@@ -1,0 +1,1554 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Stargazing Forecast · Dark Sky Almanac</title>
+<meta name="description" content="Tonight's stargazing conditions: moon phase, true-dark window, weather, planet positions, and the best deep-sky target for every night, tuned to the dark skies of southern Utah.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stargazing Forecast · Dark Sky Almanac">
+<meta property="og:description" content="Tonight's stargazing conditions: moon phase, true-dark window, weather, planet positions, and the best deep-sky target for every night, tuned to the dark skies of southern Utah.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/forecast">
+<meta property="og:url" content="https://app.darkskyalmanac.com/forecast">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<style>
+html,body{margin:0;padding:0;background:#141319}
+html,body{min-height:100dvh}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;
+  font-family:'Montserrat',-apple-system,sans-serif;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+#zcl-cal-wrap,#zcl-moon-wrap,#zcl-con-wrap,#zcl-m-wrap,#zcl-sf-wrap,#zcl-idx-wrap,#zcl-sk-wrap,#zcl-ss-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+#pwa-install{position:fixed;left:12px;right:12px;bottom:74px;z-index:10000;
+  display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+  background:rgba(13,10,24,.97);border:1px solid rgba(203,168,90,.4);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);font-family:'Montserrat',sans-serif}
+#pwa-install.show{display:flex}
+#pwa-install .txt{flex:1;font-size:12px;color:#C9BD97;line-height:1.4}
+#pwa-install .txt b{color:#F2E4BE;font-weight:600}
+#pwa-install button{font-family:inherit;font-size:11px;letter-spacing:.1em;font-weight:600;
+  text-transform:uppercase;border-radius:5px;padding:8px 12px;cursor:pointer;border:none}
+#pwa-install .go{background:#CBA85A;color:#0d0a18}
+#pwa-install .dismiss{background:none;color:#7A6E55;border:1px solid rgba(203,168,90,.3)}
+
+/* ── Global night mode (injected into every PWA page) ── */
+#pwa-night-overlay{position:fixed;inset:0;pointer-events:none;z-index:10001;
+  background:rgba(160,0,0,.0);transition:background .4s ease}
+body.night-mode{background:#000 !important}
+body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+
+#pwa-night-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);z-index:10002;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(10,8,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(203,168,90,.32);color:#9A8A66;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-family:inherit}
+#pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
+</style>
+</head>
+<body><!-- ════════════════════════════════════════════════════════════
+     ZION DARK SKY ALMANAC · PRO
+     Self-contained Squarespace embed (paste into a Code block).
+     Sections:  1 CSS   2 MARKUP   3 DATA   4 ASTRO   5 WEATHER
+                6 RENDER   7 DETAIL PANEL   8 INIT
+     ════════════════════════════════════════════════════════════ -->
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+
+<!-- ─────────────────────────  1 · CSS  ───────────────────────── -->
+<style>
+#zcl-cal-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;
+  background:#141319;
+  font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
+/* On phones, break out of any container padding so the dark panel is edge-to-edge */
+@media(max-width:640px){
+  #zcl-cal-wrap{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+}
+#zcl-cal-wrap *{box-sizing:border-box}
+#zcl-cal{width:100%;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%,rgba(72,68,86,.30),transparent 55%),
+    radial-gradient(ellipse 100% 70% at 50% 110%,rgba(56,54,68,.26),transparent 55%),
+    radial-gradient(circle at 50% 40%,#22212c 0%,#1a1922 55%,#141319 100%);
+  border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+#zcl-cal::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
+#zcl-cal::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
+.zcl-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
+#zcl-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
+.zcl-fl{position:absolute;width:40px;height:40px;z-index:3;pointer-events:none;opacity:.58}
+.zcl-fl svg{width:100%;height:100%}
+.zcl-tl{top:14px;left:14px}.zcl-tr{top:14px;right:14px;transform:scaleX(-1)}
+.zcl-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-br{bottom:14px;right:14px;transform:scale(-1,-1)}
+.zcl-wrap{position:relative;z-index:1;max-width:1100px;margin:0 auto}
+
+/* Title banner */
+.zcl-titlebar{text-align:center;padding:30px 24px 22px}
+.zcl-maintitle{font-size:clamp(22px,3.4vw,34px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
+  text-transform:uppercase;line-height:1.2;
+  text-shadow:0 0 24px rgba(203,168,90,.22)}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 11px;max-width:340px}
+.zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-subtitle{font-size:13px;letter-spacing:.02em;color:#9A8E6E;max-width:520px;margin:0 auto}
+@media(max-width:520px){
+  .zcl-titlebar{padding:24px 16px 18px}
+  .zcl-subtitle{font-size:12px}
+}
+
+.zcl-hdr{display:flex;align-items:center;justify-content:space-between;padding:26px 36px 20px;border-bottom:1px solid rgba(203,168,90,.2)}
+.zcl-pro{font-size:9px;font-weight:700;letter-spacing:.18em;background:rgba(203,168,90,.18);color:#CBA85A;
+  border:1px solid rgba(203,168,90,.45);border-radius:3px;padding:2px 6px;vertical-align:middle;margin-left:7px;text-transform:uppercase}
+.zcl-htitle{font-size:11px;font-weight:600;letter-spacing:.22em;color:#CBA85A;text-transform:uppercase}
+.zcl-loclabel{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#8A6E32;margin-bottom:4px}
+.zcl-hloc{font-size:15px;color:#9A8A66;margin-top:0}
+.zcl-locedit{font-style:normal;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+  color:#CBA85A;border:1px solid rgba(203,168,90,.4);border-radius:3px;padding:2px 8px;margin-left:9px;cursor:pointer;white-space:nowrap}
+.zcl-locedit:hover{background:rgba(203,168,90,.12)}
+.zcl-locform{display:none;align-items:center;gap:7px;margin-top:8px}
+.zcl-locform.open{display:flex;flex-wrap:wrap}
+.zcl-locform input{background:rgba(0,0,0,.25);border:1px solid rgba(203,168,90,.32);border-radius:4px;
+  color:#E4D9B8;font-family:inherit;font-size:13px;padding:5px 9px;width:120px;outline:none}
+.zcl-locform input:focus{border-color:#CBA85A}
+.zcl-locform button{background:rgba(203,168,90,.14);border:1px solid rgba(203,168,90,.4);border-radius:4px;
+  color:#CBA85A;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.08em;padding:5px 11px;cursor:pointer}
+.zcl-locform button:hover{background:rgba(203,168,90,.24)}
+.zcl-zipmsg{font-size:11px;color:#7A6E55}
+.zcl-mnav{display:flex;align-items:center;gap:14px;border:1px solid rgba(203,168,90,.32);border-radius:4px;padding:8px 14px}
+.zcl-mlabel{font-size:18px;font-weight:500;color:#E4D9B8;letter-spacing:.05em;min-width:160px;text-align:center}
+.zcl-nbtn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.24);background:none;color:#CBA85A;
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;flex-shrink:0}
+.zcl-nbtn:hover{background:rgba(203,168,90,.09);border-color:#CBA85A}
+
+.zcl-wds{display:grid;grid-template-columns:repeat(7,1fr);padding:14px 22px 6px}
+.zcl-wd{text-align:center;font-size:9px;letter-spacing:.16em;color:#9A7A38;text-transform:uppercase;padding:4px 0}
+
+.zcl-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px;padding:4px 22px 16px}
+.zcl-dc{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;border-radius:7px;cursor:pointer;
+  border:1px solid rgba(203,168,90,.13);background:rgba(255,255,255,.013);padding:8px 2px 6px;min-height:82px;
+  transition:background .15s,border-color .15s}
+.zcl-dc:hover:not(.zcl-oc){background:rgba(203,168,90,.09);border-color:rgba(203,168,90,.3)}
+.zcl-dc.zcl-today{background:rgba(203,168,90,.09);border-color:rgba(203,168,90,.35)}
+.zcl-dc.zcl-sel{background:rgba(203,168,90,.18);border-color:#CBA85A}
+.zcl-dc.zcl-oc{opacity:.16;pointer-events:none;border-color:transparent;background:transparent}
+.zcl-dn{font-size:11px;font-weight:400;color:#7A6E55;line-height:1}
+.zcl-dc.zcl-today .zcl-dn{color:#CBA85A;font-weight:600}
+.zcl-dc.zcl-sel .zcl-dn{color:#E4D9B8}
+.zcl-dm{line-height:0}
+
+#zcl-det{display:none;border-top:1px solid rgba(203,168,90,.2);padding:22px 28px 24px}
+#zcl-det.zcl-open{display:block;animation:zcl-fi .22s ease}
+@keyframes zcl-fi{from{opacity:0;transform:translateY(-5px)}to{opacity:1;transform:translateY(0)}}
+.zcl-dh{display:flex;align-items:flex-start;gap:22px;margin-bottom:18px}.zcl-dmeta{flex:1}
+.zcl-daynav{display:flex;gap:14px;align-items:center;justify-content:center;margin:4px 0 18px}
+.zcl-daynav-top{margin:0;gap:8px;align-self:flex-start;flex-shrink:0}
+.zcl-daynav-top .zcl-daybtn{width:32px;height:32px;font-size:19px}
+.zcl-daynav-label{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8A6E32;min-width:110px;text-align:center}
+.zcl-daybtn{width:38px;height:38px;border-radius:50%;border:1px solid rgba(203,168,90,.35);background:none;
+  color:#CBA85A;font-size:23px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s,border-color .15s;padding:0;flex-shrink:0}
+.zcl-daybtn:hover{background:rgba(203,168,90,.12);border-color:#CBA85A}
+.zcl-daybtn:active{background:rgba(203,168,90,.28);transform:scale(.94)}
+
+/* planets-at-10pm antique sky illustration */
+.zcl-skycard{padding:14px 14px 12px;background:
+  radial-gradient(ellipse 90% 80% at 50% 100%,rgba(40,38,52,.6),transparent 70%),#0d0a18}
+.zcl-skysvg{display:block;margin:0 auto}
+.zcl-skytext{font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:.12em;text-transform:uppercase;fill:#9A875C}
+.zcl-planetlist{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;margin-top:8px}
+.zcl-planetchip{font-size:12px;color:#C9BD97;display:inline-flex;align-items:center;gap:6px}
+.zcl-planetchip i{width:9px;height:9px;border-radius:50%;display:inline-block}
+.zcl-ddate{font-size:20px;font-weight:500;color:#CBA85A;letter-spacing:.04em;margin-bottom:5px}
+.zcl-dphase{font-size:15px;color:#7A6E55;margin-bottom:5px}
+.zcl-dill{font-size:13px;color:#7A6E55}
+
+.zcl-psec{margin-bottom:6px;padding-top:0;
+  border:1px solid rgba(203,168,90,.16);border-radius:8px;overflow:hidden}
+.zcl-psec-label{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;
+  padding:12px 14px;margin:0;border-bottom:1px solid rgba(203,168,90,.18);
+  display:flex;align-items:center;justify-content:space-between;
+  cursor:pointer;user-select:none;-webkit-user-select:none}
+.zcl-psec-label::after{content:'›';font-size:18px;font-weight:300;color:#CBA85A;opacity:.6;
+  transition:transform .2s;transform:rotate(90deg)}
+.zcl-psec.collapsed .zcl-psec-label::after{transform:rotate(0deg)}
+.zcl-psec-body{padding:12px 14px 14px}
+.zcl-psec.collapsed .zcl-psec-body{display:none}
+.zcl-pcards{display:grid;gap:9px}
+.zcl-pcards.cols2{grid-template-columns:1fr 1fr}
+.zcl-pcards.cols3{grid-template-columns:1fr 1fr 1fr}
+.zcl-pcards.cols4{grid-template-columns:2fr 1fr 1fr}
+@media(max-width:520px){.zcl-pcards.cols3,.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
+.zcl-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:10px 12px}
+.zcl-pcard.accent{border-color:rgba(203,168,90,.38);background:rgba(203,168,90,.06)}
+.zcl-pclabel{font-size:10px;letter-spacing:.13em;color:#8A6E32;text-transform:uppercase;margin-bottom:6px}
+.zcl-pcval{font-size:16px;color:#E4D9B8;line-height:1.2}
+.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px}
+.zcl-altrow{font-size:12.5px;color:#9A875C;letter-spacing:.04em;margin-top:9px;padding:0 2px}
+
+.zcl-badge{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;border-radius:5px;
+  background:rgba(0,0,0,.2);margin:0 8px 10px 0;border:1px solid rgba(203,168,90,.4)}
+.zcl-badge-t{font-size:11px;font-weight:600;letter-spacing:.12em}
+.zcl-badge-s{font-size:10px;color:#7A6E55}
+.zcl-dewbanner{display:flex;align-items:center;gap:10px;padding:9px 13px;border-radius:7px;
+  border:1px solid rgba(255,180,50,.35);background:rgba(255,160,30,.07);color:#F0C060;font-size:12px;margin-bottom:14px}
+
+/* sky window: true dark + paired moon times */
+.zcl-skywin{display:grid;grid-template-columns:1fr 1.3fr;gap:9px}
+@media(max-width:520px){.zcl-skywin{grid-template-columns:1fr}}
+.zcl-skywin-times{display:flex;flex-direction:column;gap:9px}
+.zcl-moonpair{display:flex;flex-direction:column}
+.zcl-mtimes{display:flex;align-items:center;margin-top:2px}
+.zcl-mtime{display:flex;align-items:center;gap:9px;flex:1}
+.zcl-mtico{font-size:18px;color:#CBA85A;line-height:1;flex-shrink:0}
+.zcl-mtlabel{font-size:10.5px;letter-spacing:.13em;color:#A07F38;text-transform:uppercase;margin-bottom:3px}
+.zcl-mtval{font-size:15px;color:#E4D9B8;line-height:1.1}
+.zcl-mtdiv{width:1px;align-self:stretch;background:rgba(203,168,90,.16);margin:2px 12px}
+
+/* "How to find it" — always visible inside the target card */
+.zcl-find{margin-top:11px;border-top:1px solid rgba(203,168,90,.16);padding-top:9px}
+.zcl-find-head{font-size:11px;font-weight:600;letter-spacing:.1em;
+  text-transform:uppercase;color:#CBA85A;display:flex;align-items:center;gap:7px}
+.zcl-find-head svg{width:14px;height:14px;flex-shrink:0;opacity:.85}
+.zcl-find-body{font-size:13.5px;line-height:1.55;color:#C9BD97;margin-top:9px}
+
+/* target card body text — readable, consistent with the night caption */
+.zcl-tgtwhy{font-size:13.5px;line-height:1.55;color:#C9BD97;margin-top:6px}
+.zcl-tgtsec{font-size:13px;line-height:1.4;color:#9A875C;margin-top:10px}
+
+.zcl-trec{display:flex;align-items:flex-start;gap:10px;padding:12px 15px;border-radius:8px;font-size:14px}
+.zcl-trec.great{background:rgba(111,143,168,.08);border:1px solid rgba(111,143,168,.22);color:#9DB6CC}
+.zcl-trec.good{background:rgba(203,168,90,.07);border:1px solid rgba(203,168,90,.22);color:#CBA85A}
+.zcl-trec.clouded{background:rgba(128,128,128,.07);border:1px solid rgba(128,128,128,.2);color:#999}
+.zcl-trec-icon{font-size:18px;line-height:1;flex-shrink:0;margin-top:1px}
+.zcl-nodata{font-size:13px;color:#7A6E55}
+
+@media(max-width:520px){
+  .zcl-hdr{flex-direction:column;align-items:flex-start;gap:12px;padding:22px 18px 16px}
+  .zcl-mnav{width:100%;justify-content:space-between}
+  .zcl-mlabel{flex:1;min-width:0;font-size:17px}
+  .zcl-wds{padding:10px 8px 4px}
+  .zcl-grid{padding:4px 8px 12px;gap:4px}
+  .zcl-dc{min-height:72px;padding:8px 2px 6px;border-radius:6px}
+  .zcl-wd{font-size:8px;letter-spacing:.10em}
+  #zcl-det{padding:18px 14px 20px}
+  .zcl-ddate{font-size:18px}
+  .zcl-dh{gap:16px}
+}
+</style>
+
+<!-- ────────────────────────  2 · MARKUP  ──────────────────────── -->
+<div id="zcl-cal-wrap">
+<div id="zcl-cal">
+  <div class="zcl-goldbar"></div>
+  <div class="zcl-fl zcl-tl"></div><div class="zcl-fl zcl-tr"></div>
+  <div class="zcl-fl zcl-bl"></div><div class="zcl-fl zcl-br"></div>
+  <svg id="zcl-stars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
+  <div class="zcl-wrap">
+    <div class="zcl-titlebar">
+      <div class="zcl-maintitle">Stargazing Forecast</div>
+      <div class="zcl-titlerule">
+        <span class="zcl-rline"></span>
+        <svg class="zcl-rstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+        <span class="zcl-rline"></span>
+      </div>
+    </div>
+    <header class="zcl-hdr">
+      <div>
+        <div class="zcl-loclabel">Location</div>
+        <div class="zcl-hloc" id="zcl-loc">Zion National Park · 37.20° N <span class="zcl-locedit">change</span></div>
+        <div class="zcl-locform" id="zcl-locform">
+          <input id="zcl-zip" type="text" inputmode="numeric" maxlength="5" placeholder="US ZIP code" />
+          <button id="zcl-zipgo">Go</button>
+          <button id="zcl-zipreset" title="Back to default">Reset</button>
+          <span class="zcl-zipmsg" id="zcl-zipmsg"></span>
+        </div>
+      </div>
+      <div class="zcl-mnav">
+        <button class="zcl-nbtn" id="zcl-prev" aria-label="Previous month">&#8249;</button>
+        <div class="zcl-mlabel" id="zcl-mlabel"></div>
+        <button class="zcl-nbtn" id="zcl-next" aria-label="Next month">&#8250;</button>
+      </div>
+    </header>
+    <div class="zcl-wds">
+      <div class="zcl-wd">Sun</div><div class="zcl-wd">Mon</div><div class="zcl-wd">Tue</div>
+      <div class="zcl-wd">Wed</div><div class="zcl-wd">Thu</div><div class="zcl-wd">Fri</div><div class="zcl-wd">Sat</div>
+    </div>
+    <div class="zcl-grid" id="zcl-grid"></div>
+    <div id="zcl-det"></div>
+  </div>
+</div>
+</div>
+
+<script>
+"use strict";
+(function(){
+
+// ════════════════════════  CONSTANTS  ════════════════════════
+// Location is mutable so the user can change it by ZIP. Defaults to Zion.
+let LAT = 37.1986, LNG = -112.9869;
+let PLACE = 'Zion National Park';
+let TZ = 'America/Denver';
+const SYNODIC = 29.53058867;
+const REF_NEW_MOON = new Date('2000-01-06T18:14:00Z');
+const TOUR_START = 21, TOUR_END = 23;          // 9–11 PM
+
+const MO = ['January','February','March','April','May','June','July','August','September','October','November','December'];
+const MO_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+const DY = ['Sunday','Monday','Tuesday','Wednesday','Thursday','Friday','Saturday'];
+
+// ─────────────────────  3 · STATIC DATA  ─────────────────────
+// Each month holds a POOL of deep-sky targets; dark nights rotate
+// through them so the same month never repeats one object. Mix of
+// crowd-pleasers and lesser-known surprises (planetaries, dark
+// nebulae, galaxy chains, carbon stars, asterisms).
+const MONTHLY_POOL = [
+  // ── January ──
+  [
+    {p:'M42 Orion Nebula',           why:"The closest major star-forming region to Earth at about 1,340 light years, and the year's single most impressive eyepiece view. At its heart sit four young stars called the Trapezium, only a million years old, whose fierce radiation lights the surrounding gas — you are watching a stellar nursery in the act of building new suns."},
+    {p:'M1 Crab Nebula',             why:'The expanding wreckage of a star that exploded in 1054 AD — an event so bright Chinese and Arab astronomers recorded it as a "guest star" visible in daylight for weeks. At its center spins a neutron star, the collapsed core, rotating 30 times a second. In the eyepiece it is a faint grey oval near the tip of Taurus\u2019s horn, but knowing what it is transforms the view.'},
+    {p:'NGC 2392 Eskimo Nebula',     why:'A planetary nebula in Gemini — the glowing shell a Sun-like star puffs off as it dies, a preview of our own Sun\u2019s fate in about five billion years. The blue-green disc is wrapped in a fuzzy fringe that looks like a face inside a furry parka hood, and high magnification reveals the central white-dwarf star.'},
+    {p:'Hyades + Aldebaran',         why:'The nearest open star cluster to Earth at just 150 light years, forming the V-shaped face of Taurus the Bull. The brilliant orange star Aldebaran appears to anchor the V but is a line-of-sight coincidence — it sits less than half as far away, unrelated to the cluster behind it.'},
+    {p:'M37 Auriga Cluster',         why:'The richest of three open clusters in Auriga, packing around 500 stars formed together some 350 million years ago. A glittering field resolves at moderate power, with a notable orange-red star near the center — a more evolved member that has already swollen into a red giant.'},
+  ],
+  // ── February ──
+  [
+    {p:'M81 & M82 Bode\u2019s Galaxies', why:'A pair of galaxies 12 million light years away, locked in a slow gravitational collision. M81 is a grand, orderly spiral; its smaller neighbour M82 has been so disrupted by the encounter that it is now a "starburst" galaxy, furiously birthing stars and venting plumes of glowing hydrogen from its core. Both fit one low-power field — a galactic before-and-after.'},
+    {p:'M78 Reflection Nebula',      why:"Orion\u2019s quieter nebula — not glowing on its own like M42, but a cloud of dust reflecting the blue light of hot young stars embedded within it, about 1,300 light years away. Subtler than its famous neighbour and rarely shown, it rewards a patient look under dark skies."},
+    {p:'NGC 2024 Flame Nebula',      why:'A vast emission nebula glowing beside Alnitak, the easternmost star of Orion\u2019s belt. A lane of foreground dust splits it down the middle into a flame-like shape; behind that dust lies a hidden cluster of newborn stars revealed only in infrared. The glare of Alnitak makes it a fun challenge to tease out.'},
+    {p:'M44 Beehive Cluster',       why:'One of the nearest open clusters at about 580 light years, known since antiquity — Galileo was the first to resolve its haze into stars in 1609. To the ancient Greeks and Romans it was the "manger" (Praesepe) from which two flanking donkey-stars fed. A naked-eye smudge that bursts into dozens of stars in binoculars.'},
+    {p:'Leo Triplet (M65/M66/NGC 3628)', why:'Three galaxies about 35 million light years away sharing a single eyepiece field. The edge-on NGC 3628 trails a faint 300,000-light-year tidal tail of stars drawn out by gravitational tugs from its two companions — galaxy season\u2019s opening showpiece.'},
+  ],
+  // ── March ──
+  [
+    {p:'Markarian\u2019s Chain',     why:'A gently curving arc of galaxies near the heart of the Virgo Cluster, our nearest large galaxy cluster at about 55 million light years. At least seven of them move through space together as a physically bound group. Sweeping slowly at low power, you can hop from one island universe to the next across the most galaxy-dense patch of sky visible from our latitude.'},
+    {p:'M51 Whirlpool Galaxy',       why:'The first galaxy ever recognized to have spiral structure, sketched by Lord Rosse in 1845. About 28 million light years away, it is caught mid-interaction with a smaller companion galaxy tugging at the end of one arm — that gravitational encounter is what makes its spiral arms so dramatic and bright. Its face-on arms are visible in a modest scope under dark skies.'},
+    {p:'M97 Owl + M108',             why:'A two-for-one field below the Big Dipper\u2019s bowl. The Owl is a planetary nebula about 2,000 light years off whose two dark "eyes" give it its name; beside it floats M108, an edge-on galaxy 45 million light years beyond — a striking juxtaposition of something dying in our own galaxy against an entire distant one.'},
+    {p:'M104 Sombrero Galaxy',       why:'An edge-on galaxy 30 million light years away, tilted just six degrees from edge-on so a thick lane of dark dust cuts across its glowing bulge like the brim of a hat. That bulge hides a supermassive black hole a billion times the mass of our Sun.'},
+    {p:'NGC 2903 (Leo)',            why:'A bright barred spiral galaxy near Leo\u2019s nose that Charles Messier inexplicably overlooked, despite being brighter than many objects in his catalogue. About 30 million light years away, it shows real structure in a backyard scope — a rewarding target almost no one thinks to point at.'},
+  ],
+  // ── April ──
+  [
+    {p:'M3 Globular Cluster',        why:'A swarm of roughly half a million stars bound into a sphere about 34,000 light years away, and one of the finest globulars in the northern sky. Its stars are ancient — around 11 billion years old, nearly as old as the universe itself — yet it contains an unusual number of "blue stragglers," stars that look younger than they should after stellar collisions and mergers.'},
+    {p:'M63 Sunflower Galaxy',       why:'A spiral 27 million light years away whose arms are "flocculent" — patchy and feathered rather than sweeping, looking like the petals of a sunflower. It belongs to the same galaxy group as M51 and is a satisfying, slightly challenging target in Canes Venatici.'},
+    {p:'M94 (Cat\u2019s Eye Galaxy)', why:'A compact spiral 16 million light years away with a brilliant, tight core ringed by a faint outer halo of young blue stars. That ring is a burst of recent star formation, making M94 a favourite example of a "starburst ring" galaxy — small, bright, and easy to find near the Dipper.'},
+    {p:'Cor Caroli + La Superba',    why:'Start at Cor Caroli, a lovely double star whose two components split easily in any small scope. Then hop to nearby Y Canum Venaticorum — "La Superba," one of the reddest stars in the sky. It is a dying carbon star, its outer layers sooty with carbon that filters its light to a deep ruby; it will soon (astronomically speaking) shed those layers as a planetary nebula.'},
+    {p:'M106 Galaxy',                why:'A large, bright spiral about 24 million light years away with a violently active core — its central black hole is devouring matter and firing "anomalous arms" of superheated gas out through the galaxy. Big enough to show genuine structure in a backyard scope, and badly underrated.'},
+  ],
+  // ── May ──
+  [
+    {p:'M13 Hercules Cluster',       why:'The showpiece globular cluster of the northern sky — several hundred thousand stars 25,000 light years away, resolving into a sparkling ball at 150x that stops everyone in their tracks. So iconic that in 1974 it was the target of the Arecibo Message, humanity\u2019s first deliberate radio broadcast to the stars.'},
+    {p:'M57 Ring Nebula',            why:'A perfect glowing smoke-ring in Lyra, about 2,300 light years away — the exhaled outer shell of a dying Sun-like star, lit from within by the exposed stellar core. Unmistakable even in small scopes, it is the textbook example of a planetary nebula and a genuine preview of our own Sun\u2019s distant future.'},
+    {p:'M5 Globular Cluster',        why:'One of the oldest known globular clusters at around 13 billion years, holding perhaps half a million stars 25,000 light years away. Many observers quietly rank it above even M13 — looser, beautifully asymmetric, and packed with variable stars that pulse in brightness.'},
+    {p:'M101 Pinwheel Galaxy',       why:'A huge face-on spiral 21 million light years away, nearly twice the diameter of our own Milky Way. Its low surface brightness means it needs dark, moonless skies, but on a good night its sprawling, slightly lopsided arms — distorted by past encounters with companion galaxies — are a spectacular sight.'},
+    {p:'NGC 6543 Cat\u2019s Eye',     why:'A small but intensely blue-green planetary nebula in Draco, about 3,300 light years away — and one of the most structurally complex known, with concentric shells, jets, and knots that Hubble revealed in stunning detail. A hidden gem that takes high magnification well.'},
+  ],
+  // ── June ──
+  [
+    {p:'M13 Hercules Cluster',       why:'Riding near the zenith now, this half-million-star globular 25,000 light years away is at its best. Look for the "Propeller" — three dark lanes near the core where the star density seems to thin into a three-bladed shape, a fun high-power challenge once the cluster resolves.'},
+    {p:'M92 Globular Cluster',       why:'Hercules\u2019 overlooked second globular, forever in M13\u2019s shadow — yet it is tighter, more concentrated, and one of the oldest objects in the galaxy at roughly 14 billion years. About 27,000 light years away, it would be a celebrated showpiece in any other constellation.'},
+    {p:'M57 Ring Nebula',            why:'High overhead and easy to find slung between two stars of Lyra, this glowing ring 2,300 light years away is the shed shell of a dying star. Long-exposure images reveal the faint central white dwarf — the star\u2019s exposed core, slowly cooling over billions of years.'},
+    {p:'M12 & M10 (Ophiuchus)',      why:'A matched pair of globular clusters in the Serpent-Bearer, both around 14,000 light years away and just three degrees apart — close enough to frame together in binoculars. M12 is looser, M10 more concentrated; seeing two ancient star-cities side by side is a quiet delight that rarely gets the attention it deserves.'},
+    {p:'Rho Ophiuchi Complex',       why:'The most colourful region in the entire sky, about 400 light years away — and one of the closest stellar nurseries, where new stars are actively condensing out of the dust right now. Blue reflection nebulae glow around hot young stars, golden dust wraps the red supergiant Antares, and dark lanes of cold gas wind between them. Best appreciated as a wide-field photographic target, low in the southern sky.'},
+  ],
+  // ── July ──
+  [
+    {p:'M8 Lagoon + M20 Trifid',     why:'Two glowing nebulae sharing a two-degree field in Sagittarius, deep in the Milky Way\u2019s core region. The Lagoon (M8), 4,000 light years away, is so bright it is visible to the naked eye as a misty patch; the Trifid (M20) just above it is split into three petals by dark dust lanes and shows both red emission and blue reflection. Peak season for the galactic center.'},
+    {p:'M22 Globular Cluster',       why:'One of the brightest globular clusters in the whole sky, about 10,000 light years away — closer than most and therefore large and easy. It was the first globular ever discovered, in 1665, and remarkably hides a couple of planetary nebulae and even stray black holes among its hundreds of thousands of stars. Northern observers often miss it because it sits low.'},
+    {p:'M11 Wild Duck Cluster',      why:'A dense, fan-shaped knot of around 2,900 stars in Scutum, about 6,000 light years away — so compact it almost looks like a globular. A bright leading star gives it the shape of a flight of ducks in V-formation. One of the richest open clusters anywhere, set against the glowing Scutum star cloud.'},
+    {p:'Barnard\u2019s Dark Nebulae',  why:'The Pipe and Snake nebulae are not bright objects but absences — cold, dense clouds of dust so thick they blot out the stars behind them, silhouetted against the Milky Way. These are the very cradles where future stars will form, and from truly dark skies they are visible to the naked eye as inky rifts in the galaxy.'},
+    {p:'M16 Eagle + M17 Swan',       why:"Two emission nebulae in one sweep of Sagittarius. M16 hosts the famous Pillars of Creation — towering columns of gas where stars are being born, made iconic by Hubble; they are subtle visually but present at high power. Nearby M17, the Swan or Omega Nebula, shows a bright bar of glowing gas shaped like a floating swan."},
+  ],
+  // ── August ──
+  [
+    {p:'M16 Eagle + M17 Swan',       why:'At maximum altitude now, this pair glows in the heart of the summer Milky Way. M17, the Swan Nebula, is one of the brightest emission nebulae in the sky — an active star-forming region about 5,500 light years away whose newborn stars make the surrounding hydrogen fluoresce.'},
+    {p:'M27 Dumbbell Nebula',        why:'The first planetary nebula ever discovered, by Messier in 1764, and the brightest in the sky — an apple-core of glowing gas in Vulpecula about 1,200 light years away. So large and bright it shows its twin-lobed shape even in binoculars; it is the dying breath of a star that ran out of fuel some 10,000 years ago.'},
+    {p:'Coathanger (Cr 399)',        why:'A chance alignment of ten unrelated stars that happen to form a perfect upside-down coathanger — a straight bar with a hook. Not a true cluster at all but a line-of-sight coincidence, and a delightful, unmistakable surprise in binoculars between Albireo and Altair.'},
+    {p:'M24 Star Cloud',             why:'Not an object but a window — a gap in the Milky Way\u2019s obscuring dust that lets us see straight through to a dense river of stars thousands of light years deep toward the galactic center. A bright naked-eye patch that dissolves into countless stars in binoculars; you are looking into the depths of our own galaxy.'},
+    {p:'Veil Nebula (NGC 6960/6992)',why:'The delicate, lacework wreckage of a star that exploded as a supernova roughly 10,000 years ago, about 2,400 light years away in Cygnus. The blast wave is still expanding, and its glowing filaments now stretch across an area six times the width of the full moon. An OIII filter transforms it from nearly invisible to breathtaking.'},
+  ],
+  // ── September ──
+  [
+    {p:'M31 Andromeda Galaxy',       why:'At 2.5 million light years, the most distant object visible to the naked eye and the nearest large galaxy to our own — a trillion-star spiral on a collision course with the Milky Way, due to merge in about 4.5 billion years. The light reaching your eye tonight left it before humans existed.'},
+    {p:'Perseus Double Cluster',     why:'Two young open clusters, NGC 869 and NGC 884, sitting side by side about 7,500 light years away and only a few million years old. Both are visible to the naked eye as a brighter knot in the Milky Way and are simply breathtaking at low power — a pair of glittering jewel-boxes in the same field.'},
+    {p:'M15 Globular Cluster',       why:'One of the densest globular clusters known — its core has undergone "core collapse," packing stars so tightly that it may harbour a black hole at its center. About 34,000 light years away in Pegasus, it is also the only globular known to contain a planetary nebula within it.'},
+    {p:'NGC 7331 + Stephan\u2019s Quintet', why:'NGC 7331 is a bright spiral 40 million light years away, often called a twin of our Milky Way. Just half a degree away lies Stephan\u2019s Quintet — a compact group of five galaxies 300 million light years distant, four of them gravitationally entangled and tearing at each other. Famous from the first James Webb images; a genuine dark-sky challenge to glimpse.'},
+    {p:'M2 Globular Cluster',        why:'A rich, slightly oval globular in Aquarius, about 37,000 light years away and 13 billion years old, holding roughly 150,000 stars. Bright and easy to find, yet it almost never gets pointed at — an underrated ancient relic of the early galaxy.'},
+  ],
+  // ── October ──
+  [
+    {p:'M31 Andromeda Galaxy',       why:'At its seasonal best high overhead, with its two brightest satellite galaxies — M32 and M110 — flanking it in the same low-power field, much as our Milky Way is orbited by its own dwarf companions. A whole galactic system on display 2.5 million light years away.'},
+    {p:'NGC 253 Sculptor Galaxy',    why:'One of the brightest galaxies outside our Local Group, about 11 million light years away and seen nearly edge-on. It is a dusty, mottled starburst galaxy churning out new stars, and despite being a stunning sight it is badly underrated because it sits low in the south for northern observers — Zion\u2019s dark southern horizon is ideal for it.'},
+    {p:'M33 Triangulum Galaxy',      why:'The third-largest galaxy in our Local Group at 2.7 million light years, and a notorious naked-eye challenge — its light is spread so thin across the sky that it is paradoxically harder to see than the more distant M31. Spotting it without optics is a genuine test of how dark and transparent the night truly is.'},
+    {p:'Helix Nebula (NGC 7293)',    why:'The closest bright planetary nebula at just 650 light years — the cast-off shell of a dying star spread across an area half the width of the full moon, nicknamed the "Eye of God." So large and diffuse that low power and an OIII filter work best; under dark skies, binoculars can catch it.'},
+    {p:'M74 Phantom Galaxy',         why:'A delicate, perfectly face-on "grand design" spiral 32 million light years away — and one of the most difficult Messier objects, its light spread thin across the sky. Tracking it down is a trophy and an excellent gauge of a truly dark, transparent night.'},
+  ],
+  // ── November ──
+  [
+    {p:'M45 Pleiades',               why:'The Seven Sisters — a young open cluster just 444 light years away, only about 100 million years old, its hottest stars still wrapped in wisps of blue reflection nebulosity (a passing dust cloud they happen to be drifting through). Known to cultures worldwide for millennia and the finest cluster for the naked eye and binoculars.'},
+    {p:'NGC 891 (Andromeda)',        why:'A spiral galaxy 30 million light years away seen exactly edge-on, with a knife-thin lane of dark dust slicing it lengthwise. It looks like a textbook diagram of what our own Milky Way would appear as from outside — a flattened disc with a central bulge and an obscuring band of interstellar dust.'},
+    {p:'M76 Little Dumbbell',        why:'A small, faint planetary nebula in Perseus about 2,500 light years away — widely considered the toughest object in Messier\u2019s catalogue to observe well. Its twin-lobed shape mirrors its larger cousin M27, and tracking it down is a genuinely satisfying catch.'},
+    {p:'Kemble\u2019s Cascade',       why:'A striking straight line of more than twenty stars tumbling across Camelopardalis toward a small cluster, NGC 1502. Like the Coathanger it is a line-of-sight asterism rather than a true grouping, named for the amateur astronomer Lucian Kemble who delighted in it — a pure binocular pleasure.'},
+    {p:'M42 Orion Nebula',           why:'Orion is climbing in the east and by late evening M42 is a prime target. The closest major stellar nursery at 1,340 light years, its dark "fish-mouth" intrusion and the four Trapezium stars are visible at 60x — a nebula being actively carved by the newborn stars inside it.'},
+  ],
+  // ── December ──
+  [
+    {p:'M42 Orion Nebula',           why:'Prime winter window — Orion rides high and the nebula rivals the summer Milky Way for sheer visual impact. At 1,340 light years it is the nearest region where massive stars are being born, and its glowing gas, dark lanes, and the Trapezium cluster make it the most rewarding deep-sky object of the cold months.'},
+    {p:'NGC 2244 Rosette Nebula',    why:'A huge circular wreath of glowing hydrogen in Monoceros, about 5,000 light years away, with a cluster of hot young stars at its center. Those newborn stars have blown a cavity in the middle of the cloud with their stellar winds — you are seeing a flower-shaped bubble carved by starlight. Gorgeous in wide-field photographs.'},
+    {p:'Christmas Tree / Cone (NGC 2264)', why:'A triangular open cluster shaped like a Christmas tree, about 2,600 light years away in Monoceros, with the dark Cone Nebula forming the tree\u2019s tip. A genuinely festive, seasonal sight — the cluster\u2019s stars are mere millions of years old, still glowing within the gas that formed them.'},
+    {p:'M35 + NGC 2158',             why:'A big, bright open cluster at the feet of Gemini, about 2,800 light years away and roughly the size of the full moon. Just beside it sits the tiny, dense cluster NGC 2158 — five times more distant, so it appears as a faint compact knot, creating a beautiful near-and-far contrast in one eyepiece field.'},
+    {p:'Hubble\u2019s Variable Nebula', why:'A rare fan-shaped reflection nebula (NGC 2261) lit by the erratic young star R Monocerotis. Dense clouds near the star cast moving shadows across the nebula, so its shape visibly changes over a few weeks — one of the very few deep-sky objects you can watch evolve in a human timescale. Almost no one shows it.'},
+  ],
+];
+
+// Secondary "also up" suggestion per month (kept simple)
+const MONTHLY_SECONDARY = [
+  'M45 Pleiades / M1 Crab', 'M44 Beehive / Leo Triplet', 'M51 Whirlpool / M3', 'Leo & Virgo galaxies',
+  'M51 / M101 spirals', 'M57 Ring / M92', 'M22 / M11 clusters', 'M27 Dumbbell / M24',
+  'M15 / Double Cluster', 'M33 / NGC 253', 'M31 / Double Cluster', 'M45 / M35'
+];
+
+// Moonlight-resistant targets per month — bright double stars, the brightest
+// globulars/open clusters, and showpiece objects that punch through a bright
+// sky. These are what to show on a strongly moonlit night.
+const MOON_PROOF = [
+  'Pleiades, the Orion Nebula, and the double star Rigel',          // Jan
+  'the Beehive Cluster, Castor (a fine double), and bright Sirius', // Feb
+  'the double star Algieba in Leo, M44 Beehive, and Cor Caroli',    // Mar
+  'M3 globular, Cor Caroli, and the double star Mizar & Alcor',     // Apr
+  'M13 Hercules globular, M5, and the double star Izar in Boötes',  // May
+  'M13 globular, the Ring Nebula, and the double star Albireo',     // Jun
+  'M22 globular, M11 Wild Duck, and Antares with its companion',    // Jul
+  'M22 globular, the Dumbbell Nebula, and double star Albireo',     // Aug
+  'M15 globular, the Double Cluster, and the double star Almach',   // Sep
+  'M15 globular, the Double Cluster, and Almach (a colour-contrast double)', // Oct
+  'the Double Cluster, Pleiades, and the double star Almach',       // Nov
+  'the Pleiades, M35 cluster, the Orion Nebula, and Rigel',         // Dec
+];
+
+// How to find each target — naked-eye star-hop directions for the eyepiece.
+// Keyed by the rendered primary name (apostrophes are real \u2019 chars at runtime).
+const FINDERS = {
+  'M42 Orion Nebula':"Lives in Orion the Hunter, the most recognizable winter constellation — look for the three evenly-spaced belt stars. Drop down from the belt to the shorter line of stars below it (the 'sword'); the fuzzy middle 'star' of the sword is the nebula, visible to the naked eye.",
+  'M1 Crab Nebula':"Sits in Taurus the Bull, the V-faced constellation up and right of Orion. Find the tip of the bull's lower horn — the star Zeta Tauri — and the Crab is just 1° northwest of it, a faint grey smudge that needs a dark sky.",
+  'NGC 2392 Eskimo Nebula':"In Gemini the Twins, marked by the bright pair Castor and Pollux. Find the star Wasat (Delta Geminorum) near the twins' midsection and look just southeast — it looks almost star-like until you crank up the magnification.",
+  'Hyades + Aldebaran':"Forms the very face of Taurus the Bull. Impossible to miss — the bright orange star Aldebaran marks the bull's eye at one tip of a naked-eye V of stars, sitting up and to the right of Orion.",
+  'M37 Auriga Cluster':"In Auriga the Charioteer, a pentagon of bright stars riding high overhead in winter, anchored by brilliant Capella. Sweep with binoculars across the lower part of the pentagon, toward Orion, to land on this rich cluster.",
+  'M81 & M82 Bode\u2019s Galaxies':"In Ursa Major, the Great Bear that contains the Big Dipper. Draw a diagonal across the Dipper's bowl from Phecda to Dubhe, then extend that line the same distance again into the bear's body — the galaxy pair sits there, high in the north.",
+  'M78 Reflection Nebula':"In Orion the Hunter, just north of the famous belt. Find Alnitak, the easternmost (leftmost) belt star, and hop about 2° northeast to this small bluish glow.",
+  'NGC 2024 Flame Nebula':"In Orion, immediately east of Alnitak — the leftmost star of the Hunter's belt. The star's glare makes it tricky; nudge Alnitak just out of the field to let the flame's shape emerge.",
+  'M44 Beehive Cluster':"In Cancer the Crab, a faint zodiac constellation tucked between two bright landmarks. Aim midway between Pollux (in Gemini) and Regulus (in Leo) — under dark skies the cluster is a naked-eye haze that bursts into stars in binoculars.",
+  'Leo Triplet (M65/M66/NGC 3628)':"In Leo the Lion, below the lion's hindquarters. Find the star Chertan (Theta Leonis) marking the lion's hip and hop about 2.5° southeast — all three galaxies fit one low-power field.",
+  'Markarian\u2019s Chain':"In Virgo the Maiden, in the heart of the great Virgo galaxy cluster. Aim midway between Denebola (the tail of neighbouring Leo) and Vindemiatrix in Virgo, then sweep slowly at low power — galaxies pop into view one after another.",
+  'M51 Whirlpool Galaxy':"In Canes Venatici, the Hunting Dogs, just below the Big Dipper's handle. From Alkaid, the star at the very end of the handle, hop about 3.5° southwest. Rides high overhead in spring.",
+  'M97 Owl + M108':"In Ursa Major, just below the Big Dipper's bowl. Find Merak, the bottom-front bowl star, and hop about 2.5° southeast — both objects share one low-power field.",
+  'M104 Sombrero Galaxy':"On the border of Virgo and Corvus the Crow. Find the compact four-star box of Corvus low in the south, then hop north toward the bright star Spica — the Sombrero sits about a third of the way along.",
+  'NGC 2903 (Leo)':"In Leo the Lion, at the very tip of the 'Sickle' — the backwards-question-mark of stars forming the lion's head and mane. Drop about 1.5° south of the star Lambda Leonis at the sickle's end.",
+  'M3 Globular Cluster':"On the Canes Venatici–Boötes border, below the Dipper's handle. Aim halfway between the brilliant orange star Arcturus (in Boötes) and Cor Caroli, then sweep with binoculars for a fuzzy ball of stars.",
+  'M63 Sunflower Galaxy':"In Canes Venatici, the Hunting Dogs that trail below the Big Dipper's handle. Hop about 5° north-northeast from the constellation's lead star, Cor Caroli.",
+  'M94 (Cat\u2019s Eye Galaxy)':"In Canes Venatici, below the Dipper's handle. Find Cor Caroli, the constellation's brightest star, and nudge about 3° north — small, bright, and easy to land on.",
+  'Cor Caroli + La Superba':"Both in Canes Venatici, the Hunting Dogs below the Dipper's handle. Cor Caroli is the lone bright star here, an easy double; La Superba (Y CVn) lies about 7° north — a deep ruby-red carbon star, obvious in binoculars.",
+  'M106 Galaxy':"In Canes Venatici, below the Big Dipper's bowl. From the bowl star Phecda, hop southwest toward the Hunting Dogs' pair of stars — this large, bright spiral sits along the way.",
+  'M13 Hercules Cluster':"In Hercules the Strongman, whose central four stars form the lopsided square called the 'Keystone.' Trace the western edge of the Keystone between the stars Eta and Zeta Herculis; M13 sits a third of the way down, faintly naked-eye on dark nights.",
+  'M57 Ring Nebula':"In Lyra the Lyre (Harp), marked by the brilliant blue-white star Vega nearly overhead in summer. Dead simple: the Ring sits exactly between the two bottom stars of Lyra's small parallelogram, Sheliak and Sulafat.",
+  'M5 Globular Cluster':"In Serpens, the Serpent held by Ophiuchus. Find the serpent's brightest star, Unukalhai (Alpha Serpentis), and hop about 8° southwest toward the star 5 Serpentis.",
+  'M101 Pinwheel Galaxy':"In Ursa Major, off the end of the Big Dipper's handle. Form an equilateral triangle with the last two handle stars, Mizar and Alkaid — M101 is the third corner, to the north.",
+  'NGC 6543 Cat\u2019s Eye':"High in Draco the Dragon, the long winding constellation coiling between the Big and Little Dippers. Aim near the midpoint between the stars Zeta and Delta Draconis — a tiny, intense blue-green dot, so crank up the power.",
+  'M92 Globular Cluster':"In Hercules the Strongman, north of the central 'Keystone' square. From the Keystone's top edge, hop about 6° north — a superb cluster forever overlooked beside its famous neighbour M13.",
+  'M12 & M10 (Ophiuchus)':"In Ophiuchus, the Serpent-Bearer — a large constellation high in the summer south, often called the unofficial '13th zodiac sign.' The two globulars sit in its body between the stars Yed Prior and Sabik, only 3° apart, fitting one binocular field.",
+  'Rho Ophiuchi Complex':"On the border of Scorpius and Ophiuchus, centered just north of the brilliant red supergiant Antares — the heart of the Scorpion. Low in the southern sky in summer; this region is huge, so it's a wide-field target.",
+  'M8 Lagoon + M20 Trifid':"In Sagittarius the Archer, whose brightest stars form the unmistakable 'Teapot' shape low in the summer south. Sweep a few degrees up from Alnasl, the star at the Teapot's spout — the Lagoon is a naked-eye glow with the Trifid just above it.",
+  'M22 Globular Cluster':"In Sagittarius the Archer, just above the 'Teapot' asterism. Look just above and left of Kaus Borealis, the star at the top of the Teapot's lid — one of the easiest globulars, big and bright in binoculars.",
+  'M11 Wild Duck Cluster':"In Scutum the Shield, a tiny constellation just south of Aquila the Eagle in the summer Milky Way. Follow the Milky Way down from Altair (Aquila's bright star) to a dense bright knot in the Scutum star cloud.",
+  'Barnard\u2019s Dark Nebulae':"Spanning Ophiuchus and Sagittarius, just east of red Antares toward the rich Sagittarius star clouds. The 'Pipe' and 'Snake' are silhouettes — from truly dark skies they show to the naked eye as black voids against the Milky Way.",
+  'M16 Eagle + M17 Swan':"In Serpens and Sagittarius, just north of the Sagittarius 'Teapot' in the summer Milky Way. Sweep up from the top of the Teapot — M17 (the brighter checkmark) comes first, M16 about 2.5° further north.",
+  'M27 Dumbbell Nebula':"In Vulpecula the Fox, a faint constellation just north of the little arrow-shaped Sagitta. From the arrow's tip, hop about 3° north — bright enough to show its twin-lobed shape in binoculars.",
+  'Coathanger (Cr 399)':"In Vulpecula the Fox, along the Milky Way. Sweep with binoculars about a third of the way from Albireo (the head of Cygnus the Swan) toward Altair — the upside-down coathanger of stars is unmistakable.",
+  'M24 Star Cloud':"In Sagittarius the Archer, just north of the Lagoon between M17 and the Teapot's lid. A bright naked-eye patch of the Milky Way itself, best swept with binoculars.",
+  'Veil Nebula (NGC 6960/6992)':"In Cygnus the Swan, which flies along the summer Milky Way (also called the Northern Cross). Center on the star 52 Cygni, below the wing star Gienah — an OIII filter turns it from nearly invisible to spectacular.",
+  'M31 Andromeda Galaxy':"In Andromeda, the Chained Princess, beside the Great Square of Pegasus. From the Square, hop to the star Mirach, turn 90° and pass two fainter stars — M31 is just beyond, a naked-eye spindle of light and the most distant thing visible to the unaided eye.",
+  'Perseus Double Cluster':"On the border of Perseus the Hero and Cassiopeia the Queen (the bright 'W' of stars). Trace from the W toward Perseus — the two clusters are a naked-eye misty patch about halfway between them.",
+  'M15 Globular Cluster':"In Pegasus, the Winged Horse marked by the Great Square. Follow the horse's nose to the star Enif, then hop about 4° northwest — a bright, very compact ball of stars.",
+  'NGC 7331 + Stephan\u2019s Quintet':"In Pegasus, the Winged Horse. About 4° north-northwest of the star Matar lies NGC 7331, the bright spiral; Stephan's Quintet is a faint clump 0.5° southwest of it — a genuine dark-sky challenge.",
+  'M2 Globular Cluster':"In Aquarius the Water-Bearer, a faint zodiac constellation south of Pegasus. Look about 5° due north of the star Sadalsuud (Beta Aquarii), nearly on a line dropping down from the Great Square.",
+  'NGC 253 Sculptor Galaxy':"In Sculptor, a dim southern constellation low beneath the Great Square. Drop about 7° from the star Diphda (in neighbouring Cetus the Whale) toward the horizon — a bright cigar of light that rewards a dark southern horizon.",
+  'M33 Triangulum Galaxy':"In Triangulum, a small triangle of stars next to Andromeda. Aim between Mirach (in Andromeda) and the triangle — a large, low-surface-brightness glow that needs low power and dark skies; a famous naked-eye challenge.",
+  'Helix Nebula (NGC 7293)':"In Aquarius the Water-Bearer, low in the autumn south. About 1° west of the star Upsilon Aquarii — large and faint, so use the lowest power and an OIII filter; under dark skies even binoculars can catch it.",
+  'M74 Phantom Galaxy':"In Pisces the Fishes, a faint zodiac constellation. About 1.5° east-northeast of the star Eta Piscium — notoriously dim, so a clear, moonless, transparent night is essential.",
+  'M45 Pleiades':"In Taurus the Bull, riding high above Orion. Impossible to miss — a tiny dipper-shaped knot of blue stars up and to the right of orange Aldebaran. Naked-eye, and stunning in binoculars.",
+  'NGC 891 (Andromeda)':"In Andromeda, the Chained Princess, toward the Perseus border. About 3.5° east of the colourful double star Almach (Gamma Andromedae) — a thin edge-on streak that needs a dark sky.",
+  'M76 Little Dumbbell':"In Perseus the Hero, near the Andromeda border. Just south of the star Phi Persei — small and faint, widely considered the toughest Messier object, so star-hop carefully.",
+  'Kemble\u2019s Cascade':"In Camelopardalis the Giraffe, a dim region between the 'W' of Cassiopeia and Polaris. Best swept up with binoculars — a straight river of stars tumbling down toward a small cluster, NGC 1502.",
+  'NGC 2244 Rosette Nebula':"In Monoceros the Unicorn, the faint constellation east of Orion in the winter Milky Way. Find the small star cluster first (visible in binoculars left of Orion, toward Procyon) — the rose of nebulosity surrounds it.",
+  'Christmas Tree / Cone (NGC 2264)':"In Monoceros the Unicorn, about 4° north of the Rosette near the star S Monocerotis. The triangular cluster is the 'tree'; the dark Cone Nebula forms a faint notch at its tip.",
+  'M35 + NGC 2158':"In Gemini the Twins, at the feet of the western twin near the star Propus (Eta Geminorum). A big naked-eye-fuzzy cluster, with the tiny distant cluster NGC 2158 tucked just southwest in the same field.",
+  'Hubble\u2019s Variable Nebula':"In Monoceros the Unicorn, at the northern tip of the Christmas Tree Cluster, fanning out from the star R Monocerotis — a small high-power target right beside the Cone Nebula.",
+};
+
+// Finder hints for the lunar features (where they sit on the disc).
+const LUNAR_FINDERS = {
+  'Mare Crisium':"An isolated dark oval near the moon's eastern (right) limb — the first major 'sea' to catch sunrise, standing alone away from the others.",
+  'Langrenus & Petavius':"On the eastern limb just south of Mare Crisium — two large craters in a row, Petavius the lower one showing a bright central peak and a rille.",
+  'Theophilus Trio':"On the western shore of Mare Nectaris, mid-disc toward the south — three large craters overlapping in a chain, Theophilus the sharpest.",
+  'Mare Tranquillitatis':"The prominent dark sea left of center — Apollo 11 landed on its southwestern shore. Easy naked-eye, dramatic on the terminator at first quarter.",
+  'Lunar Apennines':"The grand mountain arc curving along the southeast edge of Mare Imbrium, near the disc center at first quarter — long shadows make it spectacular.",
+  'Apennines & Archimedes':"Just inside the Apennine arc on the Mare Imbrium side sits the crater Archimedes — a smooth-floored ring near disc center.",
+  'Copernicus':"A bright, isolated crater just south of the center of the disc, on the edge of the Oceanus Procellarum — terraced walls and central peaks pop in raking light.",
+  'Eratosthenes & Sinus Iridum':"Sinus Iridum is the half-circle 'bay' biting into the northwest of Mare Imbrium; Eratosthenes sits at the southern end of the Apennines near center.",
+  'Plato & Tycho rays':"Plato is the dark-floored oval crater on the northern shore of Mare Imbrium; Tycho is the bright rayed crater far to the south — both near the terminator now.",
+  'Tycho & Copernicus rays':"At full moon, look for the two brilliant 'splash' crater systems — Tycho in the south throwing rays across the whole disc, Copernicus near center.",
+  'Mare Orientale limb':"Right on the western (left) limb — only the edge is ever visible, and only when libration tilts it our way. A challenge even to glimpse.",
+  'Grimaldi & Riccioli':"Two very dark-floored craters near the western limb, in line with the equator — Grimaldi is one of the darkest features on the whole moon.",
+  'Aristarchus Plateau':"The brightest spot on the moon, on the northwest near Oceanus Procellarum — so bright it's visible even in earthshine. Schröter's Valley snakes nearby.",
+  'Kepler & Encke rays':"Mid-northwest in Oceanus Procellarum — two bright ray craters, Kepler the more prominent, between Copernicus and Aristarchus.",
+  'Last-quarter terminator':"At last quarter the lit half is the western side — the morning maria lie in shadow while Oceanus Procellarum shows sunset relief. A late-night/pre-dawn view.",
+  'Mare Humorum & Gassendi':"A smaller circular sea in the moon's southwest; the crater Gassendi sits on its northern rim like a diamond on a ring.",
+  'Tycho & southern highlands':"The bright crater Tycho dominates the rugged, heavily-cratered southern third of the disc — unmistakable with its radiating ray system.",
+  'Old-moon earthshine':"The whole disc, low in the east before dawn — the sunlit crescent plus the rest of the moon glowing softly grey from earthshine ('the old moon in the new moon's arms').",
+};
+
+const METEOR_SHOWERS = [
+  {name:'Quadrantids',     m:0,  d:3,  zhr:120, rad:'Boötes',     note:'Sharp 6-hour peak — best 2–5 AM'},
+  {name:'Lyrids',          m:3,  d:22, zhr:18,  rad:'Lyra',       note:"Reliable annual shower; occasional outbursts"},
+  {name:'Eta Aquariids',   m:4,  d:6,  zhr:50,  rad:'Aquarius',   note:"Pre-dawn best; Halley's Comet debris"},
+  {name:'Delta Aquariids', m:6,  d:30, zhr:25,  rad:'Aquarius',   note:'Broad peak; pairs with early Perseids'},
+  {name:'Perseids',        m:7,  d:12, zhr:100, rad:'Perseus',    note:"The year's most reliable — warm nights, high rate"},
+  {name:'Draconids',       m:9,  d:8,  zhr:10,  rad:'Draco',      note:'Evening shower; occasional outburst years'},
+  {name:'Orionids',        m:9,  d:21, zhr:25,  rad:'Orion',      note:'Swift bright meteors; Halley debris'},
+  {name:'Leonids',         m:10, d:17, zhr:15,  rad:'Leo',        note:'Potential storm years; pre-dawn best'},
+  {name:'Geminids',        m:11, d:13, zhr:150, rad:'Gemini',     note:"The year's best — active all night, slow bright meteors"},
+  {name:'Ursids',          m:11, d:22, zhr:10,  rad:'Ursa Minor', note:'Brief solstice shower; circumpolar radiant'},
+];
+
+const ASTRO_EVENTS = [
+  {y:2026,m:9,  d:4,  label:'Saturn at Opposition',     note:'Brightest for 2026 (mag +0.3), up all night in Cetus. Rings ~7.5° open after the 2025 edge-on crossing — the Cassini Division shows in a 4–6″ scope, and the view keeps widening each year through 2032.'},
+  {y:2026,m:9,  d:25, label:'Uranus at Opposition',     note:'Closest and brightest for the year (mag +5.6) in Taurus — a dim blue-green point, just catchable in binoculars from a dark sky.'},
+  {y:2026,m:10, d:16, label:'Mars–Jupiter Conjunction', note:'Mars (mag +0.7) passes about 1.2° from brilliant Jupiter (mag −2.1) low in the pre-dawn sky — both in the same low-power field.'},
+  {y:2027,m:0,  d:10, label:'Jupiter at Opposition',    note:'Magnitude −2.5 in Cancer — equatorial bands and all four Galilean moons on show. Well placed through February to April 2027.'},
+  {y:2027,m:1,  d:19, label:'Mars at Opposition',       note:'Mars at its best until 2029 — up all night, the disc showing its polar cap and dark markings like Syrtis Major at high power.'},
+];
+
+// Lunar terminator highlights, keyed by waxing illumination band.
+// As the moon waxes the terminator sweeps west, revealing new features
+// in sharp relief each night — so even bright nights get a fresh target.
+const LUNAR_FEATURES = [
+  // [maxIll, primary, why]
+  [0.10, 'Mare Crisium',            'The isolated Sea of Crises catches the first sunlight right on the dawn terminator, standing alone near the eastern limb. This 350-mile lava plain filled an ancient impact basin billions of years ago; at this low sun angle its ringing mountain rim casts long shadows, making it look strikingly three-dimensional.'],
+  [0.20, 'Langrenus & Petavius',    'Two grand craters blaze along the terminator south of Mare Crisium. Both have bright central peaks — mountains that rebounded upward in the instant after impact — and Petavius shows a dramatic rille, a great crack running across its floor, that is one of the finest such features visible in a small scope.'],
+  [0.30, 'Theophilus Trio',         'Theophilus, Cyrillus, and Catharina form a chain of three large craters on the shore of Mare Nectaris, each a different age. Theophilus is the youngest and sharpest, its terraced walls and central mountain crisp; the older two are progressively more eroded by later impacts — a visible timeline of lunar history in raking light.'],
+  [0.42, 'Mare Tranquillitatis',    'The Sea of Tranquility sits on the terminator — the dark lava plain where Apollo 11 landed in 1969. The low sun reveals subtle wrinkle ridges across its surface, formed as the cooling lava contracted; you are looking at the exact region where humans first walked on another world.'],
+  [0.50, 'Lunar Apennines',         'At first quarter the Apennine mountain range throws its longest shadows — the single best night of the month for lunar mountain relief. These peaks rise up to 3 miles high along the edge of Mare Imbrium and were thrown up by the colossal impact that carved that basin. The jagged terminator here is unforgettable at high power.'],
+  [0.58, 'Apennines & Archimedes',  'Just past first quarter, the crater Archimedes commands the scene — a large, smooth-floored ring on Mare Imbrium whose flat floor was flooded by lava after it formed, burying its central peak. Beside it the Apennine front catches the morning sun, and nearby is Hadley Rille, the winding valley Apollo 15 explored in 1971.'],
+  [0.68, 'Copernicus',             'The textbook impact crater of the entire moon, 57 miles across, standing in isolation so its features show beautifully. Its terraced walls slumped in concentric steps after the impact, and its central peaks rebounded from the depths; a vast system of bright rays — pulverized rock thrown out in the blast — radiates from it across the surrounding plains.'],
+  [0.78, 'Eratosthenes & Sinus Iridum','Sinus Iridum, the Bay of Rainbows, catches sunrise — a half-circle of lava ringed by the curved Jura Mountains that glow against the dark mare as the sun rises over them, an effect called the "Golden Handle." Nearby Eratosthenes marks the southern end of the Apennine range.'],
+  [0.88, 'Plato & Tycho rays',      'Dark-floored Plato, a 60-mile lava-filled crater on the northern shore of Mare Imbrium, sits near the terminator and stands out for its unusually smooth, dark floor. To the south, the bright young crater Tycho begins to dominate, its spectacular ray system spreading across the highlands.'],
+  [1.01, 'Tycho & Copernicus rays', 'At full moon there are no shadows, so the great ray systems take over. Tycho — only about 108 million years old, young for the moon — flings bright streaks of ejecta a thousand miles across the disc, and Copernicus adds its own splash. These rays are pulverized rock that has not yet darkened with age, making the freshest impacts shine brightest.'],
+];
+
+// Waning equivalents — terminator is now a sunset line on the western face.
+// Ordered ascending by illumination ceiling (same convention as waxing table).
+const LUNAR_FEATURES_WANING = [
+  [0.20, 'Old-moon earthshine',     'A delicate waning crescent low in the pre-dawn east, the whole disc faintly visible — the dark portion glows with "earthshine," sunlight reflected off Earth onto the lunar night side. Leonardo da Vinci was the first to correctly explain this "old moon in the new moon\u2019s arms" five centuries ago.'],
+  [0.30, 'Tycho & southern highlands','The waning crescent throws the rugged southern highlands into sharp sunset relief, with the young crater Tycho prominent. This heavily cratered terrain is the moon\u2019s ancient original crust, never resurfaced by lava — every crater a record of billions of years of bombardment.'],
+  [0.42, 'Mare Humorum & Gassendi', 'The compact Sea of Moisture catches low sunset light, a circular lava plain about 240 miles across. On its northern rim sits Gassendi, a large crater whose floor is fractured by a network of rilles — cracks formed as lava pushed up beneath it — making it a favourite high-power target.'],
+  [0.54, 'Kepler & Encke rays',     'At last quarter the bright ray craters Kepler and Encke catch the sunset line across Oceanus Procellarum, the largest of the lunar maria. Kepler\u2019s rays are crisp and bright, marking it as a relatively young impact whose ejecta still hasn\u2019t weathered to grey.'],
+  [0.66, 'Aristarchus Plateau',     'Aristarchus is the brightest large feature on the moon — so reflective it can be glimpsed even by earthshine alone. Beside it winds Schröter\u2019s Valley, the moon\u2019s largest sinuous rille, a channel carved by flowing lava over a billion years ago. The whole plateau is a hotspot for mysterious "transient lunar phenomena."'],
+  [0.78, 'Grimaldi & Riccioli',     'Grimaldi, near the western limb, has one of the darkest floors on the entire moon — a lava plain so dark it is easily spotted even at full moon. Beside it lies Riccioli, named for the astronomer who in 1651 devised the lunar naming system we still use today, where craters honour scientists and philosophers.'],
+  [1.01, 'Mare Orientale limb',     'The waning gibbous favours the western limb, where favourable libration — the moon\u2019s slight rocking that lets us see a bit around its edge — can reveal Mare Orientale. It is a colossal bullseye of concentric mountain rings from one of the youngest great impacts, mostly hidden on the far side and only glimpsed edge-on from Earth.'],
+];
+
+// Pick a target for ANY night. Dark → rotating seasonal deep-sky; bright → lunar feature.
+function pickTarget(date){
+  const {ill,waxing}=moonPhase(date);
+  const month=date.getMonth();
+  // Dark enough for deep sky → rotate through the month's pool by day
+  if(ill<0.35){
+    const pool=MONTHLY_POOL[month];
+    const t=pool[(date.getDate()-1)%pool.length];
+    return {primary:t.p, secondary:'Also up: '+MONTHLY_SECONDARY[month], kind:'Deep Sky', why:t.why, find:FINDERS[t.p]||null};
+  }
+  // Bright moon → lunar feature on the terminator (varies every night).
+  // Both tables are ordered by ascending illumination ceiling; pick the
+  // first band whose ceiling the current illumination falls within.
+  const table = waxing ? LUNAR_FEATURES : LUNAR_FEATURES_WANING;
+  let feat=table[table.length-1];
+  for(const row of table){ if(ill<=row[0]){ feat=row; break } }
+  // On a strongly moonlit night (>=65%) only the brightest, moon-proof
+  // targets are realistic; otherwise the normal seasonal list is fine.
+  const secondary = ill>=0.65
+    ? 'Moon-proof picks: '+MOON_PROOF[month]
+    : 'If skies allow: '+MONTHLY_SECONDARY[month]+' (brighter targets cut through moonlight best)';
+  return {primary:feat[1], secondary:secondary, kind:'Lunar Feature', why:feat[2], find:LUNAR_FINDERS[feat[1]]||null};
+}
+
+// ═══════════════════════  4 · ASTRONOMY  ═══════════════════════
+
+// Seeded RNG so each date's icon is stable
+function rng(seed){ return function(){ seed|=0; seed=seed+0x6D2B79F5|0; let t=Math.imul(seed^seed>>>15,1|seed); t=t+Math.imul(t^t>>>7,61|t)^t; return((t^t>>>14)>>>0)/4294967296 } }
+
+// Moon phase: illumination 0–1, fraction-of-cycle, and a name that
+// always matches the drawn icon (new < 2%, full > 98%).
+function moonPhase(date){
+  const days=(date-REF_NEW_MOON)/86400000;
+  const ph=((days%SYNODIC)+SYNODIC)%SYNODIC;
+  const frac=ph/SYNODIC;
+  const ill=0.5*(1-Math.cos(2*Math.PI*frac));
+  const waxing=frac<0.5;
+  let name;
+  if(ill<0.02)      name='New Moon';
+  else if(ill>0.98) name='Full Moon';
+  else if(ill<0.46) name=waxing?'Waxing Crescent':'Waning Crescent';
+  else if(ill<0.54) name=waxing?'First Quarter':'Last Quarter';
+  else              name=waxing?'Waxing Gibbous':'Waning Gibbous';
+  return {ill,frac,waxing,name};
+}
+
+// Format any Date as 12-hour Mountain Time, e.g. "9:45 PM"
+function fmtMT(d){
+  if(!d||isNaN(d)) return null;
+  return new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'2-digit',hour12:true}).format(d);
+}
+// Fractional Mountain-Time hour of a Date (0–24)
+function hourMT(d){
+  if(!d||isNaN(d)) return null;
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'numeric',hour12:false}).formatToParts(d);
+  let h=+p.find(x=>x.type==='hour').value, m=+p.find(x=>x.type==='minute').value;
+  if(h===24) h=0;
+  return h+m/60;
+}
+const compass=deg=>['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45)%8];
+
+// Julian Day at the instant of a UTC Date
+function julianDay(d){
+  const Y=d.getUTCFullYear(),M=d.getUTCMonth()+1,D=d.getUTCDate();
+  const UT=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;
+  return 367*Y-Math.floor(7*(Y+Math.floor((M+9)/12))/4)+Math.floor(275*M/9)+D+1721013.5+UT/24;
+}
+// Altitude (°) of the galactic centre (RA 17h45.7m, Dec −29°) at a UTC instant
+function gcAltitude(utc){
+  const RA=17+45.7/60, DEC=-29.0;
+  const latR=LAT*Math.PI/180, decR=DEC*Math.PI/180;
+  let GMST=280.46061837+360.98564736629*(julianDay(utc)-2451545.0);
+  GMST=((GMST%360)+360)%360;
+  const LST=((GMST/15+LNG/15)%24+24)%24;          // local sidereal time, hours
+  const HA=((LST-RA)*15)*Math.PI/180;             // hour angle, radians
+  const sinAlt=Math.sin(latR)*Math.sin(decR)+Math.cos(latR)*Math.cos(decR)*Math.cos(HA);
+  return Math.asin(Math.max(-1,Math.min(1,sinAlt)))*180/Math.PI;
+}
+// Real UTC offset (hours) for the active timezone TZ on a given date,
+// computed via Intl so it works for any location and handles DST.
+function mtOffset(date){
+  try{
+    const dt=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),6,0,0));
+    const s=new Intl.DateTimeFormat('en-US',{timeZone:TZ,timeZoneName:'shortOffset',hour:'numeric'}).formatToParts(dt);
+    const tzn=s.find(p=>p.type==='timeZoneName');
+    if(tzn){ const m=tzn.value.match(/GMT([+-]\d+)(?::(\d+))?/); if(m) return -(parseInt(m[1])) }
+  }catch(e){}
+  // fallback: Mountain Time rule
+  const y=date.getFullYear();
+  const marDST=new Date(y,2,8); marDST.setDate(8+(7-marDST.getDay())%7);
+  const novSTD=new Date(y,10,1); novSTD.setDate(1+(7-novSTD.getDay())%7);
+  return (date>=marDST && date<novSTD)?6:7;
+}
+// Milky-Way-core summary for a tour night, or null if it never clears 10°
+function milkyWay(date){
+  const decR=-29.0*Math.PI/180, latR=LAT*Math.PI/180;
+  const maxAlt=Math.asin(Math.sin(latR)*Math.sin(decR)+Math.cos(latR)*Math.cos(decR))*180/Math.PI;
+  if(maxAlt<5) return null;
+  const off=mtOffset(date);
+  const tourUTC=h=>new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),h+off));
+  const alts=[21,22,23].map(h=>Math.round(gcAltitude(tourUTC(h))));
+  const visible=alts.some(a=>a>=5);
+
+  // Transit (LST = RA) → UTC time on this date
+  const RA=17+45.7/60;
+  const base=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),0));
+  let GMST0=280.46061837+360.98564736629*(julianDay(base)-2451545.0);
+  GMST0=((GMST0%360)+360)%360;
+  let transitUT=(((RA-GMST0/15-LNG/15)/1.0027379)%24+24)%24;
+  const transit=new Date(base.getTime()+transitUT*3600000);
+
+  // Scan for the moment it crosses +10° (every 4 min from 6 PM to next 6 AM)
+  let riseStr=null;
+  const start=tourUTC(18);
+  for(let min=0;min<=720;min+=4){
+    const a=new Date(start.getTime()+min*60000), b=new Date(start.getTime()+(min+4)*60000);
+    if(gcAltitude(a)<5 && gcAltitude(b)>=5){ riseStr=fmtMT(new Date((+a+ +b)/2)); break }
+  }
+  return {alts,visible,riseStr,transit:fmtMT(transit)};
+}
+
+// Moon position phrase for the tour window (or null)
+function moonTour(date){
+  if(typeof SunCalc==='undefined') return null;
+  let mt; try{ mt=SunCalc.getMoonTimes(date,LAT,LNG) }catch(e){ return null }
+  if(mt.alwaysUp)   return 'high overhead all night';
+  if(mt.alwaysDown) return null;
+  const rH=hourMT(mt.rise), sH=hourMT(mt.set);
+  if(rH!==null && rH>=TOUR_START && rH<=TOUR_END) return 'rising in the east around '+fmtMT(mt.rise);
+  if(sH!==null && sH>=TOUR_START && sH<=TOUR_END) return 'setting in the west around '+fmtMT(mt.set);
+  if(rH!==null && rH<TOUR_START && (sH===null||sH<6||sH>TOUR_END)) return 'up throughout the evening';
+  return null;
+}
+// Moonrise / moonset display strings
+function moonRiseSet(date){
+  if(typeof SunCalc==='undefined') return {rise:'—',set:'—'};
+  let mt; try{ mt=SunCalc.getMoonTimes(date,LAT,LNG) }catch(e){ return {rise:'—',set:'—'} }
+  if(mt.alwaysUp)   return {rise:'Up all night',set:'Up all night'};
+  if(mt.alwaysDown) return {rise:'Below horizon',set:'Below horizon'};
+  return {rise:mt.rise?fmtMT(mt.rise):'—', set:mt.set?fmtMT(mt.set):'—'};
+}
+// Astronomical twilight end (true dark)
+function trueDark(date){
+  if(typeof SunCalc==='undefined') return '—';
+  let t; try{ t=SunCalc.getTimes(date,LAT,LNG) }catch(e){ return '—' }
+  const d=t.night||t.astronomicalDusk||t.dusk;
+  return d?fmtMT(d):'—';
+}
+
+// Sunset of the chosen night and sunrise of the following morning. Two calls
+// to getTimes (today + tomorrow) because tonight's sunrise is calendar-tomorrow.
+function sunTimes(date){
+  if(typeof SunCalc==='undefined') return {sunset:'—',sunrise:'—'};
+  let today, tomorrow;
+  try{
+    today    = SunCalc.getTimes(date, LAT, LNG);
+    const tm = new Date(date.getTime()+86400000);
+    tomorrow = SunCalc.getTimes(tm, LAT, LNG);
+  }catch(e){ return {sunset:'—',sunrise:'—'} }
+  return {
+    sunset:  today.sunset    ? fmtMT(today.sunset)    : '—',
+    sunrise: tomorrow.sunrise ? fmtMT(tomorrow.sunrise) : '—'
+  };
+}
+
+// Alerts ------------------------------------------------------------
+
+// ── Planets up tonight ───────────────────────────────────────────
+// Keplerian elements (J2000) with per-century linear rates — accurate
+// to well under a degree for the naked-eye planets, plenty for an arc.
+const PLANET_ELEMS = {
+  Mercury:{a:[0.38709927,0.00000037],e:[0.20563593,0.00001906],I:[7.00497902,-0.00594749],L:[252.25032350,149472.67411175],wbar:[77.45779628,0.16047689],O:[48.33076593,-0.12534081],col:'#9FB089'},
+  Venus:  {a:[0.72333566,0.0000039 ],e:[0.00677672,-0.00004107],I:[3.39467605,-0.0007889 ],L:[181.97909950,58517.81538729],wbar:[131.60246718,0.00268329],O:[76.67984255,-0.27769418],col:'#8FA8C4'},
+  Mars:   {a:[1.52371034,0.0000018 ],e:[0.09339410,0.00007882],I:[1.84969142,-0.00813131],L:[-4.55343205,19140.30268499],wbar:[-23.94362959,0.44441088],O:[49.55953891,-0.29257343],col:'#C77B5E'},
+  Jupiter:{a:[5.20288700,-0.00011607],e:[0.04838624,-0.00013253],I:[1.30439695,-0.00183714],L:[34.39644051,3034.74612775],wbar:[14.72847983,0.21252668],O:[100.47390909,0.20469106],col:'#CBB081'},
+  Saturn: {a:[9.53667594,-0.0012506 ],e:[0.05386179,-0.00050991],I:[2.48599187,0.00193609],L:[49.95424423,1222.49362201],wbar:[92.59887831,-0.41897216],O:[113.66242448,-0.28867794],col:'#E0C764'},
+};
+const EARTH_ELEMS={a:[1.00000261,0.00000562],e:[0.01671123,-0.00004392],I:[-0.00001531,-0.01294668],L:[100.46457166,35999.37244981],wbar:[102.93768193,0.32327364],O:[0.0,0.0]};
+
+function _kepler(M,e){ M=M*Math.PI/180; let E=M; for(let i=0;i<8;i++){ E=E-(E-e*Math.sin(E)-M)/(1-e*Math.cos(E)) } return E }
+function _helio(el,T){
+  const a=el.a[0]+el.a[1]*T, e=el.e[0]+el.e[1]*T, I=(el.I[0]+el.I[1]*T)*Math.PI/180;
+  const L=el.L[0]+el.L[1]*T, wbar=el.wbar[0]+el.wbar[1]*T, O=(el.O[0]+el.O[1]*T)*Math.PI/180;
+  const w=(wbar-(el.O[0]+el.O[1]*T))*Math.PI/180;
+  let M=L-wbar; M=((M%360)+360)%360; if(M>180)M-=360;
+  const E=_kepler(M,e);
+  const xp=a*(Math.cos(E)-e), yp=a*Math.sqrt(1-e*e)*Math.sin(E);
+  const cw=Math.cos(w),sw=Math.sin(w),cO=Math.cos(O),sO=Math.sin(O),cI=Math.cos(I),sI=Math.sin(I);
+  return {
+    x:(cw*cO-sw*sO*cI)*xp+(-sw*cO-cw*sO*cI)*yp,
+    y:(cw*sO+sw*cO*cI)*xp+(-sw*sO+cw*cO*cI)*yp,
+    z:(sw*sI)*xp+(cw*sI)*yp
+  };
+}
+// Geocentric equatorial RA/Dec of a planet at a UTC date
+function planetRaDec(name,utc){
+  const T=(julianDay(utc)-2451545.0)/36525.0;
+  const p=_helio(PLANET_ELEMS[name],T), earth=_helio(EARTH_ELEMS,T);
+  let xg=p.x-earth.x, yg=p.y-earth.y, zg=p.z-earth.z;
+  const ob=23.43928*Math.PI/180;
+  const xe=xg, ye=yg*Math.cos(ob)-zg*Math.sin(ob), ze=yg*Math.sin(ob)+zg*Math.cos(ob);
+  const ra=Math.atan2(ye,xe), dec=Math.atan2(ze,Math.sqrt(xe*xe+ye*ye));
+  return {ra:((ra*180/Math.PI)/15+24)%24, dec:dec*180/Math.PI};
+}
+// Altitude + azimuth of an RA/Dec at a UTC instant for the current LAT/LNG
+function altAz(ra_h,dec_d,utc){
+  const latR=LAT*Math.PI/180, decR=dec_d*Math.PI/180;
+  let GMST=280.46061837+360.98564736629*(julianDay(utc)-2451545.0);
+  GMST=((GMST%360)+360)%360;
+  const LST=((GMST/15+LNG/15)%24+24)%24;
+  const HA=((LST-ra_h)*15)*Math.PI/180;
+  const alt=Math.asin(Math.sin(latR)*Math.sin(decR)+Math.cos(latR)*Math.cos(decR)*Math.cos(HA));
+  let az=Math.atan2(Math.sin(HA),Math.cos(HA)*Math.sin(latR)-Math.tan(decR)*Math.cos(latR));
+  az=(az*180/Math.PI+180)%360;
+  return {alt:alt*180/Math.PI, az};
+}
+// Planets above the horizon at 10 PM, with arc position.
+// A single fixed snapshot time means every planet's altitude is measured at the
+// same instant, so heights are directly comparable. Anchored to the location's
+// CIVIL clock time (real timezone offset, DST-aware via mtOffset) so the "10 PM"
+// reading matches what an observer sees on their own clock.
+function planetsTonight(date){
+  const off = mtOffset(date);                 // real UTC offset (e.g. 6 for MDT, 7 for MST)
+  const utcHour = 22 + off;                   // 10 PM civil local time → UTC
+  const t=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),0,0,0));
+  t.setUTCMinutes(Math.round(utcHour*60));
+  const out=[];
+  for(const name in PLANET_ELEMS){
+    const rd=planetRaDec(name,t);
+    const aa=altAz(rd.ra,rd.dec,t);
+    if(aa.alt>0) out.push({name,alt:aa.alt,az:aa.az,col:PLANET_ELEMS[name].col});
+  }
+  return out;
+}
+
+// Antique-illustration panel of the planets' arc across the night sky
+function planetPanel(date){
+  const ps=planetsTonight(date);
+  const W=560,H=230, cx=W/2, baseY=H-34;
+  const RX=W*0.46, RY=H-70;            // half-ellipse radii sized to fit the viewBox
+  let svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet" class="zcl-skysvg">';
+
+  // the ecliptic dome: a half-ellipse from horizon-left up over the top to horizon-right
+  const domeL=cx-RX, domeR=cx+RX;
+  svg+='<path d="M '+domeL+' '+baseY+' A '+RX+' '+RY+' 0 0 1 '+domeR+' '+baseY+'" fill="none" stroke="#CBA85A" stroke-width="1.1" stroke-opacity=".55"/>';
+  // a second, very faint inner arc for an engraved look
+  svg+='<path d="M '+(domeL+10)+' '+baseY+' A '+(RX-10)+' '+(RY-7)+' 0 0 1 '+(domeR-10)+' '+baseY+'" fill="none" stroke="#CBA85A" stroke-width=".5" stroke-opacity=".18"/>';
+  // horizon line
+  svg+='<line x1="14" y1="'+baseY+'" x2="'+(W-14)+'" y2="'+baseY+'" stroke="#CBA85A" stroke-width="1" stroke-opacity=".55"/>';
+  svg+='<circle cx="14" cy="'+baseY+'" r="2" fill="#CBA85A" opacity=".6"/><circle cx="'+(W-14)+'" cy="'+baseY+'" r="2" fill="#CBA85A" opacity=".6"/>';
+  // cardinal labels
+  svg+='<text x="16" y="'+(baseY+18)+'" class="zcl-skytext" text-anchor="start">East</text>';
+  svg+='<text x="'+cx+'" y="'+(baseY+18)+'" class="zcl-skytext" text-anchor="middle">S</text>';
+  svg+='<text x="'+(W-16)+'" y="'+(baseY+18)+'" class="zcl-skytext" text-anchor="end">West</text>';
+  // zenith ornament at the very top of the dome
+  svg+='<path d="M '+cx+' '+(baseY-RY)+' l 2 5 l 5 0 l -4 3 l 2 5 l -5 -3 l -5 3 l 2 -5 l -4 -3 l 5 0 Z" fill="#CBA85A" opacity=".4" transform="translate(-2.5,-3)"/>';
+
+  if(ps.length===0){
+    svg+='<text x="'+cx+'" y="'+(baseY-RY/2)+'" class="zcl-skytext" text-anchor="middle" style="font-size:12px">No bright planets above the horizon at 10 PM</text>';
+  }
+  // Place each planet ON the dome. Azimuth sets the angle along the half-ellipse
+  // (East 60°→left edge, S 180°→top, West 300°→right edge).
+  const AZ_MIN=60, AZ_MAX=300;
+  // pass 1: compute every dot's position
+  const pts=ps.map(p=>{
+    let frac=(p.az-AZ_MIN)/(AZ_MAX-AZ_MIN); frac=Math.max(0,Math.min(1,frac));
+    const theta=Math.PI*(1-frac);
+    const ex=cx+RX*Math.cos(theta);
+    const ey=baseY-RY*Math.sin(theta);
+    const altFrac=Math.max(0,Math.min(1,p.alt/90));
+    const trueY=baseY-Math.sin(altFrac*Math.PI/2)*RY;
+    return {p, x:ex, y:(ey+trueY)/2};
+  });
+  // draw the dots first (so labels always sit on top)
+  pts.forEach(d=>{
+    svg+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="5.5" fill="'+d.p.col+'" stroke="#3a2f16" stroke-width=".5"/>';
+    svg+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="9" fill="none" stroke="'+d.p.col+'" stroke-width=".6" stroke-opacity=".45"/>';
+  });
+  // pass 2: place labels, stacking them when dots are close so text never overlaps.
+  // Process left-to-right; each label defaults above its dot, but if it would
+  // collide with one already placed, push it further up (or below if no room).
+  const placed=[];                 // {x, y} of label baselines already used
+  const LBL_W=46, LBL_H=12;        // approx label footprint
+  pts.slice().sort((a,b)=>a.x-b.x).forEach(d=>{
+    let lx=d.x, ly=(d.y<34)?d.y+18:d.y-13;   // default below if dot is near top
+    let dir=(d.y<34)?1:-1;                    // stack downward if started below, else upward
+    // nudge until this label clears all previously placed ones
+    let guard=0;
+    while(guard++<8 && placed.some(q=>Math.abs(q.x-lx)<LBL_W && Math.abs(q.y-ly)<LBL_H)){
+      ly += dir*LBL_H;
+      // if we run off the top, flip to stacking downward from the dot
+      if(ly<10){ ly=d.y+18; dir=1 }
+    }
+    placed.push({x:lx,y:ly});
+    // leader line if the label sits well away from its dot
+    if(Math.abs(ly-d.y)>16){
+      svg+='<line x1="'+d.x.toFixed(1)+'" y1="'+d.y.toFixed(1)+'" x2="'+lx.toFixed(1)+'" y2="'+(ly-7).toFixed(1)+'" stroke="'+d.p.col+'" stroke-width=".5" stroke-opacity=".4"/>';
+    }
+    svg+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" class="zcl-skytext" text-anchor="middle" style="fill:'+d.p.col+';font-size:9px">'+d.p.name+'</text>';
+  });
+  svg+='</svg>';
+
+  // text legend with altitude + simple direction
+  let list='';
+  if(ps.length){
+    const simpleDir=az=>az<150?'E':az>210?'W':'S';
+    list='<div class="zcl-planetlist">'+ps
+      .sort((a,b)=>b.alt-a.alt)
+      .map(p=>'<span class="zcl-planetchip"><i style="background:'+p.col+'"></i>'+p.name+' · '+Math.round(p.alt)+'\u00B0 '+simpleDir(p.az)+'</span>')
+      .join('')+'</div>';
+  }
+  return '<div class="zcl-psec collapsed"><div class="zcl-psec-label">Planets at 10 PM</div>'
+    +'<div class="zcl-psec-body"><div class="zcl-pcard zcl-skycard">'+svg+list
+    +'<div style="margin-top:11px;text-align:center"><a href="solar" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;text-decoration:none;border:1px solid rgba(203,168,90,.4);border-radius:4px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px">\u25CC Explore the Planets <span style="font-size:14px;line-height:1">\u203A</span></a></div>'
+    +'</div></div></div>';
+}
+
+function meteorAlert(date){
+  const m=date.getMonth(), d=date.getDate();
+  for(const s of METEOR_SHOWERS){
+    if(s.m!==m) continue;
+    const off=Math.abs(d-s.d);
+    if(off<=4) return Object.assign({},s,{daysOff:off,atPeak:off<1});
+  }
+  return null;
+}
+function eventAlert(date){
+  for(const e of ASTRO_EVENTS){
+    const diff=(date-new Date(e.y,e.m,e.d))/86400000;
+    if(diff>=0 && diff<=10) return Object.assign({},e,{daysTo:Math.round(-diff)});
+  }
+  return null;
+}
+
+// ════════════════════════  5 · ICONS  ════════════════════════
+let gradSeq=0;   // guarantees globally unique gradient ids
+
+// Moon disc for a given illumination/waxing, sized sz px.
+function moonGlyph(ill,waxing,sz){
+  const r=sz/2-1.5, cx=sz/2, cy=sz/2;
+  const top=(cy-r).toFixed(2), bot=(cy+r).toFixed(2);
+  const gid='zclg'+(++gradSeq);
+  const defs=`<defs><radialGradient id="${gid}" gradientUnits="userSpaceOnUse" cx="${(cx-r*.3).toFixed(2)}" cy="${(cy-r*.38).toFixed(2)}" r="${(r*1.7).toFixed(2)}">`
+    +`<stop offset="0%" stop-color="#FFF6D8"/><stop offset="22%" stop-color="#F3DC97"/><stop offset="48%" stop-color="#D4AF5A"/>`
+    +`<stop offset="74%" stop-color="#B08C3E"/><stop offset="100%" stop-color="#7C5F2A"/></radialGradient></defs>`;
+  const gold='url(#'+gid+')', dark='#1c1b24';
+  const rim=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="none" stroke="#CBA85A" stroke-width=".85" stroke-opacity=".55"/>`;
+  const body=`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${dark}"/>`;
+  if(ill<0.02) return defs+body+rim;                                    // new
+  if(ill>0.98) return defs+`<circle cx="${cx}" cy="${cy}" r="${r}" fill="${gold}"/>`+rim;  // full
+  const limb = waxing
+    ? `M ${cx} ${top} A ${r} ${r} 0 0 1 ${cx} ${bot} Z`                 // lit on right
+    : `M ${cx} ${top} A ${r} ${r} 0 0 0 ${cx} ${bot} Z`;                // lit on left
+  const rx=(r*Math.abs(Math.cos(2*Math.PI*(waxing?ill*0.5:1-ill*0.5)))).toFixed(2);
+  const termFill = ill>0.5 ? gold : dark;                              // gibbous fills / crescent carves
+  return defs+body+`<path d="${limb}" fill="${gold}"/>`
+    +`<ellipse cx="${cx}" cy="${cy}" rx="${rx}" ry="${r}" fill="${termFill}"/>`+rim;
+}
+
+// Full cell icon: moon + (on dark nights) faint nebula, stars, sparkle
+function cellIcon(date,sz){
+  const {ill,waxing}=moonPhase(date);
+  const seed=date.getFullYear()*372+date.getMonth()*31+date.getDate();
+  const rnd=rng(seed);
+  const cx=sz/2, cy=sz/2;
+  const dark = ill<0.5 ? (1-ill/0.5) : 0;     // 1 at new moon → 0 by half
+  let defs='', neb='', stars='', overlay='';
+
+  if(dark>0.05){
+    const cols=['#6F8FA8','#5E8B8B','#8A7BA0','#9A7BB0'];
+    const n = ill<0.10 ? 2 : 1;
+    for(let i=0;i<n;i++){
+      const gx=(cx+(rnd()-.5)*sz*.6).toFixed(1), gy=(cy+(rnd()-.5)*sz*.6).toFixed(1);
+      const gr=(sz*(.34+rnd()*.24)).toFixed(1), col=cols[(rnd()*cols.length)|0];
+      const op=(0.07+0.20*dark*dark).toFixed(3), gid='zcln'+(++gradSeq);
+      defs+=`<radialGradient id="${gid}"><stop offset="0%" stop-color="${col}" stop-opacity="${op}"/><stop offset="100%" stop-color="${col}" stop-opacity="0"/></radialGradient>`;
+      neb+=`<circle cx="${gx}" cy="${gy}" r="${gr}" fill="url(#${gid})"/>`;
+    }
+    const ns=Math.round(4+dark*8);
+    for(let i=0;i<ns;i++){
+      const x=(rnd()*sz).toFixed(1), y=(rnd()*sz).toFixed(1);
+      const sr=(rnd()*.5+.18).toFixed(2), o=Math.min(0.2+rnd()*0.5*dark+0.08,.92).toFixed(2);
+      stars+=`<circle cx="${x}" cy="${y}" r="${sr}" fill="#fff" opacity="${o}"/>`;
+    }
+  }
+  const moon=moonGlyph(ill,waxing,sz);
+  if(ill<0.05){                                  // blue sparkle on the new moon
+    const blue=['#BFE0FF','#9DC8F0','#CFE8FF'];
+    for(let i=0;i<3;i++){
+      const sx=cx+(rnd()-.5)*sz*.82, sy=cy+(rnd()-.5)*sz*.82, L=sz*(.10+rnd()*.06), w=L*.15;
+      const col=blue[(rnd()*blue.length)|0], op=(.7+rnd()*.3).toFixed(2), f=v=>v.toFixed(1);
+      overlay+=`<path d="M ${f(sx)} ${f(sy-L)} L ${f(sx+w)} ${f(sy)} L ${f(sx)} ${f(sy+L)} L ${f(sx-w)} ${f(sy)} Z `
+        +`M ${f(sx-L)} ${f(sy)} L ${f(sx)} ${f(sy+w)} L ${f(sx+L)} ${f(sy)} L ${f(sx)} ${f(sy-w)} Z" fill="${col}" opacity="${op}"/>`
+        +`<circle cx="${f(sx)}" cy="${f(sy)}" r="${(L*.16).toFixed(2)}" fill="#fff" opacity="${op}"/>`;
+    }
+  }
+  return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${defs?'<defs>'+defs+'</defs>':''}${neb}${stars}${moon}${overlay}</svg>`;
+}
+function moonSVG(ill,waxing,sz){ return `<svg width="${sz}" height="${sz}" viewBox="0 0 ${sz} ${sz}">${moonGlyph(ill,waxing,sz)}</svg>` }
+
+// ═══════════════════════  6 · CAPTIONS  ═══════════════════════
+const WMO={0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',
+  51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',
+  71:'Light snow',73:'Snow',75:'Heavy snow',77:'Snow grains',80:'Light showers',81:'Showers',82:'Heavy showers',
+  85:'Snow showers',86:'Heavy snow showers',95:'Thunderstorm',96:'Thunderstorm + hail',99:'Thunderstorm + hail'};
+
+const SEASON=['mid-winter','mid-winter','early spring','spring','late spring','early summer',
+              'peak summer','peak summer','early fall','fall','late fall','early winter'];
+
+function cap(s){ return s ? s.charAt(0).toUpperCase()+s.slice(1) : s }
+
+// Returns {cls, icon, text} — purely astronomical, never mentions weather
+function caption(date){
+  const {ill,waxing}=moonPhase(date);
+  const month=date.getMonth();
+  const pos=moonTour(date);
+  let cls='good', icon='☾', text='';
+
+  if(ill<0.05){
+    cls='great'; icon='★';
+    const tg=pickTarget(date);
+    const mwUp = (()=>{ const mw=milkyWay(date); return mw&&mw.visible })();
+    text=tg.why+(mwUp?' The Milky Way core clears 10° during the prime viewing window.':'')+' Target: '+tg.primary+'.';
+  } else if(ill<0.12){
+    cls='great'; icon='☽';
+    const tg=pickTarget(date);
+    const where = pos&&pos.indexOf('setting')>=0 ? pos : 'low in the west after dusk';
+    text='Thin crescent '+where+' — earthshine lights the dark limb in a striking two-toned moon. Deep sky opens for most of the night. Target: '+tg.primary+'.';
+  } else if(ill<0.46){
+    cls='great'; icon='☽';
+    const tg=pickTarget(date);
+    text=SEASON[month]+' crescent night'+(pos?', moon '+pos:'')+'. Deep sky stays accessible — tonight\u2019s pick is '+tg.primary+'. The terminator also shows strong crater contrast for a split session.';
+  } else if(ill<0.54){
+    cls='good'; icon='◑';
+    const f=pickTarget(date);
+    text='First-quarter terminator'+(pos?', moon '+pos:'')+'. '+(f.why||'The sharpest crater-shadow relief of the lunar cycle runs along the terminator.')+' Deep sky is viable before or after moonset.';
+  } else if(ill<0.85){
+    cls='good'; icon='◐';
+    const f=pickTarget(date);
+    text='Bright '+(waxing?'waxing':'waning')+' gibbous'+(pos?', '+pos:'')+'. '+(f.why||'Work the lunar surface — the terminator reveals fresh craters in relief.')+' Zion\u2019s sandstone walls glow in reflected moonlight.';
+  } else {
+    cls='good'; icon='○';
+    const f=pickTarget(date);
+    text='Full moon'+(pos?', '+pos:'')+'. '+(f.why||'Maximum ray-system visibility with no shadows to hide the contrast.')+' Moonlight transforms the landscape — landscape-photography gold.';
+  }
+  return {cls,icon,text:cap(text)};
+}
+
+// ════════════════════════  7 · WEATHER  ════════════════════════
+// wx[ 'YYYY-MM-DD' ] = {code,temp,cloud,precip,wind,windDir,dew}
+const wx={};
+let wxLoaded=false;
+
+function isoKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') }
+function within16(date){
+  const diff=(date-new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate()))/86400000;
+  return diff>=0 && diff<16;
+}
+
+async function loadWeather(){
+  try{
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LNG
+      +'&hourly=weather_code,temperature_2m,cloud_cover,precipitation_probability,wind_speed_10m,wind_direction_10m,dew_point_2m,relative_humidity_2m'
+      +'&temperature_unit=fahrenheit&timezone=auto&forecast_days=16';
+    const data=await (await fetch(url)).json();
+    const H=data.hourly, bucket={};
+    H.time.forEach((t,i)=>{
+      const hr=+t.slice(11,13);
+      if(hr<TOUR_START||hr>TOUR_END) return;
+      const k=t.slice(0,10);
+      (bucket[k]||(bucket[k]={temp:[],cloud:[],precip:[],wind:[],dir:[],dew:[],hum:[],code:null}));
+      bucket[k].temp.push(H.temperature_2m[i]);
+      bucket[k].cloud.push(H.cloud_cover[i]);
+      bucket[k].precip.push(H.precipitation_probability[i]);
+      bucket[k].wind.push(H.wind_speed_10m[i]);
+      bucket[k].dir.push(H.wind_direction_10m[i]);
+      bucket[k].dew.push(H.dew_point_2m[i]);
+      bucket[k].hum.push(H.relative_humidity_2m[i]);
+      if(hr===22) bucket[k].code=H.weather_code[i];
+    });
+    const avg=a=>Math.round(a.reduce((x,y)=>x+y,0)/a.length);
+    for(const k in bucket){
+      const b=bucket[k];
+      wx[k]={code:b.code==null?0:b.code,temp:avg(b.temp),cloud:avg(b.cloud),
+             precip:Math.max.apply(null,b.precip),wind:avg(b.wind),windDir:avg(b.dir),dew:avg(b.dew),hum:avg(b.hum)};
+    }
+  }catch(e){ /* leave wx empty; panel shows graceful fallback */ }
+  wxLoaded=true;
+  render();
+  if(selKey){ const [Y,M,D]=selKey.split('-'); openDetail(new Date(+Y,+M-1,+D)) }
+}
+
+// ════════════════════════  8 · RENDER  ════════════════════════
+const NOW=new Date();
+let year=NOW.getFullYear(), month=NOW.getMonth(), selKey=null;
+
+const $=id=>document.getElementById(id);
+
+// background star field
+(function(){
+  let s='';
+  for(let i=0;i<150;i++){
+    s+=`<circle cx="${(Math.random()*800).toFixed(1)}" cy="${(Math.random()*700).toFixed(1)}" r="${(Math.random()*.9+.2).toFixed(2)}" fill="#fff" opacity="${(Math.random()*.6+.1).toFixed(2)}"/>`;
+  }
+  $('zcl-stars').innerHTML=s;
+})();
+
+// corner flourishes
+(function(){
+  const fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+    +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
+    +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
+    +'<path d="M2 19 C9 19 9 12 2 12" opacity=".55"/><path d="M19 2 C19 9 12 9 12 2" opacity=".55"/>'
+    +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
+  document.querySelectorAll('.zcl-fl').forEach(el=>el.innerHTML=fl);
+})();
+
+function makeCell(date,outside){
+  const {ill,waxing}=moonPhase(date);
+  const el=document.createElement('div');
+  el.className='zcl-dc'+(outside?' zcl-oc':'');
+  const key=isoKey(date);
+  el.setAttribute('data-key',key);
+  if(!outside && key===isoKey(NOW)) el.className+=' zcl-today';
+  if(!outside && key===selKey)      el.className+=' zcl-sel';
+  el.innerHTML='<span class="zcl-dn">'+date.getDate()+'</span><div class="zcl-dm">'+cellIcon(date,38)+'</div>';
+  if(!outside) el.addEventListener('click',()=>openDetail(date));
+  return el;
+}
+
+function render(){
+  $('zcl-mlabel').textContent=MO[month]+' '+year;
+  const grid=$('zcl-grid'); grid.innerHTML='';
+  const first=new Date(year,month,1).getDay();
+  const dim=new Date(year,month+1,0).getDate();
+  const prevDim=new Date(year,month,0).getDate();
+  for(let i=first-1;i>=0;i--) grid.appendChild(makeCell(new Date(year,month-1,prevDim-i),true));
+  for(let d=1;d<=dim;d++)     grid.appendChild(makeCell(new Date(year,month,d),false));
+  const tail=Math.ceil((first+dim)/7)*7-first-dim;
+  for(let d=1;d<=tail;d++)    grid.appendChild(makeCell(new Date(year,month+1,d),true));
+}
+
+// ════════════════════  9 · DETAIL PANEL  ════════════════════
+function card(label,val,sub,cls){
+  return '<div class="zcl-pcard'+(cls?' '+cls:'')+'">'
+    +'<div class="zcl-pclabel">'+label+'</div>'
+    +'<div class="zcl-pcval">'+val+'</div>'
+    +(sub?'<div class="zcl-pcsub">'+sub+'</div>':'')+'</div>';
+}
+
+function openDetail(date,skipFade){
+  const key=isoKey(date);
+  selKey=key;
+  document.querySelectorAll('.zcl-dc').forEach(c=>c.classList.remove('zcl-sel'));
+  const cell=document.querySelector('.zcl-dc[data-key="'+key+'"]');
+  if(cell && !cell.classList.contains('zcl-oc')) cell.classList.add('zcl-sel');
+
+  const det=$('zcl-det');
+  let html='';
+  try{
+    const mp=moonPhase(date);
+    const w=wx[key];
+
+    // header
+    html+='<div class="zcl-dh"><div>'+moonSVG(mp.ill,mp.waxing,64)+'</div>'
+      +'<div class="zcl-dmeta">'
+      +'<div class="zcl-ddate">'+DY[date.getDay()]+', '+MO[date.getMonth()]+' '+date.getDate()+'</div>'
+      +'<div class="zcl-dphase">'+mp.name+'</div>'
+      +'<div class="zcl-dill">'+Math.round(mp.ill*100)+'% illuminated</div>'
+      +'</div>'
+      +'<div class="zcl-daynav zcl-daynav-top">'
+      +  '<button class="zcl-daybtn" id="zcl-dayprev2" aria-label="Previous night">&#8249;</button>'
+      +  '<button class="zcl-daybtn" id="zcl-daynext2" aria-label="Next night">&#8250;</button>'
+      +'</div>'
+      +'</div>';
+
+    // badges
+    const shower=meteorAlert(date), event=eventAlert(date);
+    let badges='';
+    if(shower){
+      const heat=shower.zhr>=100?'#D4844A':shower.zhr>=50?'#C9A84C':'#9A7A38';
+      const when=shower.atPeak?'● PEAK TONIGHT':'○ '+(shower.daysOff===1?'1 day':shower.daysOff+' days')+' from peak';
+      badges+='<div class="zcl-badge" style="border-color:'+heat+'">'
+        +'<span class="zcl-badge-t" style="color:'+heat+'">☄ '+shower.name.toUpperCase()+'</span>'
+        +'<span class="zcl-badge-s">'+when+' · ZHR ~'+shower.zhr+' · '+shower.rad+'</span></div>';
+    }
+    if(event){
+      const when=event.daysTo===0?'Tonight':event.daysTo>0?'in '+event.daysTo+' days':Math.abs(event.daysTo)+' days ago';
+      badges+='<div class="zcl-badge">'
+        +'<span class="zcl-badge-t" style="color:#CBA85A">♄ '+event.label.toUpperCase()+'</span>'
+        +'<span class="zcl-badge-s">'+when+' · '+event.note+'</span></div>';
+    }
+    if(badges) html+=badges;
+
+    // dew banner (only when within 4°F)
+    if(w && (w.temp-w.dew)<4){
+      html+='<div class="zcl-dewbanner">⚠ Dew risk — temp '+w.temp+'°F, dew point '+w.dew+'°F. Protect your optics tonight.</div>';
+    }
+
+    // weather — open by default
+    html+='<div class="zcl-psec"><div class="zcl-psec-label">Weather · 9–11 PM</div><div class="zcl-psec-body">';
+    if(w){
+      html+='<div class="zcl-pcards cols2">'
+        +card('Conditions',(WMO[w.code]||'Unknown'),w.temp+'°F')
+        +card('Cloud Cover',w.cloud+'%')
+        +card('Wind',w.wind+' mph',compass(w.windDir))
+        +card('Humidity',w.hum+'%',w.hum>=80?'Hazy / dew likely':w.hum>=60?'Some haze possible':'Good transparency')
+        +'</div>';
+    }else{
+      html+='<div class="zcl-pcard"><div class="zcl-nodata">'
+        +(!wxLoaded&&within16(date)?'Loading forecast…':'Forecast available within 16 days')
+        +'</div></div>';
+    }
+    html+='</div></div>';
+
+    // sky window — collapsed by default
+    const rs=moonRiseSet(date);
+    const st=sunTimes(date);
+    html+='<div class="zcl-psec collapsed"><div class="zcl-psec-label">Sky Window</div><div class="zcl-psec-body">'
+      +'<div class="zcl-skywin">'
+      +  '<div class="zcl-pcard accent"><div class="zcl-pclabel">True Dark Starts</div>'
+      +    '<div class="zcl-pcval">'+trueDark(date)+'</div>'
+      +    '<div class="zcl-pcsub">Astro twilight ends</div></div>'
+      +  '<div class="zcl-skywin-times">'
+      +    '<div class="zcl-pcard zcl-moonpair">'
+      +      '<div class="zcl-pclabel">Sun Times</div>'
+      +      '<div class="zcl-mtimes">'
+      +        '<div class="zcl-mtime"><span class="zcl-mtico">&#x2198;</span><div><div class="zcl-mtlabel">Sunset</div><div class="zcl-mtval">'+st.sunset+'</div></div></div>'
+      +        '<div class="zcl-mtdiv"></div>'
+      +        '<div class="zcl-mtime"><span class="zcl-mtico">&#x2197;</span><div><div class="zcl-mtlabel">Sunrise</div><div class="zcl-mtval">'+st.sunrise+'</div></div></div>'
+      +      '</div>'
+      +    '</div>'
+      +    '<div class="zcl-pcard zcl-moonpair">'
+      +      '<div class="zcl-pclabel">Moon Times</div>'
+      +      '<div class="zcl-mtimes">'
+      +        '<div class="zcl-mtime"><span class="zcl-mtico">&#x2197;</span><div><div class="zcl-mtlabel">Rise</div><div class="zcl-mtval">'+rs.rise+'</div></div></div>'
+      +        '<div class="zcl-mtdiv"></div>'
+      +        '<div class="zcl-mtime"><span class="zcl-mtico">&#x2198;</span><div><div class="zcl-mtlabel">Set</div><div class="zcl-mtval">'+rs.set+'</div></div></div>'
+      +      '</div>'
+      +    '</div>'
+      +  '</div>'
+      +'</div></div></div>';
+
+    // milky way — collapsed by default
+    const mw=milkyWay(date);
+    html+='<div class="zcl-psec collapsed"><div class="zcl-psec-label">Milky Way Core</div><div class="zcl-psec-body">';
+    if(!mw){
+      html+='<div class="zcl-pcard"><div class="zcl-nodata">Below 10° all night — not a core night.</div></div>';
+    }else{
+      const riseCard = mw.riseStr
+        ? card('Rises above 5°',mw.riseStr,'','accent')
+        : card('Rises above 5°','By dusk','Already up at 10 PM','accent');
+      html+='<div class="zcl-pcards cols2">'+riseCard+card('Peaks (Transit)',mw.transit,'')+'</div>';
+      const lab=mw.alts.map((a,i)=>['9 PM','10 PM','11 PM'][i]+': '+(a<0?'below '+Math.abs(a):'+'+a)+'°').join('  ·  ');
+      html+='<div class="zcl-altrow">'+lab+'</div>';
+    }
+    html+='</div></div>';
+
+    // ── day stepper + tonight's target ──────────────────────────
+    html+='<div class="zcl-daynav">'
+      +'<button class="zcl-daybtn" id="zcl-dayprev" aria-label="Previous night">&#8249;</button>'
+      +'<span class="zcl-daynav-label">Browse nights</span>'
+      +'<button class="zcl-daybtn" id="zcl-daynext" aria-label="Next night">&#8250;</button>'
+      +'</div>';
+
+    // tonight's target — open by default
+    {
+      const tg=pickTarget(date);
+      const isLunar = tg.kind==='Lunar Feature';
+      const cue   = isLunar ? '\u263D ' : '';
+      const inner = isLunar ? 'Lunar Feature on the Terminator' : 'Deep-Sky Object';
+      const lunarLink = isLunar
+        ? '<div style="margin-top:11px"><a href="moon" style="font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;text-decoration:none;border:1px solid rgba(203,168,90,.4);border-radius:4px;padding:6px 10px;display:inline-flex;align-items:center;gap:6px">\u263D Explore in the Lunar Atlas <span style="font-size:14px;line-height:1">\u203A</span></a></div>'
+        : '';
+      const findBlock = tg.find
+        ? '<div class="zcl-find"><div class="zcl-find-head">'
+          +'<svg viewBox="0 0 16 16" fill="none">'
+          +'<circle cx="6.6" cy="6.6" r="4.6" fill="rgba(125,150,180,0.16)" stroke="#CBA85A" stroke-width="1.4"/>'
+          +'<line x1="10.1" y1="10.1" x2="14" y2="14" stroke="#B5933F" stroke-width="1.6" stroke-linecap="round"/>'
+          +'</svg>How to find it</div>'
+          +'<div class="zcl-find-body">'+tg.find+'</div></div>'
+        : '';
+      html+='<div class="zcl-psec collapsed"><div class="zcl-psec-label">Tonight\u2019s Target</div><div class="zcl-psec-body">'
+        +'<div class="zcl-pcard accent"><div class="zcl-pclabel">'+inner+'</div>'
+        +'<div class="zcl-pcval" style="color:#CBA85A;font-size:16px;margin-bottom:2px">'+cue+tg.primary+'</div>'
+        +(tg.why?'<div class="zcl-tgtwhy">'+tg.why+'</div>':'')
+        +findBlock
+        +lunarLink
+        +'<div class="zcl-tgtsec">'+tg.secondary+'</div></div></div></div>';
+    }
+
+    // ── planets — collapsed by default ─────────────────────────
+    html += planetPanel(date);
+
+  }catch(err){
+    const mp=moonPhase(date);
+    html='<div class="zcl-dh"><div>'+moonSVG(mp.ill,mp.waxing,64)+'</div><div class="zcl-dmeta">'
+      +'<div class="zcl-ddate">'+DY[date.getDay()]+', '+MO[date.getMonth()]+' '+date.getDate()+'</div>'
+      +'<div class="zcl-dphase">'+mp.name+'</div>'
+      +'<div class="zcl-dill">'+Math.round(mp.ill*100)+'% illuminated</div></div></div>'
+      +'<div class="zcl-trec good"><span class="zcl-trec-icon">☾</span><span>Detailed forecast unavailable for this date.</span></div>';
+  }
+
+  det.innerHTML=html;
+
+  // Accordion: tap any section label to expand/collapse.
+  det.querySelectorAll('.zcl-psec-label').forEach(lbl=>{
+    lbl.addEventListener('click', e=>{
+      // Don't toggle if click was on a link inside the label (shouldn't happen but safe).
+      if(e.target.closest('a')) return;
+      lbl.closest('.zcl-psec').classList.toggle('collapsed');
+    });
+  });
+
+  if(!skipFade){
+    det.classList.remove('zcl-open');
+    void det.offsetWidth;          // restart the fade animation
+    det.classList.add('zcl-open');
+  }else{
+    det.classList.add('zcl-open'); // no flash while rapidly stepping days
+  }
+
+  // wire up the prev/next-day arrows (panel is rebuilt each open, so bind here)
+  bindDayBtn('zcl-dayprev', -1);
+  bindDayBtn('zcl-daynext',  1);
+  bindDayBtn('zcl-dayprev2',-1);
+  bindDayBtn('zcl-daynext2', 1);
+}
+
+// The date currently shown in the panel (derived from selKey).
+function currentDate(){
+  if(!selKey) return new Date(NOW);
+  const [Y,M,D]=selKey.split('-'); return new Date(+Y,+M-1,+D);
+}
+
+// Bind a day-step button: single click steps once; press-and-hold auto-advances.
+let _holdTimer=null, _holdInterval=null;
+function bindDayBtn(id, delta){
+  const b=$(id); if(!b) return;
+  b.addEventListener('click',()=>stepDay(currentDate(),delta,id));
+  // press-and-hold (mouse + touch)
+  const start=(e)=>{
+    // ignore the synthetic click that follows; we handle stepping here on hold
+    clearHold();
+    _holdTimer=setTimeout(()=>{
+      _holdInterval=setInterval(()=>stepDay(currentDate(),delta,id), 130);
+    }, 380);                         // hold ~0.4s before auto-advance kicks in
+  };
+  b.addEventListener('mousedown',start);
+  b.addEventListener('touchstart',start,{passive:true});
+}
+function clearHold(){
+  if(_holdTimer){ clearTimeout(_holdTimer); _holdTimer=null }
+  if(_holdInterval){ clearInterval(_holdInterval); _holdInterval=null }
+}
+
+// Move to the adjacent night; flip the calendar to that month if needed.
+// Keeps the clicked arrow under the cursor by preserving scroll position.
+function stepDay(fromDate,delta,btnId){
+  const btn = btnId ? $(btnId) : null;
+  const beforeY = btn ? btn.getBoundingClientRect().top : null;
+  const d=new Date(fromDate.getFullYear(),fromDate.getMonth(),fromDate.getDate()+delta);
+  if(d.getMonth()!==month||d.getFullYear()!==year){
+    month=d.getMonth(); year=d.getFullYear(); render();
+  }
+  openDetail(d, true);   // skip fade for snappy repeat-clicks
+  // restore the button to the same screen position so the cursor stays on it
+  if(btn!==null && beforeY!==null){
+    const newBtn=$(btnId);
+    if(newBtn){
+      const afterY=newBtn.getBoundingClientRect().top;
+      const dy=afterY-beforeY;
+      if(dy) window.scrollBy(0,dy);
+    }
+  }
+}
+
+// ════════════════════════  10 · INIT  ════════════════════════
+$('zcl-prev').addEventListener('click',()=>{ month--; if(month<0){month=11;year--} render() });
+$('zcl-next').addEventListener('click',()=>{ month++; if(month>11){month=0;year++} render() });
+
+// Stop any press-and-hold auto-advance when the press ends anywhere.
+['mouseup','touchend','touchcancel','mouseleave','blur'].forEach(ev=>
+  window.addEventListener(ev, clearHold));
+
+// Left/Right arrow keys step the day when the calendar has been interacted with.
+let _keyNavArmed=false;
+document.addEventListener('keydown',(e)=>{
+  // only hijack arrows once a day is open and the user isn't typing in the ZIP box
+  if(!selKey) return;
+  const ae=document.activeElement;
+  if(ae && (ae.id==='zcl-zip' || ae.tagName==='INPUT')) return;
+  if(e.key==='ArrowRight'){ e.preventDefault(); stepDay(currentDate(),1,null) }
+  else if(e.key==='ArrowLeft'){ e.preventDefault(); stepDay(currentDate(),-1,null) }
+});
+
+// ---- Location chooser (ZIP → lat/lng via Zippopotam.us, no key) ----
+function updateLocHeader(){
+  const hemi = LAT>=0 ? 'N' : 'S';
+  $('zcl-loc').innerHTML = PLACE+' · '+Math.abs(LAT).toFixed(2)+'\u00B0 '+hemi
+    +' <span class="zcl-locedit">change</span>';
+  bindLocEdit();
+}
+function bindLocEdit(){
+  const e=document.querySelector('#zcl-loc .zcl-locedit');
+  if(e) e.addEventListener('click',()=>{ $('zcl-locform').classList.toggle('open'); $('zcl-zip').focus() });
+}
+function applyLocation(lat,lng,place,tz){
+  LAT=lat; LNG=lng; PLACE=place; if(tz) TZ=tz;
+  // clear cached weather (it was for the old place) and refetch
+  for(const k in wx) delete wx[k];
+  wxLoaded=false;
+  updateLocHeader();
+  render();
+  if(selKey){ const [Y,M,D]=selKey.split('-'); openDetail(new Date(+Y,+M-1,+D)) }
+  else openDetail(NOW);
+  loadWeather();
+}
+async function lookupZip(){
+  const zip=($('zcl-zip').value||'').trim();
+  const msg=$('zcl-zipmsg');
+  if(!/^\d{5}$/.test(zip)){ msg.textContent='Enter a 5-digit ZIP'; return }
+  msg.textContent='Looking up…';
+  try{
+    const r=await fetch('https://api.zippopotam.us/us/'+zip);
+    if(!r.ok) throw new Error('not found');
+    const d=await r.json();
+    const p=d.places[0];
+    const lat=parseFloat(p.latitude), lng=parseFloat(p.longitude);
+    const place=p['place name']+', '+p['state abbreviation'];
+    // resolve a timezone from the browser via the coordinates is non-trivial;
+    // Open-Meteo's timezone=auto handles weather, and sky math is UTC-based,
+    // so we approximate the display TZ from longitude for label purposes.
+    msg.textContent='';
+    $('zcl-locform').classList.remove('open');
+    applyLocation(lat,lng,place,guessTZ(lng));
+  }catch(e){
+    msg.textContent='ZIP not found — try another';
+  }
+}
+// Rough US timezone from longitude (display/labels; weather uses timezone=auto)
+function guessTZ(lng){
+  if(lng>=-67.5) return 'America/Halifax';
+  if(lng>=-82.5) return 'America/New_York';
+  if(lng>=-97.5) return 'America/Chicago';
+  if(lng>=-112.5) return 'America/Denver';
+  if(lng>=-127.5) return 'America/Los_Angeles';
+  if(lng>=-142.5) return 'America/Anchorage';
+  return 'Pacific/Honolulu';
+}
+$('zcl-zipgo').addEventListener('click',lookupZip);
+$('zcl-zip').addEventListener('keydown',e=>{ if(e.key==='Enter') lookupZip() });
+$('zcl-zipreset').addEventListener('click',()=>{
+  $('zcl-zipmsg').textContent='';
+  $('zcl-locform').classList.remove('open');
+  applyLocation(37.1986,-112.9869,'Zion National Park','America/Denver');
+});
+bindLocEdit();
+
+render();
+openDetail(NOW);
+loadWeather();
+
+})();
+</script>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem active" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+<script>
+(function(){
+  // Night mode is applied here on load if it was enabled in Settings;
+  // the gear icon (top-right) opens Settings to toggle it.
+  try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+})();
+</script>
+<!-- ════ Settings popup (shared) ════ -->
+<style>
+#zcl-set-modal{position:fixed;inset:0;z-index:10050;display:none;
+  align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px 16px}
+#zcl-set-modal.on{display:flex}
+#zcl-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#zcl-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
+  background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
+  box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;
+  animation:zcl-set-pop .2s ease}
+@keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+#zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+</style>
+<div id="zcl-set-modal">
+  <div id="zcl-set-backdrop"></div>
+  <div id="zcl-set-sheet"><iframe id="zcl-set-frame" title="Settings"></iframe></div>
+</div>
+<script>
+(function(){
+  var modal=document.getElementById('zcl-set-modal');
+  var frame=document.getElementById('zcl-set-frame');
+  var backdrop=document.getElementById('zcl-set-backdrop');
+  var gear=document.getElementById('pwa-night-btn')||document.getElementById('zcl-sf-nightbtn');
+  var loaded=false;
+  function open(){
+    if(!loaded){ frame.src='settings.html?embed=1'; loaded=true }
+    modal.classList.add('on');
+  }
+  function close(){ modal.classList.remove('on') }
+  if(gear){
+    gear.addEventListener('click', function(e){ e.preventDefault(); open() });
+  }
+  backdrop.addEventListener('click', close);
+  // Messages from the settings iframe
+  window.addEventListener('message', function(e){
+    var d=e.data||{};
+    if(d.type==='zcl-close'){ close() }
+    else if(d.type==='zcl-night'){
+      document.body.classList.toggle('night-mode', !!d.on);
+      if(gear) gear.classList.toggle('on', !!d.on);
+    }
+    // zcl-fov: nothing to do live; finder re-reads sfVFOV on open
+  });
+})();
+</script>
+
+
+<script>
+/* PWA install relay — beforeinstallprompt only fires on the top-level page, not
+   inside the settings iframe, so we capture it here and bridge it to Settings. */
+(function(){
+  var deferred = null;
+  function frameWin(){
+    var f = document.getElementById('zcl-set-frame') || document.getElementById('es-set-frame');
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+  function tellFrame(msg){ var w = frameWin(); if(w) w.postMessage(msg, '*') }
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferred = ev;
+    tellFrame({ type:'zcl-install-available' });
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    tellFrame({ type:'zcl-installed' });
+  });
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.type === 'zcl-do-install' && deferred){
+      deferred.prompt();
+      deferred.userChoice.finally(function(){ deferred = null });
+    } else if(d.type === 'zcl-install-query'){
+      tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

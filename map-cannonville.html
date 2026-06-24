@@ -1,0 +1,369 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1,user-scalable=no">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Cannonville Dark Sky Map · Dark Sky Almanac</title>
+<meta name="description" content="An interactive dark-sky map of the Cannonville region — gateway to Kodachrome Basin and Grosvenor Arch. Placeholder map; sites and basemap art coming soon.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Cannonville Dark Sky Map · Dark Sky Almanac">
+<meta property="og:description" content="An interactive dark-sky map of the Cannonville region — gateway to Kodachrome Basin and Grosvenor Arch. Placeholder map; sites and basemap art coming soon.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/map-cannonville">
+<meta property="og:url" content="https://app.darkskyalmanac.com/map-cannonville">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+/* ====================================================================
+   ESCALANTE DARK SKY MAP — clean prototype
+   Design goals: map is the hero (full-bleed), pins are obvious, tapping
+   a pin surfaces an info card, tapping a list row flies to its pin, and
+   the selected pin <-> selected row stay visually linked. No clutter.
+   ==================================================================== */
+:root{
+  --bg:#0d0a18; --panel:#141319; --ink:#F2E4BE; --ink2:#C9BD97; --ink3:#9A8E6E;
+  --gold:#CBA85A; --gold-hi:#E6CC85; --line:rgba(203,168,90,.22);
+  --b1:#B4C8E6; --b2:#D4C864; --b3:#DC8C46;
+  --nav-h:54px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0;height:100%;background:var(--bg);
+  font-family:'Montserrat',-apple-system,BlinkMacSystemFont,sans-serif;
+  color:var(--ink);overscroll-behavior:none}
+body{overflow:hidden;position:fixed;inset:0}   /* lock the page; the map owns all gestures */
+
+/* ── Top bar (compact, floats over the map) ───────────────────────── */
+#es-top{position:absolute;top:0;left:0;right:0;z-index:30;
+  /* Padding-top now includes --nav-h so the title clears the nav, which is
+     pinned to the top of the viewport in v106+. */
+  padding:calc(env(safe-area-inset-top,0px) + var(--nav-h) + 9px) 14px 18px;
+  background:linear-gradient(to bottom,rgba(8,6,16,.93) 0%,rgba(8,6,16,.78) 55%,rgba(8,6,16,.35) 85%,transparent 100%);
+  pointer-events:none}
+#es-title{font-size:17px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:#FBF3DE;text-align:center;text-shadow:0 1px 2px rgba(0,0,0,.9),0 2px 14px rgba(0,0,0,.7)}
+#es-sub{font-size:10px;font-weight:500;letter-spacing:.05em;color:#D8CBA4;
+  text-align:center;margin-top:1px;text-shadow:0 1px 2px rgba(0,0,0,.95),0 1px 10px rgba(0,0,0,.8)}
+
+/* ── Map viewport (fills everything) ──────────────────────────────── */
+#es-map{position:absolute;inset:0;overflow:hidden;background:#15110d;
+  transition:bottom .28s cubic-bezier(.22,.61,.36,1);
+  touch-action:none;cursor:grab;
+  /* Belt-and-braces against desktop click-drag misfires: kill text selection
+     and the browser's native image-drag ghost across the entire viewport. */
+  user-select:none;-webkit-user-select:none;-moz-user-select:none;-ms-user-select:none;
+  -webkit-user-drag:none}
+/* When a pin info card is open, lift the map viewport so the basemap's
+   bottom edge sits ABOVE the card rather than being hidden behind it. The
+   existing resize plumbing re-clamps the world once the transition lands. */
+body.card-open #es-map{bottom:42vh}
+#es-map.grab{cursor:grabbing}
+#es-world{position:absolute;top:0;left:0;width:100%;
+  transform-origin:0 0;will-change:transform;
+  user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
+#es-world img.basemap{display:block;width:100%;height:auto;pointer-events:none;
+  -webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;
+  user-select:none;-webkit-user-select:none}
+
+/* ── Pins (absolutely placed over the world, in % coords) ─────────── */
+.es-pin{position:absolute;z-index:5;
+  /* `--pin-scale` is set by JS to `naturalWidth / clientWidth` once the
+     basemap image loads. It counter-scales the pin against the additional
+     fit-to-viewport factor we apply to the world's transform (see apply()),
+     so visible pin size remains identical to the previous behaviour
+     (30px × logical-scale, i.e. ~66px at the start zoom of 2.2). */
+  transform:translate(-50%,-50%) scale(var(--pin-scale, 1));
+  width:30px;height:30px;cursor:pointer;pointer-events:auto;
+  display:flex;align-items:center;justify-content:center}
+.es-pin .dot{width:15px;height:15px;border-radius:50%;
+  background:rgba(var(--c), 0.65);
+  border:2px solid rgba(13,10,24,.9);
+  box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(0,0,0,.6);
+  transition:transform .16s ease, box-shadow .16s ease}
+.es-pin .ring{position:absolute;width:30px;height:30px;border-radius:50%;
+  border:1.5px solid transparent;transition:border-color .16s ease, transform .16s ease}
+.es-pin .lab{position:absolute;bottom:120%;left:50%;transform:translateX(-50%) translateY(4px);
+  white-space:nowrap;font-size:10.5px;font-weight:600;letter-spacing:.02em;
+  color:var(--ink);background:rgba(13,10,24,.92);
+  border:1px solid var(--line);border-radius:6px;padding:3px 8px;
+  opacity:0;pointer-events:none;transition:opacity .16s ease, transform .16s ease;
+  text-shadow:0 1px 4px rgba(0,0,0,.8);box-shadow:0 4px 14px rgba(0,0,0,.5)}
+.es-pin .lab::after{content:'';position:absolute;top:100%;left:50%;transform:translateX(-50%);
+  border:5px solid transparent;border-top-color:rgba(13,10,24,.92)}
+/* selected state */
+.es-pin.sel{z-index:9}
+.es-pin.sel .dot{transform:scale(1.5)}
+.es-pin.sel .ring{border-color:var(--gold-hi);transform:scale(1.25);
+  box-shadow:0 0 14px rgba(230,204,133,.5)}
+/* label is redundant once the info card is open, so we keep it hidden for the
+   selected pin; the card names the spot. Hover still shows labels on desktop. */
+.es-pin.sel .lab{opacity:0}
+/* hover (desktop) — show label only on non-selected pins */
+@media(hover:hover){ .es-pin:not(.sel):hover .lab{opacity:1;transform:translateX(-50%) translateY(0)} }
+
+/* ── Zoom controls (sit above the info card's max height) ─────────── */
+#es-zoom{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);z-index:26;
+  display:flex;flex-direction:column;gap:1px;
+  border:1px solid var(--line);border-radius:10px;overflow:hidden;
+  background:rgba(13,10,24,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  transition:transform .28s cubic-bezier(.22,.61,.36,1)}
+#es-zoom button{width:42px;height:42px;border:0;background:transparent;color:var(--gold);
+  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center}
+#es-zoom button:active{background:rgba(203,168,90,.16)}
+#es-zoom button + button{border-top:1px solid var(--line)}
+#es-loc{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px + 86px);z-index:26;
+  width:44px;height:44px;border-radius:10px;border:1px solid var(--line);
+  background:rgba(13,10,24,.82);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  color:var(--gold);display:flex;align-items:center;justify-content:center;cursor:pointer;
+  transition:transform .28s cubic-bezier(.22,.61,.36,1)}
+#es-loc:active{background:rgba(203,168,90,.16)}
+#es-loc svg{width:20px;height:20px}
+/* When the info card is open, lift the controls above it */
+body.card-open #es-zoom{transform:translateY(-280px)}
+body.card-open #es-loc{transform:translateY(-280px)}
+
+/* (Bortle legend removed — header is now title + byline only.) */
+
+/* ── Info card (slides up when a pin is selected) ─────────────────── */
+#es-card{position:absolute;left:0;right:0;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);z-index:25;
+  background:linear-gradient(to bottom,#1a1822,#141319);
+  border-top:1px solid var(--gold);border-radius:18px 18px 0 0;
+  box-shadow:0 -10px 40px rgba(0,0,0,.55);
+  padding:16px 18px calc(18px + env(safe-area-inset-bottom,0px));
+  transform:translateY(110%);transition:transform .28s cubic-bezier(.22,.61,.36,1);
+  pointer-events:auto}
+#es-card.on{transform:translateY(0)}
+#es-card-grip{position:absolute;top:7px;left:50%;transform:translateX(-50%);
+  width:38px;height:4px;border-radius:2px;background:rgba(203,168,90,.4)}
+#es-card-close{position:absolute;top:12px;right:14px;width:30px;height:30px;
+  border:0;background:transparent;color:var(--ink3);font-size:22px;line-height:1;cursor:pointer}
+#es-card-close:active{color:var(--ink)}
+.es-card-badge{display:inline-flex;align-items:center;gap:6px;
+  font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:7px}
+.es-card-badge i{width:10px;height:10px;border-radius:50%;border:1px solid rgba(13,10,24,.8)}
+#es-card-name{font-size:18px;font-weight:600;letter-spacing:.01em;color:var(--ink);
+  padding-right:34px;line-height:1.25}
+#es-card-why{font-size:12.5px;line-height:1.55;color:var(--ink2);margin-top:9px}
+#es-card-info{font-size:11px;color:var(--ink3);margin-top:11px;padding-top:10px;
+  border-top:1px solid var(--line);letter-spacing:.02em}
+#es-card-nav{display:flex;justify-content:space-between;align-items:center;margin-top:14px}
+.es-card-arrow{width:40px;height:40px;border-radius:10px;border:1px solid var(--line);
+  background:transparent;color:var(--gold);font-size:18px;cursor:pointer;
+  display:flex;align-items:center;justify-content:center}
+.es-card-arrow:active{background:rgba(203,168,90,.14)}
+#es-card-count{font-size:11px;color:var(--ink3);letter-spacing:.06em}
+
+/* ── List drawer (pull up from a handle) ──────────────────────────── */
+#es-drawer{position:absolute;left:0;right:0;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);z-index:24;
+  height:72vh;max-height:560px;
+  background:linear-gradient(to bottom,#1a1822,#141319);
+  border-top:1px solid var(--line);border-radius:18px 18px 0 0;
+  box-shadow:0 -10px 40px rgba(0,0,0,.5);
+  transform:translateY(calc(100% - 46px));     /* only the handle peeks */
+  transition:transform .3s cubic-bezier(.22,.61,.36,1);
+  display:flex;flex-direction:column}
+#es-drawer.open{transform:translateY(0)}
+#es-drawer-handle{flex:0 0 auto;height:46px;display:flex;flex-direction:column;
+  align-items:center;justify-content:center;gap:5px;cursor:pointer;position:relative}
+#es-drawer-handle .bar{width:38px;height:4px;border-radius:2px;background:rgba(203,168,90,.45)}
+#es-drawer-handle .txt{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--ink3)}
+#es-list{flex:1 1 auto;overflow-y:auto;padding:4px 12px calc(14px + env(safe-area-inset-bottom,0px));
+  -webkit-overflow-scrolling:touch;overscroll-behavior:contain}
+.es-row{display:flex;align-items:center;gap:12px;padding:12px 12px;cursor:pointer;
+  border-radius:11px;border:1px solid transparent;transition:background .14s,border-color .14s}
+.es-row + .es-row{margin-top:2px}
+.es-row:active{background:rgba(203,168,90,.06)}
+.es-row.sel{background:rgba(203,168,90,.1);border-color:rgba(203,168,90,.4)}
+.es-row .pindot{flex:0 0 auto;width:13px;height:13px;border-radius:50%;
+  border:2px solid rgba(13,10,24,.9);box-shadow:0 0 0 1px rgba(255,255,255,.2)}
+.es-row .rmid{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;gap:2px}
+.es-row .rname{display:block;font-size:13.5px;font-weight:600;color:var(--ink);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.es-row .rmeta{display:block;font-size:10.5px;color:var(--ink3);
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.es-row .rchev{flex:0 0 auto;color:var(--ink3);font-size:16px}
+
+/* ── Bottom nav (kept, slim) ──────────────────────────────────────── */
+.pwa-nav{position:absolute;top:0;left:0;right:0;z-index:40;height:var(--nav-h);
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.97);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;text-decoration:none;color:var(--ink3);font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:var(--gold)}
+
+/* settings modal */
+#es-set-modal{position:absolute;inset:0;z-index:60;display:none;align-items:center;justify-content:center;
+  padding:env(safe-area-inset-top) 16px 16px}
+#es-set-modal.on{display:flex}
+#es-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.62);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#es-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
+  background:var(--panel);border:1px solid rgba(203,168,90,.4);border-radius:14px;overflow:hidden;
+  box-shadow:0 16px 50px rgba(0,0,0,.6)}
+#es-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:var(--panel)}
+
+/* ── Night mode (applied when Settings has toggled it on) ── */
+body.night-mode{background:#000 !important}
+body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+
+</style>
+</head>
+<body>
+
+<div id="es-map">
+  <div id="es-world">
+    <img class="basemap" src="map-cannonville.jpg" alt="Cannonville region placeholder map" draggable="false">
+  </div>
+</div>
+
+<!-- pins get injected into #es-world by JS -->
+
+<div id="es-top">
+  <div id="es-title">Cannonville</div>
+  <div id="es-sub">Gateway to Kodachrome Basin · Grosvenor Arch</div>
+</div>
+
+<button id="es-loc" title="My location" aria-label="My location">
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6">
+    <circle cx="12" cy="12" r="3.2"/><line x1="12" y1="2" x2="12" y2="5.5"/>
+    <line x1="12" y1="18.5" x2="12" y2="22"/><line x1="2" y1="12" x2="5.5" y2="12"/>
+    <line x1="18.5" y1="12" x2="22" y2="12"/></svg>
+</button>
+<div id="es-zoom">
+  <button id="es-zin" aria-label="Zoom in">+</button>
+  <button id="es-zout" aria-label="Zoom out">−</button>
+</div>
+
+<!-- Info card -->
+<div id="es-card">
+  <div id="es-card-grip"></div>
+  <button id="es-card-close" aria-label="Close">×</button>
+  <div class="es-card-badge" id="es-card-badge"><i></i><span></span></div>
+  <div id="es-card-name"></div>
+  <div id="es-card-why"></div>
+  <div id="es-card-info"></div>
+  <div id="es-card-nav">
+    <button class="es-card-arrow" id="es-prev" aria-label="Previous">‹</button>
+    <span id="es-card-count"></span>
+    <button class="es-card-arrow" id="es-next" aria-label="Next">›</button>
+  </div>
+</div>
+
+<!-- List drawer -->
+<div id="es-drawer">
+  <div id="es-drawer-handle">
+    <span class="bar"></span>
+    <span class="txt" id="es-drawer-txt">12 Stargazing Sites</span>
+  </div>
+  <div id="es-list"></div>
+</div>
+
+<nav class="pwa-nav">
+  <a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+  <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+  <a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+  <a class="pwa-navitem active" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+  <a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/></svg><span>Events</span></a>
+  <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+  <a class="pwa-navitem" id="es-set-btn" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3" stroke-width="1.5"/><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="1.4"/></svg><span>Settings</span></a>
+</nav>
+
+<div id="es-set-modal">
+  <div id="es-set-backdrop"></div>
+  <div id="es-set-sheet"><iframe id="es-set-frame" title="Settings"></iframe></div>
+</div>
+
+<script>
+/* Per-map data only — the shared engine in map-engine.js reads window.MAP_CONFIG. */
+window.MAP_CONFIG = {
+  name: 'Cannonville',
+  defaultAspect: 2028/2538,
+  bounds: { top:99, bottom:-99, left:-199, right:199 },
+  geoFit: {
+  // PLACEHOLDER — not yet calibrated. Real GPS anchors will be added when
+  // the actual basemap art arrives. These coefficients map a nominal
+  // bounding box to 0-100% so the engine runs without error.
+  ax: 0, bx: 0, cx: 50,
+  ay: 0, by: 0, cy: 50
+},
+  spots: [
+  { id:'kodabasin', n:'Kodachrome Basin State Park', b:'1', x:30, y:28,
+    why:'A pocket of sandstone spires and chimneys 9 mi from Cannonville — quiet, walk-in dark, with the Grand Staircase rising in every direction.',
+    info:'~15 min from Cannonville · Year-round · State park fee · Camping' },
+  { id:'grosvenor', n:'Grosvenor Arch', b:'1', x:58, y:42,
+    why:'A massive double sandstone arch on Cottonwood Canyon Road — far from any town glow, with low horizons and superb Milky Way views.',
+    info:'~45 min from Cannonville · Dirt road, impassable when wet · Year-round (dry weather)' },
+  { id:'cottonwood', n:'Cottonwood Canyon Road', b:'1', x:55, y:58,
+    why:'The unpaved scenic route south toward Page — empty desert, deep canyons, Bortle 1 skies the entire way.',
+    info:'~1 hr drive · High clearance recommended · Closed when wet' },
+  { id:'yelobrick', n:'Yellow Rock / Hackberry', b:'2', x:62, y:72,
+    why:'A slickrock dome off Cottonwood Canyon Road with 360° horizons — popular daytime hike, exceptional star-shooting at night.',
+    info:'~1 hr from Cannonville · Short scramble · Year-round' },
+  { id:'willis', n:'Willis Creek Narrows', b:'2', x:42, y:52,
+    why:'A short slot-canyon trailhead off Skutumpah Road — base camp on the slickrock above is wide-open and silent at night.',
+    info:'~30 min from Cannonville · Dirt access · Year-round (dry weather)' },
+  { id:'tropicres', n:'Tropic Reservoir', b:'2', x:18, y:40,
+    why:'A high pine-rimmed reservoir up Hwy 12 toward Bryce — easy access, dark sky, cooler temperatures in summer.',
+    info:'~30 min from Cannonville · Paved access · Summer–fall · Forest Service campground' },
+]
+};
+</script>
+<script src="map-engine.js"></script>
+
+<script>
+// Apply night mode if it was toggled on in Settings (sessionStorage flag).
+try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+
+<script>
+/* PWA install relay — beforeinstallprompt only fires on the top-level page, not
+   inside the settings iframe, so we capture it here and bridge it to Settings. */
+(function(){
+  var deferred = null;
+  function frameWin(){
+    var f = document.getElementById('zcl-set-frame') || document.getElementById('es-set-frame');
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+  function tellFrame(msg){ var w = frameWin(); if(w) w.postMessage(msg, '*') }
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferred = ev;
+    tellFrame({ type:'zcl-install-available' });
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    tellFrame({ type:'zcl-installed' });
+  });
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.type === 'zcl-do-install' && deferred){
+      deferred.prompt();
+      deferred.userChoice.finally(function(){ deferred = null });
+    } else if(d.type === 'zcl-install-query'){
+      tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

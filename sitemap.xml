@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <!-- Top-level -->
+  <url><loc>https://app.darkskyalmanac.com/</loc><priority>1.0</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/forecast</loc><priority>0.9</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/maps</loc><priority>0.9</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/objects</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/finder</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/events</loc><priority>0.8</priority></url>
+  <!-- Deep-sky catalog (renamed v113 from /messier) -->
+  <url><loc>https://app.darkskyalmanac.com/catalog</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/constellations</loc><priority>0.7</priority></url>
+  <!-- The 14 dark-sky region maps -->
+  <url><loc>https://app.darkskyalmanac.com/map-zion</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-bryce</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-capitol-reef</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-canyonlands</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-arches</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-cedar-breaks</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-st-george</loc><priority>0.7</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-cedar-city</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-kanab</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-cannonville</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-escalante</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-torrey</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-hanksville</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/map-moab</loc><priority>0.6</priority></url>
+  <!-- Tonight in the solar system -->
+  <url><loc>https://app.darkskyalmanac.com/moon</loc><priority>0.7</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/solar</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/jupiter</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/saturn</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/mars</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/earth</loc><priority>0.6</priority></url>
+</urlset>

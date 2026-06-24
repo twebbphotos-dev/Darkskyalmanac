@@ -1,0 +1,909 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>The Planets · Dark Sky Almanac</title>
+<meta name="description" content="The planets tonight and their orbits around the Sun, with a date slider to watch conjunctions and alignments evolve over time.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="The Planets · Dark Sky Almanac">
+<meta property="og:description" content="The planets tonight and their orbits around the Sun, with a date slider to watch conjunctions and alignments evolve over time.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/solar">
+<meta property="og:url" content="https://app.darkskyalmanac.com/solar">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<style>
+html,body{margin:0;padding:0;background:#141319}
+html,body{min-height:100dvh}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;
+  font-family:'Montserrat',-apple-system,sans-serif;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+#zcl-cal-wrap,#zcl-moon-wrap,#zcl-con-wrap,#zcl-m-wrap,#zcl-sf-wrap,#zcl-idx-wrap,#zcl-sk-wrap,#zcl-ss-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+#pwa-install{position:fixed;left:12px;right:12px;bottom:74px;z-index:10000;
+  display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+  background:rgba(13,10,24,.97);border:1px solid rgba(203,168,90,.4);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);font-family:'Montserrat',sans-serif}
+#pwa-install.show{display:flex}
+#pwa-install .txt{flex:1;font-size:12px;color:#C9BD97;line-height:1.4}
+#pwa-install .txt b{color:#F2E4BE;font-weight:600}
+#pwa-install button{font-family:inherit;font-size:11px;letter-spacing:.1em;font-weight:600;
+  text-transform:uppercase;border-radius:5px;padding:8px 12px;cursor:pointer;border:none}
+#pwa-install .go{background:#CBA85A;color:#0d0a18}
+#pwa-install .dismiss{background:none;color:#7A6E55;border:1px solid rgba(203,168,90,.3)}
+
+/* ── Global night mode (injected into every PWA page) ── */
+#pwa-night-overlay{position:fixed;inset:0;pointer-events:none;z-index:10001;
+  background:rgba(160,0,0,.0);transition:background .4s ease}
+body.night-mode{background:#000 !important}
+body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+
+#pwa-night-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);z-index:10002;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(10,8,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(203,168,90,.32);color:#9A8A66;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-family:inherit}
+#pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
+</style>
+</head>
+<body><!-- ════════════════════════════════════════════════════════════
+     ZION DARK SKY ALMANAC · SOLAR SYSTEM
+     Two views: tonight's sky arc, and an overhead top-down view
+     of the planets' positions around the Sun. Real Keplerian
+     elements; beautiful gold-and-color rendering.
+     Self-contained Squarespace embed (paste into a Code Block).
+     ════════════════════════════════════════════════════════════ -->
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<style>
+#zcl-ss-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;overflow-x:hidden;
+  background:#141319;font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
+#zcl-ss-wrap *{box-sizing:border-box}
+#zcl-ss-page{width:100%;position:relative;overflow:hidden;
+  background:radial-gradient(circle at 50% 40%,#22212c 0%,#1a1922 55%,#141319 100%);
+  border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+#zcl-ss-page::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:3}
+.zcl-ss-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
+#zcl-ss-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
+.zcl-ss-fl{position:absolute;width:40px;height:40px;z-index:4;pointer-events:none;opacity:.58}
+.zcl-ss-fl svg{width:100%;height:100%}
+.zcl-ss-tl{top:14px;left:14px}.zcl-ss-tr{top:14px;right:14px;transform:scaleX(-1)}
+.zcl-ss-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-ss-br{bottom:14px;right:14px;transform:scale(-1,-1)}
+.zcl-ss-inner{position:relative;z-index:1;max-width:960px;margin:0 auto;padding:0 22px 36px}
+
+/* title */
+.zcl-ss-titlebar{text-align:center;padding:40px 24px 18px}
+.zcl-ss-maintitle{font-size:clamp(23px,3.7vw,34px);font-weight:600;letter-spacing:.06em;
+  color:#F2E4BE;text-transform:uppercase;text-shadow:0 0 24px rgba(203,168,90,.22)}
+.zcl-ss-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 11px;max-width:340px}
+.zcl-ss-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-ss-titlerule .zcl-ss-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-ss-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-ss-subtitle{font-size:13px;color:#9A8E6E;max-width:540px;margin:0 auto}
+
+/* view toggle */
+.zcl-ss-toggle{display:flex;justify-content:center;gap:0;margin:8px auto 18px;border:1px solid rgba(203,168,90,.32);border-radius:6px;padding:3px;width:fit-content;background:rgba(0,0,0,.25)}
+.zcl-ss-tab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;
+  color:#9A8A66;background:none;border:none;border-radius:4px;padding:9px 18px;cursor:pointer;
+  font-family:inherit;transition:all .15s}
+.zcl-ss-tab:hover{color:#CBA85A}
+.zcl-ss-tab.on{background:rgba(203,168,90,.18);color:#F2E4BE}
+
+/* view stage */
+.zcl-ss-viewcard{background:radial-gradient(ellipse 90% 80% at 50% 100%,rgba(40,38,52,.6),transparent 70%),#0b0814;
+  border:1px solid rgba(203,168,90,.28);border-radius:10px;overflow:hidden;
+  padding:14px;margin-bottom:18px}
+.zcl-ss-viewlbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8A6E32;margin-bottom:9px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.zcl-ss-svg{display:block;width:100%;height:auto}
+
+/* planet chips under the sky-view diagram */
+.zcl-ss-chips{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;
+  margin:10px 4px 2px;min-height:18px}
+.zcl-ss-chip{font-size:12px;color:#C9BD97;display:inline-flex;align-items:center;gap:6px}
+.zcl-ss-chip i{width:9px;height:9px;border-radius:50%;display:inline-block;box-shadow:0 0 4px currentColor}
+.zcl-ss-chip-none{font-size:12px;color:#7A6E55}
+
+/* time + date controls.
+   Grid layout so the two rows (Date and Time) align column-wise — label,
+   slider, value, and the optional "Today" button each get a fixed column.
+   The Time row leaves the button column empty but still reserves space,
+   so its slider sits at the same x as the Date row's slider. */
+.zcl-ss-controls{display:grid;grid-template-columns:42px 200px 108px 56px;
+  align-items:center;justify-content:center;column-gap:14px;margin:0 0 10px}
+.zcl-ss-tlabel{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#8A6E32;text-align:right}
+.zcl-ss-tval{font-size:14px;color:#E4D9B8;font-variant-numeric:tabular-nums;text-align:center}
+.zcl-ss-slider{appearance:none;-webkit-appearance:none;width:100%;height:4px;background:rgba(203,168,90,.2);border-radius:2px;outline:none}
+.zcl-ss-slider::-webkit-slider-thumb{appearance:none;-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#CBA85A;cursor:pointer;border:2px solid #0b0814}
+.zcl-ss-slider::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#CBA85A;cursor:pointer;border:2px solid #0b0814}
+.zcl-ss-dreset{background:rgba(203,168,90,.12);border:1px solid rgba(203,168,90,.4);border-radius:4px;
+  color:#CBA85A;font-family:inherit;font-size:9.5px;font-weight:600;letter-spacing:.12em;
+  text-transform:uppercase;padding:4px 9px;cursor:pointer;transition:background .15s}
+.zcl-ss-dreset:hover{background:rgba(203,168,90,.22)}
+.zcl-ss-dreset.hidden{opacity:.3;pointer-events:none}
+
+/* planet info table */
+.zcl-ss-sectit{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:#CBA85A;margin:18px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.22);text-align:center}
+.zcl-ss-table{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+
+/* Single info key at the bottom of the page (replaces per-card "?" popups) */
+.zcl-ss-infokey{margin-top:18px;background:#0d0a18;border:1px solid rgba(203,168,90,.22);
+  border-radius:9px;padding:15px 17px 13px}
+.zcl-ss-infokey-title{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;
+  color:#CBA85A;margin-bottom:10px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.2)}
+.zcl-ss-infokey-list{margin:0;padding-left:0;list-style:none}
+.zcl-ss-infokey-list li{font-size:12.5px;line-height:1.6;color:#9A875C;
+  padding:5px 0 5px 16px;position:relative}
+.zcl-ss-infokey-list li::before{content:'';position:absolute;left:2px;top:11px;
+  width:4px;height:4px;border-radius:50%;background:#CBA85A;opacity:.7}
+.zcl-ss-infokey-list b{color:#E4D9B8;font-weight:600}
+.zcl-ss-infokey-list i{color:#C9BD97}
+.zcl-ss-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:12px 14px}
+.zcl-ss-outernote{font-size:12.5px;line-height:1.6;color:#9A875C;margin-bottom:12px}
+.zcl-ss-outernote b{color:#C9BD97;font-weight:600}
+.zcl-ss-pcaveat{font-size:11px;line-height:1.5;color:#8A7C5C;
+  margin-top:8px;padding-top:8px;border-top:1px solid rgba(203,168,90,.14)}
+a.zcl-ss-pcard{display:block;text-decoration:none;transition:border-color .15s,transform .15s}
+a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
+.zcl-ss-pmore{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;margin-top:9px;display:flex;align-items:center;gap:5px}
+.zcl-ss-pmore span{font-size:15px;line-height:1}
+.zcl-ss-pname{display:flex;align-items:center;gap:8px;font-size:14px;color:#E4D9B8;font-weight:500;margin-bottom:8px}
+.zcl-ss-pdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
+.zcl-ss-prow{display:flex;justify-content:space-between;font-size:11.5px;color:#8A7C5C;line-height:1.6}
+.zcl-ss-prow b{color:#C9BD97;font-weight:500}
+.zcl-ss-pstatus{font-size:11px;color:#9A8A66;margin-top:6px}
+.zcl-ss-pstatus.up{color:#bcd8b8}
+.zcl-ss-pstatus.dn{color:#8A6E32}
+
+@media(max-width:520px){
+  .zcl-ss-titlebar{padding:30px 14px 14px}
+  .zcl-ss-inner{padding:0 14px 26px}
+  /* On narrow screens, shrink the slider and button columns so the row fits */
+  .zcl-ss-controls{grid-template-columns:38px 1fr 86px 50px;column-gap:10px;max-width:340px;margin-left:auto;margin-right:auto}
+}
+</style>
+
+<div id="zcl-ss-wrap">
+<div id="zcl-ss-page">
+  <div class="zcl-ss-goldbar"></div>
+  <div class="zcl-ss-fl zcl-ss-tl"></div><div class="zcl-ss-fl zcl-ss-tr"></div>
+  <div class="zcl-ss-fl zcl-ss-bl"></div><div class="zcl-ss-fl zcl-ss-br"></div>
+  <svg id="zcl-ss-stars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
+
+  <div class="zcl-ss-inner">
+    <div class="zcl-ss-titlebar">
+      <div class="zcl-ss-maintitle">The Planets</div>
+      <div class="zcl-ss-titlerule">
+        <span class="zcl-ss-rline"></span>
+        <svg class="zcl-ss-rstar" viewBox="0 0 24 24"><path d="M12 2L13.6 9.2L21 12L13.6 14.8L12 22L10.4 14.8L3 12L10.4 9.2Z" fill="#CBA85A"/></svg>
+        <span class="zcl-ss-rline"></span>
+      </div>
+    </div>
+
+    <div class="zcl-ss-toggle">
+      <button class="zcl-ss-tab on" data-view="sky">Tonight's Sky</button>
+      <button class="zcl-ss-tab" data-view="top">Top-Down View</button>
+    </div>
+
+    <div class="zcl-ss-viewcard">
+      <div class="zcl-ss-viewlbl" id="zcl-ss-viewlbl">Tonight's Sky &middot; Looking South from Zion</div>
+      <svg class="zcl-ss-svg" id="zcl-ss-svg" viewBox="0 0 720 380" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="zcl-ss-chips" id="zcl-ss-chips"></div>
+    </div>
+
+    <!-- Date slider: scrub days forward/back to watch planetary alignments evolve.
+         Always visible (both views are date-dependent). Tonight = 0 offset. -->
+    <div class="zcl-ss-controls">
+      <span class="zcl-ss-tlabel">Date</span>
+      <input type="range" class="zcl-ss-slider" id="zcl-ss-dateslider" min="-30" max="365" step="1" value="0">
+      <span class="zcl-ss-tval" id="zcl-ss-dval">Tonight</span>
+      <button type="button" id="zcl-ss-datereset" class="zcl-ss-dreset" title="Back to today">Today</button>
+    </div>
+
+    <div class="zcl-ss-controls" id="zcl-ss-skyctl">
+      <span class="zcl-ss-tlabel">Time</span>
+      <input type="range" class="zcl-ss-slider" id="zcl-ss-timeslider" min="18" max="30" step="0.5" value="22">
+      <span class="zcl-ss-tval" id="zcl-ss-tval">10:00 PM</span>
+    </div>
+
+    <div class="zcl-ss-sectit">Inner Solar System</div>
+    <div class="zcl-ss-table" id="zcl-ss-table-inner"></div>
+
+    <div class="zcl-ss-sectit" style="margin-top:24px">Outer System &amp; Kuiper Belt</div>
+    <div class="zcl-ss-outernote">Beyond Mars the distances grow enormous — Jupiter is 5 times farther from the Sun than Earth, Neptune 30 times. These giants are too far to show on the same diagram, but most are still findable in the night sky. Past Neptune lies the <b>Kuiper Belt</b>, a vast ring of icy worlds where Pluto orbits.</div>
+    <div class="zcl-ss-table" id="zcl-ss-table-outer"></div>
+
+    <!-- Single info key for the whole page (replaces per-card "?" popups) -->
+    <div class="zcl-ss-infokey">
+      <div class="zcl-ss-infokey-title">Reading this page</div>
+      <ul class="zcl-ss-infokey-list">
+        <li><b>AU (Astronomical Unit)</b> — the average Earth–Sun distance, about 93 million miles (150 million km). Mercury orbits at 0.4 AU, Saturn at 9.5, Neptune at 30, and Pluto averages 39.</li>
+        <li><b>Orbit lines</b> — each inner planet's real elliptical path, drawn brighter along the arc just travelled (behind it) and dimmer along the path ahead.</li>
+        <li><b>Kuiper Belt</b> — a doughnut-shaped zone of icy bodies beyond Neptune, from about 30 to 50 AU. Pluto is its most famous resident; it was reclassified as a dwarf planet in 2006.</li>
+        <li><b>Distance from Earth</b> changes nightly — a planet is closest and brightest near <i>opposition</i>, when Earth passes between it and the Sun.</li>
+      </ul>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<script>
+"use strict";
+(function(){
+const $ = id => document.getElementById(id);
+
+// ── star backdrop + filigree ───────────────────────────────
+(function(){
+  let s='';
+  for(let i=0;i<150;i++){
+    s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>';
+  }
+  $('zcl-ss-stars').innerHTML = s;
+  const fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+    +'<path d="M2 2L2 14" stroke-width="1.4"/><path d="M2 2L14 2" stroke-width="1.4"/>'
+    +'<path d="M2 7C12 7 7 17 17 17" opacity=".9"/><path d="M7 2C7 12 17 7 17 17" opacity=".9"/>'
+    +'<path d="M2 19C9 19 9 12 2 12" opacity=".55"/><path d="M19 2C19 9 12 9 12 2" opacity=".55"/>'
+    +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/>'
+    +'<circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
+  document.querySelectorAll('.zcl-ss-fl').forEach(el=>el.innerHTML=fl);
+})();
+
+// ── constants ──────────────────────────────────────────────
+const LAT = 37.1986, LNG = -112.9869;
+const TODAY = new Date();              // real "today" — fixed reference
+let   NOW   = new Date(TODAY.getTime());  // the date the page is showing — moves with the slider
+const TZ  = 'America/Denver';
+const MO_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+// Planet data — Keplerian J2000 elements (proven accurate in the forecast page).
+// `col` is the antique-painted disc color; `size` is a relative draw size.
+const PLANETS = {
+  Mercury:{a:[0.38709927,0.00000037],e:[0.20563593,0.00001906],I:[7.00497902,-0.00594749],L:[252.25032350,149472.67411175],wbar:[77.45779628,0.16047689],O:[48.33076593,-0.12534081],col:'#A89878',size:4.5,desc:'the swift inner messenger'},
+  Venus:  {a:[0.72333566,0.0000039 ],e:[0.00677672,-0.00004107],I:[3.39467605,-0.0007889 ],L:[181.97909950,58517.81538729],wbar:[131.60246718,0.00268329],O:[76.67984255,-0.27769418],col:'#E6D9A8',size:6.5,desc:'the brilliant evening &amp; morning star'},
+  Earth:  {a:[1.00000261,0.00000562],e:[0.01671123,-0.00004392],I:[-0.00001531,-0.01294668],L:[100.46457166,35999.37244981],wbar:[102.93768193,0.32327364],O:[0.0,0.0],col:'#7AA0C8',size:6.5,desc:'home'},
+  Mars:   {a:[1.52371034,0.0000018 ],e:[0.09339410,0.00007882],I:[1.84969142,-0.00813131],L:[-4.55343205,19140.30268499],wbar:[-23.94362959,0.44441088],O:[49.55953891,-0.29257343],col:'#C77B5E',size:5,desc:'the red planet'},
+  Jupiter:{a:[5.20288700,-0.00011607],e:[0.04838624,-0.00013253],I:[1.30439695,-0.00183714],L:[34.39644051,3034.74612775],wbar:[14.72847983,0.21252668],O:[100.47390909,0.20469106],col:'#D4B891',size:11,desc:'the giant of giants'},
+  Saturn: {a:[9.53667594,-0.0012506 ],e:[0.05386179,-0.00050991],I:[2.48599187,0.00193609],L:[49.95424423,1222.49362201],wbar:[92.59887831,-0.41897216],O:[113.66242448,-0.28867794],col:'#E6CC85',size:9.5,desc:'the ringed wanderer'},
+  Uranus: {a:[19.18916464,-0.00196176],e:[0.04725744,-0.00004397],I:[0.77263783,-0.00242939],L:[313.23810451,428.48202785],wbar:[170.95427630,0.40805281],O:[74.01692503,0.04240589],col:'#A8D8DC',size:7,desc:'the tilted ice giant'},
+  Neptune:{a:[30.06992276,0.00026291],e:[0.00859048,0.00005105],I:[1.77004347,0.00035372],L:[-55.12002969,218.45945325],wbar:[44.96476227,-0.32241464],O:[131.78422574,-0.00508664],col:'#7A9CE0',size:7,desc:'the deep blue giant'},
+  Pluto:  {a:[39.48211675,-0.00031596],e:[0.24882730,0.00005170],I:[17.14001206,0.00004818],L:[238.92903833,145.20780515],wbar:[224.06891629,-0.04062942],O:[110.30393684,-0.01183482],col:'#B89A7A',size:3.5,desc:'the distant dwarf'},
+};
+// The top-down diagram shows only the inner system (legible scale).
+// The outer system is presented as a simple informational list.
+const INNER_PLANETS = ['Mercury','Venus','Earth','Mars'];
+const OUTER_PLANETS = ['Jupiter','Saturn','Uranus','Neptune','Pluto'];
+// Orbit diagram shows the inner system only (keeps the scale legible).
+const PNAMES = ['Mercury','Venus','Earth','Mars'];
+// Sky view can show every planet that's bright enough to find.
+const SKY_PLANETS = ['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'];
+
+// ── astronomy helpers ──────────────────────────────────────
+function julianDay(d){
+  const Y=d.getUTCFullYear(),M=d.getUTCMonth()+1,D=d.getUTCDate();
+  const UT=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;
+  return 367*Y-Math.floor(7*(Y+Math.floor((M+9)/12))/4)+Math.floor(275*M/9)+D+1721013.5+UT/24;
+}
+function _kepler(M,e){ M=M*Math.PI/180; let E=M; for(let i=0;i<8;i++){ E=E-(E-e*Math.sin(E)-M)/(1-e*Math.cos(E)) } return E }
+function _helio(el,T){
+  const a=el.a[0]+el.a[1]*T, e=el.e[0]+el.e[1]*T, I=(el.I[0]+el.I[1]*T)*Math.PI/180;
+  const L=el.L[0]+el.L[1]*T, wbar=el.wbar[0]+el.wbar[1]*T, O=(el.O[0]+el.O[1]*T)*Math.PI/180;
+  const w=(wbar-(el.O[0]+el.O[1]*T))*Math.PI/180;
+  let M=L-wbar; M=((M%360)+360)%360; if(M>180)M-=360;
+  const E=_kepler(M,e);
+  const xp=a*(Math.cos(E)-e), yp=a*Math.sqrt(1-e*e)*Math.sin(E);
+  const cw=Math.cos(w),sw=Math.sin(w),cO=Math.cos(O),sO=Math.sin(O),cI=Math.cos(I),sI=Math.sin(I);
+  return {
+    x:(cw*cO-sw*sO*cI)*xp+(-sw*cO-cw*sO*cI)*yp,
+    y:(cw*sO+sw*cO*cI)*xp+(-sw*sO+cw*cO*cI)*yp,
+    z:(sw*sI)*xp+(cw*sI)*yp,
+    a:a
+  };
+}
+function planetRaDec(name,utc){
+  const T=(julianDay(utc)-2451545.0)/36525.0;
+  const p=_helio(PLANETS[name],T), earth=_helio(PLANETS.Earth,T);
+  let xg=p.x-earth.x, yg=p.y-earth.y, zg=p.z-earth.z;
+  const dist = Math.sqrt(xg*xg+yg*yg+zg*zg);
+  const ob=23.43928*Math.PI/180;
+  const xe=xg, ye=yg*Math.cos(ob)-zg*Math.sin(ob), ze=yg*Math.sin(ob)+zg*Math.cos(ob);
+  const ra=Math.atan2(ye,xe), dec=Math.atan2(ze,Math.sqrt(xe*xe+ye*ye));
+  return {ra:((ra*180/Math.PI)/15+24)%24, dec:dec*180/Math.PI, dist:dist};
+}
+function altAz(ra_h,dec_d,utc){
+  const latR=LAT*Math.PI/180, decR=dec_d*Math.PI/180;
+  let GMST=280.46061837+360.98564736629*(julianDay(utc)-2451545.0);
+  GMST=((GMST%360)+360)%360;
+  const LST=((GMST/15+LNG/15)%24+24)%24;
+  const HA=((LST-ra_h)*15)*Math.PI/180;
+  const alt=Math.asin(Math.sin(latR)*Math.sin(decR)+Math.cos(latR)*Math.cos(decR)*Math.cos(HA));
+  let az=Math.atan2(Math.sin(HA),Math.cos(HA)*Math.sin(latR)-Math.tan(decR)*Math.cos(latR));
+  az=(az*180/Math.PI+180)%360;
+  return {alt:alt*180/Math.PI, az};
+}
+function compass(deg){ return ['N','NE','E','SE','S','SW','W','NW'][Math.round(deg/45)%8] }
+
+// Approximate constellation for an RA value (degrees). Simple lookup
+// using ecliptic-band zodiac constellations — close enough for a hint.
+function zodiacOfRA(ra_h){
+  const ra=ra_h*15;
+  const z=[[0,'Pisces'],[31,'Aries'],[58,'Taurus'],[91,'Gemini'],
+           [119,'Cancer'],[140,'Leo'],[174,'Virgo'],[218,'Libra'],
+           [241,'Scorpius'],[266,'Sagittarius'],[300,'Capricornus'],
+           [328,'Aquarius'],[353,'Pisces']];
+  for(let i=z.length-1;i>=0;i--){ if(ra>=z[i][0]) return z[i][1] }
+  return 'Pisces';
+}
+
+// ── state ───────────────────────────────────────────────────
+let view = 'sky';       // 'sky' or 'top'
+let timeHour = 22;      // 18..30 (so 24 = midnight, 30 = 6am next day)
+
+// Real UTC offset (hours) for TZ on a given date, via Intl (DST-aware).
+function tzOffset(date){
+  try{
+    const dt=new Date(Date.UTC(date.getFullYear(),date.getMonth(),date.getDate(),6,0,0));
+    const s=new Intl.DateTimeFormat('en-US',{timeZone:TZ,timeZoneName:'shortOffset',hour:'numeric'}).formatToParts(dt);
+    const tzn=s.find(p=>p.type==='timeZoneName');
+    if(tzn){ const m=tzn.value.match(/GMT([+-]\d+)(?::(\d+))?/); if(m) return -(parseInt(m[1])) }
+  }catch(e){}
+  // fallback: Mountain Time rule
+  const y=date.getFullYear();
+  const marDST=new Date(y,2,8); marDST.setDate(8+(7-marDST.getDay())%7);
+  const novSTD=new Date(y,10,1); novSTD.setDate(1+(7-novSTD.getDay())%7);
+  return (date>=marDST && date<novSTD)?6:7;
+}
+
+// UTC instant corresponding to the slider hour for tonight (civil local time).
+function selectedUTC(){
+  const off = tzOffset(NOW);       // real timezone offset (DST-aware), e.g. 6 for MDT
+  const utcHour = timeHour + off;
+  const t = new Date(Date.UTC(NOW.getFullYear(), NOW.getMonth(), NOW.getDate(), 0, 0, 0));
+  t.setUTCMinutes(Math.round(utcHour * 60));
+  return t;
+}
+
+// ════════════════════════════════════════
+// VIEW A — Sky Arc (looking south)
+// ════════════════════════════════════════
+function renderSkyView(){
+  const W=720, H=380, cx=W/2, baseY=H-44;
+  const RX=W*0.46, RY=H-72;
+  const utc = selectedUTC();
+  let svg='';
+
+  // ecliptic dome (gold arc)
+  const domeL = cx-RX, domeR = cx+RX;
+  svg+='<path d="M '+domeL+' '+baseY+' A '+RX+' '+RY+' 0 0 1 '+domeR+' '+baseY+'" fill="none" stroke="#CBA85A" stroke-width="1.2" stroke-opacity=".55"/>';
+  svg+='<path d="M '+(domeL+10)+' '+baseY+' A '+(RX-10)+' '+(RY-7)+' 0 0 1 '+(domeR-10)+' '+baseY+'" fill="none" stroke="#CBA85A" stroke-width=".5" stroke-opacity=".18"/>';
+  // horizon
+  svg+='<line x1="14" y1="'+baseY+'" x2="'+(W-14)+'" y2="'+baseY+'" stroke="#CBA85A" stroke-width="1" stroke-opacity=".55"/>';
+  svg+='<circle cx="14" cy="'+baseY+'" r="2" fill="#CBA85A" opacity=".6"/><circle cx="'+(W-14)+'" cy="'+baseY+'" r="2" fill="#CBA85A" opacity=".6"/>';
+  // cardinal labels
+  const lblCls = 'font-family="Montserrat" font-size="11" letter-spacing="2" fill="#9A875C" text-transform="uppercase"';
+  svg+='<text x="16" y="'+(baseY+22)+'" '+lblCls+' text-anchor="start">East</text>';
+  svg+='<text x="'+cx+'" y="'+(baseY+22)+'" '+lblCls+' text-anchor="middle">South</text>';
+  svg+='<text x="'+(W-16)+'" y="'+(baseY+22)+'" '+lblCls+' text-anchor="end">West</text>';
+  // zenith ornament
+  svg+='<path d="M '+cx+' '+(baseY-RY)+' l 2 5 l 5 0 l -4 3 l 2 5 l -5 -3 l -5 3 l 2 -5 l -4 -3 l 5 0 Z" fill="#CBA85A" opacity=".4" transform="translate(-2.5,-3)"/>';
+
+  // compute planet positions
+  const visible = [];
+  SKY_PLANETS.forEach(name=>{
+    if(name==='Earth') return;
+    const rd = planetRaDec(name, utc);
+    const aa = altAz(rd.ra, rd.dec, utc);
+    if(aa.alt > 0) visible.push({name, alt:aa.alt, az:aa.az, col:PLANETS[name].col, size:PLANETS[name].size, dist:rd.dist});
+  });
+
+  if(visible.length === 0){
+    svg+='<text x="'+cx+'" y="'+(baseY-RY/2)+'" font-family="Montserrat" font-size="13" font-style="italic" fill="#9A875C" text-anchor="middle">No bright planets above the horizon at this hour</text>';
+  }
+
+  // place planets on the dome (same projection as forecast page)
+  const AZ_MIN=60, AZ_MAX=300;
+  const pts = visible.map(p=>{
+    let frac = (p.az-AZ_MIN)/(AZ_MAX-AZ_MIN); frac = Math.max(0,Math.min(1,frac));
+    const theta = Math.PI*(1-frac);
+    const ex = cx + RX*Math.cos(theta);
+    const ey = baseY - RY*Math.sin(theta);
+    const altFrac = Math.max(0, Math.min(1, p.alt/90));
+    const trueY = baseY - Math.sin(altFrac*Math.PI/2)*RY;
+    return {p, x:ex, y:(ey+trueY)/2};
+  });
+
+  // dots
+  pts.forEach(d=>{
+    const r = d.p.size*0.85;
+    // glow
+    svg+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="'+(r+5).toFixed(1)+'" fill="'+d.p.col+'" opacity=".15"/>';
+    svg+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="'+(r+2).toFixed(1)+'" fill="none" stroke="'+d.p.col+'" stroke-width=".6" stroke-opacity=".5"/>';
+    svg+='<circle cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" r="'+r.toFixed(1)+'" fill="'+d.p.col+'" stroke="#3a2f16" stroke-width=".5"/>';
+    // Saturn rings hint
+    if(d.p.name === 'Saturn'){
+      svg+='<ellipse cx="'+d.x.toFixed(1)+'" cy="'+d.y.toFixed(1)+'" rx="'+(r*1.8).toFixed(1)+'" ry="'+(r*0.5).toFixed(1)+'" fill="none" stroke="'+d.p.col+'" stroke-width="1.1" stroke-opacity=".75" transform="rotate(-12 '+d.x.toFixed(1)+' '+d.y.toFixed(1)+')"/>';
+    }
+  });
+
+  // labels with collision avoidance
+  const placed = [];
+  const LBL_W = 50, LBL_H = 14;
+  pts.slice().sort((a,b)=>a.x-b.x).forEach(d=>{
+    let lx = d.x, ly = (d.y<40) ? d.y+22 : d.y-15;
+    let dir = (d.y<40) ? 1 : -1;
+    let guard = 0;
+    while(guard++<8 && placed.some(q=>Math.abs(q.x-lx)<LBL_W && Math.abs(q.y-ly)<LBL_H)){
+      ly += dir*LBL_H;
+      if(ly<10){ ly = d.y+22; dir = 1 }
+    }
+    placed.push({x:lx,y:ly});
+    if(Math.abs(ly-d.y)>18){
+      svg+='<line x1="'+d.x.toFixed(1)+'" y1="'+d.y.toFixed(1)+'" x2="'+lx.toFixed(1)+'" y2="'+(ly-7).toFixed(1)+'" stroke="'+d.p.col+'" stroke-width=".5" stroke-opacity=".4"/>';
+    }
+    svg+='<text x="'+lx.toFixed(1)+'" y="'+ly.toFixed(1)+'" text-anchor="middle" font-family="Montserrat" font-size="11" font-weight="500" fill="'+d.p.col+'">'+d.p.name+'</text>';
+  });
+
+  $('zcl-ss-svg').innerHTML = svg;
+
+  // Below the diagram: name + altitude chips for each visible planet
+  // (same style as the forecast page's "Planets at 10 PM" caption row).
+  const chipsEl = $('zcl-ss-chips');
+  if(visible.length === 0){
+    chipsEl.innerHTML = '<span class="zcl-ss-chip-none">No bright planets above the horizon at this hour</span>';
+  } else {
+    const simpleDir = az => az<150?'E':az>210?'W':'S';
+    chipsEl.innerHTML = visible
+      .slice().sort((a,b)=>b.alt-a.alt)
+      .map(p => '<span class="zcl-ss-chip"><i style="background:'+p.col+';color:'+p.col+'"></i>'
+        + p.name + ' \u00B7 ' + Math.round(p.alt) + '\u00B0 ' + simpleDir(p.az) + '</span>')
+      .join('');
+  }
+}
+
+// ════════════════════════════════════════
+// VIEW B — Top-down (heliocentric)
+// ════════════════════════════════════════
+function renderTopView(){
+  const W=720, H=380, cx=W/2, cy=H/2;
+  const utc = selectedUTC();
+  const T = (julianDay(utc)-2451545.0)/36525.0;
+  let svg = '';
+
+  // Sun at center
+  svg+='<defs>'
+    +'<radialGradient id="zcl-ss-sun" cx="50%" cy="50%" r="50%">'
+    +'<stop offset="0%" stop-color="#FFF6D8"/><stop offset="30%" stop-color="#FFE08C"/>'
+    +'<stop offset="100%" stop-color="#D4A030"/></radialGradient>'
+    +'</defs>';
+  // sun glow
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="42" fill="url(#zcl-ss-sun)" opacity=".22"/>';
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="28" fill="url(#zcl-ss-sun)" opacity=".5"/>';
+  svg+='<circle cx="'+cx+'" cy="'+cy+'" r="13" fill="url(#zcl-ss-sun)"/>';
+  // tiny sun spikes
+  for(let i=0;i<8;i++){
+    const a = i*Math.PI/4;
+    svg+='<line x1="'+(cx+Math.cos(a)*14).toFixed(1)+'" y1="'+(cy+Math.sin(a)*14).toFixed(1)+'" '
+       +'x2="'+(cx+Math.cos(a)*20).toFixed(1)+'" y2="'+(cy+Math.sin(a)*20).toFixed(1)+'" '
+       +'stroke="#FFE08C" stroke-width="1.5" stroke-linecap="round" opacity=".8"/>';
+  }
+
+  // Orbital scale: inner system only, outermost shown is Mars at ~1.52 AU.
+  // Linear scale reads naturally at this range (no need to log-compress).
+  const auMax = 1.7;
+  const orbitR = (au)=> 30 + (au/auMax) * 150;
+
+  // Draw real Keplerian ellipses for each planet, split at the planet's current
+  // position: gold/bright for the past half, dim for the future half.
+  // The ellipse in the ecliptic plane: semi-major a, semi-minor b=a√(1-e²),
+  // center offset from Sun by a*e toward perihelion (angle ω in the ecliptic).
+  // We sample N points around the full orbit and project to screen, then find the
+  // split index and draw two polylines.
+  PNAMES.forEach(name=>{
+    const el = PLANETS[name];
+    const a_au = el.a[0] + el.a[1]*T;
+    const e    = el.e[0]  + el.e[1]*T;
+    const b_au = a_au * Math.sqrt(Math.max(0, 1 - e*e));
+    // perihelion direction in ecliptic (longitude of perihelion minus lon of ascending node)
+    const wbar_deg = el.wbar[0] + el.wbar[1]*T;
+    const O_deg    = el.O[0]    + el.O[1]*T;
+    const w_rad    = (wbar_deg - O_deg) * Math.PI / 180;  // arg of perihelion ≈ ecliptic angle of perihelion
+    // For a top-down ecliptic view the inclination is small; use the perihelion direction
+    // directly as the ellipse rotation angle.
+    const peri_angle = (wbar_deg) * Math.PI / 180;  // direction of perihelion in ecliptic
+    // Planet's current mean anomaly → eccentric anomaly → true anomaly
+    const L = el.L[0] + el.L[1]*T;
+    let M_deg = L - wbar_deg; M_deg = ((M_deg % 360)+360)%360; if(M_deg>180) M_deg-=360;
+    // current eccentric anomaly
+    let Ec = M_deg*Math.PI/180;
+    for(let i=0;i<10;i++) Ec = Ec - (Ec - e*Math.sin(Ec) - M_deg*Math.PI/180)/(1 - e*Math.cos(Ec));
+    // current true anomaly (angle from perihelion in orbit)
+    const cosNu = (Math.cos(Ec)-e)/(1-e*Math.cos(Ec));
+    const sinNu = (Math.sqrt(1-e*e)*Math.sin(Ec))/(1-e*Math.cos(Ec));
+    const nu_now = Math.atan2(sinNu, cosNu);  // true anomaly at current position, radians
+
+    // Sample the full ellipse at N points (parametric eccentric anomaly 0..2π).
+    // For each sample, compute its real distance from the Sun, then place it on
+    // screen at orbitR(distance) along that direction angle. This polar-radial
+    // mapping uses the same orbitR function for every point of every orbit, so
+    // ellipses can never cross each other in screen space.
+    const N = 120;
+    const pts = [];
+    for(let i=0;i<N;i++){
+      const Ep = 2*Math.PI*i/N;
+      // position in orbit plane (perihelion at θ=0)
+      const xo = a_au*(Math.cos(Ep)-e);
+      const yo = b_au*Math.sin(Ep);
+      // rotate by perihelion direction in ecliptic
+      const xe = xo*Math.cos(peri_angle) - yo*Math.sin(peri_angle);
+      const ye = xo*Math.sin(peri_angle) + yo*Math.cos(peri_angle);
+      // polar-radial scale: distance from Sun → screen radius
+      const r_au = Math.sqrt(xe*xe + ye*ye);
+      const ang  = Math.atan2(ye, xe);
+      const r_px = orbitR(r_au);
+      const sx = cx + r_px * Math.cos(ang);
+      const sy = cy - r_px * Math.sin(ang);  // y-flip
+      pts.push([sx, sy]);
+    }
+    // Find the sample index closest to the planet's current eccentric anomaly
+    let splitIdx = Math.round(((Ec % (2*Math.PI)) + 2*Math.PI) % (2*Math.PI) / (2*Math.PI) * N) % N;
+
+    // Build two polyline point strings: past (split..end + start..split) and future (split..split+N)
+    // "Past" = the arc the planet has already traversed (going backward from current pos)
+    // Since the orbit goes counterclockwise (prograde), past = points BEFORE current index
+    // i.e. indices [splitIdx..N-1, 0..splitIdx] closing at current pos.
+    const pastPts  = [...pts.slice(splitIdx), ...pts.slice(0, splitIdx+1)];
+    const futurePts= pts.slice(0, splitIdx+1).reverse().concat(pts.slice(splitIdx));
+    // Actually simplest split: future = pts from splitIdx forward (splitIdx..N-1, 0..splitIdx)
+    // past = pts from splitIdx backward (splitIdx..0, N-1..splitIdx)
+    const fwdPts = [...pts.slice(splitIdx), ...pts.slice(0, splitIdx+1)];
+    const bwdPts = [...pts.slice(0, splitIdx+1).reverse(), ...pts.slice(splitIdx).reverse()];
+
+    const toStr = arr => arr.map(p=>p[0].toFixed(1)+','+p[1].toFixed(1)).join(' ');
+
+    // Orbit line at ~50% opacity overall, but with depth emphasis:
+    // the arc the planet has already traversed (behind it) is drawn stronger,
+    // and the arc ahead of it (in front) is drawn dimmer. This reads as the
+    // planet trailing a brighter wake and heading into a fainter path.
+    // Future arc (ahead / in front) — dimmer
+    svg += '<polyline points="'+toStr(fwdPts)+'" fill="none" stroke="'+el.col+'" stroke-width="1" stroke-opacity=".28"/>';
+    // Past arc (behind) — stronger
+    svg += '<polyline points="'+toStr(bwdPts)+'" fill="none" stroke="'+el.col+'" stroke-width="1.6" stroke-opacity=".62"/>';
+  });
+
+  // compute heliocentric positions and project to 2D (use x,y, ignore z for top-down view)
+  const positions = {};
+  PNAMES.forEach(name=>{
+    const p = _helio(PLANETS[name], T);
+    positions[name] = p;
+  });
+
+  // For each planet, scale its actual heliocentric radius to our display radius.
+  // angle is preserved from real ecliptic position.
+  // Two passes: bodies first, then labels with collision avoidance.
+  const bodies = [];
+  PNAMES.forEach(name=>{
+    const el = PLANETS[name];
+    const p = positions[name];
+    const realA = Math.sqrt(p.x*p.x + p.y*p.y);
+    const angle = Math.atan2(p.y, p.x);
+    const r = orbitR(realA);
+    const px = cx + r*Math.cos(angle);
+    const py = cy - r*Math.sin(angle);   // y flipped so north-up
+    const size = el.size * (name==='Earth' ? 1.0 : (name==='Jupiter'||name==='Saturn'? 0.55 : 0.75));
+    bodies.push({name, px, py, size, el, angle});
+
+    // glow
+    svg+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(size+5).toFixed(1)+'" fill="'+el.col+'" opacity=".18"/>';
+    // planet body
+    svg+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+size.toFixed(1)+'" fill="'+el.col+'" stroke="#3a2f16" stroke-width=".5"/>';
+    // Earth gets a tiny moon hint
+    if(name === 'Earth'){
+      svg+='<circle cx="'+(px+10).toFixed(1)+'" cy="'+py.toFixed(1)+'" r="1.8" fill="#C9BD97"/>';
+      svg+='<circle cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" r="'+(size+9).toFixed(1)+'" fill="none" stroke="#7AA0C8" stroke-width=".5" stroke-opacity=".4" stroke-dasharray="1 2"/>';
+    }
+    // Saturn rings
+    if(name === 'Saturn'){
+      svg+='<ellipse cx="'+px.toFixed(1)+'" cy="'+py.toFixed(1)+'" rx="'+(size*1.7).toFixed(1)+'" ry="'+(size*0.55).toFixed(1)+'" fill="none" stroke="'+el.col+'" stroke-width="1.2" stroke-opacity=".75" transform="rotate(-18 '+px.toFixed(1)+' '+py.toFixed(1)+')"/>';
+    }
+  });
+
+  // Labels — place radially outward from Sun so labels never overlap dots
+  // and inner planets' labels don't collide with each other.
+  const placed = [];
+  bodies.forEach(b=>{
+    // unit vector from Sun toward planet
+    const ux = Math.cos(b.angle), uy = -Math.sin(b.angle);
+    // start position: just outside the planet's body
+    let labelDist = b.size + 14;
+    let lx, ly, guard=0;
+    while(guard++<10){
+      lx = b.px + ux*labelDist;
+      ly = b.py + uy*labelDist;
+      // collision check against earlier labels
+      const hit = placed.some(q=>Math.abs(q.x-lx)<54 && Math.abs(q.y-ly)<14);
+      if(!hit) break;
+      labelDist += 14;
+    }
+    placed.push({x:lx, y:ly});
+    // leader line if pushed far out
+    if(labelDist > b.size + 22){
+      svg+='<line x1="'+(b.px+ux*(b.size+3)).toFixed(1)+'" y1="'+(b.py+uy*(b.size+3)).toFixed(1)
+        +'" x2="'+(lx-ux*7).toFixed(1)+'" y2="'+(ly-uy*7).toFixed(1)
+        +'" stroke="'+b.el.col+'" stroke-width=".5" stroke-opacity=".4"/>';
+    }
+    // anchor based on which side of the Sun
+    const anchor = ux > 0.2 ? 'start' : ux < -0.2 ? 'end' : 'middle';
+    svg+='<text x="'+lx.toFixed(1)+'" y="'+(ly+4).toFixed(1)+'" text-anchor="'+anchor+'" font-family="Montserrat" font-size="11" font-weight="500" fill="'+b.el.col+'">'+b.name+'</text>';
+  });
+
+  // legend / ornament: Sun label (reflects the date the slider is showing)
+  const sameDay = NOW.toDateString() === TODAY.toDateString();
+  const dateLbl = sameDay ? 'NOW'
+    : (MO_ABBR[NOW.getMonth()]+' '+NOW.getDate()+', '+NOW.getFullYear()).toUpperCase();
+  svg+='<text x="'+cx+'" y="'+(cy+H*0.42)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="3" fill="#9A875C" opacity=".7">SUN AT CENTER &middot; ORBITAL POSITIONS '+dateLbl+'</text>';
+
+  $('zcl-ss-svg').innerHTML = svg;
+  // Top-down view: clear the sky-view chip list
+  $('zcl-ss-chips').innerHTML = '';
+}
+
+// ════════════════════════════════════════
+// PLANET INFO TABLE
+// ════════════════════════════════════════
+// Planets that have their own detail page → card becomes a link.
+const DETAIL_PAGES = {Earth:'earth', Mars:'mars', Jupiter:'jupiter', Saturn:'saturn'};
+
+// Build one planet card's HTML.
+function planetCard(name){
+  const el = PLANETS[name];
+  const page = DETAIL_PAGES[name];
+  const utc = selectedUTC();
+  const moonSuffix = (name==='Earth') ? ' and its moon' : ' and its moons';
+  const more = page ? '<div class="zcl-ss-pmore">Explore '+name+moonSuffix+' <span>&#8250;</span></div>' : '';
+
+  // Earth — we're on it, no sky position.
+  if(name === 'Earth'){
+    if(!page) return '';
+    return '<a class="zcl-ss-pcard" href="'+page+'">'
+      + '<div class="zcl-ss-pname"><span class="zcl-ss-pdot" style="background:'+el.col+';color:'+el.col+'"></span>Earth</div>'
+      + '<div class="zcl-ss-prow"><span>Distance from Earth</span><b>0 AU</b></div>'
+      + '<div class="zcl-ss-prow"><span>You are here</span><b>Home</b></div>'
+      + more + '</a>';
+  }
+
+  const rd = planetRaDec(name, utc);
+  const aa = altAz(rd.ra, rd.dec, utc);
+  const up = aa.alt > 0;
+  const constellation = zodiacOfRA(rd.ra);
+  const open = page ? '<a class="zcl-ss-pcard" href="'+page+'">' : '<div class="zcl-ss-pcard">';
+  const close = page ? '</a>' : '</div>';
+  // Faint outer worlds get a legibility caveat.
+  const CAVEATS = {
+    Uranus: 'Magnitude ~5.7 \u2014 just at the naked-eye limit under a truly dark sky, an easy target in binoculars as a tiny blue-green dot.',
+    Neptune:'Magnitude ~7.8 \u2014 below naked-eye visibility; needs binoculars or a telescope, where it shows as a faint blue point.',
+    Pluto:  'Magnitude ~15 \u2014 far too faint for the eye or a small telescope. Shown for its place in the system; a large scope and very dark sky are needed to glimpse it.',
+  };
+  const caveat = CAVEATS[name]
+    ? '<div class="zcl-ss-pcaveat">'+CAVEATS[name]+'</div>'
+    : '';
+  return open
+    + '<div class="zcl-ss-pname"><span class="zcl-ss-pdot" style="background:'+el.col+';color:'+el.col+'"></span>'+name+'</div>'
+    + '<div class="zcl-ss-prow"><span>In</span><b>'+constellation+'</b></div>'
+    + '<div class="zcl-ss-prow"><span>Distance from Earth</span><b>'+rd.dist.toFixed(2)+' AU</b></div>'
+    + (up
+        ? '<div class="zcl-ss-prow"><span>Altitude</span><b>'+Math.round(aa.alt)+'\u00B0 '+compass(aa.az)+'</b></div>'
+          + '<div class="zcl-ss-pstatus up">\u2191 Above horizon</div>'
+        : '<div class="zcl-ss-pstatus dn">\u2193 Below horizon at this hour</div>')
+    + caveat
+    + more + close;
+}
+
+function renderTable(){
+  $('zcl-ss-table-inner').innerHTML = INNER_PLANETS.map(planetCard).join('');
+  $('zcl-ss-table-outer').innerHTML = OUTER_PLANETS.map(planetCard).join('');
+}
+
+// ════════════════════════════════════════
+// TIME SLIDER
+// ════════════════════════════════════════
+function fmtHour(h){
+  // 18 = 6PM, 22 = 10PM, 24 = midnight, 30 = 6AM
+  const wholeH = Math.floor(h);
+  const m = Math.round((h - wholeH) * 60);
+  const displayH = wholeH % 24;
+  const isPM = displayH >= 12 && displayH < 24;
+  let hh12 = displayH % 12; if(hh12 === 0) hh12 = 12;
+  return hh12 + ':' + String(m).padStart(2,'0') + ' ' + (isPM ? 'PM' : 'AM');
+}
+
+function update(){
+  $('zcl-ss-tval').textContent = fmtHour(timeHour);
+  const sameDay = NOW.toDateString() === TODAY.toDateString();
+  const niceDate = MO_ABBR[NOW.getMonth()]+' '+NOW.getDate();
+  if(view === 'sky'){
+    $('zcl-ss-viewlbl').textContent = (sameDay ? "Tonight's Sky" : "Sky on "+niceDate)
+      + " \u00B7 Looking South from Zion";
+    renderSkyView();
+  } else {
+    $('zcl-ss-viewlbl').textContent = "Inner Solar System \u00B7 Orbital Positions "
+      + (sameDay ? "Now" : "on "+niceDate);
+    renderTopView();
+  }
+  renderTable();
+}
+
+$('zcl-ss-timeslider').addEventListener('input', e=>{
+  timeHour = parseFloat(e.target.value);
+  update();
+});
+
+// Date slider — scrub days from today (offset 0) forward/back.
+function applyDateOffset(days){
+  NOW = new Date(TODAY.getTime() + days * 86400000);
+  const dval = $('zcl-ss-dval');
+  const reset = $('zcl-ss-datereset');
+  if(days === 0){
+    dval.textContent = 'Tonight';
+    reset.classList.add('hidden');
+  } else {
+    dval.textContent = MO_ABBR[NOW.getMonth()]+' '+NOW.getDate();
+    reset.classList.remove('hidden');
+  }
+  update();
+}
+$('zcl-ss-dateslider').addEventListener('input', e=>{
+  applyDateOffset(parseInt(e.target.value, 10));
+});
+$('zcl-ss-datereset').addEventListener('click', ()=>{
+  $('zcl-ss-dateslider').value = 0;
+  applyDateOffset(0);
+});
+
+// Initialize label/reset visibility for the default offset (0).
+applyDateOffset(0);
+
+document.querySelectorAll('.zcl-ss-tab').forEach(t=>{
+  t.addEventListener('click', ()=>{
+    document.querySelectorAll('.zcl-ss-tab').forEach(x=>x.classList.remove('on'));
+    t.classList.add('on');
+    view = t.getAttribute('data-view');
+    // Time slider only affects sky view (top-down uses "now")
+    $('zcl-ss-skyctl').style.display = (view === 'sky') ? '' : 'none';
+    update();
+  });
+});
+
+// Initial render is handled by applyDateOffset(0) above.
+
+})();
+</script>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+<script>
+(function(){
+  // Night mode is applied here on load if it was enabled in Settings;
+  // the gear icon (top-right) opens Settings to toggle it.
+  try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+})();
+</script>
+<!-- ════ Settings popup (shared) ════ -->
+<style>
+#zcl-set-modal{position:fixed;inset:0;z-index:10050;display:none;
+  align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px 16px}
+#zcl-set-modal.on{display:flex}
+#zcl-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#zcl-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
+  background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
+  box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;
+  animation:zcl-set-pop .2s ease}
+@keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+#zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+</style>
+<div id="zcl-set-modal">
+  <div id="zcl-set-backdrop"></div>
+  <div id="zcl-set-sheet"><iframe id="zcl-set-frame" title="Settings"></iframe></div>
+</div>
+<script>
+(function(){
+  var modal=document.getElementById('zcl-set-modal');
+  var frame=document.getElementById('zcl-set-frame');
+  var backdrop=document.getElementById('zcl-set-backdrop');
+  var gear=document.getElementById('pwa-night-btn')||document.getElementById('zcl-sf-nightbtn');
+  var loaded=false;
+  function open(){
+    if(!loaded){ frame.src='settings.html?embed=1'; loaded=true }
+    modal.classList.add('on');
+  }
+  function close(){ modal.classList.remove('on') }
+  if(gear){
+    gear.addEventListener('click', function(e){ e.preventDefault(); open() });
+  }
+  backdrop.addEventListener('click', close);
+  // Messages from the settings iframe
+  window.addEventListener('message', function(e){
+    var d=e.data||{};
+    if(d.type==='zcl-close'){ close() }
+    else if(d.type==='zcl-night'){
+      document.body.classList.toggle('night-mode', !!d.on);
+      if(gear) gear.classList.toggle('on', !!d.on);
+    }
+    // zcl-fov: nothing to do live; finder re-reads sfVFOV on open
+  });
+})();
+</script>
+
+
+<script>
+/* PWA install relay — beforeinstallprompt only fires on the top-level page, not
+   inside the settings iframe, so we capture it here and bridge it to Settings. */
+(function(){
+  var deferred = null;
+  function frameWin(){
+    var f = document.getElementById('zcl-set-frame') || document.getElementById('es-set-frame');
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+  function tellFrame(msg){ var w = frameWin(); if(w) w.postMessage(msg, '*') }
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferred = ev;
+    tellFrame({ type:'zcl-install-available' });
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    tellFrame({ type:'zcl-installed' });
+  });
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.type === 'zcl-do-install' && deferred){
+      deferred.prompt();
+      deferred.userChoice.finally(function(){ deferred = null });
+    } else if(d.type === 'zcl-install-query'){
+      tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

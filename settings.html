@@ -1,0 +1,555 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<title>Settings · Dark Sky Almanac</title>
+<meta name="description" content="Settings and calibration for the Dark Sky Almanac sky finder and display preferences.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Settings · Dark Sky Almanac">
+<meta property="og:description" content="Settings and calibration for the Dark Sky Almanac sky finder and display preferences.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/settings">
+<meta property="og:url" content="https://app.darkskyalmanac.com/settings">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<style>
+html,body{margin:0;padding:0;background:#141319}
+html,body{min-height:100dvh}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none;font-family:'Montserrat',-apple-system,sans-serif}
+*{box-sizing:border-box}
+
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;
+  font-family:'Montserrat',-apple-system,sans-serif;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+
+#zcl-set-wrap{padding-bottom:env(safe-area-inset-bottom);min-height:100dvh;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%,rgba(72,68,86,.30),transparent 55%),
+    radial-gradient(ellipse 100% 70% at 50% 110%,rgba(56,54,68,.26),transparent 55%),
+    radial-gradient(circle at 50% 40%,#22212c 0%,#1a1922 55%,#141319 100%);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+#zcl-set-wrap::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:0}
+#zcl-set-wrap::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
+
+/* gear / night quick toggle, top-right (matches other pages' position) */
+/* Night mode: do NOT put a filter on <body> — a filter makes <body> the
+   containing block for position:fixed children, which drops the fixed gear
+   button and nav to the bottom of the page and breaks tap targets. Instead we
+   tint the whole screen with a fixed overlay that sits above content but below
+   interactive controls, and darken the page background directly. */
+body.night-mode{background:#0a0000 !important}
+body.night-mode #zcl-set-wrap{filter:grayscale(1) brightness(0.45) sepia(1) hue-rotate(-40deg) saturate(5)}
+body.night-mode .pwa-nav{backdrop-filter:none;-webkit-backdrop-filter:none;background:#0d0a18;filter:grayscale(1) brightness(0.5) sepia(1) hue-rotate(-40deg) saturate(5)}
+#pwa-night-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);z-index:10002;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(10,8,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(203,168,90,.28);color:#6A6055;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-family:inherit;text-decoration:none}
+#pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
+.zcl-set-inner{position:relative;z-index:1;max-width:640px;margin:0 auto;padding:0 20px 40px}
+
+/* title */
+.zcl-set-titlebar{text-align:center;padding:34px 24px 8px}
+.zcl-set-title{font-size:clamp(22px,3.6vw,30px);font-weight:600;letter-spacing:.07em;
+  color:#F2E4BE;text-transform:uppercase;text-shadow:0 0 22px rgba(203,168,90,.2)}
+.zcl-set-sub{font-size:13px;color:#9A8E6E;margin-top:8px}
+
+/* section */
+.zcl-set-sec{margin-top:26px}
+.zcl-set-seclabel{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
+  color:#CBA85A;margin-bottom:12px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.28)}
+
+/* row card */
+.zcl-set-card{background:#0d0a18;border:1px solid rgba(203,168,90,.2);border-radius:9px;
+  padding:15px 16px;margin-bottom:11px}
+.zcl-set-row{display:flex;align-items:center;gap:14px}
+.zcl-set-rowtext{flex:1;min-width:0}
+.zcl-set-rowtitle{font-size:15px;color:#E4D9B8;letter-spacing:.02em}
+.zcl-set-rowdesc{font-size:12.5px;color:#8A7C5C;margin-top:3px;line-height:1.45}
+
+/* toggle switch */
+.zcl-set-switch{flex-shrink:0;width:50px;height:28px;border-radius:14px;cursor:pointer;
+  background:rgba(120,110,85,.3);border:1px solid rgba(203,168,90,.35);position:relative;transition:background .2s}
+.zcl-set-switch.on{background:rgba(120,0,0,.6);border-color:rgba(200,40,40,.7)}
+.zcl-set-knob{position:absolute;top:2px;left:2px;width:22px;height:22px;border-radius:50%;
+  background:#CBA85A;transition:transform .2s,background .2s}
+.zcl-set-switch.on .zcl-set-knob{transform:translateX(22px);background:#CC2222}
+
+/* slider */
+.zcl-set-slider{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;
+  outline:none;cursor:pointer;margin:16px 0 6px;
+  background:linear-gradient(to right,#CBA85A 0%,#CBA85A var(--pct,50%),rgba(203,168,90,.2) var(--pct,50%),rgba(203,168,90,.2) 100%)}
+.zcl-set-slider::-webkit-slider-thumb{-webkit-appearance:none;width:20px;height:20px;border-radius:50%;
+  background:#CBA85A;border:2px solid #0d0a18;box-shadow:0 0 6px rgba(203,168,90,.5)}
+.zcl-set-slider::-moz-range-thumb{width:20px;height:20px;border-radius:50%;background:#CBA85A;border:2px solid #0d0a18}
+.zcl-set-sliderrow{display:flex;align-items:center;justify-content:space-between;font-size:11px;
+  letter-spacing:.06em;color:#8A7050}
+.zcl-set-fovval{font-size:20px;color:#CBA85A;font-weight:500;letter-spacing:.02em}
+.zcl-set-reset{font-family:inherit;font-size:10px;letter-spacing:.1em;text-transform:uppercase;
+  color:#CBA85A;background:rgba(203,168,90,.1);border:1px solid rgba(203,168,90,.4);
+  border-radius:4px;padding:5px 11px;cursor:pointer;margin-top:8px}
+.zcl-set-reset:active{background:rgba(203,168,90,.25)}
+
+.zcl-set-note{font-size:12px;color:#7A6E55;line-height:1.55;margin-top:10px}
+
+/* install & offline */
+.zcl-set-installbtn{font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.03em;
+  color:#15110d;background:linear-gradient(180deg,#E6CC85,#CBA85A);border:none;
+  border-radius:8px;padding:12px 20px;cursor:pointer;margin-top:13px;width:100%;
+  box-shadow:0 2px 14px rgba(203,168,90,.35)}
+.zcl-set-installbtn:active{transform:scale(.98)}
+.zcl-set-installguide{margin-top:13px;font-size:13px;color:#C9BD97;line-height:1.6}
+.zcl-set-installguide ol{margin:8px 0 0;padding-left:20px}
+.zcl-set-installguide li{margin-bottom:5px}
+.zcl-set-installguide .zcl-set-ai{display:inline-flex;align-items:center;justify-content:center;
+  width:21px;height:21px;border-radius:5px;background:rgba(203,168,90,.16);
+  border:1px solid rgba(203,168,90,.4);vertical-align:-5px;margin:0 1px}
+.zcl-set-installguide b{color:#F2E4BE}
+.zcl-set-offline{display:flex;align-items:center;gap:9px;margin-top:14px;
+  font-size:12.5px;color:#A89D7E;line-height:1.4}
+.zcl-set-offline-dot{flex-shrink:0;width:10px;height:10px;border-radius:50%;
+  background:#7A6E55;box-shadow:0 0 0 3px rgba(122,110,85,.18)}
+.zcl-set-offline-dot.ready{background:#7BC77B;box-shadow:0 0 0 3px rgba(123,199,123,.2),0 0 8px rgba(123,199,123,.5)}
+.zcl-set-offline-dot.partial{background:#E6B45A;box-shadow:0 0 0 3px rgba(230,180,90,.2)}
+.zcl-set-calibresult{margin-top:12px;padding:11px 13px;border-radius:7px;
+  background:rgba(203,168,90,.08);border:1px solid rgba(203,168,90,.3);
+  font-family:'Courier New',monospace;font-size:12px;color:#E4D9B8;line-height:1.6;
+  word-break:break-word}
+.zcl-set-calibresult b{color:#CBA85A;font-weight:600}
+.zcl-set-calibresult .zcl-set-calibhint{font-family:'Montserrat',sans-serif;font-size:11px;
+  color:#8A7C5C;margin-top:8px;display:block;line-height:1.45}
+/* manual nudge sliders */
+.zcl-set-nudge{margin-top:12px}
+.zcl-set-nudgerow{display:flex;justify-content:space-between;align-items:baseline;margin:8px 0 2px}
+.zcl-set-nudgelbl{font-size:12px;color:#A89D7E}
+.zcl-set-nudgeval{font-size:13px;font-weight:600;color:#CBA85A;font-family:'Courier New',monospace}
+.zcl-set-link{display:inline-block;margin-top:4px;font-size:13px;color:#CBA85A;text-decoration:none;
+  border-bottom:1px solid rgba(203,168,90,.4);padding-bottom:1px}
+
+/* close button — hidden by default, shown only inside the popup iframe */
+.zcl-set-close{display:none;position:absolute;top:14px;right:16px;z-index:3;
+  width:34px;height:34px;border-radius:50%;background:rgba(203,168,90,.1);
+  border:1px solid rgba(203,168,90,.4);color:#CBA85A;font-size:16px;line-height:1;
+  cursor:pointer;align-items:center;justify-content:center}
+.zcl-set-titlebar{position:relative}
+
+/* ── embed mode (loaded inside the in-page popup iframe) ── */
+body.embed #zcl-set-wrap{padding-bottom:24px!important;min-height:auto;background:transparent}
+body.embed .pwa-nav{display:none}
+body.embed #pwa-night-btn{display:none}
+body.embed .zcl-set-close{display:flex}
+body.embed .zcl-set-titlebar{padding-top:20px}
+body.embed .zcl-set-sub{display:none}
+body.embed.night-mode{filter:none;background:transparent !important}
+body.embed.night-mode #zcl-set-wrap{filter:none}
+</style>
+</head>
+<body>
+<div id="zcl-set-wrap">
+  <div class="zcl-set-inner">
+    <div class="zcl-set-titlebar">
+      <button class="zcl-set-close" id="zcl-set-close" aria-label="Close settings">&#10005;</button>
+      <div class="zcl-set-title">Settings</div>
+      <div class="zcl-set-sub">Display and Sky Finder options</div>
+    </div>
+
+    <!-- INSTALL & OFFLINE -->
+    <div class="zcl-set-sec">
+      <div class="zcl-set-seclabel">Install &amp; Offline</div>
+      <div class="zcl-set-card">
+        <div class="zcl-set-rowtitle">Add to Home Screen</div>
+        <div class="zcl-set-rowdesc">Install the almanac as an app on your phone — it opens full-screen with no browser bars, and once installed it works completely offline. Perfect for dark-sky sites with no signal.</div>
+        <button class="zcl-set-installbtn" id="zcl-set-install" style="display:none">Add to Home Screen</button>
+        <div class="zcl-set-installguide" id="zcl-set-installguide"></div>
+        <div class="zcl-set-offline" id="zcl-set-offline">
+          <span class="zcl-set-offline-dot" id="zcl-set-offline-dot"></span>
+          <span id="zcl-set-offline-txt">Checking offline status…</span>
+        </div>
+        <button class="zcl-set-reset" id="zcl-set-recache" style="margin-top:12px">Download everything for offline</button>
+        <div class="zcl-set-note">"Download everything for offline" forces every page, map, and image into storage now, so you're covered even if you didn't visit them all first.</div>
+      </div>
+    </div>
+
+    <!-- DISPLAY -->
+    <div class="zcl-set-sec">
+      <div class="zcl-set-seclabel">Display</div>
+      <div class="zcl-set-card">
+        <div class="zcl-set-row">
+          <div class="zcl-set-rowtext">
+            <div class="zcl-set-rowtitle">Night Vision Mode</div>
+            <div class="zcl-set-rowdesc">Tints the whole app dim red to protect your dark-adapted eyes at the telescope. Stays on as you move between pages.</div>
+          </div>
+          <div class="zcl-set-switch" id="zcl-set-night"><div class="zcl-set-knob"></div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SKY FINDER -->
+    <div class="zcl-set-sec">
+      <div class="zcl-set-seclabel">Sky Finder Zoom</div>
+      <div class="zcl-set-card">
+        <div class="zcl-set-rowtitle">Camera field of view</div>
+        <div class="zcl-set-rowdesc">If the Moon or Milky Way markers drift as you pan the camera — sitting right when centered but sliding off toward the edges — nudge this until a marker tracks a known object across the whole frame. Lower = the markers move faster across the screen.</div>
+        <input type="range" class="zcl-set-slider" id="zcl-set-fov" min="15" max="110" step="1" value="70">
+        <div class="zcl-set-sliderrow">
+          <span>Narrow (15°)</span>
+          <span class="zcl-set-fovval" id="zcl-set-fovval">70°</span>
+          <span>Wide (110°)</span>
+        </div>
+        <button class="zcl-set-reset" id="zcl-set-fovreset">Reset to default</button>
+        <div class="zcl-set-note">Tip: first use <b>Align</b> in the Sky Finder to fix the starting point, then fine-tune this zoom so a marker stays locked on a known object as you sweep across the whole frame.</div>
+      </div>
+    </div>
+
+    <!-- ALIGNMENT -->
+    <div class="zcl-set-sec">
+      <div class="zcl-set-seclabel">Sky Finder Alignment</div>
+      <div class="zcl-set-card">
+        <div class="zcl-set-rowtitle">Quick Align (recommended)</div>
+        <div class="zcl-set-rowdesc">If the star and planet markers sit in the wrong place, the fix takes one tap. Open the Sky Finder, tap <b>Align</b> in the tools row, and the app picks the brightest unmistakable thing in the sky right now — the Moon, a bright planet, or a bright star — and tells you exactly what to aim at. Center it in the crosshair and tap <b>Align</b>. That\u2019s it. Phone compasses are often off by 10\u201330\u00B0; this corrects it in a second.</div>
+        <div class="zcl-set-note">No need to know any stars by name — the app names the target for you and points you to it. Daytime works too: if nothing else is up it aligns to the Sun (aim using the screen only; don\u2019t look at the Sun directly).</div>
+      </div>
+
+      <div class="zcl-set-card">
+        <div class="zcl-set-rowtitle">Manual nudge</div>
+        <div class="zcl-set-rowdesc">If you\u2019d rather fine-tune by hand, or your compass is only slightly off, nudge the whole sky left/right (compass) and up/down (altitude) until the markers sit on the real objects. These add to whatever Quick Align set.</div>
+        <div class="zcl-set-nudge">
+          <div class="zcl-set-nudgerow">
+            <span class="zcl-set-nudgelbl">Left / Right (compass)</span>
+            <span class="zcl-set-nudgeval" id="zcl-set-aznudgeval">0\u00B0</span>
+          </div>
+          <input type="range" class="zcl-set-slider" id="zcl-set-aznudge" min="-30" max="30" step="0.5" value="0">
+          <div class="zcl-set-nudgerow">
+            <span class="zcl-set-nudgelbl">Up / Down (altitude)</span>
+            <span class="zcl-set-nudgeval" id="zcl-set-altnudgeval">0\u00B0</span>
+          </div>
+          <input type="range" class="zcl-set-slider" id="zcl-set-altnudge" min="-20" max="20" step="0.5" value="0">
+        </div>
+        <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:12px">
+          <button class="zcl-set-reset" id="zcl-set-calibreset" style="border-color:rgba(203,80,80,.5);color:#D88080">Reset alignment</button>
+        </div>
+        <div class="zcl-set-note">Reset clears both Quick Align and the manual nudge, returning the Sky Finder to the raw compass reading.</div>
+        <div class="zcl-set-calibresult" id="zcl-set-calibresult" style="display:none"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+<div style="text-align:center;padding:14px 0 4px;font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:.12em;color:#4A4438" id="zcl-ver-line"></div>
+<script>
+(function(){
+  if('caches' in window){
+    caches.keys().then(function(keys){
+      var sw=keys.filter(function(k){return k.startsWith('zion-sky-')});
+      if(sw.length) document.getElementById('zcl-ver-line').textContent=sw[sw.length-1];
+    }).catch(function(){});
+  }
+})();
+</script>
+
+<script>
+"use strict";
+(function(){
+  var $ = function(id){ return document.getElementById(id) };
+
+  // Embed mode: when loaded inside the in-page popup iframe (?embed=1), hide the
+  // nav bar, the title sub-text, and the gear, and add a close button. Changes
+  // are relayed to the parent page via postMessage so night mode applies live.
+  var EMBED = /[?&]embed=1/.test(location.search);
+  function tellParent(msg){ try{ if(window.parent && window.parent!==window) window.parent.postMessage(msg,'*') }catch(e){} }
+
+  if(EMBED){
+    document.body.classList.add('embed');
+  }
+
+  // ── Night mode (shared via sessionStorage, applied on every page) ──
+  function nightIsOn(){ try{ return sessionStorage.getItem('nightMode')==='1' }catch(e){ return false } }
+  function applyNight(on){
+    document.body.classList.toggle('night-mode', on);
+    $('zcl-set-night').classList.toggle('on', on);
+    var g=$('pwa-night-btn'); if(g) g.classList.toggle('on', on);
+    try{ sessionStorage.setItem('nightMode', on?'1':'0') }catch(e){}
+    tellParent({type:'zcl-night', on:on});
+  }
+  applyNight(nightIsOn());
+  $('zcl-set-night').addEventListener('click', function(){ applyNight(!nightIsOn()) });
+  var gear=$('pwa-night-btn');
+  if(gear) gear.addEventListener('click', function(e){ e.preventDefault(); applyNight(!nightIsOn()) });
+
+  // ── Sky Finder field of view ──
+  // Must match finder.html: SF_DEFAULTS.VFOV = 70, valid range 15–110
+  // (iPhone main camera ~70° vertical; range covers telephoto to ultra-wide).
+  var DEFAULT_FOV = 70;
+  function getFov(){
+    try{ var v = parseFloat(sessionStorage.getItem('sfVFOV')||''); if(!isNaN(v)) return v }catch(e){}
+    return DEFAULT_FOV;
+  }
+  function setFov(v){
+    v = Math.max(15, Math.min(110, Math.round(v)));
+    try{ sessionStorage.setItem('sfVFOV', String(v)) }catch(e){}
+    $('zcl-set-fov').value = v;
+    $('zcl-set-fovval').innerHTML = v + '°';
+    var pct = ((v-15)/(110-15)*100).toFixed(0)+'%';
+    $('zcl-set-fov').style.setProperty('--pct', pct);
+    tellParent({type:'zcl-fov', v:v});
+  }
+  setFov(getFov());
+  $('zcl-set-fov').addEventListener('input', function(){ setFov(+this.value) });
+  $('zcl-set-fovreset').addEventListener('click', function(){ setFov(DEFAULT_FOV) });
+
+  // Manual nudge sliders — post the absolute value to the Finder on each move.
+  // Values persist in sessionStorage (written by the Finder) but we also restore
+  // the slider position here from localStorage mirror for display continuity.
+  var azNudge = $('zcl-set-aznudge');
+  var altNudge = $('zcl-set-altnudge');
+  var azNudgeVal = $('zcl-set-aznudgeval');
+  var altNudgeVal = $('zcl-set-altnudgeval');
+  function fmtNudge(v){ return (v>0?'+':'') + (+v).toFixed(1).replace(/\.0$/,'') + '\u00B0' }
+  if(azNudge){
+    // restore last position if present
+    try{ var sa = sessionStorage.getItem('sfNudgeAz'); if(sa!==null){ azNudge.value = sa } }catch(e){}
+    azNudgeVal.textContent = fmtNudge(azNudge.value);
+    azNudge.addEventListener('input', function(){
+      azNudgeVal.textContent = fmtNudge(this.value);
+      tellParent({type:'zcl-az-nudge', value:+this.value});
+    });
+  }
+  if(altNudge){
+    try{ var st = sessionStorage.getItem('sfNudgeAlt'); if(st!==null){ altNudge.value = st } }catch(e){}
+    altNudgeVal.textContent = fmtNudge(altNudge.value);
+    altNudge.addEventListener('input', function(){
+      altNudgeVal.textContent = fmtNudge(this.value);
+      tellParent({type:'zcl-alt-nudge', value:+this.value});
+    });
+  }
+
+  // Reset alignment: clear every storage key the Sky Finder uses so a bad
+  // bad calibration (e.g. a degenerate solve that flipped the sky) goes away.
+  // Both sessionStorage (active values) and localStorage (last-result display)
+  // get wiped, and the FOV slider snaps back to the default.
+  var calibResetBtn = $('zcl-set-calibreset');
+  if(calibResetBtn) calibResetBtn.addEventListener('click', function(){
+    try{
+      sessionStorage.removeItem('sfVFOV');
+      sessionStorage.removeItem('sfCalibAz');
+      sessionStorage.removeItem('sfCalibAlt');
+      sessionStorage.removeItem('sfNudgeAz');
+      sessionStorage.removeItem('sfNudgeAlt');
+      localStorage.removeItem('sfCalibResult');
+    }catch(e){}
+    // Reset FOV slider visually
+    setFov(DEFAULT_FOV);
+    // Snap the manual nudge sliders back to 0
+    if(azNudge){ azNudge.value = 0; azNudgeVal.textContent = fmtNudge(0) }
+    if(altNudge){ altNudge.value = 0; altNudgeVal.textContent = fmtNudge(0) }
+    // Hide the "last calibration" readout
+    var box = $('zcl-set-calibresult');
+    if(box){ box.style.display = 'none'; box.innerHTML = '' }
+    // Confirm to the user
+    calibResetBtn.textContent = 'Reset \u2713';
+    setTimeout(function(){ calibResetBtn.textContent = 'Reset alignment' }, 1800);
+    // Tell parent (Sky Finder, if open) to drop its in-memory calibration too
+    tellParent({type:'zcl-calib-reset'});
+  });
+
+  // Show the most recent calibration result (persisted to localStorage by the
+  // Finder). This is how you read back the numbers to bake into a future build.
+  (function showCalibResult(){
+    var box = $('zcl-set-calibresult');
+    if(!box) return;
+    var raw;
+    try{ raw = localStorage.getItem('sfCalibResult') }catch(e){ return }
+    if(!raw) return;
+    var r;
+    try{ r = JSON.parse(raw) }catch(e){ return }
+    if(!r || typeof r.azOffset === 'undefined') return;
+    var d = r.when ? new Date(r.when) : null;
+    var dateStr = d ? d.toLocaleString() : '';
+    var src = r.via ? r.via : 'Calibration';
+    var tgt = r.target ? r.target : (r.stars ? r.stars[0] + ' &amp; ' + r.stars[1] : '');
+    box.innerHTML =
+      'Last alignment (' + src + '):<br>' +
+      'compass offset = <b>' + r.azOffset + '</b>\u00B0<br>' +
+      'altitude offset = <b>' + r.altOffset + '</b>\u00B0' +
+      '<span class="zcl-set-calibhint">' +
+        (tgt ? 'Aligned to ' + tgt + '. ' : '') +
+        (dateStr ? dateStr + '.' : '') +
+      '</span>';
+    box.style.display = 'block';
+  })();
+
+  // Close button (only meaningful in embed mode)
+  var closeBtn = $('zcl-set-close');
+  if(closeBtn) closeBtn.addEventListener('click', function(){ tellParent({type:'zcl-close'}) });
+
+  // ── Install & Offline ──────────────────────────────────────────────────
+  (function installAndOffline(){
+    var installBtn   = $('zcl-set-install');
+    var guide        = $('zcl-set-installguide');
+    var offlineDot   = $('zcl-set-offline-dot');
+    var offlineTxt   = $('zcl-set-offline-txt');
+    var recacheBtn   = $('zcl-set-recache');
+
+    // Are we already running as an installed PWA?
+    var isStandalone = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+      || window.navigator.standalone === true;
+
+    var ua = navigator.userAgent || '';
+    var isIOS = /iPad|iPhone|iPod/.test(ua) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);   // iPadOS 13+
+    var isAndroid = /Android/.test(ua);
+
+    // 1. The install prompt (beforeinstallprompt) only fires on the TOP-LEVEL
+    //    page, not inside this settings iframe. The parent page captures it and
+    //    bridges it to us: it sends 'zcl-install-available' when an install is
+    //    possible, and triggers the native prompt when we send 'zcl-do-install'.
+    var installAvailable = false;
+    window.addEventListener('message', function(ev){
+      var d = ev.data || {};
+      if(d.type === 'zcl-install-available'){
+        installAvailable = true;
+        if(!isStandalone && installBtn) installBtn.style.display = '';
+      } else if(d.type === 'zcl-install-none'){
+        installAvailable = false;
+        if(installBtn) installBtn.style.display = 'none';
+      } else if(d.type === 'zcl-installed'){
+        if(installBtn) installBtn.style.display = 'none';
+        if(guide) guide.innerHTML = '<b style="color:#7BC77B">\u2713 Installed.</b> Open the almanac from your home screen \u2014 it now works fully offline.';
+      }
+    });
+    if(installBtn){
+      installBtn.addEventListener('click', function(){
+        tellParent({ type:'zcl-do-install' });
+      });
+    }
+    // Ask the parent whether an install prompt is already waiting.
+    tellParent({ type:'zcl-install-query' });
+
+    // 2. Guidance text. iOS never fires beforeinstallprompt, so we always show
+    //    the manual Share-sheet steps there. Android without the event gets the
+    //    menu steps. Standalone hides all of this.
+    if(guide){
+      if(isStandalone){
+        guide.innerHTML = '<b style="color:#7BC77B">\u2713 Running as an installed app.</b> You\u2019re all set — everything works offline.';
+      } else if(isIOS){
+        guide.innerHTML =
+          'On iPhone/iPad, in <b>Safari</b>:' +
+          '<ol>' +
+            '<li>Tap the <span class="zcl-set-ai">\u2191</span> <b>Share</b> button at the bottom of the screen.</li>' +
+            '<li>Scroll down and tap <b>Add to Home Screen</b> <span class="zcl-set-ai">\u2295</span>.</li>' +
+            '<li>Tap <b>Add</b> \u2014 the almanac appears on your home screen as an app.</li>' +
+          '</ol>';
+      } else if(isAndroid){
+        guide.innerHTML =
+          'On Android, in <b>Chrome</b>: tap the <b>\u22EE</b> menu (top-right), then <b>Add to Home screen</b> (or <b>Install app</b>). ' +
+          'If a button appears above, you can just tap that.';
+      } else {
+        guide.innerHTML =
+          'In your browser\u2019s menu, choose <b>Install</b> or <b>Add to Home Screen</b>. ' +
+          'If an install button appears above, tap that for a one-tap install.';
+      }
+    }
+
+    // 3. Offline-readiness: ask the service worker whether every critical asset
+    //    is cached, and reflect it with a colored dot.
+    function setOffline(state, txt){
+      if(offlineDot){ offlineDot.className = 'zcl-set-offline-dot' + (state ? ' ' + state : '') }
+      if(offlineTxt){ offlineTxt.textContent = txt }
+    }
+    function queryCacheStatus(){
+      if(!('serviceWorker' in navigator) || !navigator.serviceWorker.controller){
+        setOffline('partial', 'Offline cache will be ready after your first full load.');
+        return;
+      }
+      var done = false;
+      function onMsg(ev){
+        var d = ev.data || {};
+        if(d.type === 'zcl-cache-status-reply'){
+          done = true;
+          navigator.serviceWorker.removeEventListener('message', onMsg);
+          if(d.ready){
+            setOffline('ready', 'Ready for offline \u2014 all ' + d.total + ' core pages and maps are saved on your device.');
+          } else {
+            setOffline('partial', 'Partly cached (' + d.have + ' of ' + d.total + '). Tap \u201CDownload everything\u201D to finish.');
+          }
+        }
+      }
+      navigator.serviceWorker.addEventListener('message', onMsg);
+      navigator.serviceWorker.controller.postMessage({ type:'zcl-cache-status' });
+      // Fallback if the SW doesn't answer (older cached SW): assume partial.
+      setTimeout(function(){ if(!done) setOffline('partial', 'Tap \u201CDownload everything for offline\u201D to be sure.') }, 1500);
+    }
+
+    // 4. Re-cache button: tell the SW to (re)download everything now.
+    if(recacheBtn){
+      recacheBtn.addEventListener('click', function(){
+        if(!('serviceWorker' in navigator) || !navigator.serviceWorker.controller){
+          setOffline('partial', 'Reload the app once while online, then try again.');
+          return;
+        }
+        recacheBtn.textContent = 'Downloading…';
+        recacheBtn.disabled = true;
+        var done = false;
+        function onMsg(ev){
+          if((ev.data||{}).type === 'zcl-recache-done'){
+            done = true;
+            navigator.serviceWorker.removeEventListener('message', onMsg);
+            recacheBtn.textContent = 'Done \u2713';
+            setTimeout(function(){ recacheBtn.textContent = 'Download everything for offline'; recacheBtn.disabled = false }, 1800);
+            queryCacheStatus();
+          }
+        }
+        navigator.serviceWorker.addEventListener('message', onMsg);
+        navigator.serviceWorker.controller.postMessage({ type:'zcl-recache' });
+        setTimeout(function(){
+          if(!done){ recacheBtn.textContent = 'Download everything for offline'; recacheBtn.disabled = false; queryCacheStatus() }
+        }, 8000);
+      });
+    }
+
+    // Hide the re-cache control when already standalone+ready is less useful?
+    // No — keep it; it's harmless and reassuring. Just run the status check.
+    queryCacheStatus();
+  })();
+})();
+
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem active" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+</body>
+</html>

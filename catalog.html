@@ -1,0 +1,845 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Deep Sky Catalog · Dark Sky Almanac</title>
+<meta name="description" content="Messier, Caldwell, NGC, and IC deep-sky objects — nebulae, galaxies, and star clusters — ranked by how high they climb tonight under dark skies.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Deep Sky Catalog · Dark Sky Almanac">
+<meta property="og:description" content="Messier, Caldwell, NGC, and IC deep-sky objects — nebulae, galaxies, and star clusters — ranked by how high they climb tonight under dark skies.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/catalog">
+<meta property="og:url" content="https://app.darkskyalmanac.com/catalog">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<style>
+html,body{margin:0;padding:0;background:#141319}
+html,body{min-height:100dvh}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;
+  font-family:'Montserrat',-apple-system,sans-serif;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+#zcl-cal-wrap,#zcl-moon-wrap,#zcl-con-wrap,#zcl-m-wrap,#zcl-sf-wrap,#zcl-idx-wrap,#zcl-sk-wrap,#zcl-ss-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+#pwa-install{position:fixed;left:12px;right:12px;bottom:74px;z-index:10000;
+  display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+  background:rgba(13,10,24,.97);border:1px solid rgba(203,168,90,.4);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);font-family:'Montserrat',sans-serif}
+#pwa-install.show{display:flex}
+#pwa-install .txt{flex:1;font-size:12px;color:#C9BD97;line-height:1.4}
+#pwa-install .txt b{color:#F2E4BE;font-weight:600}
+#pwa-install button{font-family:inherit;font-size:11px;letter-spacing:.1em;font-weight:600;
+  text-transform:uppercase;border-radius:5px;padding:8px 12px;cursor:pointer;border:none}
+#pwa-install .go{background:#CBA85A;color:#0d0a18}
+#pwa-install .dismiss{background:none;color:#7A6E55;border:1px solid rgba(203,168,90,.3)}
+
+/* ── Global night mode (injected into every PWA page) ── */
+#pwa-night-overlay{position:fixed;inset:0;pointer-events:none;z-index:10001;
+  background:rgba(160,0,0,.0);transition:background .4s ease}
+body.night-mode{background:#000 !important}
+body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+
+#pwa-night-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);z-index:10002;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(10,8,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(203,168,90,.32);color:#9A8A66;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-family:inherit}
+#pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
+</style>
+</head>
+<body><!-- ════════════════════════════════════════════════════════════
+     ZION DARK SKY ALMANAC · DEEP SKY CATALOG
+     Curated multi-catalog list (Messier, Caldwell, NGC, IC) of the
+     best deep-sky objects, ranked tonight by altitude during
+     astronomical dark hours from Zion.
+     Self-contained Squarespace embed (paste into a Code Block).
+     Sections:  1 CSS   2 MARKUP   3 DATA   4 ASTRO   5 RENDER   6 INIT
+     ════════════════════════════════════════════════════════════ -->
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+
+<!-- ─────────────────────────  1 · CSS  ───────────────────────── -->
+<style>
+#zcl-m-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;
+  background:#141319;font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
+@media(max-width:640px){
+  #zcl-m-wrap{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+}
+#zcl-m-wrap *{box-sizing:border-box}
+#zcl-m-page{width:100%;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%,rgba(72,68,86,.30),transparent 55%),
+    radial-gradient(ellipse 100% 70% at 50% 110%,rgba(56,54,68,.26),transparent 55%),
+    radial-gradient(circle at 50% 40%,#22212c 0%,#1a1922 55%,#141319 100%);
+  border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+#zcl-m-page::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
+#zcl-m-page::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
+.zcl-m-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
+#zcl-m-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
+
+.zcl-m-fl{position:absolute;width:40px;height:40px;z-index:3;pointer-events:none;opacity:.58}
+.zcl-m-fl svg{width:100%;height:100%}
+.zcl-m-tl{top:14px;left:14px}.zcl-m-tr{top:14px;right:14px;transform:scaleX(-1)}
+.zcl-m-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-m-br{bottom:14px;right:14px;transform:scale(-1,-1)}
+
+.zcl-m-inner{position:relative;z-index:1;max-width:1100px;margin:0 auto;padding:0 28px}
+
+/* title banner */
+.zcl-m-titlebar{text-align:center;padding:42px 24px 22px}
+.zcl-m-maintitle{font-size:clamp(24px,3.8vw,38px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
+  text-transform:uppercase;line-height:1.2;text-shadow:0 0 24px rgba(203,168,90,.22)}
+.zcl-m-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:14px auto 11px;max-width:360px}
+.zcl-m-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-m-titlerule .zcl-m-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-m-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-m-subtitle{font-size:13px;letter-spacing:.02em;color:#9A8E6E;max-width:560px;margin:0 auto}
+
+/* intro paragraph */
+.zcl-m-intro{max-width:680px;margin:32px auto 18px;padding:18px 18px 4px 18px;
+  border-top:1px solid rgba(203,168,90,.18);
+  font-size:13px;line-height:1.7;color:#8A7C5C;text-align:center}
+.zcl-m-intro b{color:#A89878;font-style:normal;font-weight:500}
+
+/* catalog legend */
+.zcl-m-catlegend{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;max-width:900px;margin:0 auto 26px;padding:0 12px}
+@media(max-width:680px){.zcl-m-catlegend{grid-template-columns:repeat(2,1fr)}}
+.zcl-m-catcard{padding:11px 12px 12px;border-radius:7px;background:rgba(0,0,0,.2);border:1px solid rgba(203,168,90,.18)}
+.zcl-m-catname{font-size:12px;letter-spacing:.1em;text-transform:uppercase;font-weight:600;color:#CBA85A;margin-bottom:2px}
+.zcl-m-catcount{font-size:10px;letter-spacing:.06em;color:#7A6E55;margin-bottom:6px}
+.zcl-m-catdesc{font-size:11px;line-height:1.5;color:#8A7C5C}
+
+/* filter rows */
+.zcl-m-filterrow{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;margin:0 0 10px;padding:0 12px}
+.zcl-m-filterlbl{width:100%;text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#7A6E55;margin-bottom:2px}
+.zcl-m-controls{margin-bottom:8px}
+.zcl-m-toggle{display:flex;justify-content:center;margin:2px 0 22px}
+.zcl-m-chip{font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66;
+  border:1px solid rgba(203,168,90,.28);border-radius:4px;padding:6px 12px;cursor:pointer;
+  background:rgba(0,0,0,.18);transition:all .15s}
+.zcl-m-chip:hover{border-color:#CBA85A;color:#CBA85A}
+.zcl-m-chip.active{background:rgba(203,168,90,.18);border-color:#CBA85A;color:#E4D9B8}
+.zcl-m-chip.toggle.active{background:rgba(203,168,90,.28)}
+
+/* cross-reference tag in card meta */
+.zcl-m-also{color:#9A8E6E}
+
+/* tonight summary banner */
+.zcl-m-tonight{max-width:760px;margin:0 auto 22px;padding:12px 16px;border-radius:7px;
+  background:rgba(203,168,90,.05);border:1px solid rgba(203,168,90,.22);
+  font-size:12.5px;color:#A89B72;text-align:center;line-height:1.5}
+.zcl-m-tonight b{color:#E4D9B8;font-weight:500}
+
+/* card grid */
+.zcl-m-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:14px;padding:0 0 40px}
+@media(max-width:520px){.zcl-m-grid{grid-template-columns:1fr;gap:12px;padding-bottom:32px}}
+
+.zcl-m-card{position:relative;background:#0d0a18;border:1px solid rgba(203,168,90,.22);border-radius:9px;
+  padding:14px 16px 16px;display:flex;flex-direction:column;transition:border-color .2s,transform .2s;cursor:pointer}
+.zcl-m-card:hover{border-color:#CBA85A;transform:translateY(-1px)}
+.zcl-m-card.zcl-m-dim{opacity:.42}
+
+.zcl-m-head{display:flex;align-items:flex-start;justify-content:space-between;gap:10px;margin-bottom:8px}
+.zcl-m-cardid{font-size:11px;letter-spacing:.14em;font-weight:600;color:#CBA85A;text-transform:uppercase;line-height:1.1}
+.zcl-m-cardname{font-size:15px;color:#E4D9B8;line-height:1.25;margin-top:2px}
+.zcl-m-rank{font-size:10px;letter-spacing:.1em;color:#8A6E32;text-transform:uppercase;flex-shrink:0;
+  background:rgba(203,168,90,.08);border:1px solid rgba(203,168,90,.22);border-radius:3px;padding:3px 7px;white-space:nowrap}
+.zcl-m-rank.top{background:rgba(203,168,90,.22);color:#F2E4BE;border-color:#CBA85A}
+
+.zcl-m-meta{display:flex;flex-wrap:wrap;gap:10px;font-size:11px;color:#8A7C5C;margin:6px 0 10px;
+  padding-bottom:9px;border-bottom:1px solid rgba(203,168,90,.13)}
+.zcl-m-meta span{display:inline-flex;align-items:center;gap:4px}
+.zcl-m-meta b{color:#9A8A66;font-weight:500;font-size:10px;letter-spacing:.08em;text-transform:uppercase}
+
+.zcl-m-stats{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px}
+.zcl-m-stat{padding:7px 9px;border-radius:5px;background:rgba(0,0,0,.22);border:1px solid rgba(203,168,90,.13)}
+.zcl-m-statlbl{font-size:9.5px;letter-spacing:.1em;color:#7A6E55;text-transform:uppercase;margin-bottom:3px}
+.zcl-m-statval{font-size:13.5px;color:#E4D9B8;line-height:1.1}
+.zcl-m-stat.good{background:rgba(203,168,90,.07);border-color:rgba(203,168,90,.3)}
+.zcl-m-stat.good .zcl-m-statval{color:#F2E4BE}
+
+.zcl-m-desc{font-size:12.5px;line-height:1.55;color:#9A8E6E;margin-top:6px}
+
+/* not visible state */
+.zcl-m-notvis{font-size:11px;color:#7A6E55;margin-top:6px;text-align:center;
+  padding:6px;background:rgba(0,0,0,.22);border-radius:4px}
+
+@media(max-width:520px){
+  .zcl-m-titlebar{padding:32px 16px 18px}
+  .zcl-m-intro{font-size:13px;padding:0 18px}
+  .zcl-m-controls{padding:0 18px}
+  .zcl-m-inner{padding:0 14px}
+}
+</style>
+
+<!-- ────────────────────────  2 · MARKUP  ──────────────────────── -->
+<div id="zcl-m-wrap">
+<div id="zcl-m-page">
+  <div class="zcl-m-goldbar"></div>
+  <div class="zcl-m-fl zcl-m-tl"></div><div class="zcl-m-fl zcl-m-tr"></div>
+  <div class="zcl-m-fl zcl-m-bl"></div><div class="zcl-m-fl zcl-m-br"></div>
+  <svg id="zcl-m-stars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
+
+  <div class="zcl-m-inner">
+    <div class="zcl-m-titlebar">
+      <div class="zcl-m-maintitle">Deep Sky Catalog</div>
+      <div class="zcl-m-titlerule">
+        <span class="zcl-m-rline"></span>
+        <svg class="zcl-m-rstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+        <span class="zcl-m-rline"></span>
+      </div>
+      <div class="zcl-m-subtitle">Messier &middot; Caldwell &middot; NGC &middot; IC</div>
+    </div>
+
+    <div class="zcl-m-tonight" id="zcl-m-tonight">Computing tonight's sky…</div>
+
+    <div class="zcl-m-catlegend">
+      <div class="zcl-m-catcard">
+        <div class="zcl-m-catname">Messier</div>
+        <div class="zcl-m-catcount" id="zcl-m-count-Messier">&nbsp;</div>
+        <div class="zcl-m-catdesc">A French comet hunter's 1771&ndash;1781 list of fuzzy "things to ignore" &mdash; now the most famous deep-sky list in history.</div>
+      </div>
+      <div class="zcl-m-catcard">
+        <div class="zcl-m-catname">Caldwell</div>
+        <div class="zcl-m-catcount" id="zcl-m-count-Caldwell">&nbsp;</div>
+        <div class="zcl-m-catdesc">Patrick Moore's 1995 complement to Messier &mdash; 109 bright objects Messier missed, many far north or south of his Paris rooftop.</div>
+      </div>
+      <div class="zcl-m-catcard">
+        <div class="zcl-m-catname">NGC</div>
+        <div class="zcl-m-catcount" id="zcl-m-count-NGC">&nbsp;</div>
+        <div class="zcl-m-catdesc">The New General Catalogue, 1888 &mdash; nearly 7,840 nebulae, galaxies, and clusters. The master reference astronomers still use today.</div>
+      </div>
+      <div class="zcl-m-catcard">
+        <div class="zcl-m-catname">IC</div>
+        <div class="zcl-m-catcount" id="zcl-m-count-IC">&nbsp;</div>
+        <div class="zcl-m-catdesc">The Index Catalogue, two supplements to the NGC published 1895 and 1908, adding 5,386 more objects found after the original.</div>
+      </div>
+    </div>
+
+    <div class="zcl-m-filterrow zcl-m-controls" id="zcl-m-catfilter">
+      <span class="zcl-m-filterlbl">Catalog</span>
+      <span class="zcl-m-chip active" data-cat="all">All Catalogs</span>
+      <span class="zcl-m-chip" data-cat="Messier">Messier</span>
+      <span class="zcl-m-chip" data-cat="Caldwell">Caldwell</span>
+      <span class="zcl-m-chip" data-cat="NGC">NGC &amp; IC</span>
+    </div>
+
+    <div class="zcl-m-filterrow zcl-m-controls" id="zcl-m-controls">
+      <span class="zcl-m-filterlbl">Object Type</span>
+      <span class="zcl-m-chip active" data-f="all">All Types</span>
+      <span class="zcl-m-chip" data-f="Nebula">Nebulae</span>
+      <span class="zcl-m-chip" data-f="Galaxy">Galaxies</span>
+      <span class="zcl-m-chip" data-f="Globular">Globular Clusters</span>
+      <span class="zcl-m-chip" data-f="Open Cluster">Open Clusters</span>
+    </div>
+
+    <div class="zcl-m-toggle">
+      <span class="zcl-m-chip toggle" id="zcl-m-visonly" data-on="0">Up Tonight Only</span>
+    </div>
+
+    <div class="zcl-m-grid" id="zcl-m-grid"></div>
+
+    <div class="zcl-m-intro">
+      In the 1770s, French astronomer <b>Charles Messier</b> was a comet hunter, and in his nightly sweeps of the sky he kept being fooled by fuzzy patches that looked tantalizingly like comets but never moved. Frustrated, he compiled a list of these annoyances — <b>things to ignore</b>. Two and a half centuries later, his comet discoveries are forgotten, and his catalogue of distractions is the most famous deep-sky observing list in history: the Crab Nebula, the Andromeda Galaxy, the Pleiades, the Orion Nebula. Messier worked from Paris, though, and missed plenty of bright southern and far-northern showpieces — which is why this page also draws from <b>Patrick Moore's Caldwell catalogue</b> (his 1995 complement list), the sprawling <b>New General Catalogue</b>, and its <b>Index Catalogue</b> supplements, the working reference astronomers still use to name almost everything else. Above are the brightest of all four, ranked by how high they will climb above Zion tonight.
+    </div>
+  </div>
+</div>
+</div>
+
+<!-- ────────────────────────  3 · SCRIPT  ──────────────────────── -->
+<script>
+"use strict";
+(function(){
+
+// ─────────────────────  CONSTANTS / LOCATION  ─────────────────
+const LAT = 37.1986, LNG = -112.9869;   // Zion
+const TZ = 'America/Denver';
+const NOW = new Date();
+const $ = id => document.getElementById(id);
+
+// ─────────────────────────  3 · DATA  ────────────────────────
+// 86 curated deep-sky objects spanning four catalogs (Messier, Caldwell,
+// NGC, IC). Every object in the Sky Finder's SF_MESSIER list has a match
+// here; this page additionally cross-references Caldwell numbers where
+// they apply and adds a handful of other essential targets.
+// [id, name, type, constellation, RA_hours, Dec_deg, mag, description, cats[], also]
+const OBJECTS = [
+ // ── Nebulae (31) ──
+ ['M1','Crab Nebula','Nebula','Taurus',5.5755,22.0145,8.4,
+  "The shredded remains of a star that exploded as a supernova in 1054 AD, recorded by Chinese astronomers as a daytime \u201cguest star.\u201d At its heart spins a neutron star pulsing 30 times a second.",['Messier'],null],
+ ['M8','Lagoon Nebula','Nebula','Sagittarius',18.0631,-24.3867,6,
+  "A vast star-forming cloud 4,000 light years away \u2014 bright enough to see naked-eye as a misty patch in the Milky Way. The \u201clagoon\u201d is a dark lane of dust splitting the glowing gas.",['Messier'],null],
+ ['M16','Eagle Nebula','Nebula','Serpens',18.3122,-13.7867,6,
+  "Home of the Pillars of Creation \u2014 towering columns of gas where stars are actively being born. Made world-famous by Hubble; the cluster of newborn stars is visible in any scope, the pillars subtle but present.",['Messier'],null],
+ ['M17','Swan Nebula','Nebula','Sagittarius',18.3464,-16.1717,6,
+  "One of the brightest emission nebulae in the sky. The bright central bar of gas really does look like a swan floating on the Milky Way.",['Messier'],null],
+ ['M20','Trifid Nebula','Nebula','Sagittarius',18.0356,-23.0289,6.3,
+  "Split into three petals by dark dust lanes (the name means \u201cthree-lobed\u201d), with both red emission and blue reflection nebulosity visible \u2014 a rare combination.",['Messier'],null],
+ ['M27','Dumbbell Nebula','Nebula','Vulpecula',19.9934,22.7211,7.5,
+  "The first planetary nebula ever discovered (Messier himself, 1764) and the brightest in the sky \u2014 the cast-off shell of a dying Sun-like star, glowing in an apple-core shape.",['Messier'],null],
+ ['M42','Orion Nebula','Nebula','Orion',5.5881,-5.3911,4,
+  "The closest major star-forming region to Earth at 1,344 light years \u2014 the single most spectacular nebula in the eyepiece, with four young Trapezium stars carving its glowing heart.",['Messier'],null],
+ ['M57','Ring Nebula','Nebula','Lyra',18.8923,33.0292,8.8,
+  "A perfect glowing smoke-ring 2,300 light years away \u2014 the exhaled outer shell of a dying star. Unmistakable even in small scopes, and a preview of our Sun\u2019s distant fate.",['Messier'],null],
+ ['M97','Owl Nebula','Nebula','Ursa Major',11.2461,55.019,9.9,
+  "A planetary nebula 2,000 light years away whose two dark \u201ceyes\u201d give it an owlish face. Subtle but rewarding under dark skies in the Big Dipper.",['Messier'],null],
+ ['M76','Little Dumbbell','Nebula','Perseus',1.7054,51.5754,10.1,
+  "A small, faint planetary nebula widely considered the toughest Messier object to observe well. Its twin-lobed shape mirrors its larger cousin M27 \u2014 a genuinely satisfying catch.",['Messier'],null],
+ ['M78','Reflection Nebula','Nebula','Orion',5.7794,0.0792,8.3,
+  "Orion\u2019s quieter nebula \u2014 not glowing on its own but reflecting the blue light of hot young stars embedded within it, about 1,300 light years away. The brightest reflection nebula in the sky.",['Messier'],null],
+ ['IC 1396','Elephant\u2019s Trunk Nebula','Nebula','Cepheus',21.652,57.5,3.5,
+  "A vast, faint star-forming region wrapped around a young open cluster. Within it, a dark dust pillar known as the Elephant\u2019s Trunk has become one of the most photographed narrowband targets in the northern sky.",['IC'],null],
+ ['NGC 1499','California Nebula','Nebula','Perseus',4.055,36.42,6.0,
+  "An enormous, extremely faint emission nebula whose outline genuinely resembles the state of California. Nearly invisible to the eye, but a hydrogen-alpha filter reveals it spectacularly in long exposures.",['NGC'],null],
+ ['NGC 2237','Rosette Nebula','Nebula','Monoceros',6.532,5.04,9.0,
+  "A vast, circular emission nebula wrapped around the open cluster NGC 2244 \u2014 a blossoming star-forming region some 5,200 light years away, shaped uncannily like a rose.",['NGC','Caldwell'],'Caldwell 49'],
+ ['NGC 2392','Eskimo Nebula','Nebula','Gemini',7.486,20.91,9.2,
+  "A planetary nebula with a double-shell structure that resembles a face peering out from a fur-lined parka hood \u2014 unmistakable in images, subtle but distinct in the eyepiece.",['NGC'],null],
+ ['NGC 6543','Cat\u2019s Eye Nebula','Nebula','Draco',17.976,66.63,8.1,
+  "One of the most structurally intricate planetary nebulae known \u2014 nested shells, knots, and arcs that made it one of the first targets imaged by Hubble in dramatic, multi-layered detail.",['NGC'],null],
+ ['NGC 6826','Blinking Planetary','Nebula','Cygnus',19.745,50.52,8.8,
+  "Stares back at its observer: look straight at it and the faint outer shell vanishes, leaving only the bright central star; look slightly away and the shell flashes back into view \u2014 the source of its nickname.",['NGC'],null],
+ ['NGC 6888','Crescent Nebula','Nebula','Cygnus',20.202,38.36,7.4,
+  "A fast stellar wind from a rare Wolf-Rayet star is slamming into gas the star shed earlier in its life, sculpting a glowing crescent-shaped shock front \u2014 a prized narrowband imaging target.",['NGC','Caldwell'],'Caldwell 27'],
+ ['NGC 6992','Veil Nebula (East)','Nebula','Cygnus',20.94,31.72,7.0,
+  "The eastern arc of a 20,000-year-old supernova remnant \u2014 delicate, glowing lacework left behind by a star that exploded long before recorded history. Among the finest wide-field nebulae in the sky.",['NGC','Caldwell'],'Caldwell 33'],
+ ['NGC 7000','North America Nebula','Nebula','Cygnus',20.98,44.33,4.0,
+  "A vast emission nebula whose outline strikingly resembles the continent of North America. Under truly dark skies near Deneb, it is one of the few nebulae bright enough to glimpse with the naked eye.",['NGC','Caldwell'],'Caldwell 20'],
+ ['NGC 7293','Helix Nebula','Nebula','Aquarius',22.494,-20.84,7.6,
+  "The closest bright planetary nebula to Earth, just 650 light years away. Its uncanny resemblance to a giant eye staring back from space has earned it the nickname \u201cEye of God.\u201d",['NGC','Caldwell'],'Caldwell 63'],
+ ['NGC 6960','Veil Nebula (West)','Nebula','Cygnus',20.76,30.71,7.0,
+  "The western half of the same ancient supernova remnant as the Veil Nebula East, anchored by the bright foreground star 52 Cygni. Together the two arcs frame one of the sky\u2019s great wide-field nebula complexes.",['NGC','Caldwell'],'Caldwell 34'],
+ ['NGC 281','Pacman Nebula','Nebula','Cassiopeia',0.865,56.6167,7.8,
+  "An emission nebula whose dark dust lanes carve a grinning, chomping shape into the glowing gas \u2014 a popular narrowband target wrapped around a young embedded star cluster.",['NGC'],null],
+ ['NGC 7023','Iris Nebula','Nebula','Cepheus',21.0167,68.1667,7.1,
+  "A brilliant blue reflection nebula wrapped around a single hot young star, its delicate wisps of dust shaped like flower petals \u2014 a favorite target for color astrophotography.",['NGC','Caldwell'],'Caldwell 4'],
+ // ── v116 IC additions: seven more genuinely interesting IC nebulae ──
+ ['IC 405','Flaming Star Nebula','Nebula','Auriga',5.2750,34.4500,6.0,
+  "The runaway star AE Aurigae plows headlong into a passing molecular cloud, lighting it up in streaks of red emission and blue reflection \u2014 emission and reflection nebulosity wrapped around a single luminous star.",['IC','Caldwell'],'Caldwell 31'],
+ ['IC 434','Horsehead Nebula region','Nebula','Orion',5.6792,-2.4500,7.3,
+  "A faint pink emission curtain stretching south from Alnitak in Orion\u2019s belt. Silhouetted against its glow, the small dark dust cloud Barnard 33 takes the unmistakable shape of a horse\u2019s head \u2014 among the most photographed objects in the sky.",['IC'],null],
+ ['IC 443','Jellyfish Nebula','Nebula','Gemini',6.2833,22.5167,7.5,
+  "A supernova remnant about 5,000 light years away, its expanding shock front crumpled against a foreground cloud into the wispy \u201ctentacle\u201d filaments that earn it the nickname. A favorite hydrogen-alpha and sulfur-II target.",['IC'],null],
+ ['IC 1805','Heart Nebula','Nebula','Cassiopeia',2.5500,61.4500,6.5,
+  "A vast star-forming complex shaped like a beating heart, lit from within by the young cluster Melotte 15. Two-and-a-half degrees across \u2014 five full Moons wide \u2014 it\u2019s a signature wide-field narrowband target.",['IC'],null],
+ ['IC 1848','Soul Nebula','Nebula','Cassiopeia',2.9333,60.4333,6.5,
+  "The constant companion to the Heart Nebula sitting just east of it; the two are almost always imaged together as \u201cHeart and Soul.\u201d Several embedded clusters drive its emission.",['IC'],null],
+ ['IC 5070','Pelican Nebula','Nebula','Cygnus',20.8333,44.3333,8.0,
+  "Wraps around the North America Nebula across the dark \u201cGulf of Mexico\u201d between them. From the right angle the silhouette resembles a pelican\u2019s head and beak \u2014 and the same hot stars that light NGC 7000 power its glow too.",['IC'],null],
+ ['IC 5146','Cocoon Nebula','Nebula','Cygnus',21.8917,47.2667,7.2,
+  "A small jewel of emission and reflection nebulosity at the eastern end of a long, conspicuous dark dust lane (Barnard 168). The combination \u2014 bright glowing cocoon dragging a dark wake \u2014 makes it a uniquely composed astrophotography target.",['IC','Caldwell'],'Caldwell 19'],
+ // ── Galaxies (32) ──
+ ['M31','Andromeda Galaxy','Galaxy','Andromeda',0.71231,41.2692,3.4,
+  "At 2.5 million light years, the most distant object visible to the naked eye and the nearest large galaxy \u2014 a trillion-star spiral on a collision course with the Milky Way.",['Messier'],null],
+ ['M33','Triangulum Galaxy','Galaxy','Triangulum',1.56412,30.6602,5.7,
+  "The third-largest galaxy in our Local Group at 2.7 million light years \u2014 a famously difficult naked-eye object whose light is spread thin across the sky.",['Messier'],null],
+ ['M51','Whirlpool Galaxy','Galaxy','Canes Venatici',13.4979,47.1953,8.4,
+  "The first galaxy ever recognized to have spiral structure, sketched by Lord Rosse in 1845. Caught mid-interaction with a smaller companion tugging at one arm.",['Messier'],null],
+ ['M64','Black Eye Galaxy','Galaxy','Coma Berenices',12.9456,21.6828,8.5,
+  "A spiral 17 million light years away with a striking dark dust band across its bright nucleus, like a cosmic black eye. The dust band\u2019s gas rotates opposite to the rest of the galaxy.",['Messier'],null],
+ ['M65','Leo Triplet','Galaxy','Leo',11.3155,13.0925,9.3,
+  "Three galaxies 35 million light years away sharing a single eyepiece field (M65, M66, NGC 3628). NGC 3628 trails a faint 300,000-light-year tidal tail of stars drawn out by gravity.",['Messier'],null],
+ ['M81','Bode\u2019s Galaxy','Galaxy','Ursa Major',9.9259,69.0653,6.9,
+  "A grand orderly spiral 12 million light years away, locked in slow gravitational dance with M82. The two fit a single low-power field \u2014 a galactic before-and-after.",['Messier'],null],
+ ['M82','Cigar Galaxy','Galaxy','Ursa Major',9.9319,69.6792,8.4,
+  "A starburst galaxy so disrupted by its encounter with M81 that it\u2019s furiously birthing stars and venting plumes of glowing hydrogen from its core.",['Messier'],null],
+ ['M101','Pinwheel Galaxy','Galaxy','Ursa Major',14.0537,54.3489,7.9,
+  "A huge face-on spiral 21 million light years away, nearly twice the diameter of the Milky Way. Needs truly dark, moonless skies; rewards them spectacularly.",['Messier'],null],
+ ['M104','Sombrero Galaxy','Galaxy','Virgo',12.6669,-11.6231,8,
+  "An edge-on galaxy tilted six degrees from edge-on, with a thick dark dust lane cutting across its glowing bulge like the brim of a hat. Hides a billion-Sun black hole.",['Messier'],null],
+ ['M77','Cetus A','Galaxy','Cetus',2.7115,-0.0133,8.9,
+  "An active galaxy 47 million light years away whose nucleus blazes with light from gas spiraling into a supermassive black hole \u2014 one of the brightest Seyfert galaxies in the sky.",['Messier'],null],
+ ['M63','Sunflower Galaxy','Galaxy','Canes Venatici',13.2637,42.0292,8.6,
+  "A spiral 27 million light years away whose patchy, feathered arms look like the petals of a sunflower. Belongs to the same galaxy group as M51.",['Messier'],null],
+ ['M94','Cat\u2019s Eye Galaxy','Galaxy','Canes Venatici',12.8481,41.1206,8.2,
+  "A compact spiral 16 million light years away with a brilliant tight core ringed by a faint halo of young blue stars \u2014 a textbook \u201cstarburst ring\u201d galaxy, small and easy to find.",['Messier'],null],
+ ['M106','Galaxy in Canes Venatici','Galaxy','Canes Venatici',12.316,47.3035,8.4,
+  "A large bright spiral 24 million light years away with a violently active core firing \u201canomalous arms\u201d of superheated gas out through the galaxy. Badly underrated.",['Messier'],null],
+ ['M87','Virgo A','Galaxy','Virgo',12.5137,12.3911,8.6,
+  "The giant elliptical at the heart of the Virgo Cluster, 53 million light years away. Its central black hole \u2014 6.5 billion times the Sun\u2019s mass \u2014 was the first ever directly imaged, in 2019.",['Messier'],null],
+ ['M49','Galaxy in Virgo','Galaxy','Virgo',12.4956,8.0004,8.4,
+  "The first member of the Virgo Cluster ever discovered, in 1771. A giant elliptical galaxy glowing with the combined light of perhaps a trillion stars, among the brightest in the whole cluster.",['Messier'],null],
+ ['M61','Galaxy in Virgo','Galaxy','Virgo',12.3656,4.4736,9.7,
+  "A grand-design face-on spiral and one of the largest members of the Virgo Cluster. Several supernovae have been caught flaring in its arms over the past century, more than almost any other Messier galaxy.",['Messier'],null],
+ ['M74','Galaxy in Pisces','Galaxy','Pisces',1.6114,15.7836,9.4,
+  "A textbook face-on spiral, gorgeous in long-exposure images \u2014 yet its light is spread so thin that many consider it the hardest Messier object to see visually, despite its catalogued brightness.",['Messier'],null],
+ ['M83','Southern Pinwheel','Galaxy','Hydra',13.6171,-29.8656,7.5,
+  "One of the closest and brightest barred spirals in the sky, blazing with star formation. It has hosted six recorded supernovae \u2014 more than almost any other galaxy known, earning constant attention from astronomers.",['Messier'],null],
+ ['M96','Galaxy in Leo','Galaxy','Leo',10.7789,11.82,9.3,
+  "The brightest member of the Leo I Group, its spiral arms visibly asymmetric \u2014 warped out of shape by gravitational tugging from its group neighbors, including M105 nearby.",['Messier'],null],
+ ['M105','Galaxy in Leo','Galaxy','Leo',10.7972,12.5814,9.3,
+  "A giant elliptical in the Leo I Group harboring a supermassive black hole of roughly 200 million solar masses \u2014 enormous relative to the galaxy\u2019s modest size, among the densest known.",['Messier'],null],
+ ['M108','Surfboard Galaxy','Galaxy','Ursa Major',11.1919,55.674,10.0,
+  "A nearly edge-on barred spiral sitting just off the bowl of the Big Dipper, close in the sky to the Owl Nebula M97. It shows almost no central bulge, giving it a flat, surfboard-like profile.",['Messier'],null],
+ ['M109','Barred Spiral in Ursa Major','Galaxy','Ursa Major',11.9605,53.3747,9.8,
+  "A barred spiral near Phecda, at the bowl of the Big Dipper \u2014 among the most distant Messier objects at roughly 83 million light years, trailing several small companion galaxies.",['Messier'],null],
+ ['M66','Leo Triplet','Galaxy','Leo',11.3382,12.9914,8.9,
+  "The brightest of the Leo Triplet, its spiral arms visibly warped by the gravity of its two close neighbors, M65 and NGC 3628 \u2014 three galaxies sharing a single low-power eyepiece field.",['Messier'],null],
+ ['NGC 3628','Hamburger Galaxy','Galaxy','Leo',11.3367,13.5886,9.5,
+  "The third member of the Leo Triplet \u2014 a perfectly edge-on spiral split by a thick dust lane that gives it a stacked \u201chamburger bun\u201d profile, trailing a faint 300,000-light-year tidal tail of stars.",['NGC'],null],
+ ['NGC 2403','Galaxy in Camelopardalis','Galaxy','Camelopardalis',7.614,65.6,8.4,
+  "One of the brightest galaxies outside our Local Group, similar in size and structure to M33. Easily picked up in binoculars from a dark sky, and a rewarding telescope target for its star-forming knots.",['NGC'],null],
+ ['NGC 253','Sculptor Galaxy','Galaxy','Sculptor',0.793,-25.29,7.1,
+  "One of the brightest galaxies in the sky outside the Local Group \u2014 a dusty, edge-tilted starburst galaxy and the brightest member of the nearby Sculptor Group, just 11 million light years away.",['NGC'],null],
+ ['NGC 4565','Needle Galaxy','Galaxy','Coma Berenices',12.606,25.99,9.6,
+  "Widely considered the finest edge-on spiral in the sky \u2014 a razor-thin needle of starlight split cleanly by a dark central dust lane. A favorite test of a dark, transparent night.",['NGC'],null],
+ ['NGC 6946','Fireworks Galaxy','Galaxy','Cepheus',20.581,60.15,9.6,
+  "Has hosted ten recorded supernovae since 1917 \u2014 more than any other known galaxy \u2014 earning its \u201cFireworks\u201d nickname. A face-on spiral straddling the Cepheus-Cygnus border.",['NGC','Caldwell'],'Caldwell 12'],
+ ['M32','Andromeda Companion','Galaxy','Andromeda',0.7122,40.8652,8.1,
+  "A compact dwarf elliptical galaxy, one of Andromeda\u2019s two bright companions \u2014 visible as a small, dense knot of light just south of M31\u2019s glowing core in the same wide-field view.",['Messier'],null],
+ ['M110','Andromeda Companion','Galaxy','Andromeda',0.6725,41.6856,8.5,
+  "Andromeda\u2019s other bright companion \u2014 larger and softer-edged than M32, with faint dust lanes and pockets of recent star formation that are unusual for an elliptical galaxy.",['Messier'],null],
+ ['NGC 891','Silver Sliver Galaxy','Galaxy','Andromeda',2.376,42.349,9.9,
+  "An edge-on spiral split by a razor-thin dust lane, often called the Milky Way\u2019s near-twin in size and structure. A demanding but beloved target for deep, dark-sky astrophotography.",['NGC','Caldwell'],'Caldwell 23'],
+ ['NGC 7331','Deer Lick Group','Galaxy','Pegasus',22.6171,34.4154,9.5,
+  "A near-twin of our own Milky Way in size and shape, with a small chain of much fainter background galaxies \u2014 the Deer Lick Group \u2014 huddled beside it in the same field. Often imaged alongside Stephan\u2019s Quintet just to the south.",['NGC'],null],
+ // ── Globular Clusters (13) ──
+ ['M2','Globular in Aquarius','Globular','Aquarius',21.5575,-0.8233,6.5,
+  "A rich, slightly oval globular 37,000 light years away holding roughly 150,000 stars \u2014 13 billion years old, a relic of the early galaxy.",['Messier'],null],
+ ['M3','Globular in Canes Venatici','Globular','Canes Venatici',13.7033,28.3772,6.2,
+  "Half a million stars bound 34,000 light years away, around 11 billion years old. One of the finest globulars in the northern sky.",['Messier'],null],
+ ['M5','Globular in Serpens','Globular','Serpens',15.3092,2.0817,5.7,
+  "One of the oldest known globulars at 13 billion years, packed with variable stars. Many observers quietly rank it above M13 \u2014 looser and beautifully asymmetric.",['Messier'],null],
+ ['M13','Hercules Cluster','Globular','Hercules',16.6949,36.4611,5.8,
+  "The showpiece globular of the northern sky \u2014 several hundred thousand stars 25,000 light years away. Target of the 1974 Arecibo Message, humanity\u2019s first deliberate radio broadcast to the stars.",['Messier'],null],
+ ['M15','Globular in Pegasus','Globular','Pegasus',21.4995,12.167,6.2,
+  "One of the densest globulars known \u2014 core-collapsed, possibly harboring a black hole. The only globular known to contain a planetary nebula within it.",['Messier'],null],
+ ['M22','Globular in Sagittarius','Globular','Sagittarius',18.6066,-23.9047,5.1,
+  "One of the brightest globulars in the entire sky at 10,000 light years \u2014 closer than most. The first globular ever discovered, in 1665, and hides black holes among its stars.",['Messier'],null],
+ ['M53','Globular in Coma Berenices','Globular','Coma Berenices',13.2153,18.1681,7.6,
+  "A bright globular 58,000 light years away \u2014 one of the most distant from the galactic center. Beautifully resolved at moderate power.",['Messier'],null],
+ ['M92','Globular in Hercules','Globular','Hercules',17.2853,43.1361,6.4,
+  "Forever in M13\u2019s shadow, but tighter, more concentrated, and one of the oldest objects in the galaxy at 14 billion years. Would be a celebrated showpiece in any other constellation.",['Messier'],null],
+ ['M4','Globular in Scorpius','Globular','Scorpius',16.3933,-26.5258,5.6,
+  "One of the closest globular clusters at 7,200 light years, sitting right beside red Antares. Loose enough that even a small scope resolves its stars, with a distinctive central bar.",['Messier'],null],
+ ['M10','Globular in Ophiuchus','Globular','Ophiuchus',16.9521,-4.1003,6.6,
+  "A bright, concentrated globular about 14,000 light years away near the center of Ophiuchus. Pairs with nearby M12 \u2014 two ancient star-cities just three degrees apart.",['Messier'],null],
+ ['M12','Globular in Ophiuchus','Globular','Ophiuchus',16.7855,-1.9483,6.7,
+  "A loose, easily-resolved globular nicknamed the \u201cGumball Cluster,\u201d about 16,000 light years away. Its outer stars are sparse enough that astronomers once suspected the galaxy was stripping them away.",['Messier'],null],
+ ['M30','Globular in Capricornus','Globular','Capricornus',21.67,-23.1797,7.7,
+  "A dense, core-collapsed globular 27,000 light years away, with striking chains of stars radiating outward from its compressed center \u2014 a visibly unusual shape among globulars.",['Messier'],null],
+ ['M55','Globular in Sagittarius','Globular','Sagittarius',19.6664,-30.9628,6.3,
+  "A large, loose globular 17,600 light years away \u2014 one of the easiest globulars to resolve into individual stars, even in a small telescope, thanks to its open, uncrowded structure.",['Messier'],null],
+ // ── Open Clusters (17) ──
+ ['M6','Butterfly Cluster','Open Cluster','Scorpius',17.6694,-32.2425,4.2,
+  "A scattering of about 80 stars 1,600 light years away that traces out the unmistakable shape of butterfly wings. Brilliant in binoculars.",['Messier'],null],
+ ['M7','Ptolemy\u2019s Cluster','Open Cluster','Scorpius',17.8967,-34.7929,3.3,
+  "The southernmost Messier object, mentioned by Ptolemy in 130 AD \u2014 a bright naked-eye cluster of 80 stars in the rich star-fields of the inner Milky Way.",['Messier'],null],
+ ['M11','Wild Duck Cluster','Open Cluster','Scutum',18.8506,-6.27,5.8,
+  "A dense fan-shaped knot of about 2,900 stars 6,000 light years away \u2014 so compact it almost looks like a globular. Shaped like a flight of ducks in V-formation.",['Messier'],null],
+ ['M35','Open Cluster in Gemini','Open Cluster','Gemini',6.15,24.3367,5.3,
+  "A big, bright cluster at the feet of Gemini, 2,800 light years away and roughly the size of the full moon. Tiny distant NGC 2158 sits beside it for a near-and-far contrast.",['Messier'],null],
+ ['M36','Open Cluster in Auriga','Open Cluster','Auriga',5.6056,34.1364,6.3,
+  "About 60 stars, only 25 million years old \u2014 practically newborn. Part of the rich Auriga trio with M37 and M38.",['Messier'],null],
+ ['M37','Auriga Cluster','Open Cluster','Auriga',5.8717,32.5453,6.2,
+  "The richest of three Auriga clusters, with around 500 stars 350 million years old. A glittering field with a striking orange-red star at the center.",['Messier'],null],
+ ['M38','Starfish Cluster','Open Cluster','Auriga',5.4783,35.855,7.4,
+  "A loose, irregular cluster 4,200 light years away whose star pattern traces a rough starfish shape. Companion to nearby NGC 1907 in the same field.",['Messier'],null],
+ ['M44','Beehive Cluster','Open Cluster','Cancer',8.67,19.6231,3.7,
+  "One of the nearest open clusters at 580 light years, known since antiquity \u2014 Galileo first resolved its haze in 1609. A naked-eye smudge that bursts into stars in binoculars.",['Messier'],null],
+ ['M45','Pleiades','Open Cluster','Taurus',3.7903,24.1058,1.6,
+  "The most famous star cluster in the sky, known to virtually every culture for at least 30,000 years. A young blue cluster 444 light years away, only 100 million years old.",['Messier'],null],
+ ['M67','Open Cluster in Cancer','Open Cluster','Cancer',8.8556,11.8133,6.1,
+  "One of the oldest known open clusters at 3.5\u20135 billion years \u2014 about the age of the Sun, and a rare survivor since most open clusters disperse young. A rich field of several hundred stars.",['Messier'],null],
+ ['M46','Open Cluster in Puppis','Open Cluster','Puppis',7.6964,-14.8133,6.1,
+  "A rich, even cluster of around 500 stars 5,500 light years away \u2014 with a surprise: the small planetary nebula NGC 2438 appears superimposed on it, a chance line-of-sight pairing.",['Messier'],null],
+ ['M39','Open Cluster in Cygnus','Open Cluster','Cygnus',21.5292,48.4334,4.6,
+  "A large, loose, bright naked-eye cluster just 824 light years away \u2014 among the closest open clusters to Earth. Best appreciated in binoculars, where its sparse stars fill the field.",['Messier'],null],
+ ['M48','Open Cluster in Hydra','Open Cluster','Hydra',8.2283,-5.8,5.8,
+  "A bright, large cluster with an odd history: Messier\u2019s recorded position was off by several degrees, and for two centuries astronomers debated which cluster he actually meant before this one was confirmed.",['Messier'],null],
+ ['M52','Open Cluster in Cassiopeia','Open Cluster','Cassiopeia',23.4231,61.5933,6.9,
+  "A rich, young cluster only about 35 million years old, sitting near the glowing arc of the Bubble Nebula. Compact enough to hold together nicely in a single binocular field.",['Messier'],null],
+ ['M93','Open Cluster in Puppis','Open Cluster','Puppis',7.7425,-23.8525,6.2,
+  "A compact, bright cluster of about 80 stars in a butterfly-shaped pattern \u2014 discovered by Messier himself in 1781, his very last open-cluster find before completing the catalogue.",['Messier'],null],
+ ['NGC 869 & 884','Double Cluster','Open Cluster','Perseus',2.334,57.13,4.3,
+  "Two enormous naked-eye open clusters side by side, roughly 7,500 and 6,800 light years away \u2014 among the most photogenic binocular targets in the entire sky, a true showpiece of the Perseus Milky Way.",['NGC','Caldwell'],'Caldwell 14'],
+ ['NGC 457','Owl Cluster','Open Cluster','Cassiopeia',1.323,58.29,6.4,
+  "Two bright stars form unmistakable glowing \u201ceyes,\u201d giving this cluster its alternate nickname, the E.T. Cluster \u2014 one of the most recognizable open clusters in the sky.",['NGC','Caldwell'],'Caldwell 13'],
+];
+
+// ─────────────────────────  4 · ASTRONOMY  ─────────────────────
+// Julian Date at instant of given UTC Date
+function julianDay(d){
+  const Y=d.getUTCFullYear(),M=d.getUTCMonth()+1,D=d.getUTCDate();
+  const UT=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;
+  return 367*Y-Math.floor(7*(Y+Math.floor((M+9)/12))/4)+Math.floor(275*M/9)+D+1721013.5+UT/24;
+}
+// Greenwich Mean Sidereal Time (hours) at given UTC Date
+function gmst(date){
+  const T=(julianDay(date)-2451545.0)/36525.0;
+  let g=280.46061837+360.98564736629*(julianDay(date)-2451545.0)
+        +0.000387933*T*T-T*T*T/38710000;
+  g=((g%360)+360)%360;
+  return g/15;  // hours
+}
+// Local Sidereal Time (hours) for the widget's longitude
+function lst(date){
+  return ((gmst(date)+LNG/15)%24+24)%24;
+}
+// Altitude (degrees) of an RA/Dec at a given UTC instant
+function altitude(ra_h, dec_d, utc){
+  const latR=LAT*Math.PI/180, decR=dec_d*Math.PI/180;
+  const HA=((lst(utc)-ra_h)*15)*Math.PI/180;   // hour angle, radians
+  const sinAlt=Math.sin(latR)*Math.sin(decR)
+              +Math.cos(latR)*Math.cos(decR)*Math.cos(HA);
+  return Math.asin(Math.max(-1,Math.min(1,sinAlt)))*180/Math.PI;
+}
+// Max altitude (at transit, when HA=0): 90° - |LAT - DEC|.
+function maxAltitude(dec_d){ return 90-Math.abs(LAT-dec_d) }
+
+// Format Date as 12-hour Mountain Time
+function fmtMT(d){
+  if(!d||isNaN(d)) return '\u2014';
+  return new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'2-digit',hour12:true}).format(d);
+}
+// Find UTC of transit (HA=0) for an object on the night of NOW. Bracket the
+// search window around tonight's astronomical dark, then bisect.
+function findTransitUTC(ra_h, refDate){
+  // LST = RA at transit. Walk in 4-min steps over a 24-hour window centred on
+  // midnight at Zion, find sign-change in (LST - RA), then refine.
+  const base=new Date(refDate.getTime());
+  base.setUTCHours(0,0,0,0);
+  // Anchor: midnight Zion = ~07:00 UTC
+  const anchor=new Date(base.getTime()+7*3600*1000);
+  let best=null, bestAlt=-Infinity;
+  for(let dm=-720; dm<=720; dm+=4){
+    const t=new Date(anchor.getTime()+dm*60000);
+    const alt=altitude(ra_h, 0, t);  // dec irrelevant for finding HA=0
+    let lst_h=lst(t);
+    let dHA=((lst_h-ra_h)%24+24)%24;
+    if(dHA>12) dHA-=24;
+    // |dHA| minimized at transit
+    if(Math.abs(dHA)<0.05){ return t }
+  }
+  // Coarser: find minimum |HA| in the 24-hour window
+  let minHA=Infinity, minT=null;
+  for(let dm=-720; dm<=720; dm+=2){
+    const t=new Date(anchor.getTime()+dm*60000);
+    let lst_h=lst(t);
+    let dHA=((lst_h-ra_h)%24+24)%24;
+    if(dHA>12) dHA-=24;
+    if(Math.abs(dHA)<minHA){ minHA=Math.abs(dHA); minT=t }
+  }
+  return minT;
+}
+
+// Astronomical dark window for the night that starts tonight at Zion.
+// Returns {duskUTC, dawnUTC}. Dusk is tonight's astronomical twilight end;
+// dawn is the SAME night's morning astronomical twilight start (i.e.,
+// tomorrow morning's dawn from the perspective of "tonight" continuing).
+function darkWindow(refDate){
+  let duskUTC=null, dawnUTC=null;
+  if(typeof SunCalc!=='undefined'){
+    try{
+      const today=SunCalc.getTimes(refDate, LAT, LNG);
+      duskUTC=today.night||today.nauticalDusk||today.dusk;
+      // Tomorrow's nightEnd is the dawn of the night that just ended;
+      // we want the dawn that comes after tonight's dusk. SunCalc's
+      // tomorrow.nightEnd is BEFORE tomorrow.night, so it IS the dawn
+      // immediately following tonight's dusk. Confirm by checking ordering.
+      const tom=new Date(refDate.getTime()+24*3600*1000);
+      const tt=SunCalc.getTimes(tom, LAT, LNG);
+      dawnUTC=tt.nightEnd||tt.nauticalDawn||tt.dawn;
+      // Safety: if dawn < dusk, something is off — try today's nightEnd
+      if(dawnUTC && duskUTC && dawnUTC<=duskUTC){
+        dawnUTC=today.nightEnd||today.nauticalDawn||today.dawn;
+        // Still wrong? Add 24h to make it the next morning
+        if(dawnUTC<=duskUTC) dawnUTC=new Date(dawnUTC.getTime()+24*3600*1000);
+      }
+      // Safety: clamp window to <= 18 hours (a real astronomical night)
+      if(duskUTC && dawnUTC && (dawnUTC-duskUTC)>18*3600*1000){
+        dawnUTC=new Date(duskUTC.getTime()+12*3600*1000);
+      }
+    }catch(e){}
+  }
+  return {
+    duskUTC, dawnUTC,
+    isDark:(d)=> duskUTC && dawnUTC ? (d>=duskUTC && d<=dawnUTC) : true
+  };
+}
+
+// For each object, compute tonight's data: transit time, transit altitude,
+// peak altitude during dark window. Sort by peak-during-dark descending.
+function computeTonight(){
+  const dark=darkWindow(NOW);
+  const rows=OBJECTS.map(o=>{
+    const [id,name,type,con,ra,dec,mag,desc,cats,also]=o;
+    const trUTC=findTransitUTC(ra, NOW);
+    const trAlt=maxAltitude(dec);
+    // Sample altitude every 15 min during the dark window, find max
+    let peakAlt=-90, peakAt=null;
+    if(dark.duskUTC && dark.dawnUTC){
+      let t=new Date(dark.duskUTC.getTime());
+      const end=dark.dawnUTC.getTime();
+      while(t.getTime()<=end){
+        const a=altitude(ra, dec, t);
+        if(a>peakAlt){ peakAlt=a; peakAt=new Date(t.getTime()) }
+        t=new Date(t.getTime()+15*60000);
+      }
+    } else {
+      // fallback: use transit
+      peakAlt=trAlt; peakAt=trUTC;
+    }
+    return {id,name,type,con,ra,dec,mag,desc,cats,also,
+            trUTC,trAlt,peakAlt,peakAt,
+            isUp:peakAlt>=15};   // 15° is our practical visibility threshold
+  });
+  // Sort: up-tonight first (by peak altitude desc), then not-up (by transit alt desc)
+  rows.sort((a,b)=>{
+    if(a.isUp!==b.isUp) return a.isUp?-1:1;
+    return b.peakAlt-a.peakAlt;
+  });
+  return {rows, dark};
+}
+
+// ─────────────────────────  5 · RENDER  ───────────────────────
+let typeFilter='all';     // 'all' | 'Nebula' | 'Galaxy' | 'Globular' | 'Open Cluster'
+let catFilter='all';      // 'all' | 'Messier' | 'Caldwell' | 'NGC' (NGC bucket includes IC)
+let visOnly=false;        // Up Tonight Only toggle
+
+function matchesCat(r, c){
+  if(c==='all') return true;
+  if(c==='NGC') return r.cats.includes('NGC') || r.cats.includes('IC');
+  return r.cats.includes(c);
+}
+
+function cardHTML(r, rank){
+  const goodAlt = r.peakAlt>=40 ? 'good' : '';
+  const rankTag = rank<=5 ? 'top' : '';
+  let body;
+  if(r.isUp){
+    body =
+      '<div class="zcl-m-stats">'+
+        '<div class="zcl-m-stat '+goodAlt+'"><div class="zcl-m-statlbl">Peak Altitude</div><div class="zcl-m-statval">'+Math.round(r.peakAlt)+'\u00B0</div></div>'+
+        '<div class="zcl-m-stat"><div class="zcl-m-statlbl">Highest at</div><div class="zcl-m-statval">'+fmtMT(r.peakAt)+'</div></div>'+
+      '</div>';
+  } else {
+    body='<div class="zcl-m-notvis">Not above 15° during tonight\u2019s dark window</div>';
+  }
+  const catLabel = r.cats.join(' / ');
+  const alsoSpan = r.also ? '<span class="zcl-m-also"><b>Also</b> '+r.also+'</span>' : '';
+  return '<div class="zcl-m-card'+(r.isUp?'':' zcl-m-dim')+'" data-type="'+r.type+'" data-up="'+r.isUp+'">'+
+    '<div class="zcl-m-head">'+
+      '<div><div class="zcl-m-cardid">'+r.id+'</div><div class="zcl-m-cardname">'+r.name+'</div></div>'+
+      (r.isUp?'<div class="zcl-m-rank '+rankTag+'">#'+rank+'</div>':'')+
+    '</div>'+
+    '<div class="zcl-m-meta">'+
+      '<span><b>Catalog</b> '+catLabel+'</span>'+
+      '<span><b>Type</b> '+r.type+'</span>'+
+      '<span><b>In</b> '+r.con+'</span>'+
+      '<span><b>Mag</b> '+r.mag.toFixed(1)+'</span>'+
+      alsoSpan+
+    '</div>'+
+    body+
+    '<div class="zcl-m-desc">'+r.desc+'</div>'+
+  '</div>';
+}
+
+function render(){
+  const {rows, dark}=computeTonight();
+  // tonight summary banner
+  let banner;
+  if(dark.duskUTC && dark.dawnUTC){
+    const upCount=rows.filter(r=>r.isUp).length;
+    banner='Astronomical dark tonight runs <b>'+fmtMT(dark.duskUTC)+' to '+fmtMT(dark.dawnUTC)+
+           '</b>. <b>'+upCount+'</b> of '+rows.length+' catalog objects climb above 15\u00B0 during that window.';
+  } else {
+    banner='Showing tonight\u2019s sky for Zion National Park.';
+  }
+  $('zcl-m-tonight').innerHTML=banner;
+
+  // catalog legend counts (computed once per render against the full set)
+  $('zcl-m-count-Messier').textContent = rows.filter(r=>r.cats.includes('Messier')).length+' in this list';
+  $('zcl-m-count-Caldwell').textContent = rows.filter(r=>r.cats.includes('Caldwell')).length+' in this list';
+  $('zcl-m-count-NGC').textContent = rows.filter(r=>r.cats.includes('NGC')).length+' in this list';
+  $('zcl-m-count-IC').textContent = rows.filter(r=>r.cats.includes('IC')).length+' in this list';
+
+  // filter (catalog AND type AND visible-only) + render
+  let visible=rows.filter(r=>matchesCat(r,catFilter) && (typeFilter==='all'||r.type===typeFilter));
+  if(visOnly) visible=visible.filter(r=>r.isUp);
+  // Re-rank within filtered set
+  let rank=1;
+  $('zcl-m-grid').innerHTML=visible.length
+    ? visible.map(r=>cardHTML(r, r.isUp?rank++:0)).join('')
+    : '<div class="zcl-m-notvis" style="grid-column:1/-1;padding:24px">No objects match this combination of filters tonight.</div>';
+}
+
+// ─────────────────────────  6 · INIT  ─────────────────────────
+// Star field
+(function(){
+  let s='';
+  for(let i=0;i<150;i++){
+    s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>';
+  }
+  $('zcl-m-stars').innerHTML=s;
+})();
+
+// Corner filigree
+(function(){
+  const fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+    +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
+    +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
+    +'<path d="M2 19 C9 19 9 12 2 12" opacity=".55"/><path d="M19 2 C19 9 12 9 12 2" opacity=".55"/>'
+    +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
+  document.querySelectorAll('.zcl-m-fl').forEach(el=>el.innerHTML=fl);
+})();
+
+// Catalog filter row
+document.querySelectorAll('#zcl-m-catfilter .zcl-m-chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#zcl-m-catfilter .zcl-m-chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    catFilter=c.getAttribute('data-cat');
+    render();
+  });
+});
+// Type filter row
+document.querySelectorAll('#zcl-m-controls .zcl-m-chip').forEach(c=>{
+  c.addEventListener('click',()=>{
+    document.querySelectorAll('#zcl-m-controls .zcl-m-chip').forEach(x=>x.classList.remove('active'));
+    c.classList.add('active');
+    typeFilter=c.getAttribute('data-f');
+    render();
+  });
+});
+// Up Tonight Only toggle
+$('zcl-m-visonly').addEventListener('click',()=>{
+  visOnly=!visOnly;
+  $('zcl-m-visonly').classList.toggle('active',visOnly);
+  $('zcl-m-visonly').setAttribute('data-on',visOnly?'1':'0');
+  render();
+});
+
+render();
+
+})();
+</script>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+<script>
+(function(){
+  // Night mode is applied here on load if it was enabled in Settings;
+  // the gear icon (top-right) opens Settings to toggle it.
+  try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+})();
+</script>
+<!-- ════ Settings popup (shared) ════ -->
+<style>
+#zcl-set-modal{position:fixed;inset:0;z-index:10050;display:none;
+  align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px 16px}
+#zcl-set-modal.on{display:flex}
+#zcl-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#zcl-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
+  background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
+  box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;
+  animation:zcl-set-pop .2s ease}
+@keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+#zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+</style>
+<div id="zcl-set-modal">
+  <div id="zcl-set-backdrop"></div>
+  <div id="zcl-set-sheet"><iframe id="zcl-set-frame" title="Settings"></iframe></div>
+</div>
+<script>
+(function(){
+  var modal=document.getElementById('zcl-set-modal');
+  var frame=document.getElementById('zcl-set-frame');
+  var backdrop=document.getElementById('zcl-set-backdrop');
+  var gear=document.getElementById('pwa-night-btn')||document.getElementById('zcl-sf-nightbtn');
+  var loaded=false;
+  function open(){
+    if(!loaded){ frame.src='settings.html?embed=1'; loaded=true }
+    modal.classList.add('on');
+  }
+  function close(){ modal.classList.remove('on') }
+  if(gear){
+    gear.addEventListener('click', function(e){ e.preventDefault(); open() });
+  }
+  backdrop.addEventListener('click', close);
+  // Messages from the settings iframe
+  window.addEventListener('message', function(e){
+    var d=e.data||{};
+    if(d.type==='zcl-close'){ close() }
+    else if(d.type==='zcl-night'){
+      document.body.classList.toggle('night-mode', !!d.on);
+      if(gear) gear.classList.toggle('on', !!d.on);
+    }
+    // zcl-fov: nothing to do live; finder re-reads sfVFOV on open
+  });
+})();
+</script>
+
+
+<script>
+/* PWA install relay — beforeinstallprompt only fires on the top-level page, not
+   inside the settings iframe, so we capture it here and bridge it to Settings. */
+(function(){
+  var deferred = null;
+  function frameWin(){
+    var f = document.getElementById('zcl-set-frame') || document.getElementById('es-set-frame');
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+  function tellFrame(msg){ var w = frameWin(); if(w) w.postMessage(msg, '*') }
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferred = ev;
+    tellFrame({ type:'zcl-install-available' });
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    tellFrame({ type:'zcl-installed' });
+  });
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.type === 'zcl-do-install' && deferred){
+      deferred.prompt();
+      deferred.userChoice.finally(function(){ deferred = null });
+    } else if(d.type === 'zcl-install-query'){
+      tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

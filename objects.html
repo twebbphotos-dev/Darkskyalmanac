@@ -1,0 +1,465 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Stars, Planets & Messier Objects · Dark Sky Almanac</title>
+<meta name="description" content="Explore the constellations, the planets, and the brightest deep-sky objects visible tonight — a single hub for everything you can point a telescope, binoculars, or your eye at.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Stars, Planets & Messier Objects · Dark Sky Almanac">
+<meta property="og:description" content="Explore the constellations, the planets, and the brightest deep-sky objects visible tonight — a single hub for everything you can point a telescope, binoculars, or your eye at.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/objects">
+<meta property="og:url" content="https://app.darkskyalmanac.com/objects">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<style>
+html,body{margin:0;padding:0;background:#141319}
+html,body{min-height:100dvh}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;
+  font-family:'Montserrat',-apple-system,sans-serif;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+#zcl-obj-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+body.night-mode{background:#000 !important}
+body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+
+#pwa-night-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);z-index:10002;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(10,8,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(203,168,90,.32);color:#9A8A66;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s;font-family:inherit}
+#pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
+/* ── Page shell ─────────────────────────────────── */
+#zcl-obj-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;
+  background:#141319;font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
+@media(max-width:640px){#zcl-obj-wrap{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}}
+#zcl-obj-wrap *{box-sizing:border-box}
+#zcl-obj{position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%,rgba(72,68,86,.30),transparent 55%),
+    radial-gradient(circle at 50% 30%,#22212c 0%,#1a1922 55%,#141319 100%);
+  border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+#zcl-obj::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
+#zcl-obj-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5;z-index:0}
+.zcl-obj-inner{position:relative;z-index:1;max-width:680px;margin:0 auto;padding:0 16px}
+
+.zcl-obj-fl{position:absolute;width:36px;height:36px;z-index:3;pointer-events:none;opacity:.55}
+.zcl-obj-fl svg{width:100%;height:100%}
+.zcl-obj-tl{top:14px;left:14px}.zcl-obj-tr{top:14px;right:14px;transform:scaleX(-1)}
+.zcl-obj-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-obj-br{bottom:14px;right:14px;transform:scale(-1,-1)}
+
+.zcl-obj-titlebar{text-align:center;padding:30px 20px 18px}
+.zcl-obj-title{font-size:clamp(22px,3.4vw,32px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
+  text-transform:uppercase;line-height:1.18;text-shadow:0 0 24px rgba(203,168,90,.22)}
+.zcl-obj-rule{display:flex;align-items:center;justify-content:center;gap:13px;margin:12px auto 10px;max-width:320px}
+.zcl-obj-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-obj-rule .zcl-obj-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-obj-rstar{width:15px;height:15px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-obj-sub{font-size:12.5px;letter-spacing:.02em;color:#9A8E6E;max-width:480px;margin:0 auto;line-height:1.5}
+
+/* card grid — same style as the index */
+.zcl-obj-cards{display:grid;grid-template-columns:1fr;gap:14px;margin:14px 0 8px}
+.zcl-obj-card{position:relative;display:block;text-decoration:none;
+  background:#0d0a18;border:1px solid rgba(203,168,90,.22);border-radius:12px;
+  padding:18px 18px 16px;color:inherit;transition:border-color .15s,transform .15s}
+.zcl-obj-card:hover{border-color:#CBA85A;transform:translateY(-2px)}
+.zcl-obj-card-tit{font-size:10px;font-weight:600;letter-spacing:.18em;color:#9A875C;text-transform:uppercase;margin-bottom:6px}
+.zcl-obj-card-name{font-size:21px;font-weight:600;color:#F2E4BE;letter-spacing:.02em;margin-bottom:7px}
+.zcl-obj-card-rule{height:1px;background:linear-gradient(to right,rgba(203,168,90,.45),transparent);margin:0 0 9px;max-width:140px}
+.zcl-obj-card-desc{font-size:13.5px;line-height:1.55;color:#C9BD97;margin-bottom:13px}
+.zcl-obj-card-tool{display:flex;align-items:center;gap:13px;padding:11px 13px;
+  background:rgba(203,168,90,.05);border:1px solid rgba(203,168,90,.15);border-radius:8px}
+.zcl-obj-card-icon{width:42px;height:42px;flex-shrink:0;display:flex;align-items:center;justify-content:center}
+.zcl-obj-card-icon svg{width:100%;height:100%}
+.zcl-obj-card-txt{flex:1;min-width:0}
+.zcl-obj-card-lbl{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8A7C5C;margin-bottom:3px}
+.zcl-obj-card-val{font-size:14px;color:#E4D9B8;line-height:1.25;margin-bottom:2px}
+.zcl-obj-card-vsub{font-size:11.5px;color:#8A7C5C}
+.zcl-obj-card-cta{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;
+  margin-top:11px;display:flex;align-items:center;gap:6px}
+.zcl-obj-card-cta::after{content:'\203A';font-size:16px;line-height:1}
+
+.zcl-obj-foot{text-align:center;font-size:11px;color:#5A5040;
+  padding:18px 16px 26px;line-height:1.6}
+</style>
+</head>
+<body>
+<div id="zcl-obj-wrap">
+<div id="zcl-obj">
+  <svg id="zcl-obj-stars" viewBox="0 0 800 1000" preserveAspectRatio="xMidYMid slice"></svg>
+  <div class="zcl-obj-fl zcl-obj-tl"></div><div class="zcl-obj-fl zcl-obj-tr"></div>
+  <div class="zcl-obj-fl zcl-obj-bl"></div><div class="zcl-obj-fl zcl-obj-br"></div>
+  <div class="zcl-obj-inner">
+
+    <div class="zcl-obj-titlebar">
+      <div class="zcl-obj-title">Sky Objects</div>
+      <div class="zcl-obj-rule">
+        <span class="zcl-obj-rline"></span>
+        <svg class="zcl-obj-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+        <span class="zcl-obj-rline"></span>
+      </div>
+    </div>
+
+    <div class="zcl-obj-cards">
+
+      <a class="zcl-obj-card" href="moon">
+        <div class="zcl-obj-card-tit">Our Nearest Neighbour</div>
+        <div class="zcl-obj-card-name">The Moon</div>
+        <div class="zcl-obj-card-rule"></div>
+        <div class="zcl-obj-card-desc">A labelled atlas of the seas, craters, and mountain ranges of the moon — with the moving terminator showing where shadows fall sharpest tonight.</div>
+        <div class="zcl-obj-card-tool">
+          <div class="zcl-obj-card-icon">
+            <svg class="zcl-obj-moonsvg" viewBox="0 0 42 42" id="zcl-obj-moonsvg-sm"></svg>
+          </div>
+          <div class="zcl-obj-card-txt">
+            <div class="zcl-obj-card-lbl">Tonight's Moon</div>
+            <div class="zcl-obj-card-val" id="zcl-obj-moonval">—</div>
+            <div class="zcl-obj-card-vsub" id="zcl-obj-moonsub">—</div>
+          </div>
+        </div>
+        <div class="zcl-obj-card-cta">Open the atlas</div>
+      </a>
+
+      <a class="zcl-obj-card" href="constellations">
+        <div class="zcl-obj-card-tit">The Sky Above</div>
+        <div class="zcl-obj-card-name">Constellation Guide</div>
+        <div class="zcl-obj-card-rule"></div>
+        <div class="zcl-obj-card-desc">The constellations and asterisms visible from Zion, with star-hop directions and the real shapes of the figures.</div>
+        <div class="zcl-obj-card-tool">
+          <div class="zcl-obj-card-icon">
+            <svg viewBox="0 0 42 42" fill="none" stroke="#CBA85A" stroke-width="1">
+              <circle cx="10" cy="14" r="1.3" fill="#CBA85A" stroke="none"/>
+              <circle cx="22" cy="9"  r="1.5" fill="#E6CC85" stroke="none"/>
+              <circle cx="32" cy="16" r="1.3" fill="#CBA85A" stroke="none"/>
+              <circle cx="28" cy="30" r="1.3" fill="#CBA85A" stroke="none"/>
+              <circle cx="14" cy="28" r="1.2" fill="#9A8A66" stroke="none"/>
+              <path d="M10 14 L22 9 L32 16 L28 30 L14 28 Z" stroke-opacity=".55"/>
+            </svg>
+          </div>
+          <div class="zcl-obj-card-txt">
+            <div class="zcl-obj-card-lbl">High Overhead Tonight</div>
+            <div class="zcl-obj-card-val" id="zcl-obj-constval">—</div>
+            <div class="zcl-obj-card-vsub" id="zcl-obj-constsub">the season’s signature</div>
+          </div>
+        </div>
+        <div class="zcl-obj-card-cta">Open the guide</div>
+      </a>
+
+      <a class="zcl-obj-card" href="solar">
+        <div class="zcl-obj-card-tit">Wanderers</div>
+        <div class="zcl-obj-card-name">The Planets</div>
+        <div class="zcl-obj-card-rule"></div>
+        <div class="zcl-obj-card-desc">The planets tonight, visible tonight and orbiting the Sun — with a date slider to watch alignments evolve.</div>
+        <div class="zcl-obj-card-tool">
+          <div class="zcl-obj-card-icon">
+            <svg viewBox="0 0 42 42" fill="none">
+              <defs><radialGradient id="zcl-obj-sun" cx="50%" cy="50%" r="50%">
+                <stop offset="0%" stop-color="#FFE08C"/><stop offset="100%" stop-color="#D4A030"/>
+              </radialGradient></defs>
+              <circle cx="21" cy="21" r="5" fill="url(#zcl-obj-sun)"/>
+              <circle cx="21" cy="21" r="10" fill="none" stroke="#CBA85A" stroke-width=".5" stroke-opacity=".4" stroke-dasharray="1 2"/>
+              <circle cx="21" cy="21" r="16" fill="none" stroke="#CBA85A" stroke-width=".5" stroke-opacity=".3" stroke-dasharray="1 2"/>
+              <circle cx="31" cy="21" r="1.6" fill="#7AA0C8"/>
+              <circle cx="13" cy="13" r="1.4" fill="#C77B5E"/>
+              <circle cx="9"  cy="25" r="2"   fill="#D4B891"/>
+            </svg>
+          </div>
+          <div class="zcl-obj-card-txt">
+            <div class="zcl-obj-card-lbl">Tonight’s Planets</div>
+            <div class="zcl-obj-card-val" id="zcl-obj-solarval">—</div>
+            <div class="zcl-obj-card-vsub" id="zcl-obj-solarsub">currently above the horizon</div>
+          </div>
+        </div>
+        <div class="zcl-obj-card-cta">View the Planets</div>
+      </a>
+
+      <a class="zcl-obj-card" href="catalog">
+        <div class="zcl-obj-card-tit">Deep Sky</div>
+        <div class="zcl-obj-card-name">Deep Sky Catalog</div>
+        <div class="zcl-obj-card-rule"></div>
+        <div class="zcl-obj-card-desc">Messier, Caldwell, NGC, and IC objects — nebulae, galaxies, and star clusters — ranked by altitude tonight.</div>
+        <div class="zcl-obj-card-tool">
+          <div class="zcl-obj-card-icon">
+            <svg viewBox="0 0 42 42" fill="none" stroke="#CBA85A" stroke-width="1.3">
+              <ellipse cx="21" cy="21" rx="15" ry="6.5" stroke-opacity=".75"/>
+              <ellipse cx="21" cy="21" rx="6.5" ry="15" stroke-opacity=".4"/>
+              <circle cx="21" cy="21" r="2.5" fill="#CBA85A" stroke="none"/>
+            </svg>
+          </div>
+          <div class="zcl-obj-card-txt">
+            <div class="zcl-obj-card-lbl">Highest Tonight</div>
+            <div class="zcl-obj-card-val" id="zcl-obj-messierval">—</div>
+            <div class="zcl-obj-card-vsub" id="zcl-obj-messiersub">tonight’s featured object</div>
+          </div>
+        </div>
+        <div class="zcl-obj-card-cta">Open the catalogue</div>
+      </a>
+
+    </div>
+
+    <div class="zcl-obj-foot">Each section opens its own deep dive — or jump directly via the bottom nav.</div>
+
+  </div>
+</div>
+</div>
+
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+
+<script>
+"use strict";
+(function(){
+// Mini "what's tonight" populators — small, self-contained, gentle astronomy.
+// Designed to fail silently rather than break the page if anything goes sideways.
+const LAT = 37.1986, LNG = -112.9869;
+const NOW = new Date();
+const $ = id => document.getElementById(id);
+
+// starfield + flourishes
+(function(){
+  let s='';
+  for(let i=0;i<140;i++){
+    s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*1000).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>';
+  }
+  $('zcl-obj-stars').innerHTML=s;
+  const fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+    +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
+    +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
+    +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/></svg>';
+  document.querySelectorAll('.zcl-obj-fl').forEach(el=>el.innerHTML=fl);
+})();
+
+// ── Constellation "high overhead tonight" — picks the season's signature ──
+(function(){
+  const m = NOW.getMonth();
+  const seasonal = {
+    11:['Orion','the Hunter, the showpiece of winter'],
+    0: ['Orion','the Hunter, dominating the winter sky'],
+    1: ['Orion & Taurus','the heart of the winter sky'],
+    2: ['Leo','the spring Lion, climbing high in the south'],
+    3: ['Ursa Major','the Great Bear, with the Big Dipper riding high'],
+    4: ['Boötes & Virgo','the spring kite leading galaxy season'],
+    5: ['the Summer Triangle','Vega, Deneb &amp; Altair high overhead'],
+    6: ['the Summer Triangle','blazing through the zenith with the Milky Way'],
+    7: ['Cygnus & Lyra','flying along the summer Milky Way'],
+    8: ['the Great Square of Pegasus','autumn’s signpost climbing east'],
+    9: ['Andromeda & Pegasus','autumn’s showpiece galaxies overhead'],
+    10:['Perseus & Cassiopeia','autumn’s W riding into the zenith'],
+  };
+  const p = seasonal[m]; if(!p) return;
+  $('zcl-obj-constval').innerHTML = p[0];
+  $('zcl-obj-constsub').innerHTML = p[1];
+})();
+
+// ── Planets — Keplerian positions at ~10pm local mean solar time ──
+const PLANET_ELEMS = {
+  Mercury:{a:[0.38709927,0.00000037],e:[0.20563593,0.00001906],I:[7.00497902,-0.00594749],L:[252.25032350,149472.67411175],wbar:[77.45779628,0.16047689],O:[48.33076593,-0.12534081]},
+  Venus:  {a:[0.72333566,0.0000039 ],e:[0.00677672,-0.00004107],I:[3.39467605,-0.0007889 ],L:[181.97909950,58517.81538729],wbar:[131.60246718,0.00268329],O:[76.67984255,-0.27769418]},
+  Mars:   {a:[1.52371034,0.0000018 ],e:[0.09339410,0.00007882],I:[1.84969142,-0.00813131],L:[-4.55343205,19140.30268499],wbar:[-23.94362959,0.44441088],O:[49.55953891,-0.29257343]},
+  Jupiter:{a:[5.20288700,-0.00011607],e:[0.04838624,-0.00013253],I:[1.30439695,-0.00183714],L:[34.39644051,3034.74612775],wbar:[14.72847983,0.21252668],O:[100.47390909,0.20469106]},
+  Saturn: {a:[9.53667594,-0.0012506 ],e:[0.05386179,-0.00050991],I:[2.48599187,0.00193609],L:[49.95424423,1222.49362201],wbar:[92.59887831,-0.41897216],O:[113.66242448,-0.28867794]},
+};
+const EARTH_ELEMS={a:[1.00000261,0.00000562],e:[0.01671123,-0.00004392],I:[-0.00001531,-0.01294668],L:[100.46457166,35999.37244981],wbar:[102.93768193,0.32327364],O:[0.0,0.0]};
+function _jd(d){const Y=d.getUTCFullYear(),M=d.getUTCMonth()+1,D=d.getUTCDate();const UT=d.getUTCHours()+d.getUTCMinutes()/60+d.getUTCSeconds()/3600;return 367*Y-Math.floor(7*(Y+Math.floor((M+9)/12))/4)+Math.floor(275*M/9)+D+1721013.5+UT/24}
+function _kep(M,e){M=M*Math.PI/180;let E=M;for(let i=0;i<8;i++){E=E-(E-e*Math.sin(E)-M)/(1-e*Math.cos(E))}return E}
+function _helio(el,T){const a=el.a[0]+el.a[1]*T,e=el.e[0]+el.e[1]*T,I=(el.I[0]+el.I[1]*T)*Math.PI/180;const L=el.L[0]+el.L[1]*T,wbar=el.wbar[0]+el.wbar[1]*T,O=(el.O[0]+el.O[1]*T)*Math.PI/180;const w=(wbar-(el.O[0]+el.O[1]*T))*Math.PI/180;let M=L-wbar;M=((M%360)+360)%360;if(M>180)M-=360;const E=_kep(M,e);const xp=a*(Math.cos(E)-e),yp=a*Math.sqrt(1-e*e)*Math.sin(E);const cw=Math.cos(w),sw=Math.sin(w),cO=Math.cos(O),sO=Math.sin(O),cI=Math.cos(I),sI=Math.sin(I);return{x:(cw*cO-sw*sO*cI)*xp+(-sw*cO-cw*sO*cI)*yp,y:(cw*sO+sw*cO*cI)*xp+(-sw*sO+cw*cO*cI)*yp,z:(sw*sI)*xp+(cw*sI)*yp}}
+function _radec(name,utc){const T=(_jd(utc)-2451545.0)/36525.0;const p=_helio(PLANET_ELEMS[name],T),e=_helio(EARTH_ELEMS,T);let xg=p.x-e.x,yg=p.y-e.y,zg=p.z-e.z;const ob=23.43928*Math.PI/180;const xe=xg,ye=yg*Math.cos(ob)-zg*Math.sin(ob),ze=yg*Math.sin(ob)+zg*Math.cos(ob);const ra=Math.atan2(ye,xe),dec=Math.atan2(ze,Math.sqrt(xe*xe+ye*ye));return{ra:((ra*180/Math.PI)/15+24)%24,dec:dec*180/Math.PI}}
+function _altAz(ra,dec,utc){const latR=LAT*Math.PI/180,decR=dec*Math.PI/180;let G=280.46061837+360.98564736629*(_jd(utc)-2451545.0);G=((G%360)+360)%360;const LST=((G/15+LNG/15)%24+24)%24;const HA=((LST-ra)*15)*Math.PI/180;const alt=Math.asin(Math.sin(latR)*Math.sin(decR)+Math.cos(latR)*Math.cos(decR)*Math.cos(HA));return alt*180/Math.PI}
+(function(){
+  try{
+    const meanOff = -LNG/15;
+    const utcHour = 22 + meanOff;
+    const t=new Date(Date.UTC(NOW.getFullYear(),NOW.getMonth(),NOW.getDate(),0,0,0));
+    t.setUTCMinutes(Math.round(utcHour*60));
+    const up=[];
+    for(const name in PLANET_ELEMS){
+      const rd=_radec(name,t);
+      const alt=_altAz(rd.ra,rd.dec,t);
+      if(alt>0) up.push(name);
+    }
+    if(up.length){
+      $('zcl-obj-solarval').textContent = up.join(', ');
+      $('zcl-obj-solarsub').textContent = up.length===1?'visible at 10 PM tonight':up.length+' planets visible at 10 PM tonight';
+    } else {
+      $('zcl-obj-solarval').textContent = 'None above horizon at 10 PM';
+      $('zcl-obj-solarsub').textContent = 'a planet-free evening tonight';
+    }
+  }catch(e){}
+})();
+
+// ── Moon — phase and illumination for tonight ──
+(function(){
+  const SYNODIC = 29.53058867;
+  const REF = new Date('2000-01-06T18:14:00Z');
+  const days = (NOW - REF) / 86400000;
+  const ph = ((days % SYNODIC) + SYNODIC) % SYNODIC;
+  const frac = ph / SYNODIC;
+  const ill = 0.5 * (1 - Math.cos(2 * Math.PI * frac));
+  const waxing = frac < 0.5;
+  let name;
+  if(ill < 0.02)      name = 'New Moon';
+  else if(ill > 0.98) name = 'Full Moon';
+  else if(ill < 0.46) name = waxing ? 'Waxing Crescent' : 'Waning Crescent';
+  else if(ill < 0.54) name = waxing ? 'First Quarter'   : 'Last Quarter';
+  else                name = waxing ? 'Waxing Gibbous'  : 'Waning Gibbous';
+
+  const el = $('zcl-obj-moonval');
+  const sub = $('zcl-obj-moonsub');
+  if(el) el.textContent = name;
+  if(sub) sub.textContent = Math.round(ill * 100) + '% illuminated';
+
+  // Draw a small moon glyph
+  const svg = $('zcl-obj-moonsvg-sm');
+  if(!svg) return;
+  const cx=21, cy=21, r=17, lit='url(#zobj-mg)', dark='#1a1820';
+  let s = '<defs><radialGradient id="zobj-mg" cx="35%" cy="32%" r="80%">'
+    + '<stop offset="0%" stop-color="#FFF6D8"/><stop offset="45%" stop-color="#F3DC97"/>'
+    + '<stop offset="100%" stop-color="#B08C3E"/></radialGradient></defs>';
+  s += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+dark+'"/>';
+  if(ill >= 0.98){
+    s += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="'+lit+'"/>';
+  } else if(ill > 0.02){
+    const limb = waxing
+      ? 'M '+cx+' '+(cy-r)+' A '+r+' '+r+' 0 0 1 '+cx+' '+(cy+r)+' Z'
+      : 'M '+cx+' '+(cy-r)+' A '+r+' '+r+' 0 0 0 '+cx+' '+(cy+r)+' Z';
+    const rx = (r * Math.abs(Math.cos(2*Math.PI*(waxing ? ill*0.5 : 1-ill*0.5)))).toFixed(2);
+    s += '<path d="'+limb+'" fill="'+lit+'"/>';
+    s += '<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rx+'" ry="'+r+'" fill="'+(ill>0.5?lit:dark)+'"/>';
+  }
+  s += '<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="#CBA85A" stroke-width="0.9" stroke-opacity=".55"/>';
+  svg.innerHTML = s;
+})();
+
+
+(function(){
+  const m=NOW.getMonth();
+  // Each entry: M-number, common name. Picked to be both bright and high in that month.
+  const seasonal = {
+    11:['M42','Orion Nebula'], 0:['M42','Orion Nebula'], 1:['M42','Orion Nebula'],
+    2: ['M44','Beehive Cluster'], 3:['M3','Hercules globular'], 4:['M13','Hercules globular'],
+    5: ['M13','Hercules globular'], 6:['M22','Sagittarius globular'],
+    7: ['M27','Dumbbell Nebula'], 8:['M31','Andromeda Galaxy'],
+    9: ['M31','Andromeda Galaxy'], 10:['M45','the Pleiades'],
+  };
+  const p = seasonal[m]; if(!p) return;
+  $('zcl-obj-messierval').textContent = p[0]+' \u00B7 '+p[1];
+  $('zcl-obj-messiersub').textContent = 'best deep-sky pick for the month';
+})();
+
+// Night mode on load
+try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+
+<!-- ════ Settings popup (shared) ════ -->
+<style>
+#zcl-set-modal{position:fixed;inset:0;z-index:10050;display:none;
+  align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px 16px}
+#zcl-set-modal.on{display:flex}
+#zcl-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#zcl-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
+  background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
+  box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;animation:zcl-set-pop .2s ease}
+@keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+#zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+</style>
+<div id="zcl-set-modal">
+  <div id="zcl-set-backdrop"></div>
+  <div id="zcl-set-sheet"><iframe id="zcl-set-frame" title="Settings"></iframe></div>
+</div>
+<script>
+(function(){
+  var modal=document.getElementById('zcl-set-modal');
+  var frame=document.getElementById('zcl-set-frame');
+  var backdrop=document.getElementById('zcl-set-backdrop');
+  var gear=document.getElementById('pwa-night-btn');
+  var loaded=false;
+  function open(){ if(!loaded){ frame.src='settings.html?embed=1'; loaded=true } modal.classList.add('on') }
+  function close(){ modal.classList.remove('on') }
+  if(gear){ gear.addEventListener('click', function(e){ e.preventDefault(); open() }) }
+  backdrop.addEventListener('click', close);
+  window.addEventListener('message', function(e){
+    var d=e.data||{};
+    if(d.type==='zcl-close'){ close() }
+    else if(d.type==='zcl-night'){
+      document.body.classList.toggle('night-mode', !!d.on);
+      if(gear) gear.classList.toggle('on', !!d.on);
+    }
+  });
+})();
+</script>
+
+<script>
+/* PWA install relay — beforeinstallprompt only fires on the top-level page, not
+   inside the settings iframe, so we capture it here and bridge it to Settings. */
+(function(){
+  var deferred = null;
+  function frameWin(){
+    var f = document.getElementById('zcl-set-frame') || document.getElementById('es-set-frame');
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+  function tellFrame(msg){ var w = frameWin(); if(w) w.postMessage(msg, '*') }
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferred = ev;
+    tellFrame({ type:'zcl-install-available' });
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    tellFrame({ type:'zcl-installed' });
+  });
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.type === 'zcl-do-install' && deferred){
+      deferred.prompt();
+      deferred.userChoice.finally(function(){ deferred = null });
+    } else if(d.type === 'zcl-install-query'){
+      tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>

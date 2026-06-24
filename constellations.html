@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="preconnect" href="https://cdnjs.cloudflare.com">
+
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Constellations · Dark Sky Almanac</title>
+<meta name="description" content="An interactive guide to the constellations overhead tonight, with the brightest stars, asterisms, and seasonal star patterns.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Constellations · Dark Sky Almanac">
+<meta property="og:description" content="An interactive guide to the constellations overhead tonight, with the brightest stars, asterisms, and seasonal star patterns.">
+<meta property="og:image" content="icon-512.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/constellations">
+<meta property="og:url" content="https://app.darkskyalmanac.com/constellations">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:card" content="summary">
+<style>
+html,body{margin:0;padding:0;background:#141319}
+html,body{min-height:100dvh}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;
+  font-family:'Montserrat',-apple-system,sans-serif;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+#zcl-cal-wrap,#zcl-moon-wrap,#zcl-con-wrap,#zcl-m-wrap,#zcl-sf-wrap,#zcl-idx-wrap,#zcl-sk-wrap,#zcl-ss-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+#pwa-install{position:fixed;left:12px;right:12px;bottom:74px;z-index:10000;
+  display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+  background:rgba(13,10,24,.97);border:1px solid rgba(203,168,90,.4);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);font-family:'Montserrat',sans-serif}
+#pwa-install.show{display:flex}
+#pwa-install .txt{flex:1;font-size:12px;color:#C9BD97;line-height:1.4}
+#pwa-install .txt b{color:#F2E4BE;font-weight:600}
+#pwa-install button{font-family:inherit;font-size:11px;letter-spacing:.1em;font-weight:600;
+  text-transform:uppercase;border-radius:5px;padding:8px 12px;cursor:pointer;border:none}
+#pwa-install .go{background:#CBA85A;color:#0d0a18}
+#pwa-install .dismiss{background:none;color:#7A6E55;border:1px solid rgba(203,168,90,.3)}
+
+/* ── Global night mode (injected into every PWA page) ── */
+#pwa-night-overlay{position:fixed;inset:0;pointer-events:none;z-index:10001;
+  background:rgba(160,0,0,.0);transition:background .4s ease}
+body.night-mode{background:#000 !important}
+body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
+body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
+
+#pwa-night-btn{position:fixed;top:calc(env(safe-area-inset-top,0px) + 12px);right:calc(env(safe-area-inset-right,0px) + 12px);z-index:10002;
+  width:36px;height:36px;border-radius:50%;
+  background:rgba(10,8,20,.8);backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  border:1px solid rgba(203,168,90,.32);color:#9A8A66;font-size:16px;
+  cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:all .2s;font-family:inherit}
+#pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
+</style>
+</head>
+<body><!-- ════════════════════════════════════════════════════════════
+     ZION CONSTELLATION & ASTERISM GUIDE · PRO
+     Companion to the Dark Sky Almanac & Lunar Atlas.
+     Self-contained Squarespace embed (paste into a Code block).
+     Sections:  1 CSS   2 MARKUP   3 DATA   4 PROJECTION/RENDER
+                5 DETAIL   6 INIT
+     Reuses the gold-foil theme from the suite. Star maps show only
+     the brightest figure stars (sized by real magnitude) so the
+     pattern reads at a glance — never a cluttered all-sky chart.
+     ════════════════════════════════════════════════════════════ -->
+
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+
+<!-- ─────────────────────────  1 · CSS  ───────────────────────── -->
+<style>
+#zcl-con-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;
+  background:#141319;font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box;
+  overflow-x:hidden}
+@media(max-width:640px){
+  #zcl-con-wrap{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
+}
+#zcl-con-wrap *{box-sizing:border-box;max-width:100%}
+#zcl-con{width:100%;position:relative;overflow:hidden;
+  background:
+    radial-gradient(ellipse 120% 80% at 50% -10%,rgba(72,68,86,.30),transparent 55%),
+    radial-gradient(ellipse 100% 70% at 50% 110%,rgba(56,54,68,.26),transparent 55%),
+    radial-gradient(circle at 50% 40%,#22212c 0%,#1a1922 55%,#141319 100%);
+  border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
+  box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
+#zcl-con::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
+#zcl-con::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
+  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
+.zcl-c-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
+#zcl-c-stars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
+.zcl-c-fl{position:absolute;width:40px;height:40px;z-index:3;pointer-events:none;opacity:.58}
+.zcl-c-fl svg{width:100%;height:100%}
+.zcl-c-tl{top:14px;left:14px}.zcl-c-tr{top:14px;right:14px;transform:scaleX(-1)}
+.zcl-c-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-c-br{bottom:14px;right:14px;transform:scale(-1,-1)}
+.zcl-c-inner{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:0 22px 26px}
+
+/* Title banner */
+.zcl-c-titlebar{text-align:center;padding:30px 24px 16px}
+.zcl-c-maintitle{font-size:clamp(22px,3.4vw,34px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
+  text-transform:uppercase;line-height:1.2;text-shadow:0 0 24px rgba(203,168,90,.22)}
+.zcl-c-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 11px;max-width:340px}
+.zcl-c-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-c-titlerule .zcl-c-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-c-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-c-subtitle{font-size:13px;letter-spacing:.02em;color:#9A8E6E;max-width:540px;margin:0 auto}
+@media(max-width:520px){.zcl-c-titlebar{padding:24px 16px 14px}.zcl-c-subtitle{font-size:12px}}
+
+/* season filter chips */
+.zcl-c-chips{display:flex;flex-wrap:wrap;gap:7px;justify-content:center;margin:6px 0 16px}
+.zcl-c-chip{font-size:11px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#9A875C;
+  border:1px solid rgba(203,168,90,.28);border-radius:20px;padding:6px 13px;cursor:pointer;
+  transition:background .15s,border-color .15s,color .15s;background:rgba(0,0,0,.15)}
+.zcl-c-chip:hover{border-color:rgba(203,168,90,.5)}
+.zcl-c-chip.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
+
+/* main two-column layout: list + map/detail */
+.zcl-c-cols{display:grid;grid-template-columns:200px 1fr;gap:16px;align-items:start;
+  min-width:0;width:100%}
+.zcl-c-cols > *{min-width:0}
+@media(max-width:620px){.zcl-c-cols{grid-template-columns:1fr;gap:12px}}
+
+/* scrolling list of constellations/asterisms */
+.zcl-c-list{display:flex;flex-direction:column;gap:4px;max-height:520px;overflow-y:auto;
+  padding:2px;scrollbar-width:thin}
+.zcl-c-list::-webkit-scrollbar{width:6px}.zcl-c-list::-webkit-scrollbar-thumb{background:rgba(203,168,90,.3);border-radius:3px}
+/* scroll-arrow wrapper */
+.zcl-c-listwrap{position:relative}
+.zcl-c-scroll-arrow{display:none}
+@media(max-width:620px){
+  .zcl-c-list{flex-direction:row;flex-wrap:nowrap;overflow-x:auto;max-height:none;padding-bottom:6px;
+    -webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .zcl-c-list::-webkit-scrollbar{display:none}
+  .zcl-c-scroll-arrow{
+    display:flex;align-items:center;justify-content:center;
+    position:absolute;top:0;bottom:6px;width:44px;
+    font-size:28px;color:#CBA85A;pointer-events:none;
+    opacity:0;transition:opacity .2s;z-index:2}
+  .zcl-c-arrow-l{left:0;background:linear-gradient(to right,rgba(14,11,22,.95) 35%,transparent)}
+  .zcl-c-arrow-r{right:0;background:linear-gradient(to left,rgba(14,11,22,.95) 35%,transparent)}
+  .zcl-c-scroll-arrow.show{opacity:1}
+}
+.zcl-c-item{display:flex;flex-direction:column;gap:1px;text-align:left;padding:8px 11px;border-radius:7px;cursor:pointer;
+  border:1px solid rgba(203,168,90,.13);background:rgba(255,255,255,.012);transition:background .14s,border-color .14s;flex-shrink:0}
+.zcl-c-item:hover{background:rgba(203,168,90,.08);border-color:rgba(203,168,90,.3)}
+.zcl-c-item.sel{background:rgba(203,168,90,.17);border-color:#CBA85A}
+.zcl-c-item-n{font-size:13px;color:#E4D9B8;letter-spacing:.02em;white-space:nowrap}
+.zcl-c-item-t{font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#8A6E32}
+.zcl-c-item.sel .zcl-c-item-t{color:#CBA85A}
+
+/* star map card */
+.zcl-c-mapcard{background:radial-gradient(ellipse 90% 80% at 50% 40%,rgba(40,38,52,.55),transparent 75%),#0c0a16;
+  border:1px solid rgba(203,168,90,.2);border-radius:10px;padding:8px;position:relative;
+  width:100%;max-width:100%;box-sizing:border-box;overflow:hidden}
+#zcl-c-map{display:block;width:100%;max-width:100%;height:auto;
+  aspect-ratio: 520 / 420;border-radius:7px}
+.zcl-c-maptag{position:absolute;top:13px;left:15px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8A6E32}
+.zcl-c-maptag b{color:#CBA85A;font-weight:600}
+.zcl-c-orient{position:absolute;bottom:12px;right:15px;font-size:9px;letter-spacing:.1em;color:#6E6450}
+.zcl-c-eyebtn{position:absolute;bottom:10px;left:13px;width:28px;height:28px;border-radius:50%;
+  border:1px solid rgba(203,168,90,.35);background:rgba(0,0,0,.35);cursor:pointer;
+  display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;z-index:4}
+.zcl-c-eyebtn:hover{background:rgba(203,168,90,.15);border-color:#CBA85A}
+.zcl-c-eyebtn svg{width:14px;height:14px}
+.zcl-c-detail{margin-top:14px;transition:opacity .2s;width:100%;max-width:100%;overflow-wrap:break-word}
+.zcl-c-detail.hidden{display:none}
+#zcl-c-map.labels-hidden .zcl-c-starlbl{display:none}
+.zcl-c-dhead{display:flex;align-items:baseline;gap:10px;flex-wrap:wrap;margin-bottom:3px}
+.zcl-c-dname{font-size:22px;font-weight:500;color:#CBA85A;letter-spacing:.03em}
+.zcl-c-dtype{font-size:10px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#8A6E32;
+  border:1px solid rgba(203,168,90,.32);border-radius:3px;padding:2px 7px}
+.zcl-c-dlead{font-size:13px;color:#9A8E6E;margin-bottom:13px}
+.zcl-c-dabout{font-size:14px;line-height:1.6;color:#C9BD97;margin-bottom:15px}
+.zcl-c-sec{margin-bottom:13px}
+.zcl-c-sec-h{font-size:14px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;
+  display:flex;align-items:center;gap:7px;margin-bottom:6px}
+.zcl-c-sec-h svg{width:14px;height:14px;flex-shrink:0;opacity:.85}
+.zcl-c-sec-b{font-size:13.5px;line-height:1.55;color:#C9BD97}
+.zcl-c-sec.find .zcl-c-sec-b{}
+.zcl-c-best{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:#9A875C;
+  border:1px solid rgba(203,168,90,.25);border-radius:5px;padding:6px 11px;background:rgba(0,0,0,.18)}
+.zcl-c-best b{color:#E4D9B8;font-weight:500}
+.zcl-c-binoc{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;
+  color:#9DB6CC;border:1px solid rgba(111,143,168,.4);background:rgba(111,143,168,.1);border-radius:3px;padding:2px 7px;margin-left:4px}
+
+@media(max-width:520px){
+  .zcl-c-inner{padding:0 14px 22px}
+  .zcl-c-dname{font-size:20px}
+}
+</style>
+
+<!-- ────────────────────────  2 · MARKUP  ──────────────────────── -->
+<div id="zcl-con-wrap">
+<div id="zcl-con">
+  <div class="zcl-c-goldbar"></div>
+  <div class="zcl-c-fl zcl-c-tl"></div><div class="zcl-c-fl zcl-c-tr"></div>
+  <div class="zcl-c-fl zcl-c-bl"></div><div class="zcl-c-fl zcl-c-br"></div>
+  <svg id="zcl-c-stars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
+  <div class="zcl-c-inner">
+    <div class="zcl-c-titlebar">
+      <div class="zcl-c-maintitle">Constellation Guide</div>
+      <div class="zcl-c-titlerule">
+        <span class="zcl-c-rline"></span>
+        <svg class="zcl-c-rstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+        <span class="zcl-c-rline"></span>
+      </div>
+    </div>
+
+    <div class="zcl-c-chips" id="zcl-c-chips"></div>
+
+    <div class="zcl-c-cols">
+      <div class="zcl-c-listwrap" id="zcl-c-listwrap">
+        <div class="zcl-c-list" id="zcl-c-list"></div>
+        <div class="zcl-c-scroll-arrow zcl-c-arrow-l" id="zcl-c-arrow-l">&#8249;</div>
+        <div class="zcl-c-scroll-arrow zcl-c-arrow-r" id="zcl-c-arrow-r">&#8250;</div>
+      </div>
+      <div>
+        <div class="zcl-c-mapcard">
+          <svg id="zcl-c-map" viewBox="0 0 520 420" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
+          <div class="zcl-c-maptag" id="zcl-c-maptag"></div>
+          <button class="zcl-c-eyebtn" id="zcl-c-eyebtn" title="Show/hide details" aria-label="Toggle details">
+            <svg id="zcl-c-eyesvg" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <ellipse cx="8" cy="8" rx="6.5" ry="4" stroke="#CBA85A" stroke-width="1.2"/>
+              <circle cx="8" cy="8" r="2" fill="#CBA85A"/>
+              <line id="zcl-c-eyeslash" x1="3" y1="13" x2="13" y2="3" stroke="#CBA85A" stroke-width="1.2" stroke-linecap="round" opacity="0"/>
+            </svg>
+          </button>
+        </div>
+        <div class="zcl-c-detail" id="zcl-c-detail"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
+
+<script>
+"use strict";
+(function(){
+
+// ─────────────────────────  3 · DATA  ─────────────────────────
+const DATA = [{"key": "orion", "name": "Orion", "type": "Constellation", "season": "Winter", "lead": "Rigel & Betelgeuse", "about": "The Hunter — the most universally recognized figure in the night sky. Three evenly spaced belt stars sit between the red supergiant Betelgeuse and blue-white Rigel, with a sword of stars and glowing gas hanging below. Cultures worldwide have seen a figure here for millennia.", "where": "Rides due south on winter evenings, straddling the celestial equator — so it is visible from the entire globe. Stands highest around 9–10 PM in January.", "find": "Look south for the three evenly spaced belt stars in a short diagonal line — nothing else looks like them. Orange Betelgeuse marks the upper-left shoulder; brilliant blue Rigel the lower-right foot.", "objects": "The Orion Nebula (M42) in the sword is the showpiece of the sky — a naked-eye glow and a stunning camera target. The Flame and Horsehead nebulae flank the belt star Alnitak; the whole region is wrapped in faint hydrogen for wide-field astrophotography.", "best": "December–February", "stars": [["Betelgeuse", 5.9195, 7.4071, 0.45, 1.5], ["Alnitak", 5.6793, -1.9426, 1.74, -0.2], ["Saiph", 5.7959, -9.6696, 2.07, -0.17], ["Alnilam", 5.6036, -1.2019, 1.69, -0.18], ["Mintaka", 5.5334, -0.2991, 2.25, -0.17], ["Bellatrix", 5.4189, 6.3497, 1.64, -0.22], ["", 5.4079, -2.3971, 3.35, -0.24], ["Rigel", 5.2423, -8.2016, 0.18, -0.03], ["Meissa", 5.5856, 9.9342, 3.39, -0.16], ["", 5.0762, 15.4041, 4.65, -0.06], ["", 4.9395, 13.5145, 4.06, 1.16], ["", 4.9149, 10.1508, 4.64, 0.09], ["", 4.8435, 8.9002, 4.35, 0.01], ["", 4.8307, 6.9613, 3.19, 0.48], ["", 4.8534, 5.6051, 3.68, -0.16], ["", 4.9042, 2.4407, 3.71, -0.18], ["", 4.9758, 1.714, 4.47, 1.37], ["", 6.0397, 9.6473, 4.12, 0.17], ["", 6.1262, 14.7685, 4.42, -0.16], ["", 6.199, 14.2088, 4.45, -0.18], ["", 6.0653, 20.1385, 4.64, 0.24], ["", 5.9064, 20.2762, 4.39, 0.59]], "lines": [[0, 1], [1, 2], [2, 1], [1, 3], [3, 4], [4, 5], [5, 4], [4, 6], [6, 7], [0, 5], [5, 8], [8, 8], [8, 0], [9, 10], [10, 11], [11, 12], [12, 13], [13, 5], [5, 13], [13, 14], [14, 15], [15, 16], [0, 17], [17, 18], [19, 20], [20, 21], [21, 18]]}, {"key": "ursamajor", "name": "Ursa Major", "type": "Constellation", "season": "Spring", "lead": "the Big Dipper", "about": "The Great Bear, home to the Big Dipper — the most famous star pattern of the northern sky. The seven Dipper stars form only the bear’s hindquarters and tail; fainter stars extend the full animal across a huge area.", "where": "High in the north, circling Polaris all night and all year from Zion’s latitude. Rides nearly overhead on spring evenings; swings low in the north in autumn.", "find": "The seven bright Dipper stars are unmistakable. The two end-of-bowl stars, Dubhe and Merak, are the “Pointers” — a line through them runs straight to Polaris, the North Star.", "objects": "Mizar in the handle has a naked-eye companion, Alcor — a classic eyesight test, and a true double in any scope. The bright interacting galaxies M81 and M82 ride just off the bowl; the Pinwheel Galaxy (M101) sits by the handle — all fine camera targets.", "best": "March–June (overhead); all year from Zion", "stars": [["Phecda", 11.8972, 53.6948, 2.41, 0.04], ["", 11.7675, 47.7794, 3.69, 1.18], ["", 11.1611, 44.4985, 3.0, 1.14], ["Tania Australis", 10.3722, 41.4995, 3.06, 1.6], ["Tania Borealis", 10.285, 42.9144, 3.45, 0.03], ["Alula Borealis", 11.308, 33.0943, 3.49, 1.4], ["", 11.3255, 32.8251, 6.57, 1.03], ["Megrez", 12.2571, 57.0326, 3.32, 0.08], ["Dubhe", 11.0622, 61.751, 1.81, 1.06], ["Merak", 11.0307, 56.3824, 2.34, 0.03], ["Alioth", 12.9005, 55.9598, 1.76, -0.02], ["Mizar", 13.3987, 54.9254, 2.23, 0.06], ["Alkaid", 13.7924, 49.3133, 1.85, -0.1], ["", 9.5255, 63.0619, 3.65, 0.36], ["", 9.8499, 59.0387, 3.78, 0.29], ["Muscida", 8.5044, 60.7182, 3.35, 0.86], ["", 9.5477, 51.6773, 3.17, 0.47], ["", 9.0604, 47.1565, 3.57, 0.01], ["Talitha", 8.9868, 48.0418, 3.12, 0.22]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 3], [3, 2], [2, 1], [1, 5], [5, 6], [7, 8], [8, 9], [9, 0], [0, 7], [7, 10], [10, 11], [11, 12], [8, 13], [13, 14], [14, 13], [13, 15], [15, 14], [14, 9], [9, 14], [14, 16], [16, 17], [17, 18]]}, {"key": "cassiopeia", "name": "Cassiopeia", "type": "Constellation", "season": "Autumn", "lead": "the Queen’s W", "about": "The vain queen of Greek myth, bound to her throne. Five bright stars trace a distinct W (or M, depending on the season) embedded in the Milky Way, wheeling around the pole opposite the Big Dipper.", "where": "High in the north, on the far side of Polaris from the Big Dipper — so when the Dipper rides low, Cassiopeia rides high. Overhead on autumn evenings.", "find": "Look for the bright zig-zag W of five stars set in a rich Milky Way field. A line from the deeper notch of the W points roughly toward Polaris.", "objects": "Sits in a Milky Way band packed with open clusters — M52 and the Owl Cluster nearby are easy binocular and camera targets. Points the way to the Andromeda Galaxy and the Perseus Double Cluster.", "best": "September–December (overhead); all year from Zion", "stars": [["Caph", 0.1529, 59.1498, 2.28, 0.38], ["Schedar", 0.6751, 56.5373, 2.24, 1.17], ["", 0.9451, 60.7167, 2.15, -0.05], ["Ruchbah", 1.4302, 60.2353, 2.66, 0.16], ["", 1.9066, 63.6701, 3.35, -0.15]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4]]}, {"key": "leo", "name": "Leo", "type": "Constellation", "season": "Spring", "lead": "Regulus", "about": "The Lion, crouching in mid-leap across the spring sky. A backwards question mark — the Sickle — forms the head and mane; a triangle to the east makes the hindquarters and tail. One of the oldest recognized constellations, marked by cultures from Mesopotamia to Egypt.", "where": "Rides high across the southern sky on spring evenings, near the zenith around 9 PM in April. A zodiac constellation, so the Moon and planets pass through it.", "find": "Find the Sickle — a backwards question mark — with bright blue-white Regulus as the dot at its base. The triangle of Denebola, Zosma, and Chertan trails east as the lion’s rump.", "objects": "“Galaxy season” headquarters: the Leo Triplet (M65, M66, NGC 3628) and the M96 group lie beneath the body — superb deep-sky and astrophoto targets. Algieba in the Sickle is a fine golden double star.", "best": "March–May", "stars": [["Regulus", 10.1395, 11.9672, 1.36, -0.09], ["", 10.1222, 16.7627, 3.48, -0.03], ["Algieba", 10.3329, 19.8415, 2.01, 1.13], ["Adhafera", 10.2782, 23.4173, 3.43, 0.31], ["Rasalas", 9.8794, 26.007, 3.88, 1.22], ["", 9.7642, 23.7743, 2.97, 0.81], ["Zosma", 11.2351, 20.5237, 2.56, 0.13], ["Denebola", 11.8177, 14.5721, 2.14, 0.09], ["Chertan", 11.2373, 15.4296, 3.33, -0.0], ["", 9.4109, 26.1823, 4.47, 1.22], ["Alterf", 9.5287, 22.968, 4.32, 1.54], ["", 11.3987, 10.5295, 4.0, 0.42], ["", 11.3523, 6.0293, 4.05, -0.06]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [2, 6], [6, 7], [7, 8], [8, 6], [6, 8], [8, 1], [4, 9], [9, 10], [10, 5], [5, 1], [8, 11], [11, 12]]}, {"key": "virgo", "name": "Virgo", "type": "Constellation", "season": "Spring", "lead": "Spica", "about": "The Maiden — the second-largest constellation, sprawling along the zodiac. Marked by the lone blue-white beacon Spica, it holds the nearest large cluster of galaxies to our own.", "where": "Low to mid in the southern sky on spring and early-summer evenings, following Leo. Spica sits near the celestial equator and the path of the planets.", "find": "“Arc to Arcturus, then speed on to Spica”: follow the curve of the Big Dipper’s handle to orange Arcturus, then continue the same curve down to the bright white Spica.", "objects": "The Virgo Cluster between Virgo and Leo holds thousands of galaxies, including the giant M87 — the richest galaxy-hunting ground visible from Zion. Porrima is a close, elegant double star.", "best": "April–June", "stars": [["Zaniah", 12.3318, -0.6668, 3.89, 0.03], ["", 12.0868, 8.733, 4.12, 0.97], ["", 11.7643, 6.5294, 4.04, 1.5], ["Zavijava", 11.8449, 1.7647, 3.59, 0.52], ["Porrima", 12.6943, -1.4494, 2.74, 0.37], ["", 12.9267, 3.3975, 3.39, 1.57], ["Vindemiatrix", 13.0363, 10.9591, 2.85, 0.93], ["", 13.1658, -5.539, 4.38, -0.01], ["Spica", 13.4199, -11.1613, 0.98, -0.23], ["", 13.5782, -0.5958, 3.38, 0.11], ["", 14.0274, 1.5445, 4.23, 0.12], ["", 14.7708, 1.8929, 3.73, -0.01], ["Syrma", 14.2669, -6.0005, 4.07, 0.51], ["", 14.7177, -5.6582, 3.87, 0.39]], "lines": [[6, 5], [5, 4], [4, 0], [0, 3], [3, 2], [2, 1], [4, 8], [4, 9], [9, 10], [10, 11], [9, 12], [12, 13], [8, 7]]}, {"key": "bootes", "name": "Boötes", "type": "Constellation", "season": "Spring", "lead": "Arcturus", "about": "The Herdsman, shaped like a giant kite or ice-cream cone. At its base burns Arcturus, the brightest star in the northern half of the sky — an aging orange giant racing through the galaxy at a steep angle to the disc.", "where": "High in the eastern then southern sky on spring and early-summer evenings; nearly overhead around 10 PM in June.", "find": "“Arc to Arcturus”: follow the curve of the Big Dipper’s handle straight to a brilliant orange star. The kite of Boötes rises above it.", "objects": "Izar, partway up the kite, is a gorgeous close double — an orange giant with a blue-green companion. The constellation is also the launch point for the galaxy fields of Coma and Virgo.", "best": "April–July", "stars": [["Arcturus", 14.261, 19.1824, -0.05, 1.24], ["Izar", 14.7498, 27.0742, 2.35, 0.97], ["", 15.2584, 33.3148, 3.46, 0.96], ["Nekkar", 15.0324, 40.3906, 3.49, 0.96], ["Seginus", 14.5346, 38.3083, 3.04, 0.19], ["", 14.5305, 30.3714, 3.57, 1.3], ["Muphrid", 13.9114, 18.3977, 2.68, 0.58], ["", 13.7877, 17.4569, 4.5, 0.51], ["", 14.6858, 13.7283, 3.78, 0.04], ["", 14.2731, 46.0883, 4.18, 0.09], ["", 14.42, 51.8507, 4.04, 0.5], ["", 14.2247, 51.79, 4.53, 0.23]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], [0, 6], [6, 7], [0, 8], [4, 9], [9, 10], [10, 11], [11, 9]]}, {"key": "cygnus", "name": "Cygnus", "type": "Constellation", "season": "Summer", "lead": "Deneb", "about": "The Swan, flying down the summer Milky Way with wings outstretched; its brightest stars also form the Northern Cross. Deneb, marking the tail, is a true supergiant — one of the most luminous stars known, blazing from some 2,600 light years away.", "where": "Nearly overhead on summer and early-autumn evenings, lying directly along the Milky Way. Deneb is the top star of the Summer Triangle.", "find": "Trace the long axis from Deneb (tail) to Albireo (beak), with the wings spread through Sadr in the middle — a clear cross high overhead.", "objects": "Albireo, the beak, is the sky’s loveliest double — a gold-and-sapphire pair. The North America Nebula glows near Deneb and the Veil Nebula’s supernova lacework lies off the wing — both spectacular astrophotography targets.", "best": "July–September", "stars": [["Deneb", 20.6905, 45.2803, 1.25, 0.09], ["Sadr", 20.3705, 40.2567, 2.23, 0.67], ["", 20.7702, 33.9703, 2.48, 1.02], ["Albireo", 19.512, 27.9597, 3.05, 1.09], ["", 19.7496, 45.1308, 2.86, -0.0], ["", 19.4951, 51.7298, 3.76, 0.15], ["", 19.285, 53.3685, 3.8, 0.95], ["", 20.2579, 47.7142, 3.96, 1.45], ["", 20.9529, 41.1671, 3.94, 0.03], ["", 21.2156, 30.2269, 3.21, 0.99]], "lines": [[0, 1], [1, 2], [2, 1], [1, 3], [3, 1], [1, 4], [4, 5], [5, 6], [6, 5], [5, 7], [7, 0], [0, 8], [8, 9], [9, 2]]}, {"key": "lyra", "name": "Lyra", "type": "Constellation", "season": "Summer", "lead": "Vega", "about": "The Harp, small but unmistakable thanks to Vega — the fifth-brightest star in the sky and a brilliant blue-white beacon nearly overhead in summer. A neat parallelogram of fainter stars hangs below it.", "where": "At or near the zenith on summer evenings — the westernmost vertex of the Summer Triangle.", "find": "Look near straight up for one dazzling blue-white star: Vega. Just below and east hangs a small, distinct parallelogram of four fainter stars.", "objects": "The Ring Nebula (M57) — a perfect glowing smoke ring, a dying Sun-like star — sits exactly between the parallelogram’s bottom stars, Sheliak and Sulafat. Epsilon Lyrae is the famous “Double-Double.”", "best": "July–September", "stars": [["Vega", 18.6156, 38.7837, 0.03, -0.0], ["", 18.739, 39.6701, 4.67, 0.17], ["", 18.7462, 37.6051, 4.34, 0.19], ["", 18.9084, 36.8986, 4.22, 1.57], ["Sulafat", 18.9824, 32.6896, 3.25, -0.05], ["Sheliak", 18.8347, 33.3627, 3.52, 0.0]], "lines": [[0, 1], [1, 2], [2, 0], [0, 2], [2, 3], [3, 4], [4, 5], [5, 2]]}, {"key": "aquila", "name": "Aquila", "type": "Constellation", "season": "Summer", "lead": "Altair", "about": "The Eagle, soaring up the Milky Way toward Cygnus. Its lead star Altair is among the closest bright stars at 17 light years, and spins so fast it is visibly flattened into an oval.", "where": "In the southern half of the summer sky, below Cygnus. Altair is the southern vertex of the Summer Triangle.", "find": "Altair is easy — a bright white star flanked closely on each side by a fainter star (Tarazed and Alshain), a distinctive little row of three.", "objects": "Lies in a glorious Milky Way stretch; sweeping with binoculars reveals dense star fields and the dark dust rifts of the Great Rift — a fine wide-field photo region.", "best": "July–September", "stars": [["Alshain", 19.9219, 6.4068, 3.71, 0.85], ["Altair", 19.8464, 8.8683, 0.76, 0.22], ["Tarazed", 19.771, 10.6133, 2.72, 1.51], ["", 19.425, 3.1148, 3.36, 0.32], ["", 19.1042, -4.8826, 3.43, -0.1], ["", 19.0902, 13.8635, 2.99, 0.01], ["", 19.8745, 1.0057, 3.87, 0.63], ["", 20.1884, -0.8215, 3.24, -0.07], ["", 18.9937, 15.0683, 4.02, 1.08], ["", 19.028, -5.7391, 4.02, 1.08], ["", 19.612, -1.2866, 4.36, -0.08]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 3], [3, 5], [5, 3], [3, 6], [6, 7], [8, 5], [4, 9], [7, 10], [10, 4], [4, 5]]}, {"key": "scorpius", "name": "Scorpius", "type": "Constellation", "season": "Summer", "lead": "Antares", "about": "The Scorpion — one of the rare constellations that truly looks like its namesake, with a curving body and hooked stinger. Its heart is Antares, a colossal red supergiant whose name means “rival of Mars” for its fiery hue.", "where": "Low across the southern sky on summer nights — Zion’s dark southern horizon shows it beautifully, where many northern observers never see the tail.", "find": "Find reddish Antares in the south, then follow the curve of stars down and left to the upturned hook of the stinger, Shaula and Lesath.", "objects": "Surrounded by Milky Way treasure: the globular M4 sits right beside Antares, and the bright clusters M6 (Butterfly) and M7 hang by the stinger — all gorgeous in binoculars and wide-field photos.", "best": "June–August (low south)", "stars": [["Graffias", 16.0906, -19.8055, 2.56, -0.07], ["Dschubba", 16.0056, -22.6217, 2.29, -0.12], ["", 15.9809, -26.1141, 2.89, -0.18], ["Al Niyat", 16.3531, -25.5928, 2.9, 0.3], ["Antares", 16.4901, -26.432, 1.06, 1.86], ["", 16.598, -28.216, 2.82, -0.21], ["", 16.8361, -34.2932, 2.29, 1.14], ["", 16.8645, -38.0474, 3.0, -0.2], ["", 16.9097, -42.3613, 3.62, 1.39], ["", 17.2026, -43.2392, 3.32, 0.44], ["Girtab", 17.622, -42.9978, 1.86, 0.41], ["", 17.7931, -40.127, 2.99, 0.51], ["", 17.7081, -39.03, 2.39, -0.17], ["Lesath", 17.5127, -37.2958, 2.7, -0.18], ["Shaula", 17.5601, -37.1038, 1.62, -0.23], ["", 17.831, -37.0433, 3.19, 1.19], ["", 16.1999, -19.4607, 4.0, 0.08], ["", 15.9481, -29.2141, 3.87, -0.2]], "lines": [[0, 1], [1, 2], [2, 1], [1, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [0, 16], [2, 17]]}, {"key": "sagittarius", "name": "Sagittarius", "type": "Constellation", "season": "Summer", "lead": "the Teapot", "about": "The Archer — though almost everyone sees its bright core as a Teapot. It points toward the very center of our Milky Way galaxy, making it the richest hunting ground in the entire sky.", "where": "Low in the south on summer nights, just east of Scorpius. The Milky Way is densest and brightest here. A zodiac constellation.", "find": "Find the eight-star Teapot low in the south. On dark Zion nights the Milky Way appears to rise like steam from the spout.", "objects": "A nonstop parade for eyes, binoculars, and cameras: the Lagoon (M8) and Trifid (M20) nebulae, the M22 globular, and the M24 star cloud all cluster above the Teapot. The galactic center lies just off the spout.", "best": "July–August (peak Milky Way)", "stars": [["Kaus Australis", 18.4029, -34.3846, 1.79, -0.03], ["Alnasl", 18.0968, -30.4241, 2.98, 0.98], ["Kaus Media", 18.3499, -29.8281, 2.72, 1.38], ["Kaus Borealis", 18.4662, -25.4217, 2.82, 1.02], ["Phi", 18.7609, -26.9908, 3.17, -0.11], ["Nunki", 18.9211, -26.2967, 2.05, -0.13], ["Tau", 19.1157, -27.6704, 3.32, 1.17], ["Ascella", 19.0435, -29.8801, 2.6, 0.06]], "lines": [[1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0], [0, 1], [0, 2], [2, 4]]}, {"key": "taurus", "name": "Taurus", "type": "Constellation", "season": "Winter", "lead": "Aldebaran", "about": "The Bull, charging out of the winter sky. A V-shaped cluster forms its face, anchored by the fiery orange eye Aldebaran, with two long horns sweeping back toward Auriga.", "where": "High in the south on winter evenings, up and to the right of Orion. A zodiac constellation — planets visit often.", "find": "Find the V of the Hyades tipped by orange Aldebaran — the bull’s face. The tiny dipper-shaped Pleiades rides on his shoulder just beyond.", "objects": "The Hyades is the nearest open cluster to Earth; the Pleiades (M45) is the finest naked-eye and camera cluster of all, wrapped in blue reflection nebulosity. The Crab Nebula (M1), a supernova remnant, sits at the southern horn tip.", "best": "November–February", "stars": [["", 5.6274, 21.1425, 2.97, -0.15], ["Aldebaran", 4.5987, 16.5093, 0.87, 1.54], ["", 4.4777, 15.8709, 3.4, 0.18], ["", 4.3299, 15.6276, 3.65, 0.98], ["", 4.3822, 17.5425, 3.77, 0.98], ["Ain", 4.4769, 19.1804, 3.53, 1.01], ["Elnath", 5.4382, 28.6075, 1.65, -0.13], ["", 3.4528, 9.7327, 3.73, -0.08], ["", 4.0526, 5.9893, 3.91, 0.03], ["", 3.4136, 9.0289, 3.61, 0.89], ["", 3.6146, 0.4017, 4.29, 0.57], ["", 4.0113, 12.4903, 3.41, -0.1]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [7, 8], [9, 10], [3, 11], [11, 7]]}, {"key": "gemini", "name": "Gemini", "type": "Constellation", "season": "Winter", "lead": "Castor & Pollux", "about": "The Twins, marked by the bright pair Castor and Pollux side by side. Two parallel lines of stars run down like stick-figure bodies. Pollux is a golden giant; Castor is actually a remarkable six-star system.", "where": "High in the east then south on winter evenings, up and left of Orion. A zodiac constellation.", "find": "Find the two bright stars close together high in the winter sky — Castor (white) and Pollux (gold). Their “bodies” trail down toward Orion.", "objects": "M35, a bright open cluster the size of the full moon, sits at the western twin’s feet — a lovely binocular and camera target. The Eskimo Nebula, a small bright planetary, lies nearby.", "best": "December–March", "stars": [["", 6.7548, 12.8956, 3.35, 0.44], ["", 7.3015, 16.5404, 3.58, 0.11], ["Wasat", 7.3354, 21.9823, 3.5, 0.37], ["Mekbuda", 7.0685, 20.5703, 4.01, 0.9], ["Alhena", 6.6285, 16.3993, 1.93, 0.0], ["", 7.5987, 26.8957, 4.06, 1.54], ["", 7.7408, 24.398, 3.57, 0.93], ["Pollux", 7.7553, 28.0262, 1.16, 0.99], ["", 7.4288, 27.7981, 3.78, 1.02], ["", 7.1857, 30.2452, 4.41, 1.26], ["Castor", 7.5766, 31.8883, 1.58, 0.03], ["", 6.8798, 33.9613, 3.6, 0.1], ["Mebsuta", 6.7322, 25.1311, 3.06, 1.38], ["", 6.4827, 20.2121, 4.13, -0.12], ["Tejat", 6.3827, 22.5136, 2.87, 1.62], ["Propus", 6.248, 22.5068, 3.31, 1.6], ["", 6.0687, 23.2633, 4.16, 0.83]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 3], [3, 2], [2, 5], [5, 6], [6, 5], [5, 7], [7, 5], [5, 8], [8, 9], [9, 10], [10, 9], [9, 11], [11, 9], [9, 12], [12, 13], [13, 12], [12, 14], [14, 15], [15, 16]]}, {"key": "canismajor", "name": "Canis Major", "type": "Constellation", "season": "Winter", "lead": "Sirius", "about": "The Greater Dog, Orion’s faithful hunting companion, crowned by Sirius — the brightest star in the entire night sky. So close at 8.6 light years that it often flashes vivid colors when low on the horizon.", "where": "Low in the south on winter evenings, below and left of Orion. Sits well south of the equator, so it skims Zion’s southern sky.", "find": "Follow Orion’s belt down and left and you crash straight into blazing Sirius. The rest of the dog hangs below it.", "objects": "M41, a bright open cluster, sits just below Sirius — an easy binocular and photo target. Sirius itself hides a white-dwarf companion, the “Pup.”", "best": "December–March (low south)", "stars": [["Mirzam", 6.3783, -17.9559, 1.98, -0.24], ["Sirius", 6.7525, -16.7161, -1.44, 0.01], ["Wezen", 7.1399, -26.3932, 1.83, 0.67], ["Adhara", 6.9771, -28.9721, 1.5, -0.21], ["Aludra", 7.4016, -29.3031, 2.45, -0.08], ["", 6.6114, -19.2559, 3.95, 1.04], ["", 6.9022, -24.1842, 3.89, 1.74], ["", 6.9356, -17.0542, 4.36, -0.06], ["Muliphein", 7.0626, -15.6333, 4.11, -0.11], ["", 6.9032, -12.0386, 4.08, 1.42]], "lines": [[0, 1], [1, 2], [2, 3], [3, 2], [2, 4], [0, 5], [5, 6], [6, 3], [1, 7], [7, 8], [8, 9], [9, 7]]}, {"key": "canisminor", "name": "Canis Minor", "type": "Constellation", "season": "Winter", "lead": "Procyon", "about": "The Lesser Dog — a tiny constellation of essentially just two stars, dominated by Procyon, the eighth-brightest star in the sky. Like Sirius, it is a near neighbor (11 light years) with a white-dwarf companion.", "where": "East of Orion on winter evenings, near the celestial equator. Forms the left point of the Winter Triangle with Betelgeuse and Sirius.", "find": "Look east of Orion for a single bright, slightly yellow star standing rather alone — Procyon — with one fainter star (Gomeisa) just to its north.", "objects": "A signpost more than a hunting ground — its real value is anchoring the Winter Triangle and pointing into the Milky Way fields toward Monoceros and the Rosette Nebula.", "best": "December–March", "stars": [["Procyon", 7.655, 5.225, 0.4, 0.43], ["Gomeisa", 7.4525, 8.2893, 2.89, -0.1]], "lines": [[0, 1]]}, {"key": "auriga", "name": "Auriga", "type": "Constellation", "season": "Winter", "lead": "Capella", "about": "The Charioteer, a big pentagon riding high overhead in winter. Its lead star Capella is the sixth-brightest in the sky — actually two giant yellow stars in a tight orbit, appearing as one golden point.", "where": "Near the zenith on winter evenings, above Orion and Taurus. Capella is the northernmost first-magnitude star easily seen from mid-northern latitudes.", "find": "Look nearly overhead for bright yellow Capella at the top of a large pentagon of stars. A tiny triangle of stars nearby (the “Kids”) sits beside Capella.", "objects": "Three fine open clusters — M36, M37, and M38 — string across the lower pentagon, all rewarding in binoculars, scopes, and cameras.", "best": "November–February (overhead)", "stars": [["Elnath", 5.4382, 28.6075, 1.65, -0.13], ["", 4.9499, 33.1661, 2.69, 1.49], ["", 5.1086, 41.2345, 3.18, -0.15], ["Capella", 5.2782, 45.998, 0.08, 0.8], ["Menkalinan", 5.9921, 44.9474, 1.9, 0.08], ["", 5.9954, 37.2126, 2.65, -0.08], ["", 5.0413, 41.0758, 3.69, 1.15], ["", 5.0328, 43.8233, 3.03, 0.54], ["", 5.9921, 54.2847, 3.72, 1.01]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0], [2, 6], [6, 7], [7, 3], [3, 8], [8, 4]]}, {"key": "perseus", "name": "Perseus", "type": "Constellation", "season": "Autumn", "lead": "Mirfak", "about": "The Hero who slew Medusa, holding her severed head — marked by the famous “demon star” Algol, which visibly dims every 2.9 days as a dark companion eclipses it. The ancients flagged it as sinister long before the cause was known.", "where": "High in the northeast then overhead on autumn and early-winter evenings, between Cassiopeia and Auriga, lying along the Milky Way.", "find": "Find the graceful arc of stars curving down from Mirfak, between Cassiopeia’s W and bright Capella. Watch Algol over a few nights to catch it fade and rebrighten.", "objects": "The Double Cluster — two glittering clusters side by side — is a breathtaking naked-eye, binocular, and camera target between Perseus and Cassiopeia. The Perseid meteors radiate from here each August.", "best": "October–January", "stars": [["Atik", 3.7386, 32.2882, 3.84, 0.02], ["", 3.9022, 31.8836, 2.84, 0.27], ["Menkib", 3.9827, 35.791, 3.98, 0.02], ["", 3.9642, 40.0102, 2.9, -0.2], ["", 3.7154, 47.7876, 3.01, -0.12], ["Mirfak", 3.4054, 49.8612, 1.79, 0.48], ["", 3.0799, 53.5064, 2.91, 0.72], ["", 2.8449, 55.8955, 3.77, 1.69], ["", 2.9043, 52.7625, 3.93, 0.76], ["", 3.151, 49.6133, 4.05, 0.59], ["", 3.1583, 44.8575, 3.79, 0.98], ["Algol", 3.1361, 40.9556, 2.09, -0.0], ["", 3.0863, 38.8403, 3.32, 1.53], ["", 4.1444, 47.7125, 3.96, -0.03], ["", 4.2483, 48.4093, 4.12, 0.94], ["", 4.3041, 50.2955, 4.6, 0.04], ["", 4.1097, 50.3513, 4.25, -0.01], ["", 2.7366, 49.2284, 4.1, 0.51], ["", 1.7277, 50.6887, 4.01, -0.1]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 6], [6, 8], [8, 9], [9, 5], [5, 9], [9, 10], [10, 11], [11, 3], [3, 11], [11, 12], [4, 13], [13, 14], [14, 15], [15, 16], [9, 17], [17, 18]]}, {"key": "andromeda", "name": "Andromeda", "type": "Constellation", "season": "Autumn", "lead": "the chained princess", "about": "The Chained Princess, a long chain of stars extending from a corner of the Great Square of Pegasus. Famous above all for hosting the Andromeda Galaxy — the most distant object visible to the naked eye.", "where": "High overhead on autumn evenings, joined to Pegasus. The galaxy is the farthest thing the unaided eye can reach at 2.5 million light years.", "find": "Start at the Great Square and follow the chain (Alpheratz, Mirach, Almach) curving up toward Cassiopeia.", "objects": "The Andromeda Galaxy (M31) lies just off Mirach — a faint elongated glow by eye, a magnificent astrophotography subject with its companions M32 and M110. Almach is a beautiful gold-and-blue double.", "best": "September–December", "stars": [["Alpheratz", 0.1398, 29.0904, 2.07, -0.04], ["", 0.6555, 30.861, 3.27, 1.27], ["Mirach", 1.1622, 35.6206, 2.07, 1.58], ["Almach", 2.065, 42.3297, 2.1, 1.37], ["", 23.032, 42.326, 3.62, -0.1], ["", 23.6356, 43.2681, 4.29, -0.08], ["", 23.6735, 44.3339, 4.15, -0.07], ["", 23.6261, 46.4582, 3.81, 0.98], ["", 0.3055, 36.7852, 4.51, 0.05], ["", 0.6147, 33.7193, 4.34, -0.12], ["", 0.9459, 38.4993, 3.86, 0.13], ["", 0.8302, 41.0789, 4.53, -0.14], ["", 1.1584, 47.2418, 4.26, 0.01], ["", 1.6332, 48.6282, 3.59, 1.27], ["", 0.6426, 29.3118, 4.34, 0.87], ["", 0.789, 24.2672, 4.08, 1.1], ["", 0.9534, 23.4176, 4.4, 0.94]], "lines": [[0, 1], [1, 2], [2, 3], [4, 5], [5, 6], [6, 7], [7, 6], [6, 5], [5, 8], [8, 9], [9, 1], [1, 9], [9, 2], [2, 10], [10, 11], [11, 12], [12, 13], [1, 14], [14, 15], [15, 16]]}, {"key": "pegasus", "name": "Pegasus", "type": "Constellation", "season": "Autumn", "lead": "the Great Square", "about": "The Winged Horse, flying upside-down across the autumn sky. Its body is the Great Square — a huge, conspicuously empty box of four stars that dominates the season and serves as the sky’s great signpost.", "where": "High in the south on autumn evenings. The Great Square is the most prominent autumn pattern.", "find": "Look for a large, near-empty square of four moderate stars tilted like a baseball diamond. The neck and nose (ending at Enif) extend from one corner.", "objects": "M15, one of the finest globular clusters in the sky, sits just off Enif, the muzzle — a bright, satisfying target. Counting stars inside the empty Square is a fun naked-eye darkness test.", "best": "September–November", "stars": [["", 22.1665, 33.1782, 4.28, 0.47], ["Matar", 22.7167, 30.2212, 2.93, 0.85], ["Scheat", 23.0629, 28.0828, 2.44, 1.66], ["Sadalbari", 22.8334, 24.6016, 3.51, 0.93], ["", 22.7755, 23.5657, 3.97, 1.07], ["", 22.1168, 25.3451, 3.77, 0.43], ["", 21.7441, 25.645, 4.14, 0.42], ["Alpheratz", 0.1398, 29.0904, 2.07, -0.04], ["Markab", 23.0793, 15.2053, 2.49, -0.0], ["Algenib", 0.2206, 15.1836, 2.83, -0.19], ["Enif", 21.7364, 9.875, 2.38, 1.52], ["Biham", 22.17, 6.1979, 3.52, 0.09], ["Homam", 22.691, 10.8314, 3.41, -0.09]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [7, 2], [2, 8], [8, 9], [9, 7], [10, 11], [11, 12], [12, 8]]}, {"key": "cepheus", "name": "Cepheus", "type": "Constellation", "season": "Autumn", "lead": "the house", "about": "The King, Cassiopeia’s husband — a constellation shaped like a child’s drawing of a house with a steep roof. Home to the Garnet Star, one of the reddest and largest stars known.", "where": "High in the north, circumpolar from Zion (never sets), between Cassiopeia and Polaris. Best placed on autumn evenings.", "find": "Find the five-star “house” between Cassiopeia’s W and Polaris, its pointed roof aimed at the pole.", "objects": "The Garnet Star (Mu Cephei) is a deep-red supergiant, stunning in binoculars. The region is rich in faint nebulae — the Iris Nebula and the Wizard — for long-exposure photography.", "best": "September–December; all year from Zion", "stars": [["", 20.7548, 61.8388, 3.41, 0.91], ["Alderamin", 21.3096, 62.5856, 2.45, 0.26], ["Alfirk", 21.4777, 70.5607, 3.23, -0.2], ["", 22.828, 66.2004, 3.5, 1.05], ["Errai", 23.6558, 77.6323, 3.21, 1.03], ["", 22.4862, 58.4152, 4.07, 0.78], ["", 22.1809, 58.2013, 3.39, 1.56], ["", 22.2505, 57.0436, 4.18, 0.28], ["Herschel's Garnet Star", 21.7251, 58.78, 4.23, 2.24], ["", 20.493, 62.9941, 4.21, 0.2]], "lines": [[0, 1], [1, 2], [2, 3], [3, 2], [2, 4], [4, 3], [3, 5], [5, 6], [6, 7], [7, 8], [8, 1], [9, 0]]}, {"key": "draco", "name": "Draco", "type": "Constellation", "season": "Summer", "lead": "the Dragon", "about": "The Dragon, a long winding river of stars coiling between the Big and Little Dippers. Its head is a compact quadrilateral; its tail wraps halfway around the north pole. Thuban, in the tail, was the pole star when the pyramids were built.", "where": "High in the north, circumpolar from Zion. The head rides highest, near the zenith, on summer evenings.", "find": "Locate the four-star head (a lopsided box) near brilliant Vega, then trace the faint body winding between the two Dippers and around the Little Dipper’s bowl.", "objects": "The Cat’s Eye Nebula, a small intensely structured planetary, lies in the coils — a high-power and imaging gem. The faint “Tadpole” galaxy and several spirals also hide here.", "best": "May–September; all year from Zion", "stars": [["Giausar", 11.5234, 69.3311, 3.82, 1.61], ["", 12.5581, 69.7882, 3.85, -0.12], ["Thuban", 14.0732, 64.3758, 3.67, -0.05], ["Edasich", 15.4155, 58.9661, 3.29, 1.17], ["", 16.0315, 58.5653, 4.01, 0.53], ["", 16.3999, 61.5142, 2.73, 0.91], ["", 17.1464, 65.7147, 3.17, -0.12], ["", 18.346, 71.3378, 4.22, -0.09], ["", 18.3507, 72.7328, 3.55, 0.49], ["Altais", 19.2092, 67.6615, 3.07, 0.99], ["", 19.8028, 70.2679, 3.84, 0.89], ["Grumium", 17.8921, 56.8726, 3.73, 1.18], ["", 17.5378, 55.173, 4.86, 0.28], ["Rastaban", 17.5072, 52.3014, 2.79, 0.95], ["Eltanin", 17.9434, 51.4889, 2.24, 1.52]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 7], [7, 9], [9, 10], [10, 9], [9, 11], [11, 12], [12, 13], [13, 14], [14, 11], [11, 9]]}, {"key": "corvus", "name": "Corvus", "type": "Constellation", "season": "Spring", "lead": "the Crow", "about": "The Crow — a small but punchy quadrilateral of four stars low in the spring sky, easy to pick out because it stands alone in a sparse region south of Virgo.", "where": "Low in the south on spring evenings, southwest of Spica. Sits well south, so Zion’s low southern horizon helps.", "find": "Look low in the south for a compact, sail-shaped box of four stars below and right of bright Spica.", "objects": "The Antennae — a famous pair of colliding galaxies — lie on the constellation’s edge, a prized astrophotography target. The Sombrero Galaxy sits just north toward Virgo.", "best": "April–May (low south)", "stars": [["Algorab", 12.4977, -16.5154, 2.94, -0.01], ["Gienah", 12.2634, -17.5419, 2.58, -0.11], ["", 12.1687, -22.6198, 3.02, 1.33], ["", 12.5731, -23.3968, 2.65, 0.89], ["Alchiba", 12.1402, -24.7289, 4.02, 0.33]], "lines": [[0, 1], [1, 2], [2, 3], [3, 0], [2, 4]]}, {"key": "ophiuchus", "name": "Ophiuchus", "type": "Constellation", "season": "Summer", "lead": "the Serpent-Bearer", "about": "The Serpent-Bearer — a huge constellation often called the unofficial 13th zodiac sign, since the Sun passes through it. A giant figure wrestling a serpent, straddling the summer Milky Way.", "where": "High in the south on summer evenings, between Hercules and Scorpius, just north of the galactic center.", "find": "Look for a large dome or coffin-shaped outline of stars topped by Rasalhague, sitting above and left of red Antares.", "objects": "One of the richest globular-cluster fields anywhere — M10, M12, M14, and M19 all lie within it, fine in scopes and cameras. Barnard’s Star, the fastest-moving star in the sky, is here.", "best": "June–August", "stars": [["Rasalhague", 17.5822, 12.56, 2.08, 0.15], ["", 16.9611, 9.375, 3.19, 1.16], ["Marfik", 16.5152, 1.9839, 3.82, 0.02], ["Yed Prior", 16.2391, -3.6943, 2.73, 1.58], ["Yed Posterior", 16.3054, -4.6925, 3.23, 0.97], ["", 16.4634, -8.3717, 4.62, 0.18], ["", 16.6193, -10.5671, 2.54, 0.04], ["Sabik", 17.173, -15.7249, 2.43, 0.06], ["Cebalrai", 17.7245, 4.5673, 2.76, 1.17], ["", 17.7982, 2.7073, 3.75, 0.04], ["", 17.9838, -9.7736, 3.32, 0.99], ["", 17.3668, -24.9995, 3.27, -0.19], ["", 17.4559, -29.867, 4.28, 0.4], ["", 16.519, -16.6127, 4.29, 0.92], ["", 16.4504, -18.4563, 4.22, 0.22], ["", 16.4017, -20.0373, 4.48, 1.0], ["", 16.4264, -23.4472, 4.57, 0.23]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 5], [5, 4], [4, 3], [3, 2], [2, 1], [1, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 9], [9, 8], [8, 0], [7, 11], [11, 12], [6, 13], [13, 14], [14, 15], [15, 16]]}, {"key": "serpens", "name": "Serpens", "type": "Constellation", "season": "Summer", "lead": "the Serpent", "about": "The Serpent — the only constellation split into two separate halves, held by Ophiuchus the Serpent-Bearer. Serpens Caput (the head) lies to the west, Serpens Cauda (the tail) to the east, with the great figure of Ophiuchus between them.", "where": "In the southern summer sky, draped on either side of Ophiuchus between Boötes and the Milky Way. The head is the more prominent half.", "find": "Find the small, distinct triangle of the serpent’s head west of Ophiuchus, below the Northern Crown. From there the body runs east, disappearing behind Ophiuchus and re-emerging as the tail toward the Milky Way.", "objects": "The head holds M5, one of the finest globular clusters in the sky. The tail contains the Eagle Nebula (M16) with its famous “Pillars of Creation” — a superb astrophotography target.", "best": "June–August", "stars": [["", 15.7698, 15.4218, 3.65, 0.07], ["", 15.9409, 15.6616, 3.85, 0.48], ["", 15.8123, 18.1416, 4.09, 1.62], ["", 15.6925, 19.6704, 4.51, 0.06], ["", 15.58, 10.5389, 3.8, 0.27], ["Unukalhai", 15.7378, 6.4256, 2.63, 1.17], ["", 15.8469, 4.4777, 3.71, 0.15], ["", 15.827, -3.4302, 3.54, -0.04], ["Yed Prior", 16.2391, -3.6943, 2.73, 1.58], ["Sabik", 17.173, -15.7249, 2.43, 0.06], ["", 17.6264, -15.3986, 3.54, 0.26], ["", 17.9838, -9.7736, 3.32, 0.99], ["", 18.3552, -2.8988, 3.23, 0.94], ["Alya", 18.937, 4.2036, 4.62, 0.16]], "lines": [[0, 1], [1, 2], [2, 3], [3, 0], [0, 4], [4, 5], [5, 6], [6, 7], [7, 8], [9, 10], [10, 11], [11, 12], [12, 13]]}, {"key": "hercules", "name": "Hercules", "type": "Constellation", "season": "Summer", "lead": "the Keystone", "about": "The Strongman, a large but dim constellation whose heart is the Keystone — a lopsided square of four stars. He is shown kneeling, upside-down, between brilliant Vega and orange Arcturus.", "where": "High overhead on summer evenings, midway between Vega and Arcturus.", "find": "Find the four-star Keystone — a slightly squashed square — high overhead. Two lines of stars (the arms and legs) splay out from its corners.", "objects": "The Great Globular Cluster M13 rides on the Keystone’s western edge — a half-million suns in a ball, the showpiece globular of the northern sky and a superb camera target. M92 is a fine second globular.", "best": "June–August (overhead)", "stars": [["", 17.2505, 24.8392, 3.12, 0.08], ["Rasalgethi", 17.2441, 14.3903, 2.78, 1.16], ["Kornephoros", 16.5037, 21.4896, 2.78, 0.95], ["", 16.3653, 19.1531, 3.74, 0.3], ["", 16.6881, 31.6027, 2.81, 0.65], ["", 17.0048, 30.9264, 3.92, -0.02], ["", 16.7149, 38.9223, 3.48, 0.92], ["", 16.5684, 42.437, 4.2, -0.01], ["", 16.329, 46.3134, 3.91, -0.15], ["", 17.2508, 36.8092, 3.16, 1.44], ["", 17.3947, 37.1459, 4.15, -0.01], ["", 17.9376, 37.2505, 3.86, 1.35], ["", 17.6577, 46.0063, 3.82, -0.18], ["Maasym", 17.5123, 26.1106, 4.41, 1.43], ["", 17.7743, 27.7207, 3.42, 0.75], ["", 17.9627, 29.2479, 3.7, 0.94], ["", 18.1257, 28.7625, 3.84, -0.02], ["", 15.8779, 42.4515, 4.6, 0.56], ["", 16.1462, 44.9349, 4.23, -0.04], ["Cujam", 16.4236, 14.0333, 4.57, 0.0], ["", 16.5434, 11.488, 4.84, 1.5]], "lines": [[0, 1], [1, 2], [2, 3], [3, 2], [2, 4], [4, 5], [5, 4], [4, 6], [6, 7], [7, 8], [8, 7], [7, 6], [6, 9], [9, 10], [10, 11], [11, 12], [12, 11], [11, 10], [10, 9], [9, 5], [5, 0], [0, 13], [13, 14], [14, 15], [15, 16], [17, 18], [18, 8], [3, 19], [19, 20]]}, {"key": "cancer", "name": "Cancer", "type": "Constellation", "season": "Spring", "lead": "the Beehive", "about": "The Crab — the faintest of the zodiac constellations, a dim inverted Y. Its claim to fame is the Beehive Cluster at its heart, one of the nearest and brightest open clusters.", "where": "High in the south on late-winter and spring evenings, between Gemini and Leo. A zodiac constellation, so the planets pass through.", "find": "Aim midway between Pollux (in Gemini) and Regulus (in Leo). The stars are faint, but on a dark night the Beehive shows as a hazy patch at the center.", "objects": "The Beehive Cluster (M44) is a glorious naked-eye haze that bursts into dozens of stars in binoculars — a lovely wide-field photo target. The older cluster M67 lies nearby.", "best": "February–April", "stars": [["Acubens", 8.9748, 11.8577, 4.26, 0.14], ["Asellus Australis", 8.7447, 18.1543, 3.94, 1.08], ["", 8.2753, 9.1855, 3.53, 1.48], ["Asellus Borealis", 8.7214, 21.4685, 4.66, 0.01], ["", 8.7783, 28.7599, 4.03, 1.01]], "lines": [[0, 1], [1, 2], [2, 1], [1, 3], [3, 4]]}, {"key": "aquarius", "name": "Aquarius", "type": "Constellation", "season": "Autumn", "lead": "the Water-Bearer", "about": "The Water-Bearer, a large, faint zodiac constellation. Its distinctive feature is the small “Water Jar” asterism of four stars, from which a stream of stars pours south.", "where": "In the southern sky on autumn evenings, southwest of Pegasus near the celestial equator.", "find": "Drop south from the Great Square of Pegasus to find the little Y-shaped Water Jar marked by Sadalmelik and Sadalsuud.", "objects": "Two superb planetary nebulae: the Helix (the “Eye of God,” the closest bright planetary) and the Saturn Nebula — both fine targets. The globular M2 sits in the north of the constellation.", "best": "September–November", "stars": [["Albali", 20.7946, -9.4958, 3.78, 0.0], ["Sadalsuud", 21.526, -5.5712, 2.9, 0.83], ["Sadalmelik", 22.0964, -0.3199, 2.95, 0.97], ["Sadachbia", 22.3609, -1.3873, 3.86, -0.06], ["", 22.4805, -0.02, 3.65, 0.41], ["", 22.5893, -0.1175, 4.04, -0.08], ["", 22.4213, 1.3774, 4.8, -0.17], ["", 22.1073, -13.8697, 4.29, -0.07], ["Ancha", 22.2806, -7.7833, 4.17, 0.98], ["", 22.8769, -7.5796, 3.73, 1.63], ["", 23.2387, -6.049, 4.22, 1.54], ["", 23.2984, -9.1825, 4.41, -0.14], ["", 23.3828, -20.1006, 3.96, 1.08], ["", 23.1574, -21.1724, 3.68, 1.2], ["Skat", 22.9108, -15.8208, 3.27, 0.07], ["", 22.8265, -13.5926, 4.05, 1.57]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 4], [4, 6], [6, 2], [7, 1], [1, 2], [2, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 11], [11, 13], [13, 11], [11, 14], [14, 15], [15, 9]]}, {"key": "capricornus", "name": "Capricornus", "type": "Constellation", "season": "Autumn", "lead": "the Sea-Goat", "about": "The Sea-Goat — a faint, ancient zodiac constellation shaped like a wide, drooping triangle or boat. Its brightest star Algedi is a naked-eye double of two unrelated stars.", "where": "Low in the south on late-summer and autumn evenings, east of Sagittarius along the zodiac.", "find": "Look low in the south for a large, dim triangle. Sharp eyes (or binoculars) split the top star Algedi into two.", "objects": "The globular cluster M30 lies near the constellation’s tail — a compact, satisfying target. The wide pair Algedi is a fun naked-eye and binocular sight.", "best": "August–October (low south)", "stars": [["Algedi", 20.3009, -12.5449, 3.58, 0.88], ["Dabih", 20.3502, -14.7814, 3.05, 0.79], ["", 20.7683, -25.2709, 4.13, 0.43], ["", 20.8637, -26.9191, 4.12, 1.63], ["", 21.4445, -22.4113, 3.77, 1.0], ["", 21.618, -19.466, 4.51, -0.18], ["Deneb Algedi", 21.784, -16.1273, 2.85, 0.18], ["Nashira", 21.6682, -16.6623, 3.69, 0.32], ["", 21.0991, -17.2329, 4.08, -0.01]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 0]]}, {"key": "cetus", "name": "Cetus", "type": "Constellation", "season": "Autumn", "lead": "the Whale", "about": "The Sea Monster (or Whale) — the fourth-largest constellation, sprawling below the zodiac. Its star Mira was the first variable star discovered, swinging from naked-eye bright to invisible over 11 months.", "where": "Across the southern sky on autumn and early-winter evenings, beneath Pisces and Aries.", "find": "Find the head — a small ring of stars led by Menkar — east of the body marked by Diphda (Deneb Kaitos). Mira lies between, brightening and fading over months.", "objects": "Mira is the must-watch variable — check whether it is visible at all. The bright face-on spiral galaxy M77 sits near the head, a fine deep-sky and imaging target.", "best": "October–December", "stars": [["", 2.7217, 3.2358, 3.47, 0.09], ["Menkar", 3.038, 4.0897, 2.54, 1.63], ["", 2.9952, 8.9074, 4.71, -0.11], ["", 2.749, 10.1141, 4.27, 0.31], ["", 2.4693, 8.4601, 4.3, -0.05], ["", 2.658, 0.3285, 4.08, -0.21], ["Mira", 2.3224, -2.9776, 6.47, 0.97], ["Baten Kaitos", 1.8577, -10.335, 3.74, 1.14], ["", 1.7345, -15.9375, 3.49, 0.73], ["Deneb Kaitos", 0.7265, -17.9866, 2.04, 1.02], ["", 0.3238, -8.8239, 3.56, 1.21], ["", 1.1432, -10.1823, 3.46, 1.16], ["", 1.4004, -8.1833, 3.6, 1.06]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 0], [0, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10], [10, 11], [11, 12], [12, 7]]}, {"key": "triangulum", "name": "Triangulum", "type": "Constellation", "season": "Autumn", "lead": "the Triangle", "about": "A small, simple constellation of three stars forming a narrow triangle — one of the few that looks exactly like its name. It holds the third-largest galaxy of our Local Group.", "where": "High overhead on autumn evenings, just south of Andromeda.", "find": "Below and east of the Andromeda chain, look for a thin, distinct triangle of three modest stars.", "objects": "The Triangulum Galaxy (M33) is a large, face-on spiral — a notorious naked-eye challenge under dark skies and a beautiful wide-field astrophoto target.", "best": "October–December", "stars": [["Mothallah", 1.8847, 29.5788, 3.42, 0.49], ["", 2.1591, 34.9873, 3.0, 0.14], ["", 2.2886, 33.8472, 4.03, 0.02]], "lines": [[0, 1], [1, 2], [2, 0]]}, {"key": "ursaminor", "name": "Ursa Minor", "type": "Constellation", "season": "Circumpolar", "lead": "Polaris", "about": "The Little Bear, home of Polaris — the North Star, which sits within half a degree of the north celestial pole and barely moves as the sky turns. The seven stars form a small, faint dipper whose handle is the bear’s curving tail.", "where": "Always in the north, never setting from Zion. Polaris stands 37° above the northern horizon (equal to Zion’s latitude), and the rest of the constellation wheels around it every 24 hours.", "find": "Find Polaris first using the Big Dipper’s Pointer stars (Dubhe and Merak), then trace the faint Little Dipper curving away from it. The two bowl stars Kochab and Pherkad are the brightest after Polaris.", "objects": "Polaris is the classic star-trail photography target — every star in the sky circles it. It is also a Cepheid variable, dimming and brightening slightly every four days. Kochab and Pherkad were the pole stars 3,000 years ago, when Homer called them the Bears.", "best": "All year from Zion (circumpolar)", "stars": [["Polaris", 2.5297, 89.2641, 1.97, 0.64], ["Yildun", 17.5369, 86.5865, 4.35, 0.02], ["", 16.7662, 82.0373, 4.21, 0.9], ["", 15.7343, 77.7945, 4.29, 0.04], ["", 16.2918, 75.7553, 4.95, 0.39], ["Pherkad", 15.3455, 71.834, 3.0, 0.06], ["Kochab", 14.8451, 74.1555, 2.07, 1.47]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 3]]}, {"key": "delphinus", "name": "Delphinus", "type": "Constellation", "season": "Summer", "lead": "Job’s Coffin", "about": "The Dolphin — a tiny constellation whose five brightest stars form a near-perfect diamond that looks exactly like a leaping porpoise. Everyone who finds it is charmed by how well it lives up to its name. Two of its stars are nicknamed Sualocin and Rotanev — the reversed Latin name of an Italian astronomer who sneaked himself into the 1814 Palermo Star Catalogue.", "where": "In the east then high south on late-summer evenings, just east of Aquila and the Summer Triangle. Small and faint but very distinctive once you know the compact diamond.", "find": "From Altair (the Summer Triangle’s south star), hop east about 10°. Look for four stars in a tight diamond (Job’s Coffin) with a fifth forming the dolphin’s tail below-right.", "objects": "The diamond asterism is the reward. NGC 6934 is a moderately bright globular just outside the border. Sualocin and Rotanev are among the few stars with names that are jokes.", "best": "August–October", "stars": [["", 20.5535, 11.3033, 4.03, -0.12], ["Rotanev", 20.6258, 14.5951, 3.64, 0.42], ["Sualocin", 20.6606, 15.9121, 3.77, -0.06], ["", 20.7776, 16.1243, 4.27, 1.04], ["", 20.7243, 15.0746, 4.43, 0.3]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 1]]}, {"key": "aries", "name": "Aries", "type": "Constellation", "season": "Autumn", "lead": "Hamal", "about": "The Ram — a small zodiac constellation tracing the ram’s head and horns. Historically critical: two thousand years ago the Sun crossed the celestial equator here, making Aries the first sign of the zodiac. Precession has shifted that point into Pisces, but “the First Point of Aries” remains the zero of right ascension in astronomy.", "where": "High in the south on autumn and early-winter evenings, between the Pleiades (Taurus) and the Great Square of Pegasus. A zodiac constellation: planets cross it regularly.", "find": "Look for a shallow, curved line of three stars between the Pleiades and the Great Square of Pegasus. Hamal, the brightest, is a warm orange star. A fourth star, Botein, extends the arc slightly.", "objects": "Gamma Arietis (Mesarthim) was the first double star discovered by telescope (Robert Hooke, 1664) — a clean, easy split. Watch for bright planets passing through this region.", "best": "October–January", "stars": [["Mesartim", 1.8922, 19.2939, 3.88, -0.05], ["Sheratan", 1.9107, 20.808, 2.64, 0.17], ["Hamal", 2.1196, 23.4624, 2.01, 1.15], ["", 2.8331, 27.2605, 3.61, -0.1]], "lines": [[0, 1], [1, 2], [2, 3]]}, {"key": "scutum", "name": "Scutum", "type": "Constellation", "season": "Summer", "lead": "the Shield", "about": "The Shield — a tiny, faint constellation sitting in the middle of one of the richest Milky Way star clouds visible from Earth. It has almost no figure, but the Scutum Star Cloud around it is a naked-eye treasure and the Wild Duck Cluster (M11) is one of the finest open clusters in the sky.", "where": "Low in the south on summer evenings, between Aquila and Sagittarius, in the brightest part of the Milky Way. Follow the galaxy band south from Altair.", "find": "Drop south from Altair along the Milky Way into a noticeably brighter, denser star cloud. Scutum is a small, faint quadrilateral at the top of this cloud, just south of the Wild Duck’s patch.", "objects": "M11, the Wild Duck Cluster — one of the richest open clusters in the sky, so dense it nearly looks globular. The Scutum Star Cloud itself is a spectacular naked-eye and wide-field photo target on a dark Zion night.", "best": "July–August (peak Milky Way)", "stars": [["", 18.7862, -4.7479, 4.22, 1.09], ["", 18.5868, -8.2441, 3.85, 1.32], ["", 18.4866, -14.5658, 4.67, 0.08], ["", 18.7046, -9.0525, 4.7, 0.36]], "lines": [[0, 1], [1, 2], [2, 3], [3, 0]]}, {"key": "leoMinor", "name": "Leo Minor", "type": "Constellation", "season": "Spring", "lead": "the Little Lion", "about": "The Little Lion — a small, faint constellation sandwiched between Leo and Ursa Major in the spring sky. A historical curiosity: its brightest star was never assigned the letter Alpha (an oversight by Hevelius in 1687), so 46 Leonis Minoris holds the top spot by default.", "where": "In the spring sky directly above Leo and below the bowl of the Big Dipper, riding high overhead around 10 PM in April.", "find": "Aim midway between Regulus (in Leo) and Merak (in the Big Dipper). A faint arc of four stars curves through this region. Not striking, but worth knowing for the galaxy fields it frames.", "objects": "Contains faint spring galaxies including the face-on NGC 3344 and striking edge-on NGC 3432. Good galaxy-season scope targets in an under-observed region.", "best": "March–May", "stars": [["", 9.5704, 36.3976, 4.54, 0.91], ["", 10.1238, 35.2447, 4.49, 0.19], ["", 10.4647, 36.7072, 4.2, 0.91], ["", 10.8885, 34.2149, 3.79, 1.04], ["", 10.4319, 33.7961, 4.72, 0.26]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 1]]}, {"key": "coronaborealis", "name": "Corona Borealis", "type": "Constellation", "season": "Summer", "lead": "Alphecca", "about": "The Northern Crown — a delicate, perfect semicircle of seven stars with Alphecca as the jewel. One of the few constellations that genuinely looks like its name, it is charming and unmistakable. It also harbours T Coronae Borealis, the Blaze Star — a recurrent nova that erupts to naked-eye brightness roughly every 80 years and is overdue.", "where": "High in the south on early-summer evenings, between the orange beacon Arcturus and the Keystone of Hercules.", "find": "Find orange Arcturus, then look east for the small, distinct crown semicircle with Alphecca as the brightest star. It sits midway between Arcturus and the Hercules Keystone.", "objects": "T Coronae Borealis — normally magnitude 10 but erupts to around magnitude 2. The last outburst was 1946; the star has been showing pre-eruption behaviour and may flare any season. Mark this spot.", "best": "May–August", "stars": [["", 15.5488, 31.3591, 4.14, -0.13], ["Nusakan", 15.4638, 29.1057, 3.66, 0.32], ["Alphecca", 15.5781, 26.7147, 2.22, 0.03], ["", 15.7124, 26.2956, 3.81, 0.02], ["", 15.8266, 26.0684, 4.59, 0.79], ["", 15.9598, 26.8779, 4.14, 1.23], ["", 16.024, 29.8511, 4.98, -0.05]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]}, {"key": "summertriangle", "name": "Summer Triangle", "type": "Asterism", "season": "Summer", "lead": "Vega, Deneb, Altair", "about": "A vast triangle drawn from the brightest stars of three constellations — Vega in Lyra, Deneb in Cygnus, Altair in Aquila. It dominates the summer sky and is the easiest pattern of the season to learn.", "where": "Nearly overhead on summer and early-autumn evenings; still high in the west into November.", "find": "Look near the zenith for three brilliant stars in a large triangle. The brightest (and highest in early evening) is Vega; the Milky Way runs through the triangle between Deneb and Altair.", "objects": "Frames the richest part of the northern summer Milky Way — sweep inside it with binoculars from Zion and the star fields, dark rifts, and nebulae are endless. A spectacular wide-field photo region.", "best": "July–September (overhead)", "stars": [["Vega", 18.6156, 38.784, 0.03, 0], ["Deneb", 20.6905, 45.28, 1.25, 0.09], ["Altair", 19.8464, 8.868, 0.76, 0.22]], "lines": [[0, 1], [1, 2], [2, 0]]}, {"key": "springtriangle", "name": "Spring Triangle", "type": "Asterism", "season": "Spring", "lead": "Arcturus, Spica, Regulus", "about": "A large triangle of three spring beacons — orange Arcturus, blue-white Spica, and Regulus — that frames the high southern sky once winter’s stars have set.", "where": "High across the southern sky on spring evenings. Some add Denebola (Leo’s tail) to make a “Spring Diamond.”", "find": "Arc off the Big Dipper’s handle to Arcturus, then speed on to Spica; Regulus sits to the west, completing a big triangle high in the south.", "objects": "The triangle encloses “galaxy season” — the Virgo Cluster, the Leo galaxies, and countless faint island universes lie within it for scopes and long exposures.", "best": "April–June", "stars": [["Arcturus", 14.261, 19.182, -0.05, 1.23], ["Spica", 13.4199, -11.161, 0.98, -0.24], ["Regulus", 10.1395, 11.967, 1.36, -0.11]], "lines": [[0, 1], [1, 2], [2, 0]]}, {"key": "wintertriangle", "name": "Winter Triangle", "type": "Asterism", "season": "Winter", "lead": "Betelgeuse, Sirius, Procyon", "about": "A near-perfect equilateral triangle of three brilliant winter stars: red Betelgeuse in Orion, blazing Sirius in Canis Major, and Procyon in Canis Minor.", "where": "Rides up the southeastern sky on winter evenings, standing south around 9 PM in January–February.", "find": "Betelgeuse (Orion’s reddish shoulder), Sirius (the brightest star, below-left), and Procyon (to the left) form a big, obvious triangle.", "objects": "A signpost rather than a target — its corners point you to Orion, both Dogs, and the whole winter sky. The Milky Way runs through it for wide-field shots.", "best": "December–March", "stars": [["Betelgeuse", 5.9195, 7.407, 0.5, 1.85], ["Sirius", 6.7525, -16.716, -1.46, 0], ["Procyon", 7.655, 5.225, 0.34, 0.42]], "lines": [[0, 1], [1, 2], [2, 0]]}, {"key": "winterhexagon", "name": "Winter Hexagon", "type": "Asterism", "season": "Winter", "lead": "six winter beacons", "about": "A giant ring of six of the brightest stars in the sky — Rigel, Aldebaran, Capella, Pollux, Procyon, and Sirius — spanning a huge swath of the winter heavens. Also called the Winter Circle.", "where": "Fills the southern half of the sky on winter evenings, with Orion standing inside it.", "find": "Take in the whole southern sky: six brilliant stars form an enormous hexagon, with reddish Betelgeuse near its center.", "objects": "Encloses Orion and nearly every winter showpiece — a loop around the hexagon hits the year’s best clusters and the Orion Nebula along the way.", "best": "December–February", "stars": [["Rigel", 5.2423, -8.202, 0.18, -0.03], ["Aldebaran", 4.5987, 16.509, 0.85, 1.54], ["Capella", 5.2782, 45.998, 0.08, 0.8], ["Pollux", 7.7553, 28.026, 1.16, 1], ["Procyon", 7.655, 5.225, 0.34, 0.42], ["Sirius", 6.7525, -16.716, -1.46, 0]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 0]]}, {"key": "greatsquare", "name": "Great Square of Pegasus", "type": "Asterism", "season": "Autumn", "lead": "four corners", "about": "Four stars marking the body of Pegasus in a large, conspicuously empty box — the defining signpost of the autumn sky.", "where": "High in the south on autumn evenings.", "find": "Look for a big square of four moderate stars tilted like a baseball diamond, with very little inside it.", "objects": "A dark-sky test (count the stars inside) and a launch point: from the Square you star-hop to Andromeda and its great galaxy, and down into the autumn deep sky.", "best": "September–November", "stars": [["Markab", 23.0793, 15.205, 2.49, -0.01], ["Scheat", 23.0629, 28.083, 2.42, 1.66], ["Alpheratz", 0.1398, 29.091, 2.07, -0.04], ["Algenib", 0.2206, 15.184, 2.83, -0.19]], "lines": [[0, 1], [1, 2], [2, 3], [3, 0]]}, {"key": "littledipper", "name": "Little Dipper", "type": "Asterism", "season": "Circumpolar", "lead": "Polaris", "about": "The tail and body of Ursa Minor, the Little Bear — a faint dipper anchored by Polaris, the North Star, at the tip of its handle. Polaris sits almost exactly over the north celestial pole.", "where": "In the north, circumpolar from Zion (never sets). Polaris stays fixed; the rest wheels around it through the night.", "find": "Use the Big Dipper’s two Pointer stars to find Polaris, a modestly bright star standing alone in the north. The faint bowl (Kochab and Pherkad, the “Guardians”) curls back from there.", "objects": "Polaris barely moves — aim a camera at it for perfect circular star trails. The Little Dipper’s faint stars double as a sky-darkness gauge.", "best": "All year from Zion (circumpolar)", "stars": [["Polaris", 2.5303, 89.264, 1.98, 0.6], ["Yildun", 17.5369, 86.586, 4.36, 0], ["Epsilon", 16.7662, 82.037, 4.21, 0.89], ["Zeta", 15.7344, 77.794, 4.29, 0.04], ["Pherkad", 15.3455, 71.834, 3.05, 0.06], ["Kochab", 14.8451, 74.156, 2.07, 1.47], ["Eta", 16.292, 75.755, 4.95, 0.36]], "lines": [[0, 1], [1, 2], [2, 3], [3, 6], [6, 4], [4, 5], [5, 3]]}, {"key": "teapot", "name": "The Teapot", "type": "Asterism", "season": "Summer", "lead": "heart of Sagittarius", "about": "The eight brightest stars of Sagittarius, forming a teapot so convincing it has all but replaced the Archer in modern stargazing. It aims squarely at the center of the Milky Way galaxy.", "where": "Low in the south on summer nights, just east of Scorpius.", "find": "The spout, handle, and lid are immediately obvious low in the south. From dark Zion skies the Milky Way billows up from the spout like steam.", "objects": "The single richest patch of sky for binoculars and cameras — the Lagoon and Trifid nebulae, the M22 globular, and dense star clouds all cluster just above the pot.", "best": "July–August (peak Milky Way)", "stars": [["Alnasl", 18.0966, -30.424, 2.98, 1.04], ["Kaus Media", 18.3494, -29.828, 2.7, 1.38], ["Kaus Australis", 18.4029, -34.385, 1.79, -0.03], ["Kaus Borealis", 18.4662, -25.422, 2.81, 1.06], ["Phi", 18.7621, -26.991, 3.17, -0.01], ["Nunki", 18.9219, -26.297, 2.05, -0.13], ["Tau", 19.1153, -27.671, 3.32, 1.18], ["Ascella", 19.0435, -29.88, 2.6, 0.06]], "lines": [[0, 1], [1, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 2], [2, 1], [4, 1]]}, {"key": "northerncross", "name": "Northern Cross", "type": "Asterism", "season": "Summer", "lead": "within Cygnus", "about": "The brightest stars of Cygnus the Swan, arranged as an unmistakable cross. In late autumn it stands upright on the northwestern horizon at dusk, an evocative sight that names the asterism.", "where": "Nearly overhead in summer, lying along the Milky Way; settling into the northwest by late autumn.", "find": "Deneb marks the top of the cross, Albireo the foot, with the crossbar through Sadr in the middle.", "objects": "Albireo at the foot is the sky’s most beautiful double — gold and blue. The crossbar lies in dense Milky Way fields thick with clusters and nebulae for imaging.", "best": "July–October", "stars": [["Deneb", 20.6905, 45.28, 1.25, 0.09], ["Sadr", 20.3705, 40.257, 2.23, 0.67], ["Albireo", 19.5121, 27.96, 3.08, 1.09], ["Gienah", 20.7704, 33.97, 2.48, 1.02], ["Delta", 19.7495, 45.131, 2.87, -0.03]], "lines": [[0, 1], [1, 2], [3, 1], [1, 4]]}, {"key": "coathanger", "name": "The Coathanger", "type": "Asterism", "season": "Summer", "lead": "a binocular surprise", "binocular": true, "about": "A chance alignment of ten unrelated stars forming a perfect upside-down coathanger — a straight bar with a hook. Not a true cluster, just a delightful line-of-sight coincidence. Too faint for naked eyes, but a showpiece in binoculars.", "where": "In the summer Milky Way between Cygnus and Aquila, near the little constellation Vulpecula.", "find": "Sweep with binoculars about a third of the way from Albireo (foot of the Northern Cross) toward Altair. The little coathanger pops out unmistakably.", "objects": "The asterism itself is the prize — one of the most charming and surprising binocular sights in the whole sky.", "best": "July–September (binoculars)", "stars": [["", 19.0667, 20.183, 5.2, 0.9], ["", 19.1, 20, 6.2, 0.6], ["", 19.1333, 19.9, 6.6, 0.5], ["", 19.1667, 19.7, 5, 1.2], ["", 19.2, 19.6, 5.2, 0.4], ["", 19.2333, 19.5, 6.1, 1], ["", 19.1667, 19.3, 7, 0.7], ["", 19.1167, 19.2, 6.4, 0.5]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [3, 6], [6, 7]]}, {"key": "pleiades", "name": "The Pleiades", "type": "Asterism", "season": "Winter", "lead": "the Seven Sisters", "about": "The most famous star cluster in the sky — known to virtually every culture on Earth for at least 30,000 years. A genuine young open cluster 444 light years away and only 100 million years old, whose hottest members are still wrapped in blue reflection nebulosity from a passing dust cloud.", "where": "On the shoulder of Taurus on autumn and winter evenings, rising in the northeast in October and riding high by December. One of the first things to rise after sunset in autumn.", "find": "Impossible to miss — a tight, unmistakable dipper-shaped knot of blue stars in Taurus, up and to the right of orange Aldebaran. The naked eye sees six or seven; binoculars reveal dozens.", "objects": "The cluster itself is the object — one of the finest naked-eye and binocular sights in the sky. Under dark Zion conditions the surrounding reflection nebula shows in long-exposure photographs. A classic wide-field astrophotography target.", "best": "October–February", "stars": [["Alcyone", 3.791, 24.105, 2.87, -0.09], ["Atlas", 3.8194, 24.053, 3.63, -0.1], ["Electra", 3.7441, 24.113, 3.7, -0.11], ["Maia", 3.7752, 24.368, 3.87, -0.07], ["Merope", 3.7762, 23.948, 4.18, -0.06], ["Taygeta", 3.7649, 24.467, 4.3, -0.11], ["Pleione", 3.81, 24.133, 5.05, -0.08]], "lines": [[0, 1], [0, 2], [0, 3], [0, 4], [0, 5], [0, 6]]}, {"key": "fishhook", "name": "The Fish Hook", "type": "Asterism", "season": "Summer", "lead": "the tail of Scorpius", "about": "The curving tail of Scorpius — from Shaula and Lesath (the stinger) back through the body — traces a perfect fish-hook shape in the southern sky. The Polynesian navigators knew this as Maui’s Fish Hook and used it to navigate the Pacific, making Scorpius one of the most culturally significant constellations in the world.", "where": "Low in the south on summer evenings — Zion’s dark southern horizon reveals the full hook when Scorpius is at its best in July.", "find": "Follow Scorpius south from Antares, past Epsilon and Mu, around the curve to the two bright stinger stars Shaula and Lesath sitting side by side at the tip.", "objects": "M7 (Ptolemy’s Cluster) and M6 (the Butterfly Cluster) hang just off the stinger — two of the finest open clusters in the southern Milky Way, gorgeous in binoculars and cameras.", "best": "June–August (low south)", "stars": [["Antares", 16.4901, -26.432, 1.06, 1.83], ["Tau", 16.5984, -28.216, 2.82, -0.2], ["Epsilon", 16.836, -34.293, 2.29, 1.15], ["Mu", 16.8655, -38.047, 3, -0.2], ["Zeta", 16.912, -42.362, 3.62, 1.4], ["Sargas", 17.6219, -42.998, 1.86, 0.4], ["Shaula", 17.5601, -37.104, 1.62, -0.23], ["Lesath", 17.5126, -37.296, 2.7, -0.16]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7]]}, {"key": "sickle", "name": "The Sickle", "type": "Asterism", "season": "Spring", "lead": "the head of Leo", "about": "A backwards question mark of six stars forming the head and mane of Leo the Lion. Regulus, the bright blue-white star, is the dot at the base. The Sickle is one of the most useful star-hop landmarks of the spring sky and one of the few asterisms that is also a genuine stellar association — the stars of the Sickle share a common origin.", "where": "High in the south on spring evenings, the western half of Leo. The backwards question mark stands out against the otherwise sparse spring sky.", "find": "Look high in the south for a lone brilliant blue-white star (Regulus), then trace five fainter stars curving above it in a backwards question mark — the lion’s mane.", "objects": "Regulus sits almost exactly on the ecliptic, so the Moon and planets pass very close to it several times a year — watch for dramatic close conjunctions. The Leo Triplet of galaxies lies just below the lion’s hindquarters.", "best": "March–May", "stars": [["Regulus", 10.1395, 11.967, 1.36, -0.11], ["Eta", 10.1222, 16.763, 3.48, -0.03], ["Algieba", 10.3328, 19.842, 2.01, 1.13], ["Adhafera", 10.2782, 23.417, 3.43, 0.31], ["Rasalas", 9.8797, 26.007, 3.88, 1.22], ["Epsilon", 9.7641, 23.774, 2.98, 0.81]], "lines": [[5, 4], [4, 3], [3, 2], [2, 1], [1, 0]]}, {"key": "kemble", "name": "Kemble’s Cascade", "type": "Asterism", "season": "Autumn", "lead": "a binocular river of stars", "binocular": true, "about": "A striking straight line of more than twenty faint stars tumbling across the sky toward a small cluster — named for the amateur astronomer Lucian Kemble, who delighted in it. A pure binocular pleasure, not a true grouping.", "where": "In the far-northern constellation Camelopardalis, between Cassiopeia’s W and Polaris. Circumpolar from Zion.", "find": "Sweep with binoculars in the dim region between Cassiopeia and the pole; the cascade is a remarkable straight chain of stars ending at the little cluster NGC 1502.", "objects": "The chain itself, capped by the small open cluster NGC 1502 — a lovely low-power and wide-field photo target.", "best": "October–February (binoculars); all year from Zion", "stars": [["", 3.55, 63.3, 5, 0.9], ["", 3.62, 62.95, 6.2, 0.6], ["", 3.69, 62.6, 5.9, 0.5], ["", 3.76, 62.25, 6.5, 1], ["", 3.83, 61.9, 5.2, 0.4], ["", 3.9, 61.55, 6.4, 1.2], ["NGC 1502", 4.13, 62.33, 5.7, 0.3]], "lines": [[0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6]]}];
+
+// ───────────────  4 · PROJECTION & MAP RENDER  ───────────────
+const TINT={w:'#F3E7C0',r:'#F0B27A',b:'#BCD2F0'};
+const D2R=Math.PI/180,H2R=Math.PI/12;
+function _project(raH,decD,ra0H,dec0D){
+  const ra=raH*H2R,dec=decD*D2R,ra0=ra0H*H2R,dec0=dec0D*D2R,dRA=ra-ra0;
+  const cosc=Math.sin(dec0)*Math.sin(dec)+Math.cos(dec0)*Math.cos(dec)*Math.cos(dRA);
+  const k=2/(1+cosc);
+  return {xi:k*Math.cos(dec)*Math.sin(dRA), eta:k*(Math.cos(dec0)*Math.sin(dec)-Math.sin(dec0)*Math.cos(dec)*Math.cos(dRA))};
+}
+function _center(stars){
+  let x=0,y=0,z=0;
+  for(const s of stars){const ra=s[1]*H2R,dec=s[2]*D2R;x+=Math.cos(dec)*Math.cos(ra);y+=Math.cos(dec)*Math.sin(ra);z+=Math.sin(dec)}
+  return {ra0:(Math.atan2(y,x)/H2R+24)%24, dec0:Math.atan2(z,Math.hypot(x,y))/D2R};
+}
+function _magR(m){return Math.max(1.6,Math.min(10,7.6-m*1.4))}
+function bvColor(bv,blend){
+  if(bv==null||isNaN(bv))bv=0.4; if(bv<-0.4)bv=-0.4; if(bv>2.0)bv=2.0;
+  var T=4600*(1/(0.92*bv+1.7)+1/(0.92*bv+0.62)),t=T/100,r,g,b;
+  if(t<=66){r=255;g=99.4708025861*Math.log(t)-161.1195681661}else{r=329.698727446*Math.pow(t-60,-0.1332047592);g=288.1221695283*Math.pow(t-60,-0.0755148492)}
+  if(t>=66)b=255;else if(t<=19)b=0;else b=138.5177312231*Math.log(t-10)-305.0447927307;
+  r=Math.max(0,Math.min(255,r));g=Math.max(0,Math.min(255,g));b=Math.max(0,Math.min(255,b));
+  var m=(blend==null?0.30:blend);
+  return 'rgb('+Math.round(r*(1-m)+243*m)+','+Math.round(g*(1-m)+231*m)+','+Math.round(b*(1-m)+192*m)+')';
+}
+function buildMap(entry,W,H,pad){
+  const c=_center(entry.stars);
+  const pts=entry.stars.map(s=>{const p=_project(s[1],s[2],c.ra0,c.dec0);return {x:-p.xi,y:-p.eta,name:s[0],mag:s[3],bv:s[4]}});
+  let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
+  pts.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y)});
+  const spanX=Math.max(1e-4,maxX-minX),spanY=Math.max(1e-4,maxY-minY);
+  const s=Math.min((W-2*pad)/spanX,(H-2*pad)/spanY);
+  const offX=(W-spanX*s)/2-minX*s,offY=(H-spanY*s)/2-minY*s;
+  const X=p=>p.x*s+offX,Y=p=>p.y*s+offY;
+  let svg='';
+  entry.lines.forEach(function(L){const a=pts[L[0]],b=pts[L[1]];
+    svg+='<line x1="'+X(a).toFixed(1)+'" y1="'+Y(a).toFixed(1)+'" x2="'+X(b).toFixed(1)+'" y2="'+Y(b).toFixed(1)+'" stroke="#CBA85A" stroke-width="1" stroke-opacity=".4"/>'});
+  pts.forEach(function(p){const r=_magR(p.mag),col=bvColor(p.bv),cx=X(p).toFixed(1),cy=Y(p).toFixed(1);
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+3).toFixed(1)+'" fill="'+col+'" opacity=".13"/>';
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'" fill="'+col+'"/>';
+    if(p.name){svg+='<text class="zcl-c-starlbl" x="'+cx+'" y="'+(Y(p)-r-6).toFixed(1)+'" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="12" fill="#C9BD97" opacity=".92">'+p.name+'</text>'}
+  });
+  return svg;
+}
+
+// ════════════════════════  5 · DETAIL  ════════════════════════
+const ICON_LOC='<svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5 C5.2 1.5 3 3.7 3 6.5 C3 10 8 14.5 8 14.5 C8 14.5 13 10 13 6.5 C13 3.7 10.8 1.5 8 1.5 Z" stroke="#CBA85A" stroke-width="1.3" fill="rgba(203,168,90,0.10)"/><circle cx="8" cy="6.4" r="1.8" fill="#CBA85A"/></svg>';
+const ICON_FIND='<svg viewBox="0 0 16 16" fill="none"><circle cx="6.6" cy="6.6" r="4.6" fill="rgba(125,150,180,0.16)" stroke="#CBA85A" stroke-width="1.4"/><line x1="10.1" y1="10.1" x2="14" y2="14" stroke="#B5933F" stroke-width="1.6" stroke-linecap="round"/></svg>';
+const ICON_OBJ='<svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5 L9.6 6 L14 6.4 L10.6 9.3 L11.7 13.7 L8 11.2 L4.3 13.7 L5.4 9.3 L2 6.4 L6.4 6 Z" fill="#CBA85A" opacity=".85"/></svg>';
+
+const $=id=>document.getElementById(id);
+const byKey={}; DATA.forEach(d=>byKey[d.key]=d);
+const SEASONS=['Winter','Spring','Summer','Autumn','Circumpolar'];
+
+// Popularity ranking — the constellations and asterisms people most want to
+// find, in rough order of fame/recognizability. Anything not listed sorts
+// after these (alphabetically by their natural DATA order). Used to order the
+// list so the marquee targets sit at the top.
+const POPULARITY=[
+  'orion','scorpius','ursamajor','bigdipper','cassiopeia','leo','cygnus',
+  'taurus','pleiades','sagittarius','teapot','gemini','canismajor','lyra',
+  'andromeda','pegasus','aquila','bootes','perseus','summertriangle',
+  'ursaminor','littledipper','draco','hercules','aries','cancer','auriga',
+  'northerncross','winterhexagon','greatsquare','sickle','virgo','corona borealis',
+  'canisminor','triangulum','cepheus','aquarius','capricornus','cetus',
+  'corvus','ophiuchus','serpens','delphinus','coronaborealis','springtriangle',
+  'wintertriangle','fishhook','coathanger','kemble','leoMinor','scutum'
+];
+function popRank(key){ const i=POPULARITY.indexOf(key); return i<0?999:i }
+
+// Determine the current season from the date so the guide opens on what's
+// actually up tonight. (Northern hemisphere, meteorological seasons.)
+function currentSeason(){
+  const m=new Date().getMonth();           // 0=Jan
+  if(m===11||m<=1) return 'Winter';        // Dec–Feb
+  if(m<=4) return 'Spring';                // Mar–May
+  if(m<=7) return 'Summer';                // Jun–Aug
+  return 'Autumn';                         // Sep–Nov
+}
+
+let season=currentSeason(), selKey=null;
+
+function renderChips(){
+  const chips=$('zcl-c-chips'); chips.innerHTML='';
+  ['All',...SEASONS].forEach(s=>{
+    const c=document.createElement('span');
+    c.className='zcl-c-chip'+(s===season?' on':'');
+    c.textContent=s;
+    c.addEventListener('click',()=>{ season=s; renderList() });
+    chips.appendChild(c);
+  });
+}
+
+function visible(){
+  const base = season==='All' ? DATA.slice() : DATA.filter(d=>d.season===season);
+  // Order by fame so the marquee targets lead the list.
+  return base.sort((a,b)=>popRank(a.key)-popRank(b.key));
+}
+
+function renderList(){
+  renderChips();
+  const list=$('zcl-c-list'); list.innerHTML='';
+  const items=visible();
+  if(!items.some(d=>d.key===selKey) && items.length) selKey=items[0].key;
+  items.forEach(d=>{
+    const el=document.createElement('div');
+    el.className='zcl-c-item'+(d.key===selKey?' sel':'');
+    el.innerHTML='<span class="zcl-c-item-n">'+d.name+'</span><span class="zcl-c-item-t">'+d.type+' \u00b7 '+d.season+'</span>';
+    el.addEventListener('click',()=>{ selKey=d.key; renderList(); renderSelection() });
+    list.appendChild(el);
+  });
+  renderSelection();
+  // Update scroll arrows after list is rebuilt (needs a tick for layout)
+  setTimeout(function(){ if(window._zcl_updateArrows) window._zcl_updateArrows() }, 40);
+}
+
+function renderSelection(){
+  const d=byKey[selKey];
+  // map
+  $('zcl-c-map').innerHTML=buildMap(d,520,420,52);
+  $('zcl-c-maptag').innerHTML=(d.type==='Asterism'?'Asterism':'Constellation')+' &middot; <b>'+d.name+'</b>';
+  // detail
+  const binoc=d.binocular?'<span class="zcl-c-binoc">Binoculars</span>':'';
+  $('zcl-c-detail').innerHTML=
+    '<div class="zcl-c-dhead"><span class="zcl-c-dname">'+d.name+'</span>'
+    +'<span class="zcl-c-dtype">'+d.type+'</span>'+binoc+'</div>'
+    +'<div class="zcl-c-dlead">'+d.lead+'</div>'
+    +'<div class="zcl-c-dabout">'+d.about+'</div>'
+    +'<div class="zcl-c-sec where"><div class="zcl-c-sec-h">'+ICON_LOC+'Where in the sky</div><div class="zcl-c-sec-b">'+d.where+'</div></div>'
+    +'<div class="zcl-c-sec find"><div class="zcl-c-sec-h">'+ICON_FIND+'How to find it</div><div class="zcl-c-sec-b">'+d.find+'</div></div>'
+    +'<div class="zcl-c-sec"><div class="zcl-c-sec-h">'+ICON_OBJ+'What to look for</div><div class="zcl-c-sec-b">'+d.objects+'</div></div>'
+    +'<div class="zcl-c-best">Best viewing: <b>'+d.best+'</b></div>';
+}
+
+// ════════════════════════  6 · INIT  ════════════════════════
+// background star field
+(function(){let s='';for(let i=0;i<150;i++){s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>'}$('zcl-c-stars').innerHTML=s})();
+// corner flourishes
+(function(){const fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+  +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
+  +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
+  +'<path d="M2 19 C9 19 9 12 2 12" opacity=".55"/><path d="M19 2 C19 9 12 9 12 2" opacity=".55"/>'
+  +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
+  document.querySelectorAll('.zcl-c-fl').forEach(el=>el.innerHTML=fl)})();
+
+renderList();
+
+// ── scroll arrows: show left/right chevrons when list overflows ─────
+(function(){
+  const list=$('zcl-c-list');
+  const arrowL=$('zcl-c-arrow-l');
+  const arrowR=$('zcl-c-arrow-r');
+  function updateArrows(){
+    if(!arrowL||!arrowR) return;
+    const sl=list.scrollLeft;
+    const maxSl=list.scrollWidth-list.clientWidth;
+    arrowL.classList.toggle('show', sl>6);
+    arrowR.classList.toggle('show', maxSl-sl>6);
+  }
+  list.addEventListener('scroll',updateArrows,{passive:true});
+  window.addEventListener('resize',updateArrows,{passive:true});
+  // Re-check after every renderList call since the list is rebuilt each time
+  const _orig=window.renderList||renderList;
+  window._zcl_updateArrows=updateArrows;
+  setTimeout(updateArrows,80); // first check after layout settles
+})();
+
+// ── eye toggle — hides/shows star name labels on the map ────────────
+let labelsVisible=true;
+$('zcl-c-eyebtn').addEventListener('click',()=>{
+  labelsVisible=!labelsVisible;
+  const map=$('zcl-c-map');
+  map.classList.toggle('labels-hidden',!labelsVisible);
+  // dim connecting lines to 50% when labels hidden
+  map.querySelectorAll('line').forEach(l=>l.setAttribute('stroke-opacity',labelsVisible?'.4':'.08'));
+  // open eye = labels showing (pupil visible, no slash)
+  // closed eye = labels hidden (no pupil, slash through eye)
+  document.getElementById('zcl-c-eyesvg').querySelector('circle').style.opacity=labelsVisible?'1':'0';
+  document.getElementById('zcl-c-eyeslash').style.opacity=labelsVisible?'0':'1';
+});
+
+})();
+</script>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+<script>
+(function(){
+  // Night mode is applied here on load if it was enabled in Settings;
+  // the gear icon (top-right) opens Settings to toggle it.
+  try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+})();
+</script>
+<!-- ════ Settings popup (shared) ════ -->
+<style>
+#zcl-set-modal{position:fixed;inset:0;z-index:10050;display:none;
+  align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px 16px}
+#zcl-set-modal.on{display:flex}
+#zcl-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);
+  backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
+#zcl-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
+  background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
+  box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;
+  animation:zcl-set-pop .2s ease}
+@keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
+#zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+</style>
+<div id="zcl-set-modal">
+  <div id="zcl-set-backdrop"></div>
+  <div id="zcl-set-sheet"><iframe id="zcl-set-frame" title="Settings"></iframe></div>
+</div>
+<script>
+(function(){
+  var modal=document.getElementById('zcl-set-modal');
+  var frame=document.getElementById('zcl-set-frame');
+  var backdrop=document.getElementById('zcl-set-backdrop');
+  var gear=document.getElementById('pwa-night-btn')||document.getElementById('zcl-sf-nightbtn');
+  var loaded=false;
+  function open(){
+    if(!loaded){ frame.src='settings.html?embed=1'; loaded=true }
+    modal.classList.add('on');
+  }
+  function close(){ modal.classList.remove('on') }
+  if(gear){
+    gear.addEventListener('click', function(e){ e.preventDefault(); open() });
+  }
+  backdrop.addEventListener('click', close);
+  // Messages from the settings iframe
+  window.addEventListener('message', function(e){
+    var d=e.data||{};
+    if(d.type==='zcl-close'){ close() }
+    else if(d.type==='zcl-night'){
+      document.body.classList.toggle('night-mode', !!d.on);
+      if(gear) gear.classList.toggle('on', !!d.on);
+    }
+    // zcl-fov: nothing to do live; finder re-reads sfVFOV on open
+  });
+})();
+</script>
+
+
+<script>
+/* PWA install relay — beforeinstallprompt only fires on the top-level page, not
+   inside the settings iframe, so we capture it here and bridge it to Settings. */
+(function(){
+  var deferred = null;
+  function frameWin(){
+    var f = document.getElementById('zcl-set-frame') || document.getElementById('es-set-frame');
+    return f && f.contentWindow ? f.contentWindow : null;
+  }
+  function tellFrame(msg){ var w = frameWin(); if(w) w.postMessage(msg, '*') }
+  window.addEventListener('beforeinstallprompt', function(ev){
+    ev.preventDefault();
+    deferred = ev;
+    tellFrame({ type:'zcl-install-available' });
+  });
+  window.addEventListener('appinstalled', function(){
+    deferred = null;
+    tellFrame({ type:'zcl-installed' });
+  });
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if(d.type === 'zcl-do-install' && deferred){
+      deferred.prompt();
+      deferred.userChoice.finally(function(){ deferred = null });
+    } else if(d.type === 'zcl-install-query'){
+      tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
+    }
+  });
+})();
+</script>
+
+</body>
+</html>
