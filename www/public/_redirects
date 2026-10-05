@@ -1,0 +1,5 @@
+# Short links into the app. Add more as needed: /path  destination  status
+/app       https://app.darkskyalmanac.com/          302
+/forecast  https://app.darkskyalmanac.com/forecast  302
+/finder    https://app.darkskyalmanac.com/finder    302
+/maps      https://app.darkskyalmanac.com/maps      302

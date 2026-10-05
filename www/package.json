@@ -1,5 +1,5 @@
 {
-  "name": "darkskyalmanac",
+  "name": "darkskyalmanac-www",
   "private": true,
   "scripts": {
     "dev": "wrangler dev",

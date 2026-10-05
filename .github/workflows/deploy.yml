@@ -1,17 +1,23 @@
-name: Deploy to Cloudflare
+name: Deploy darkskyalmanac.com
 
+# Deploys only the root-domain site in www/. The app at app.darkskyalmanac.com
+# is deployed separately and is not touched by this workflow.
 on:
   push:
     branches: [main]
+    paths: ['www/**', '.github/workflows/deploy.yml']
   workflow_dispatch:
 
 concurrency:
-  group: deploy
+  group: deploy-www
   cancel-in-progress: false
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: www
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
