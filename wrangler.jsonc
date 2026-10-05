@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Static-assets-only Worker: Cloudflare serves everything in ./public directly.
+  "name": "darkskyalmanac",
+  "compatibility_date": "2026-09-01",
+  "assets": {
+    "directory": "./public",
+    // Serves /forecast.html at /forecast (sw.js already caches both forms).
+    "html_handling": "auto-trailing-slash",
+    "not_found_handling": "none"
+  },
+  // Cloudflare creates the DNS record + TLS cert for this hostname on deploy.
+  // darkskyalmanac.com must be an active zone in the same Cloudflare account.
+  "routes": [
+    { "pattern": "app.darkskyalmanac.com", "custom_domain": true }
+  ],
+  "workers_dev": true
+}
