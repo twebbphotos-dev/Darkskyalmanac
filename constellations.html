@@ -251,6 +251,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-c-mapcard">
           <svg id="zcl-c-map" viewBox="0 0 520 420" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="zcl-c-maptag" id="zcl-c-maptag"></div>
+          <div class="zcl-c-orient" id="zcl-c-orient"></div>
         </div>
         <div class="zcl-c-opts">
           <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-names" checked><span>Star names</span></label>
@@ -285,6 +286,31 @@ function _center(stars){
   for(const s of stars){const ra=s[1]*H2R,dec=s[2]*D2R;x+=Math.cos(dec)*Math.cos(ra);y+=Math.cos(dec)*Math.sin(ra);z+=Math.sin(dec)}
   return {ra0:(Math.atan2(y,x)/H2R+24)%24, dec0:Math.atan2(z,Math.hypot(x,y))/D2R};
 }
+// ── Sky orientation ─────────────────────────────────────────────
+// Rotate the chart so "up" is toward the zenith for the saved location right now,
+// the way the constellation sits in the sky. A point just above the constellation's
+// center (toward the zenith) is sent back to RA/Dec and projected; the chart turns
+// until that point is straight up. Near the zenith the direction is unstable and
+// below the horizon it's meaningless, so both fall back to north-up.
+function _loc(){try{const r=JSON.parse(localStorage.getItem('dsa-location'));if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)return {lat:+r.lat,lng:+r.lng}}catch(e){}return {lat:37.1986,lng:-112.9869}}
+function skyOrientation(ra0H,dec0D,when){
+  const loc=_loc(),phi=loc.lat*D2R;
+  const JD=(when||new Date()).getTime()/86400000+2440587.5,D=JD-2451545,T=D/36525;
+  let gmst=(280.46061837+360.98564736629*D+0.000387933*T*T-T*T*T/38710000)%360;if(gmst<0)gmst+=360;
+  const lst=(gmst+loc.lng)*D2R,dec=dec0D*D2R,Hh=lst-ra0H*H2R;
+  const alt=Math.asin(Math.max(-1,Math.min(1,Math.sin(dec)*Math.sin(phi)+Math.cos(dec)*Math.cos(phi)*Math.cos(Hh))));
+  const az=Math.atan2(-Math.cos(dec)*Math.sin(Hh),Math.sin(dec)*Math.cos(phi)-Math.cos(dec)*Math.sin(phi)*Math.cos(Hh));
+  const altD=alt/D2R;
+  if(altD<0)return {a:0,note:'Below the horizon now · north up'};
+  if(altD>80)return {a:0,note:'Nearly overhead now · north up'};
+  const alt2=alt+0.5*D2R;
+  const dec2=Math.asin(Math.sin(alt2)*Math.sin(phi)+Math.cos(alt2)*Math.cos(phi)*Math.cos(az));
+  const H2=Math.atan2(-Math.cos(alt2)*Math.sin(az),Math.sin(alt2)*Math.cos(phi)-Math.cos(alt2)*Math.cos(az)*Math.sin(phi));
+  const p=_project((lst-H2)/H2R,dec2/D2R,ra0H,dec0D),v={x:-p.xi,y:-p.eta};
+  const dirs=['N','NE','E','SE','S','SW','W','NW'],d=dirs[Math.round((((az/D2R)%360)+360)%360/45)%8];
+  return {a:-Math.PI/2-Math.atan2(v.y,v.x),note:'As it appears now · looking '+d+' · '+Math.round(altD)+'° up'};
+}
+let orientNote='';
 function _magR(m){return Math.max(1.6,Math.min(10,7.6-m*1.4))}
 function bvColor(bv,blend){
   if(bv==null||isNaN(bv))bv=0.4; if(bv<-0.4)bv=-0.4; if(bv>2.0)bv=2.0;
@@ -302,8 +328,10 @@ let labelsVisible=true,naturalSky=false,artOn=false;
 function _magN(m){return Math.max(0.55,2.8*Math.pow(10,-0.16*(m-2)))}
 function _magA(m){return Math.max(0.35,Math.min(1,1-(m-3)*0.18))}
 function buildMap(entry,W,H,pad){
-  const c=_center(entry.stars);
-  const pts=entry.stars.map(s=>{const p=_project(s[1],s[2],c.ra0,c.dec0);return {x:-p.xi,y:-p.eta,name:s[0],mag:s[3],bv:s[4]}});
+  const c=_center(entry.stars),O=skyOrientation(c.ra0,c.dec0,window.__zclNow),ca=Math.cos(O.a),sa=Math.sin(O.a);
+  orientNote=O.note;
+  const rotp=q=>({x:q.x*ca-q.y*sa,y:q.x*sa+q.y*ca});
+  const pts=entry.stars.map(s=>{const p=_project(s[1],s[2],c.ra0,c.dec0),q=rotp({x:-p.xi,y:-p.eta});return {x:q.x,y:q.y,name:s[0],mag:s[3],bv:s[4]}});
   let minX=1e9,maxX=-1e9,minY=1e9,maxY=-1e9;
   pts.forEach(p=>{minX=Math.min(minX,p.x);maxX=Math.max(maxX,p.x);minY=Math.min(minY,p.y);maxY=Math.max(maxY,p.y)});
   const spanX=Math.max(1e-4,maxX-minX),spanY=Math.max(1e-4,maxY-minY);
@@ -315,7 +343,7 @@ function buildMap(entry,W,H,pad){
   let svg='';
   if(art){
     // Same projection and fit as the stars, so the drawing stays registered to them.
-    const sky=(raH,decD)=>{const p=_project(raH,decD,c.ra0,c.dec0);return {x:-p.xi*s+offX,y:-p.eta*s+offY}};
+    const sky=(raH,decD)=>{const p=_project(raH,decD,c.ra0,c.dec0),q=rotp({x:-p.xi,y:-p.eta});return {x:q.x*s+offX,y:q.y*s+offY}};
     svg+=art(sky);
   }
   entry.lines.forEach(function(L){const a=pts[L[0]],b=pts[L[1]];
@@ -457,85 +485,6 @@ orion:function(sky){
   o+=ticks(outerIsL?pelt.L:pelt.R,peltC,2,peltC.length-2,2,3.2,.5);
   o+=hair('M'+peltC.slice(1,-1).map(pt).join(' L'),.3);
   o+=tube([bel,elbowW],12.5*u)+tube([elbowW,tab],10.5*u)+knob(elbowW,5)+knob(tab,5);
-  return o+'</g>';
-},
-ursamajor:function(sky){
-  const meg=sky(12.2571,57.0326),dub=sky(11.0621,61.751),mer=sky(11.0307,56.3824),phe=sky(11.8972,53.6948),
-        ali=sky(12.9005,55.9598),miz=sky(13.3988,54.9254),alk=sky(13.7923,49.3133),
-        chi=sky(11.7675,47.7794),nuB=sky(11.308,33.0943),xiA=sky(11.3031,31.5308),psi=sky(11.1611,44.4985),
-        muT=sky(10.3722,41.4995),lamT=sky(10.2849,42.9144),h23=sky(9.5255,63.0619),omi=sky(8.5044,60.7182),
-        ups=sky(9.8498,59.0387),phi=sky(9.8684,54.0643),the=sky(9.5476,51.6773),iot=sky(8.9868,48.0418),kap=sky(9.0604,47.1565);
-  const u=Math.hypot(dub.x-alk.x,dub.y-alk.y)/208;
-  const {sw,tube,plate,knob,hair,hilite,ticks}=kit(u),G=AG,GL=AGL,INK=AINK,FILL=AFILL;
-  let o=ADEFS+'<g class="zcl-art" opacity=".93">';
-  const upOf=T=>{const n=perp(T);return n.y<0?n:mul(n,-1)};  // screen-up side of a centerline
-  const paw=(p,dir,r)=>{const a=Math.atan2(dir.y,dir.x)*180/Math.PI;let s='<ellipse cx="'+f(p.x)+'" cy="'+f(p.y)+'" rx="'+sw(r)+'" ry="'+sw(r*.7)+'" transform="rotate('+f(a)+' '+f(p.x)+' '+f(p.y)+')" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1.1)+'"/>';
-    for(let k=-1;k<=1;k++){const q=add(add(p,mul(dir,r*.75*u)),mul(perp(dir),k*r*.42*u));s+='<circle cx="'+f(q.x)+'" cy="'+f(q.y)+'" r="'+sw(r*.22)+'" fill="'+G+'" fill-opacity=".7"/>'}return s};
-  const leg=(P,w0,w1,pawAt,toe)=>{const C=spline(P,8),sh=shell(C,profile([[0,w0],[.3,w0*.78],[.7,(w0*.78+w1)/2],[1,w1]],u));
-    let s=plate(sh.d,1.2);
-    const T=tangents(C);s+=paw(pawAt,T[T.length-1],w1*1.3);return s};
-  const shoulder=mix(dub,mer,.55),hips=mix(meg,phe,.5),axis=nrm(sub(hips,shoulder)),
-        rump=add(hips,mul(axis,16*u)),rumpEnd=add(hips,mul(axis,30*u));   // body ends along its own axis; the tail curves off it
-
-  // ── near hind legs: Phecda > chi (hip) > Alula pair, and chi > psi > Tania pair
-  o+=leg([add(phe,{x:2*u,y:-6*u}),chi,nuB,xiA],15,6,xiA,0);
-  o+=leg([add(chi,{x:5*u,y:-3*u}),psi,lamT,muT],13,6,muT,0);
-
-  // ── body: snout at Muscida, brow at h, shoulders over Dubhe/Merak, hips over Megrez/Phecda
-  const fwdH=nrm(sub(omi,h23));
-  const neckPt=mix(h23,ups,.55),neckDir=nrm(sub(h23,neckPt));
-  // start inside the skull, along the neck line, so the shell never folds back on itself
-  const bodyC=spline([add(h23,mul(neckDir,8*u)),h23,neckPt,shoulder,hips,rump,rumpEnd],12);
-  // snout, skull, neck, shoulder hump, back dip, rounded rump
-  const body=shell(bodyC,profile([[0,13],[.06,16],[.2,21],[.36,34],[.5,31],[.66,32],[.82,27],[.93,16],[1,3]],u));
-  o+=plate(body.d,1.6);
-  // belly shadow and back highlight, then fur
-  const belly=bodyC.map((p,i)=>i).filter(i=>i>Math.floor(bodyC.length*.42)&&i<bodyC.length-2);
-  o+='<path d="M'+belly.map(i=>pt(body.R[i])).join(' L')+' L'+belly.slice().reverse().map(i=>pt(mix(body.R[i],bodyC[i],.3))).join(' L')+' Z" fill="'+INK+'" fill-opacity=".4" stroke="none"/>';
-  o+=hilite('M'+bodyC.map((p,i)=>i).filter(i=>i>Math.floor(bodyC.length*.45)&&i<bodyC.length-3).map(i=>pt(mix(body.L[i],bodyC[i],.25))).join(' L'),.28);
-  o+=ticks(body.L,bodyC,Math.floor(bodyC.length*.3),bodyC.length-2,2,2.6,.4);
-  o+=ticks(body.R,bodyC,Math.floor(bodyC.length*.45),bodyC.length-3,3,2.2,.3);
-  // shoulder and haunch contours
-  o+=hair('M'+pt(add(shoulder,{x:10*u,y:-16*u}))+' Q'+pt(add(shoulder,{x:-2*u,y:0}))+' '+pt(add(shoulder,{x:6*u,y:22*u})),.4);
-  o+=hair('M'+pt(add(hips,{x:-4*u,y:-14*u}))+' Q'+pt(add(hips,{x:6*u,y:4*u}))+' '+pt(add(chi,{x:-2*u,y:-6*u})),.4);
-
-  // ── the long tail (drawn over the rump so the root covers the body's end cap): Megrez > Alioth > Mizar > Alkaid, bushy, curling past the last star
-  const tailC=spline([hips,rump,ali,miz,alk,add(alk,mul(nrm(sub(alk,miz)),9*u))],10);
-  const tail=shell(tailC,t=>u*(7-2*t+5.5*Math.pow(Math.sin(Math.PI*Math.min(1,t*1.05)),.8)+ .8*Math.sin(t*38)));
-  o+=plate(tail.d,1.3);
-  o+=ticks(tail.R,tailC,8,tailC.length-3,3,3,.45)+ticks(tail.L,tailC,10,tailC.length-3,4,2.2,.3);
-  o+=hilite('M'+tail.L.slice(6,-6).map((p,i)=>pt(mix(p,tailC[i+6],.35))).join(' L'),.3);
-
-  // ── near front leg: Merak > phi > theta > Talitha, with kappa as the outer toe
-  o+=leg([add(shoulder,{x:8*u,y:2*u}),phi,the,mix(iot,kap,.45)],13,6,mix(iot,kap,.45),0);
-
-  // ── head: its own shape over the body's front, snout at Muscida, skull at h.
-  // Local frame: x forward along the muzzle, y up; units are fractions of the head length.
-  const HL=Math.hypot(omi.x-h23.x,omi.y-h23.y)*1.28,hu=(()=>{const n=perp(fwdH);return n.y<0?n:mul(n,-1)})();
-  const HO=add(omi,mul(fwdH,-1.0*HL)),      // nose pad lands on Muscida
-  Hp=(x,y)=>pt(add(add(HO,mul(fwdH,x*HL)),mul(hu,y*HL)));
-  const HC=(a1,b1,c1,d1,e1,g1)=>' C'+Hp(a1,b1)+' '+Hp(c1,d1)+' '+Hp(e1,g1),HQ=(a1,b1,c1,d1)=>' Q'+Hp(a1,b1)+' '+Hp(c1,d1);
-  // ear, behind the skull
-  o+=plate('M'+Hp(.1,.26)+HC(.02,.42,.2,.5,.28,.32)+' Z',1.1);
-  o+=hair('M'+Hp(.12,.3)+HQ(.13,.4,.22,.34),.5);
-  // skull and upper jaw: brow dome, muzzle sloping to the nose, lip back to the corner of the mouth
-  o+=plate('M'+Hp(0,.04)+HC(0,.3,.3,.4,.52,.3)+HC(.72,.22,.92,.16,1.02,.1)+HC(1.06,.06,1.04,0,.98,-.02)
-    +HC(.88,-.04,.74,-.06,.62,-.1)+HC(.5,-.22,.2,-.3,0,.04)+' Z',1.4);
-  // open lower jaw, hinged at the cheek
-  o+='<path d="M'+Hp(.6,-.09)+' L'+Hp(.98,-.02)+' L'+Hp(1.0,-.3)+' Z" fill="'+INK+'" fill-opacity=".9"/>';
-  o+=plate('M'+Hp(.58,-.1)+HC(.7,-.22,.9,-.3,1.02,-.33)+HC(.98,-.24,.86,-.16,.72,-.13)+' Z',1.2);
-  // canines
-  [[.7,-.055,-1],[.9,-.03,-1],[.76,-.14,1],[.94,-.2,1]].forEach(t=>{const x=t[0],y=t[1],d=t[2];
-    o+='<path d="M'+Hp(x-.025,y)+' L'+Hp(x,y+d*.09)+' L'+Hp(x+.025,y)+' Z" fill="'+GL+'" fill-opacity=".9"/>'});
-  // nose pad, snarl wrinkles, eye and heavy brow
-  o+='<ellipse cx="'+Hp(1.0,.07).replace(' ','" cy="')+'" rx="'+f(.06*HL)+'" ry="'+f(.045*HL)+'" transform="rotate('+f(Math.atan2(fwdH.y,fwdH.x)*180/Math.PI)+' '+Hp(1.0,.07)+')" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(.9)+'"/>';
-  o+=hair('M'+Hp(.78,.12)+HQ(.86,.16,.94,.11),.55)+hair('M'+Hp(.76,.05)+HQ(.85,.09,.93,.04),.45);
-  o+='<path d="M'+Hp(.42,.14)+HQ(.5,.2,.58,.14)+HQ(.5,.1,.42,.14)+' Z" fill="'+INK+'" stroke="'+GL+'" stroke-width="'+sw(.9)+'"/>';
-  o+='<circle cx="'+Hp(.51,.145).replace(' ','" cy="')+'" r="'+f(.018*HL)+'" fill="'+GL+'"/>';
-  o+='<path d="M'+Hp(.36,.24)+HQ(.5,.26,.62,.17)+'" fill="none" stroke="'+G+'" stroke-width="'+sw(1.6)+'" stroke-linecap="round"/>';
-  // fur along the crown and the back of the jaw
-  for(let k=0;k<5;k++)o+=hair('M'+Hp(.08+k*.09,.32+ (k<3?k*.03:(.09-(k-3)*.03)))+' L'+Hp(.04+k*.09,.4+(k<3?k*.03:(.09-(k-3)*.03))),.45);
-  for(let k=0;k<3;k++)o+=hair('M'+Hp(.12+k*.1,-.2-k*.03)+' L'+Hp(.08+k*.1,-.3-k*.02),.4);
   return o+'</g>';
 },
 scorpius:function(sky){
@@ -744,6 +693,7 @@ function drawMap(){
   // toggling the illustration never moves the stars
   map.innerHTML=buildMap(d,520,420,ART[d.key]?76:52);
   map.classList.toggle('labels-hidden',!labelsVisible);
+  $('zcl-c-orient').textContent=orientNote;
   $('zcl-c-artopt').hidden=!ART[d.key];
 }
 function renderSelection(){
@@ -779,6 +729,8 @@ function renderSelection(){
 try{const o=JSON.parse(localStorage.getItem('dsa-con-opts')||'{}');naturalSky=!!o.natural;artOn=!!o.art;labelsVisible=o.names!==false}catch(e){}
 $('zcl-c-names').checked=labelsVisible;$('zcl-c-natural').checked=naturalSky;$('zcl-c-art').checked=artOn;
 renderList();
+// the sky turns about a degree every four minutes; keep the tilt current while the page is open
+setInterval(function(){if(document.visibilityState==='visible')drawMap()},60000);
 
 // ── scroll arrows: show left/right chevrons when list overflows ─────
 (function(){

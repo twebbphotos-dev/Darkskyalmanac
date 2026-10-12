@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.59 / zion-sky-v325 — 2026-10-12
+- Constellation charts now tilt the way the figure sits in the sky right
+  now for the saved location: a point just above the figure's center
+  (toward the zenith) is projected and the chart turns until it's straight
+  up. Caption under the map: direction and altitude. Near the zenith
+  (>80°) and below the horizon it stays north-up and says so. Refreshes
+  once a minute.
+- Ursa Major illustration removed for now; Orion and Scorpius stay.
+
 ## v3.58 / zion-sky-v324 — 2026-10-12
 - Ursa Major: the head is its own drawn shape, snout on Muscida and skull
   at h: heavy brow, small angled eye, snarling muzzle, open jaw with

@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v324';
+const CACHE = 'zion-sky-v325';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
