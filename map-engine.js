@@ -25,7 +25,9 @@ const BCOL = { '1':'#B4C8E6', '2':'#D4C864', '3':'#DC8C46' };
 // render at 50% alpha (map shows through) while keeping their dark border
 // and white halo at full opacity for clear definition.
 const BCOL_RGB = { '1':'180,200,230', '2':'212,200,100', '3':'220,140,70' };
-const BLAB = { '1':'Bortle 1 · pristine dark', '2':'Bortle 2 · truly dark', '3':'Bortle 3 · rural' };
+// Classes are estimates from light-pollution mapping and park dark-sky reports,
+// not on-site measurements, so each tier is shown as a range.
+const BLAB = { '1':'Bortle 1–2 · darkest', '2':'Bortle 2–3 · very dark', '3':'Bortle 3–4 · rural dark' };
 // Calibrated affine transform: (lat,lng) → map (x%, y%).
 // Derived by least-squares fit against 8 high-confidence landmark
 // pins (Town of Virgin, the Museum, Pa’rus, Canyon Overlook,
@@ -237,6 +239,8 @@ function buildPins(){
 const rowEls = {};
 function buildList(){
   const list = $('es-list');
+  // The site count is read from the data, so the label can never drift from the list.
+  const dtxt = $('es-drawer-txt'); if(dtxt) dtxt.textContent = SPOTS.length+' Stargazing Sites';
   list.innerHTML='';
   SPOTS.forEach(s=>{
     const row=document.createElement('div');
@@ -272,18 +276,23 @@ function select(id, fly){
   $('es-card-count').textContent = (idx+1)+' / '+SPOTS.length;
   $('es-card').classList.add('on');
   document.body.classList.add('card-open');
-  // The CSS lifts #es-map's bottom to 42vh when card-open is on. Wait for
-  // that transition (~280ms) to land, then have the engine re-read its new
-  // viewport size so pan limits and the cover-scale match the smaller area.
+  document.body.style.setProperty('--card-h', $('es-card').offsetHeight + 'px');
+  document.body.style.setProperty('--card-h', $('es-card').offsetHeight + 'px');
+  document.body.style.setProperty('--card-h', $('es-card').offsetHeight + 'px');
+  // The CSS lifts #es-map's bottom by the card's real height (~230px) when
+  // card-open is on. Wait for that transition (~280ms) to land, then have
+  // the engine re-read its new viewport size so pan limits and the
+  // cover-scale match the smaller area.
   setTimeout(()=>{ try{ recomputeMin(); clamp(); apply() }catch(e){} }, 300);
   if(fly){
-    // List-tap: explicit fly. Pins near the top/bottom edges of a tall map
-    // need more zoom: enough that lifting them into the clear band doesn't
-    // pull the map's own border into view above the card. Boost scales up
-    // sharply toward the vertical edges.
+    // List-tap: explicit, gentle fly. The previous behaviour zoomed to 3.0×
+    // (5.0× near vertical edges) which pixelated the basemap on big screens.
+    // Now we use a subtle bump that re-centres the pin without losing crispness;
+    // a slightly stronger nudge near the top/bottom edges so lifting the pin
+    // into the clear band doesn't drag the map's border into view.
     const edge = Math.min(s.y, 100 - s.y);          // 0 at edge, 50 at centre
-    let target = 3.0;
-    if(edge < 22) target = 3.0 + (22 - edge) * 0.30;
+    let target = 1.9;
+    if(edge < 22) target = 1.9 + (22 - edge) * 0.025;   // up to ~2.45 at the very edge
     world.style.transition = 'transform 420ms ease-out';
     flyTo(s.x, s.y, Math.max(scale, target));
     setTimeout(()=>{ world.style.transition='' }, 450);
@@ -311,10 +320,10 @@ function step(dir){
 
 /* ── Drawer ───────────────────────────────────────────────────────── */
 const drawer = $('es-drawer');
-function openDrawer(){ drawer.classList.add('open') }
-function closeDrawer(){ drawer.classList.remove('open') }
+function openDrawer(){ drawer.classList.add('open'); document.body.classList.add('drawer-open') }
+function closeDrawer(){ drawer.classList.remove('open'); document.body.classList.remove('drawer-open') }
 $('es-drawer-handle').addEventListener('click', ()=>{
-  drawer.classList.toggle('open');
+  if(drawer.classList.contains('open')) closeDrawer(); else openDrawer();
 });
 
 /* ── Gesture handling on the map (pointer events) ─────────────────── */
@@ -410,7 +419,7 @@ $('es-loc').addEventListener('click', ()=>{
       // rim and outer glow for clear definition over light terrain.
       // Counter-scaled the same way pins are so its CSS-pixel size stays
       // consistent regardless of the natural-image fit factor.
-      me.style.cssText='position:absolute;z-index:8;transform:translate(-50%,-50%) scale(var(--pin-scale, 1));width:16px;height:16px;border-radius:50%;background:rgba(90,169,230,0.65);border:2px solid #fff;box-shadow:0 0 12px rgba(90,169,230,.8)';
+      me.style.cssText='position:absolute;z-index:8;transform:translate(-50%,-50%) scale(var(--pin-scale, 1));width:13px;height:13px;border-radius:50%;background:rgba(90,169,230,0.65);border:2px solid #fff;box-shadow:0 0 12px rgba(90,169,230,.8)';
       world.appendChild(me) }
     me.style.left=xPct+'%'; me.style.top=yPct+'%';
     flyTo(xPct,yPct,Math.max(scale,3));
@@ -492,13 +501,17 @@ function init(){
   buildPins(); buildList();
   refreshAspect();
   recomputeMin();
-  // Default view: a comfortable mid-zoom (~1.8×) focused on the right-side
-  // main canyon corridor — frames the Visitor Center, Museum, Canyon
-  // Junction, the Scenic Drive and the tunnel/Canyon Overlook area, which
-  // is where most users are headed. They can pinch out to MINS to see the
-  // whole park (Kolob included) or pinch in further.
+  // Default view: the WHOLE map fit to the viewport (cover scale). Each
+  // page can opt into a focused starting view by setting
+  // MAP_CONFIG.defaultView = { x:%, y:%, scale: 1.4 } — useful for park maps
+  // where 90% of activity is concentrated in one corner. Without that
+  // override we show everything, so users see the full park at first glance
+  // and can pinch in themselves.
   scale = MINS; tx = 0; ty = 0; clamp(); apply();
-  flyTo(58, 60, 1.8);
+  var dv = (CFG && CFG.defaultView) || null;
+  if(dv && typeof dv.x==='number' && typeof dv.y==='number'){
+    flyTo(dv.x, dv.y, dv.scale || 1.4);
+  }
 }
 window.addEventListener('resize', ()=>{ recomputeMin(); clamp(); apply() });
 init();

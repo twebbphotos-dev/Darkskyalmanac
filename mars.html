@@ -14,15 +14,15 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Mars · Dark Sky Almanac</title>
-<meta name="description" content="Mars tonight — the red planet's surface features, moons, and best viewing details for backyard telescopes.">
+<meta name="description" content="Mars tonight — its phase, size and brightness, when it is closest to Earth, and a to-scale look at Olympus Mons, the tallest volcano in the solar system.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Mars · Dark Sky Almanac">
-<meta property="og:description" content="Mars tonight — the red planet's surface features, moons, and best viewing details for backyard telescopes.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:description" content="Mars tonight — its phase, size and brightness, when it is closest to Earth, and a to-scale look at Olympus Mons, the tallest volcano in the solar system.">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/mars">
 <meta property="og:url" content="https://app.darkskyalmanac.com/mars">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -39,7 +39,22 @@ body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
 .pwa-navitem svg{width:18px;height:18px}
 .pwa-navitem.active{color:#CBA85A}
 .pwa-navitem:active{color:#E6CC85}
-#zcl-pl-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+#zcl-cal-wrap,#zcl-moon-wrap,#zcl-con-wrap,#zcl-m-wrap,#zcl-sf-wrap,#zcl-idx-wrap,#zcl-sk-wrap,#zcl-ss-wrap{padding-bottom:env(safe-area-inset-bottom) !important}
+#pwa-install{position:fixed;left:12px;right:12px;bottom:74px;z-index:10000;
+  display:none;align-items:center;gap:12px;padding:12px 14px;border-radius:10px;
+  background:rgba(13,10,24,.97);border:1px solid rgba(203,168,90,.4);
+  box-shadow:0 6px 24px rgba(0,0,0,.5);font-family:'Montserrat',sans-serif}
+#pwa-install.show{display:flex}
+#pwa-install .txt{flex:1;font-size:12px;color:#C9BD97;line-height:1.4}
+#pwa-install .txt b{color:#F2E4BE;font-weight:600}
+#pwa-install button{font-family:inherit;font-size:11px;letter-spacing:.1em;font-weight:600;
+  text-transform:uppercase;border-radius:5px;padding:8px 12px;cursor:pointer;border:none}
+#pwa-install .go{background:#CBA85A;color:#0d0a18}
+#pwa-install .dismiss{background:none;color:#7A6E55;border:1px solid rgba(203,168,90,.3)}
+
+/* ── Global night mode (injected into every PWA page) ── */
+#pwa-night-overlay{position:fixed;inset:0;pointer-events:none;z-index:10001;
+  background:rgba(160,0,0,.0);transition:background .4s ease}
 body.night-mode{background:#000 !important}
 body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pwa-install){filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
 body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
@@ -52,11 +67,12 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   cursor:pointer;display:flex;align-items:center;justify-content:center;
   transition:all .2s;font-family:inherit}
 #pwa-night-btn.on{background:rgba(60,0,0,.95);border-color:rgba(120,0,0,.8);color:#CC1111;box-shadow:0 0 8px rgba(100,0,0,.6)}
+
 </style>
 </head>
 <body>
+
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- MARS — simplified planet page (generated from shared template) -->
 <style>
 #zcl-pl-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;background:#141319;
   font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
@@ -70,55 +86,191 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
   box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
 #zcl-pl::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
-#zcl-pl::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
 .zcl-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
 #zcl-plstars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
 .zcl-fl{position:absolute;width:40px;height:40px;z-index:3;pointer-events:none;opacity:.58}
 .zcl-fl svg{width:100%;height:100%}
 .zcl-tl{top:14px;left:14px}.zcl-tr{top:14px;right:14px;transform:scaleX(-1)}
 .zcl-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-br{bottom:14px;right:14px;transform:scale(-1,-1)}
-.zcl-wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto}
-.zcl-titlebar{text-align:center;padding:30px 24px 18px}
+.zcl-wrap{position:relative;z-index:4;max-width:1040px;margin:0 auto}
+.zcl-titlebar{text-align:center;padding:30px 24px 10px}
 .zcl-maintitle{font-size:clamp(22px,3.4vw,34px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
   text-transform:uppercase;line-height:1.2;text-shadow:0 0 24px rgba(203,168,90,.22)}
-.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 11px;max-width:360px}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 4px;max-width:360px}
 .zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
 .zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
 .zcl-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
-.zcl-subtitle{font-size:13px;letter-spacing:.02em;color:#9A8E6E;max-width:560px;margin:0 auto}
-@media(max-width:520px){.zcl-titlebar{padding:24px 16px 16px}.zcl-subtitle{font-size:12px}}
-.zcl-stage{padding:8px 22px 4px}
+
+/* time bar */
+.zcl-hdr{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 20px 12px}
+.zcl-tnav{display:flex;align-items:center;gap:6px}
+.zcl-nbtn{width:34px;height:34px;border-radius:50%;background:#0d0a18;border:1px solid rgba(203,168,90,.3);
+  color:#CBA85A;font-size:19px;line-height:1;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.zcl-nbtn:active{background:rgba(203,168,90,.15)}
+.zcl-stamp{font-size:12.5px;letter-spacing:.03em;color:#E4D9B8;min-width:190px;text-align:center;font-variant-numeric:tabular-nums}
+.zcl-tbtn{background:none;border:1px solid rgba(203,168,90,.3);border-radius:18px;color:#9A875C;
+  font-family:inherit;font-size:11px;letter-spacing:.06em;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.zcl-tbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
+
+/* stages */
+.zcl-stage{padding:4px 22px 6px}
 .zcl-eyepiece{position:relative;background:radial-gradient(ellipse 80% 90% at 50% 50%,rgba(30,28,40,.7),#08070d 78%);
-  border:1px solid rgba(203,168,90,.22);border-radius:12px;padding:22px 14px 18px;overflow:hidden}
-.zcl-eyepiece::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%)}
-.zcl-fieldsvg{display:block;width:100%;position:relative;z-index:1}
-.zcl-stagenote{font-size:11.5px;color:#7A6E55;text-align:center;margin-top:10px;padding:0 12px;line-height:1.5}
-.zcl-body{padding:6px 28px 26px}
-.zcl-psec{margin-bottom:22px;padding-top:4px}
+  border:1px solid rgba(203,168,90,.22);border-radius:12px;overflow:hidden}
+.zcl-eyepiece canvas{display:block;width:100%;touch-action:manipulation}
+#zcl-hero{aspect-ratio:2.25/1}
+#zcl-field{aspect-ratio:2/1}
+@media(max-width:560px){#zcl-hero{aspect-ratio:1.9/1}#zcl-field{aspect-ratio:1.25/1}}
+.zcl-heroyr{position:absolute;left:14px;bottom:12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8A7340;pointer-events:none}
+.zcl-heroyr b{display:block;font-size:20px;letter-spacing:.04em;color:#E6CC85;font-weight:500;margin-top:2px}
+.zcl-bar{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+.zcl-vbtn{background:none;border:1px solid rgba(203,168,90,.26);border-radius:20px;color:#9A875C;
+  font-family:inherit;font-size:11px;letter-spacing:.05em;padding:6px 13px;cursor:pointer;transition:all .15s}
+.zcl-vbtn:hover{border-color:rgba(203,168,90,.55);color:#CBA85A}
+.zcl-vbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
+.zcl-vbtn.round{width:32px;height:30px;padding:0;font-size:15px}
+.zcl-grp{display:inline-flex;align-items:center;gap:6px}
+@media(max-width:520px){#zcl-viewbar .zcl-sep{display:none}}
+.zcl-ibtn{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.4);color:#9A8A66;border:1px solid rgba(203,168,90,.32);
+  font-family:'Times New Roman',Georgia,serif;font-size:14px;line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.zcl-ibtn:hover{color:#CBA85A;border-color:#CBA85A}
+.zcl-ibtn.on{background:rgba(203,168,90,.18);color:#E4D9B8;border-color:#CBA85A}
+.zcl-infotxt{max-height:0;overflow:hidden;opacity:0;transition:max-height .3s ease,opacity .25s ease,margin .3s;font-size:12.5px;line-height:1.6;color:#C9BD97;margin:0 4px}
+.zcl-infotxt.open{max-height:420px;opacity:1;margin:8px 4px 10px}
+.zcl-infotxt b{color:#E6CC85;font-weight:500}
+.zcl-mkey{text-align:center;font-size:10.5px;color:#8A7340;letter-spacing:.03em;margin:2px 0 6px}
+.zcl-mkey i{display:inline-block;width:14px;height:8px;border-radius:2px;margin:0 4px 0 10px;vertical-align:0}
+.zcl-mkey i.nb{background:rgba(120,140,200,.22)}
+.zcl-mkey i.tw{height:2px;background:#CBA85A;vertical-align:2px}
+.zcl-stitle{display:flex;align-items:center;gap:14px;max-width:560px;margin:0 auto 12px;
+  font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;white-space:nowrap}
+#zcl-field{transition:opacity .2s ease}
+#zcl-field.fading{opacity:0}
+/* field controls: drift tools live in the eyepiece corner, view + zoom as two segmented bars */
+.zcl-ovl{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;align-items:center;z-index:2}
+.zcl-ovl .zcl-vbtn.round{width:30px;height:30px;background:rgba(8,7,13,.62);font-size:14px}
+.zcl-ovl .zcl-ibtn{width:30px;height:30px;background:rgba(8,7,13,.62)}
+.zcl-eyepiece.is-top .zcl-ovl{bottom:auto;top:10px}
+.zcl-eyepiece.is-top #zcl-rotl,.zcl-eyepiece.is-top #zcl-rotr{display:none}
+.zcl-eyepiece .zcl-fov{position:absolute;right:12px;bottom:9px;margin:0;pointer-events:none;font-size:10px}
+.zcl-ctlrow{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 4px}
+.zcl-seg{display:inline-flex;border:1px solid rgba(203,168,90,.24);border-radius:20px;padding:2px;background:rgba(0,0,0,.22)}
+.zcl-seg .zcl-vbtn{border:none;border-radius:17px;padding:6px 13px;white-space:nowrap}
+.zcl-seg .zcl-vbtn.on{background:rgba(203,168,90,.2);color:#E4D9B8}
+.zcl-seg .s{display:none}
+@media(max-width:600px){
+  .zcl-ctlrow{flex-direction:column;align-items:stretch;gap:7px;margin-top:10px}
+  .zcl-seg{display:flex}
+  .zcl-seg .zcl-vbtn{flex:1;padding:8px 2px;font-size:11.5px;letter-spacing:.02em}
+  .zcl-seg .l{display:none}.zcl-seg .s{display:inline}
+  .zcl-ovl{left:8px;bottom:8px}.zcl-eyepiece .zcl-fov{right:9px;bottom:7px;font-size:9.5px}
+}
+#zcl-rotl,#zcl-rotr{transition:opacity .2s ease}
+#zcl-rotl:disabled,#zcl-rotr:disabled{opacity:.25;cursor:default}
+@media(max-width:560px){.zcl-stitle{font-size:12.5px;gap:10px}}
+.zcl-zlab{min-width:34px;text-align:center;font-size:11px;color:#CBA85A;font-variant-numeric:tabular-nums}
+.zcl-yrs{max-width:760px;margin:12px auto 0;padding:10px 12px 4px;border:1px solid rgba(203,168,90,.18);border-radius:10px;background:rgba(13,10,24,.55)}
+.zcl-yrs-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
+#zcl-ylab,#zcl-mlab{font-size:12.5px;color:#E4D9B8;letter-spacing:.02em}
+.zcl-yrs-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.zcl-ytrack{position:relative;flex:1;height:40px;margin-bottom:16px}
+.zcl-spark{position:absolute;inset:0;width:100%;height:40px;pointer-events:none}
+.zcl-range{position:absolute;inset:0;width:100%;height:40px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:pan-y}
+.zcl-range::-webkit-slider-runnable-track{height:40px;background:transparent}
+.zcl-range::-moz-range-track{height:40px;background:transparent}
+.zcl-range::-webkit-slider-thumb{-webkit-appearance:none;width:4px;height:40px;border-radius:2px;background:#E6CC85;box-shadow:0 0 0 3px rgba(230,204,133,.22),0 0 10px rgba(230,204,133,.6)}
+.zcl-range::-moz-range-thumb{width:4px;height:40px;border:0;border-radius:2px;background:#E6CC85;box-shadow:0 0 0 3px rgba(230,204,133,.22)}
+.zcl-range:focus{outline:none}
+.zcl-range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(230,204,133,.5)}
+.zcl-yticks{position:absolute;left:0;right:0;top:42px;height:14px}
+.zcl-yticks span{position:absolute;transform:translateX(-50%);font-size:9.5px;color:#8A7340;letter-spacing:.04em}
+@media(max-width:520px){.zcl-yticks span:nth-child(even){display:none}}
+.zcl-fov{text-align:right;font-size:10.5px;letter-spacing:.04em;color:#8A7340;margin:6px 4px 0}
+.zcl-sep{width:1px;height:18px;background:rgba(203,168,90,.2);margin:0 4px}
+.zcl-stagenote{text-align:center;font-size:12.5px;line-height:1.55;color:#9A875C;max-width:700px;margin:10px auto 2px;padding:0 8px}
+.zcl-stagenote b{color:#CBA85A;font-weight:500}
+
+/* body */
+.zcl-body{padding:10px 28px 26px}
+.zcl-psec{margin-bottom:24px;padding-top:4px}
 .zcl-psec-label{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;
   margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.28)}
 .zcl-pcards{display:grid;gap:9px}
-.zcl-pcards.cols2{grid-template-columns:1fr 1fr}
 .zcl-pcards.cols3{grid-template-columns:1fr 1fr 1fr}
-@media(max-width:560px){.zcl-pcards.cols3{grid-template-columns:1fr 1fr}}
+.zcl-pcards.cols4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:640px){.zcl-pcards.cols3,.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
 .zcl-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:11px 13px}
 .zcl-pcard.accent{border-color:rgba(203,168,90,.38);background:rgba(203,168,90,.06)}
 .zcl-pclabel{font-size:10px;letter-spacing:.13em;color:#8A6E32;text-transform:uppercase;margin-bottom:6px}
 .zcl-pcval{font-size:16px;color:#E4D9B8;line-height:1.2}
-.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px}
-.zcl-tgtwhy{font-size:13.5px;line-height:1.55;color:#C9BD97;margin-top:6px}
-.zcl-note{font-size:12.5px;line-height:1.55;color:#9A875C;margin-top:9px}
-.zcl-moonlist{display:grid;gap:8px}
-.zcl-moonchip{display:flex;align-items:center;gap:11px;background:#0d0a18;border:1px solid rgba(203,168,90,.16);
-  border-radius:8px;padding:10px 13px}
-.zcl-moonchip i{width:11px;height:11px;border-radius:50%;flex-shrink:0}
-.zcl-moonchip .mn{font-size:14px;color:#E4D9B8}
-.zcl-moonchip .ms{font-size:12px;color:#8A7C5C}
-@media(max-width:520px){.zcl-body{padding:6px 14px 22px}.zcl-stage{padding:8px 10px 4px}}
-</style>
+.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px;line-height:1.4}
+.zcl-note{font-size:12.5px;line-height:1.6;color:#9A875C;margin-top:10px}
+.zcl-note b{color:#C9BD97;font-weight:500}
 
+.zcl-moonrow{display:grid;grid-template-columns:14px 1fr auto;gap:4px 11px;align-items:start;
+  background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:8px;padding:10px 13px;margin-bottom:8px}
+.zcl-moonrow i{width:11px;height:11px;border-radius:50%;margin-top:4px}
+.zcl-moonrow .mn{font-size:14.5px;color:#E4D9B8}
+.zcl-moonrow .mw{font-size:12.5px;color:#C9BD97;margin-top:2px}
+.zcl-moonrow .ms{font-size:12px;color:#8A7C5C;margin-top:3px;line-height:1.45}
+.zcl-moonrow .vis{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.vis.easy{background:rgba(203,168,90,.18);color:#E6CC85}
+.vis.good{background:rgba(203,168,90,.10);color:#CBA85A}
+.vis.hard{background:rgba(160,140,110,.10);color:#9A875C}
+.vis.no{background:rgba(120,120,120,.10);color:#7c7a74}
+.zcl-moonrow.dim{opacity:.62}
+
+.zcl-anat canvas{display:block;width:100%}
+.zcl-anat{background:#08070d;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:8px 6px}
+.zcl-gaplist{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+@media(max-width:640px){.zcl-gaplist{grid-template-columns:1fr}}
+
+.zcl-tilt svg{display:block;width:100%;height:auto}
+.zcl-tilt{background:#08070d;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:10px 8px 6px}
+
+@media(max-width:520px){#zcl-yspeed .zcl-sep{display:none}.zcl-body{padding:6px 14px 22px}.zcl-stage{padding:4px 10px 6px}.zcl-stamp{min-width:0;font-size:12px}.zcl-hdr{padding:6px 10px 10px}}
+/* fit */
+@media(max-width:640px){#zcl-pl::after{inset:7px}.zcl-tl,.zcl-tr{top:7px}.zcl-bl,.zcl-br{bottom:7px}.zcl-tl,.zcl-bl{left:7px}.zcl-tr,.zcl-br{right:7px}}
+@media(max-width:520px){.zcl-stage{padding-left:14px;padding-right:14px}}
+@media(max-width:1100px){.zcl-body{padding-bottom:58px}}
+@media(max-width:520px){.zcl-evfold summary{flex-wrap:wrap;gap:3px 10px}.zcl-evsum{order:3;flex:1 1 100%}.zcl-evchev{margin-left:auto}}
+.zcl-yticks span{white-space:nowrap}.zcl-yticks span[style*="left:100"]{transform:translateX(-100%)}
+.zcl-mkey span{white-space:nowrap}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style><style>
+.mr-stage{position:relative;border-radius:12px;overflow:hidden;border:1px solid rgba(203,168,90,.18);aspect-ratio:2/1;
+  background:radial-gradient(ellipse 70% 80% at 50% 50%,rgba(40,24,22,.55),#08070d 75%)}
+@media(max-width:600px){.mr-stage{aspect-ratio:1/1}}
+#mr-cv{display:block;width:100%;height:100%}
+.mr-tag{position:absolute;font-size:11px;letter-spacing:.06em;color:#9A875C;pointer-events:none}
+.mr-tag b{display:block;font-size:15px;letter-spacing:.02em;color:#F2E4BE;font-weight:500;margin-top:2px}
+#mr-tl{left:14px;top:12px}#mr-tr{right:14px;top:12px;text-align:right}
+@media(max-width:600px){.mr-tag{font-size:10px}.mr-tag b{font-size:13px}}
+.mr-chart{position:relative}
+.mr-chart svg{display:block;width:100%;height:auto;overflow:visible}
+.mr-tip{position:absolute;pointer-events:none;background:rgba(8,7,13,.92);border:1px solid rgba(203,168,90,.35);border-radius:7px;
+  padding:6px 9px;font-size:11.5px;color:#C9BD97;white-space:nowrap;opacity:0;transition:opacity .12s;transform:translate(-50%,-100%)}
+.mr-tip b{color:#F2E4BE;font-weight:500}
+.mr-om{display:grid;grid-template-columns:1.15fr 1fr;gap:14px;margin-top:4px}
+@media(max-width:700px){.mr-om{grid-template-columns:1fr}}
+.mr-panel{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:12px 12px 8px}
+.mr-panel h4{margin:0 0 6px;font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#8A6E32;font-weight:600}
+.mr-panel svg{display:block;width:100%;height:auto}
+.mr-facts{display:grid;grid-template-columns:repeat(4,1fr);gap:9px;margin-top:12px}
+@media(max-width:700px){.mr-facts{grid-template-columns:1fr 1fr}}
+.mr-lm{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+@media(max-width:620px){.mr-lm{grid-template-columns:1fr}}
+.mr-lm .zcl-pcard{display:flex;gap:12px;align-items:flex-start}
+.mr-lm svg{width:38px;height:38px;flex-shrink:0;margin-top:2px}
+.mr-lm .zcl-pcval{font-size:14.5px}
+.mr-3d{white-space:nowrap;font-size:10.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;text-decoration:none}
+.mr-lm .zcl-pcsub{font-size:12.5px;line-height:1.5;color:#A89878}
+.zcl-moonlist{display:grid;gap:8px}
+.mr-moon{display:flex;align-items:center;gap:12px;background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:8px;padding:10px 13px}
+.mr-moon svg{width:34px;height:34px;flex-shrink:0}
+.mr-moon .mn{font-size:14px;color:#E4D9B8}.mr-moon .ms{font-size:12.5px;color:#9A8C6C;line-height:1.5}
+.zcl-tgtwhy{font-size:13.5px;line-height:1.6;color:#C9BD97}
+</style>
 <div id="zcl-pl-wrap">
 <div id="zcl-pl">
   <div class="zcl-goldbar"></div>
@@ -127,185 +279,252 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   <svg id="zcl-plstars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
   <div class="zcl-wrap">
     <div class="zcl-titlebar">
-      <div class="zcl-maintitle">Mars &amp; Its Two Moons</div>
+      <div class="zcl-maintitle">Mars</div>
       <div class="zcl-titlerule">
         <span class="zcl-rline"></span>
         <svg class="zcl-rstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
         <span class="zcl-rline"></span>
       </div>
     </div>
+
     <div class="zcl-stage">
-      <div class="zcl-eyepiece">
-        <svg id="zcl-pl-field" viewBox="0 0 920 420" class="zcl-fieldsvg" preserveAspectRatio="xMidYMid meet"></svg>
+      <div class="mr-stage">
+        <canvas id="mr-cv" aria-label="Mars as it looks tonight, shaded to its current phase"></canvas>
+        <div class="mr-tag" id="mr-tl"></div><div class="mr-tag" id="mr-tr"></div>
       </div>
-      <div class="zcl-stagenote">NASA/JPL photograph — Mars as imaged by spacecraft. Surface features including Syrtis Major and Valles Marineris are visible on the disc.</div>
+      <div class="zcl-ctlrow"><div class="zcl-seg" id="mr-sizes" role="group" aria-label="Compare sizes"></div></div>
+      <div class="zcl-stagenote" id="mr-note"></div>
     </div>
     <div class="zcl-body">
+      <div class="zcl-psec"><div class="zcl-psec-label">Mars Tonight</div>
+        <div class="zcl-pcards cols4" id="mr-tonight"></div>
+      </div>
+      <div class="zcl-psec"><div class="zcl-psec-label">When to See It</div>
+        <div class="zcl-seasongrid" id="zcl-season"></div>
+        <div class="zcl-note">Dates for your saved location. About every 26 months Mars slips behind the Sun’s glare for a while, then reappears in the morning sky.</div>
+      </div>
+      <div class="zcl-psec"><div class="zcl-psec-label">Getting Closer</div>
+        <div class="mr-chart" id="mr-chart"><div class="mr-tip" id="mr-tip"></div></div>
+        <div class="zcl-note">How big Mars looks through a telescope, over the next ten years. Every 26 months Earth overtakes Mars on the inside track and the gap closes — an <b>opposition</b>. Because Mars’s orbit is lopsided, some passes are far closer than others.</div>
+      </div>
+      <div class="zcl-psec"><div class="zcl-psec-label">Olympus Mons</div>
+        <div class="zcl-tgtwhy" style="margin:0 0 12px">The tallest volcano in the solar system — a shield volcano like those of Hawaii, grown enormous because Mars has no moving plates to carry it away from the hot spot beneath. Lava piled up in the same place for billions of years.</div>
+        <div class="mr-om">
+          <div class="mr-panel"><h4>How tall</h4><svg viewBox="0 0 420 250" role="img" aria-label="Heights to scale: Everest 8.8 km, Mauna Kea 10.2 km from the sea floor, Olympus Mons 21.9 km"><defs><linearGradient id="om" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D98A5E"/><stop offset="1" stop-color="#7A3B22"/></linearGradient><linearGradient id="ea" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#B7AE9C"/><stop offset="1" stop-color="#4E4A42"/></linearGradient></defs><line x1="34" x2="414" y1="169.0" y2="169.0" stroke="rgba(203,168,90,.1)"/><text x="28" y="172.0" text-anchor="end" font-size="9" fill="#7A6E55">5 km</text><line x1="34" x2="414" y1="128.0" y2="128.0" stroke="rgba(203,168,90,.1)"/><text x="28" y="131.0" text-anchor="end" font-size="9" fill="#7A6E55">10 km</text><line x1="34" x2="414" y1="87.0" y2="87.0" stroke="rgba(203,168,90,.1)"/><text x="28" y="90.0" text-anchor="end" font-size="9" fill="#7A6E55">15 km</text><line x1="34" x2="414" y1="46.0" y2="46.0" stroke="rgba(203,168,90,.1)"/><text x="28" y="49.0" text-anchor="end" font-size="9" fill="#7A6E55">20 km</text><path d="M44.0 210 L67.8 162.8 L78.0 137.4 L86.5 159.2 L112.0 210 Z" fill="url(#ea)"/><text x="78.0" y="119.4" text-anchor="middle" font-size="11" fill="#F2E4BE">Everest</text><text x="78.0" y="131.4" text-anchor="middle" font-size="9.5" fill="#9A875C">8.8 km</text><path d="M110.0 210 L138.0 155.6 L150.0 126.4 L160.0 151.5 L190.0 210 Z" fill="url(#ea)"/><text x="150.0" y="108.4" text-anchor="middle" font-size="11" fill="#F2E4BE">Mauna Kea</text><text x="150.0" y="120.4" text-anchor="middle" font-size="9.5" fill="#9A875C">10.2 km*</text><path d="M216.0 210 L221.0 160.8 C261.0 120.8 291.0 36.4 300.0 30.4 L307.0 36.4 L325.0 36.4 L332.0 30.4 C341.0 36.4 371.0 120.8 411.0 160.8 L416.0 210 Z" fill="url(#om)"/><text x="316.0" y="12.4" text-anchor="middle" font-size="11" fill="#F2E4BE">Olympus Mons</text><text x="316.0" y="24.4" text-anchor="middle" font-size="9.5" fill="#9A875C">21.9 km</text><line x1="34" x2="414" y1="119.8" y2="119.8" stroke="rgba(214,228,250,.55)" stroke-dasharray="3 4"/><rect x="326" y="123.8" width="86" height="15" rx="7.5" fill="rgba(8,7,13,.75)"/><text x="369" y="134.3" text-anchor="middle" font-size="9" fill="#C8D8F0">airliners cruise</text><line x1="34" x2="414" y1="210" y2="210" stroke="rgba(203,168,90,.4)"/><text x="34" y="236" font-size="9" fill="#7A6E55">*measured from the sea floor · widths not to scale</text></svg></div>
+          <div class="mr-panel"><h4>How wide — laid over Utah</h4><svg viewBox="0 0 360 300" role="img" aria-label="Olympus Mons drawn to scale over the state of Utah, covering nearly all of it"><defs><radialGradient id="omf" cx="50%" cy="50%" r="50%"><stop offset="0" stop-color="#C9784E" stop-opacity=".55"/><stop offset=".8" stop-color="#9C4C2C" stop-opacity=".35"/><stop offset="1" stop-color="#9C4C2C" stop-opacity=".12"/></radialGradient></defs><ellipse cx="180.0" cy="156.0" rx="118.6" ry="107.2" fill="url(#omf)" stroke="#D98A5E" stroke-width="1.4"/><ellipse cx="186.0" cy="152.0" rx="15.2" ry="11.4" fill="rgba(60,22,12,.55)" stroke="#D98A5E" stroke-width=".8"/><polygon points="98.3,51.0 196.3,51.0 196.3,93.0 261.7,93.0 261.7,261.0 98.3,261.0" fill="none" stroke="#E6CC85" stroke-width="1.6" stroke-linejoin="round"/><circle cx="132.6" cy="252.6" r="3" fill="#E6CC85"/><text x="138.6" y="256.6" font-size="10" fill="#E6CC85">Zion</text><circle cx="168.9" cy="103.1" r="2.4" fill="#C9BD97"/><text x="173.9" y="99.1" font-size="9.5" fill="#C9BD97">Salt Lake City</text><text x="186.0" y="135.6" font-size="9.5" fill="#D98A5E" text-anchor="middle">summit caldera</text><text x="180.0" y="294.0" font-size="10.5" fill="#F2E4BE" text-anchor="middle">Olympus Mons · 600 km across</text><line x1="12" x2="50.0" y1="16" y2="16" stroke="#9A875C" stroke-width="1.5"/><text x="12" y="30" font-size="9" fill="#9A875C">100 km</text></svg></div>
+        </div>
+        <div class="mr-facts">
+          <div class="zcl-pcard"><div class="zcl-pclabel">Height</div><div class="zcl-pcval">21.9 km</div><div class="zcl-pcsub">2½ times Everest</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Width</div><div class="zcl-pcval">600 km</div><div class="zcl-pcsub">Wider than Utah is tall</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Summit caldera</div><div class="zcl-pcval">80 × 60 km</div><div class="zcl-pcsub">Up to 3 km deep</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Edge cliffs</div><div class="zcl-pcval">Up to 8 km</div><div class="zcl-pcsub">A steep scarp around much of its base</div></div>
+        </div>
+        <div class="zcl-note">Its slopes are only a few degrees on average, so climbing it would feel like a very long, gentle walk — and it is so broad that from its edge the summit would sit beyond the horizon. Some of its lava flows may be only a few million years old.</div>
+      </div>
+      <div class="zcl-psec"><div class="zcl-psec-label">More Landmarks</div>
+        <div class="mr-lm"><div class="zcl-pcard"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#2a1712" stroke="rgba(217,138,94,.45)"/><path d="M6 21 C12 18 16 23 21 20 S30 17 34 19" stroke="#0e0706" stroke-width="3.2" fill="none" stroke-linecap="round"/><path d="M13 20 l2 -4 M24 19 l3 4" stroke="#0e0706" stroke-width="1.6"/></svg><div><div class="zcl-pcval">Valles Marineris</div><div class="zcl-pcsub">A canyon system 4,000 km long and up to 7 km deep — it would stretch from Los Angeles to New York. The whole Grand Canyon would fit inside one of its side branches.</div></div></div><div class="zcl-pcard"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#2a1712" stroke="rgba(217,138,94,.45)"/><circle cx="13" cy="25" r="4" fill="#9C4C2C" stroke="#E0A07A" stroke-width=".8"/><circle cx="20" cy="20" r="4" fill="#9C4C2C" stroke="#E0A07A" stroke-width=".8"/><circle cx="27" cy="15" r="4" fill="#9C4C2C" stroke="#E0A07A" stroke-width=".8"/><circle cx="13" cy="25" r="1.3" fill="#2a1712"/><circle cx="20" cy="20" r="1.3" fill="#2a1712"/><circle cx="27" cy="15" r="1.3" fill="#2a1712"/></svg><div><div class="zcl-pcval">Tharsis</div><div class="zcl-pcsub">A volcanic plateau some 4,000 km across, topped by three more giant volcanoes in a row — Arsia, Pavonis and Ascraeus Mons — with Olympus Mons off its western edge.</div></div></div><div class="zcl-pcard"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#2a1712" stroke="rgba(217,138,94,.45)"/><circle cx="20" cy="21" r="10" fill="#4a2a1d" stroke="#E0A07A" stroke-width="1"/><circle cx="20" cy="21" r="5.5" fill="#6b3b27"/></svg><div><div class="zcl-pcval">Hellas Basin</div><div class="zcl-pcsub">An impact scar 2,300 km wide and over 7 km deep — the lowest place on Mars. Often filled with frost or cloud, so it can look bright in a telescope.</div></div></div><div class="zcl-pcard"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#2a1712" stroke="rgba(217,138,94,.45)"/><path d="M6 13 A18 18 0 0 1 34 13 Q20 20 6 13 Z" fill="#F4EEE6"/><path d="M11 27 Q20 33 29 27" stroke="#6b3b27" fill="none"/></svg><div><div class="zcl-pcval">The polar caps</div><div class="zcl-pcsub">Water ice capped by a winter layer of frozen carbon dioxide. A cap is usually the first detail you notice in a small telescope, and it visibly shrinks through the Martian spring.</div></div></div><div class="zcl-pcard"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#2a1712" stroke="rgba(217,138,94,.45)"/><path d="M17 8 C23 12 21 18 26 24 C28 29 22 32 17 30 C14 25 18 20 14 14 Z" fill="#241510"/></svg><div><div class="zcl-pcval">Syrtis Major</div><div class="zcl-pcsub">A dark plain of volcanic rock — the first surface feature ever recorded on another planet, sketched by Christiaan Huygens in 1659. Easy to spot in a small telescope when it faces us.</div></div></div><div class="zcl-pcard"><svg viewBox="0 0 40 40" aria-hidden="true"><circle cx="20" cy="20" r="18" fill="#2a1712" stroke="rgba(217,138,94,.45)"/><circle cx="20" cy="20" r="11" fill="#5a3322" stroke="#E0A07A" stroke-width="1"/><path d="M9 14 C13 17 15 18 17 20 L22 23 L19 25 Z" fill="#b98763"/><circle cx="23" cy="22" r="1.6" fill="#E6CC85"/></svg><div><div class="zcl-pcval">Jezero Crater</div><div class="zcl-pcsub">An old lake bed with a river delta, where NASA’s Perseverance rover landed in 2021 to search for signs of ancient life. <a class="mr-3d" href="spacecraft?m=mars2020">See it in 3D ›</a></div></div></div></div>
+      </div>
       <div class="zcl-psec"><div class="zcl-psec-label">The Two Moons</div>
-        <div class="zcl-moonlist"><div class="zcl-moonchip"><i style="background:#B0A088"></i><span><span class="mn">Phobos</span><br><span class="ms">27 km across · orbits in just 7.7 hours — so close and fast it rises in the west and sets in the east twice a day, and is spiralling inward to break apart in ~50 million years.</span></span></div><div class="zcl-moonchip"><i style="background:#9A8C78"></i><span><span class="mn">Deimos</span><br><span class="ms">15 km across · orbits in 30.3 hours — a tiny, distant lump so small it would look like a bright star from the Martian surface.</span></span></div></div>
-        <div class="zcl-note">Both moons are almost certainly captured asteroids — lumpy, dark, and far too small to be seen in amateur telescopes. They were discovered in 1877 and named for the sons of Ares (Mars): Fear and Dread.</div>
+        <div class="zcl-moonlist">
+          <div class="mr-moon"><svg viewBox="0 0 34 34" aria-hidden="true"><ellipse cx="17" cy="17" rx="13.0" ry="10.0" fill="#8C7F6E"/><circle cx="13.1" cy="15" r="1.6" fill="rgba(0,0,0,.25)"/></svg><span><span class="mn">Phobos</span><br><span class="ms">27 km long · orbits in 7 hours 39 minutes — faster than Mars spins, so from the surface it rises in the west and sets in the east, twice a day. It is spiralling inward and is expected to break apart or crash into Mars within about 50 million years.</span></span></div>
+          <div class="mr-moon"><svg viewBox="0 0 34 34" aria-hidden="true"><ellipse cx="17" cy="17" rx="8.0" ry="6.5" fill="#9A8C78"/><circle cx="14.6" cy="15" r="1.6" fill="rgba(0,0,0,.25)"/></svg><span><span class="mn">Deimos</span><br><span class="ms">15 km long · orbits in 30.3 hours. From Mars it would look like a bright star, barely a disc at all.</span></span></div>
+        </div>
+        <div class="zcl-note">Both are dark and lumpy. They look like captured asteroids, though they may be debris from a giant impact — Japan’s MMX mission aims to find out. Discovered in 1877 and named for the sons of Ares: Fear and Dread. Near opposition they can be glimpsed in larger telescopes if Mars’s glare is kept out of view.</div>
       </div>
       <div class="zcl-psec"><div class="zcl-psec-label">The Planet Itself</div>
-        <div class="zcl-pcards cols3"><div class="zcl-pcard"><div class="zcl-pclabel">Diameter</div><div class="zcl-pcval">6,779 km</div><div class="zcl-pcsub">About half of Earth</div></div><div class="zcl-pcard"><div class="zcl-pclabel">Day length</div><div class="zcl-pcval">24h 37m</div><div class="zcl-pcsub">Remarkably Earth-like</div></div><div class="zcl-pcard"><div class="zcl-pclabel">Year</div><div class="zcl-pcval">687 days</div><div class="zcl-pcsub">Nearly two Earth years</div></div></div>
-        <div class="zcl-note">Mars is red because its surface is literally rusted — iron-rich dust oxidised over billions of years. It carries the solar system’s record-holders: Olympus Mons, a volcano nearly three times the height of Everest, and Valles Marineris, a canyon system that would stretch across the entire United States. Through a small scope, look for the bright white polar cap and dark markings like Syrtis Major when Mars is near opposition.</div>
+        <div class="zcl-pcards cols3">
+          <div class="zcl-pcard"><div class="zcl-pclabel">Diameter</div><div class="zcl-pcval">6,779 km</div><div class="zcl-pcsub">About half of Earth</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Day</div><div class="zcl-pcval">24h 40m</div><div class="zcl-pcsub">One sol — remarkably Earth-like</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Year</div><div class="zcl-pcval">687 days</div><div class="zcl-pcsub">Nearly two Earth years</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Gravity</div><div class="zcl-pcval">38%</div><div class="zcl-pcsub">You’d weigh a bit over a third</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Air</div><div class="zcl-pcval">95% CO₂</div><div class="zcl-pcsub">Under 1% of Earth’s pressure</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Temperature</div><div class="zcl-pcval">−153 to 20 °C</div><div class="zcl-pcsub">Polar night to summer noon</div></div>
+        </div>
+        <div class="zcl-note">Mars is red because its dust is rusted — iron oxidised over billions of years. Through a small telescope near opposition, look for a white polar cap and dark markings like Syrtis Major rotating slowly into view; Mars turns only a little slower than Earth, so the same face comes back about 40 minutes later each night.</div>
       </div>
     </div>
   </div>
 </div>
 </div>
-<script>
-"use strict";
-(function(){
-
-var $=function(id){return document.getElementById(id)};
-// starfield
-(function(){var s='';for(var i=0;i<150;i++){s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>'}$('zcl-plstars').innerHTML=s})();
-// corner flourishes
-(function(){var fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+<script>(function(){var $=function(id){return document.getElementById(id)};
+var s='';for(var i=0;i<150;i++){s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>'}$('zcl-plstars').innerHTML=s;
+var fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
   +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
   +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
   +'<path d="M2 19 C9 19 9 12 2 12" opacity=".55"/><path d="M19 2 C19 9 12 9 12 2" opacity=".55"/>'
   +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
-  var els=document.querySelectorAll('.zcl-fl');for(var i=0;i<els.length;i++)els[i].innerHTML=fl})();
-
-function discEarth(cx,cy,r){
-  var ex=cx-130, ey=cy;
-  var er=r;
-  var mx=cx+170, my=cy-18;
-  var mr=r*0.27;
-  var s='';
-  var orbRx = Math.hypot(mx-ex, my-ey);
-  s+='<ellipse cx="'+ex+'" cy="'+ey+'" rx="'+orbRx+'" ry="'+(orbRx*0.35)+'"'
-    +' fill="none" stroke="#9DB6CC" stroke-opacity=".35" stroke-width="1"'
-    +' stroke-dasharray="4 5"/>';
-  var ecid='earthc', elid='earthld';
-  s+='<defs>';
-  s+='<clipPath id="'+ecid+'"><circle cx="'+ex+'" cy="'+ey+'" r="'+er+'"/></clipPath>';
-  s+='<radialGradient id="'+elid+'" cx="50%" cy="50%" r="50%">'
-    +'<stop offset="62%" stop-color="transparent"/>'
-    +'<stop offset="100%" stop-color="rgba(0,0,0,.5)"/></radialGradient>';
-  var mcid='moonc';
-  s+='<clipPath id="'+mcid+'"><circle cx="'+mx+'" cy="'+my+'" r="'+mr+'"/></clipPath>';
-  s+='<radialGradient id="mg" cx="38%" cy="36%" r="70%">'
-    +'<stop offset="0%" stop-color="#E8E2D2"/>'
-    +'<stop offset="60%" stop-color="#B5AC97"/>'
-    +'<stop offset="100%" stop-color="#5A5247"/></radialGradient>';
-  s+='</defs>';
-  // Earth photo
-  s+='<image href="img/earth.jpg" x="'+(ex-er)+'" y="'+(ey-er)+'" width="'+(er*2)+'" height="'+(er*2)+'" clip-path="url(#'+ecid+')" preserveAspectRatio="xMidYMid slice"/>';
-  s+='<circle cx="'+ex+'" cy="'+ey+'" r="'+er+'" fill="url(#'+elid+')"/>';
-  s+='<circle cx="'+ex+'" cy="'+ey+'" r="'+(er+1.5)+'" fill="none" stroke="#A8D0F4" stroke-width="2.5" stroke-opacity=".3"/>';
-  // Moon (kept as gradient — no moon photo in the set)
-  s+='<circle cx="'+mx+'" cy="'+my+'" r="'+mr+'" fill="url(#mg)"/>';
-  s+='<circle cx="'+(mx-mr*.25)+'" cy="'+(my-mr*.15)+'" r="'+(mr*.22)+'" fill="#5A5247" opacity=".5"/>';
-  s+='<circle cx="'+(mx+mr*.15)+'" cy="'+(my+mr*.25)+'" r="'+(mr*.18)+'" fill="#5A5247" opacity=".45"/>';
-  s+='<circle cx="'+mx+'" cy="'+my+'" r="'+mr+'" fill="none" stroke="#D0CAB8" stroke-width=".7" stroke-opacity=".5"/>';
-  // Labels
-  s+='<text x="'+ex+'" y="'+(ey+er+22)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="2.5" fill="#8A6E32" style="text-transform:uppercase">EARTH</text>';
-  s+='<text x="'+mx+'" y="'+(my+mr+18)+'" text-anchor="middle" font-family="Montserrat" font-size="9" letter-spacing="2.5" fill="#8A6E32">THE MOON</text>';
-  s+='<text x="'+((ex+mx)/2)+'" y="'+(ey-orbRx*0.35-8)+'" text-anchor="middle" font-family="Montserrat" font-size="8.5" letter-spacing="2" fill="#7A6E55" font-style="italic">~ 384,400 km · once every 27.3 days</text>';
-  return s;
+var els=document.querySelectorAll('.zcl-fl');for(var i=0;i<els.length;i++)els[i].innerHTML=fl})();</script>
+<script src="zcl-tz.js"></script>
+<script src="zcl-season.js"></script>
+<script>
+(function(){
+"use strict";
+var $=function(id){return document.getElementById(id)};
+var D2R=Math.PI/180, R2D=180/Math.PI, DAY=86400000, AU=149597870.7;
+var L=ZCLTZ.loc(), TZ=L.tz;
+function dot(a,b){return a[0]*b[0]+a[1]*b[1]+a[2]*b[2]}
+function len(a){return Math.sqrt(dot(a,a))}
+/* Mars as seen from Earth at time t — JPL mean elements (good to a few
+   hundredths of an arcsecond in size and a day or so in dates). */
+function mars(t){
+  var v=ZCLSeason.vec('Mars',t), P=v.P, E=v.E, g=[P[0]-E[0],P[1]-E[1],P[2]-E[2]], r=len(P), d=len(g);
+  var ca=Math.max(-1,Math.min(1,dot(P,g)/(r*d))), a=Math.acos(ca)*R2D;
+  var rd=ZCLSeason.radec(g), sd=ZCLSeason.radec([-E[0],-E[1],-E[2]]);
+  var el=Math.acos(Math.max(-1,Math.min(1,-dot(g,E)/(d*len(E)))))*R2D;
+  var dra=sd[0]-rd[0], pa=Math.atan2(Math.cos(sd[1])*Math.sin(dra), Math.sin(sd[1])*Math.cos(rd[1])-Math.cos(sd[1])*Math.sin(rd[1])*Math.cos(dra));
+  return {t:t, r:r, d:d, phase:a, lit:(1+ca)/2, ra:rd[0], dec:rd[1], sun:sd, elong:el, pa:pa,
+    size:2*3396.2/(d*AU)*206264.8, mag:-1.601+5*Math.log10(r*d)+0.02267*a-0.0001302*a*a};
 }
-
-function discMars(cx,cy,r){
-  var cid='marsc', lid='marsld';
-  var s='<defs>';
-  s+='<clipPath id="'+cid+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'"/></clipPath>';
-  s+='<radialGradient id="'+lid+'" cx="50%" cy="50%" r="50%">'
-    +'<stop offset="62%" stop-color="transparent"/>'
-    +'<stop offset="100%" stop-color="rgba(0,0,0,.52)"/></radialGradient>';
-  s+='</defs>';
-  // photo base
-  s+='<image href="img/mars.jpg" x="'+(cx-r)+'" y="'+(cy-r)+'" width="'+(r*2)+'" height="'+(r*2)+'" clip-path="url(#'+cid+')" preserveAspectRatio="xMidYMid slice"/>';
-  // limb darkening
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="url(#'+lid+')"/>';
-  // thin atmosphere limb glow
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+1)+'" fill="none" stroke="#E8B89A" stroke-width="1.8" stroke-opacity=".25"/>';
-  // rim
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(60,30,18,.4)" stroke-width="1"/>';
-  // labels
-  s+='<text x="'+cx+'" y="'+(cy+r+24)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="2.5" fill="#8A6E32">MARS</text>';
-  s+='<text x="'+(cx+r+12)+'" y="'+(cy-r*.1)+'" text-anchor="start" font-family="Montserrat" font-size="9" font-style="italic" fill="#9A875C">Syrtis Major</text>';
-  s+='<line x1="'+(cx+r+10)+'" y1="'+(cy-r*.12)+'" x2="'+(cx+r*.05)+'" y2="'+(cy-r*.1)+'" stroke="#9A875C" stroke-width=".6" stroke-opacity=".5"/>';
-  s+='<text x="'+(cx+r+12)+'" y="'+(cy+r*.38)+'" text-anchor="start" font-family="Montserrat" font-size="9" font-style="italic" fill="#9A875C">Valles Marineris</text>';
-  s+='<line x1="'+(cx+r+10)+'" y1="'+(cy+r*.36)+'" x2="'+(cx+r*.2)+'" y2="'+(cy+r*.32)+'" stroke="#9A875C" stroke-width=".6" stroke-opacity=".5"/>';
-  return s;
+function alt(t,ra,dec){
+  var lst=(280.46061837+360.98564736629*(t/DAY+2440587.5-2451545)+L.lng)*D2R, H=lst-ra, la=L.lat*D2R;
+  return Math.asin(Math.sin(la)*Math.sin(dec)+Math.cos(la)*Math.cos(dec)*Math.cos(H));
 }
+function fmtT(d){return ZCLTZ.fmtTime(d,TZ)}
+function fmtD(d,y){return ZCLTZ.fmtDate(d,y?{month:'short',day:'numeric',year:'numeric'}:{month:'short',day:'numeric'},TZ)}
+function fmtMY(d){return ZCLTZ.fmtDate(d,{month:'short',year:'numeric'},TZ)}
 
-function discSaturn(cx,cy,r){
-  var s='';
-  // ring tilt
-  var tilt=-18;
-  // BACK half of the rings — drawn first, behind the planet
-  s+='<g transform="translate('+cx+','+cy+') rotate('+tilt+')">';
-  // outer C ring (faint)
-  s+='<path d="M '+(-r*2.25)+' 0 A '+r*2.25+' '+r*.68+' 0 0 1 '+(r*2.25)+' 0" fill="none" stroke="#A89868" stroke-width="'+r*.06+'" stroke-opacity=".45"/>';
-  // A ring (bright outer)
-  s+='<path d="M '+(-r*2.05)+' 0 A '+r*2.05+' '+r*.62+' 0 0 1 '+(r*2.05)+' 0" fill="none" stroke="#E8D6A0" stroke-width="'+r*.18+'" stroke-opacity=".75"/>';
-  // Encke gap (thin dark line near outer A)
-  s+='<path d="M '+(-r*2.0)+' 0 A '+r*2.0+' '+r*.605+' 0 0 1 '+(r*2.0)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.012+'" stroke-opacity=".9"/>';
-  // Cassini Division — the famous dark gap
-  s+='<path d="M '+(-r*1.85)+' 0 A '+r*1.85+' '+r*.56+' 0 0 1 '+(r*1.85)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.03+'" stroke-opacity=".95"/>';
-  // B ring (densest, brightest)
-  s+='<path d="M '+(-r*1.7)+' 0 A '+r*1.7+' '+r*.51+' 0 0 1 '+(r*1.7)+' 0" fill="none" stroke="#F3E2B0" stroke-width="'+r*.22+'" stroke-opacity=".85"/>';
-  // C ring (inner, dusky)
-  s+='<path d="M '+(-r*1.4)+' 0 A '+r*1.4+' '+r*.42+' 0 0 1 '+(r*1.4)+' 0" fill="none" stroke="#9A8A66" stroke-width="'+r*.12+'" stroke-opacity=".55"/>';
-  s+='</g>';
-
-  // Planet body — photo
-  var scid='satc', slid='satld';
-  s+='<defs>';
-  s+='<clipPath id="'+scid+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'"/></clipPath>';
-  s+='<radialGradient id="'+slid+'" cx="50%" cy="50%" r="50%">'
-    +'<stop offset="62%" stop-color="transparent"/>'
-    +'<stop offset="100%" stop-color="rgba(0,0,0,.48)"/></radialGradient>';
-  // ring-on-planet shadow stripe
-  s+='<linearGradient id="srshd" x1="0" y1="0" x2="0" y2="1">'
-    +'<stop offset="0%" stop-color="#000" stop-opacity="0"/>'
-    +'<stop offset="50%" stop-color="#000" stop-opacity=".35"/>'
-    +'<stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>';
-  s+='</defs>';
-  s+='<image href="img/saturn.jpg" x="'+(cx-r)+'" y="'+(cy-r)+'" width="'+(r*2)+'" height="'+(r*2)+'" clip-path="url(#'+scid+')" preserveAspectRatio="xMidYMid slice"/>';
-  // ring shadow band across the disc
-  s+='<rect x="'+(cx-r)+'" y="'+(cy-r*.06)+'" width="'+(r*2)+'" height="'+(r*.12)+'" fill="url(#srshd)" transform="rotate('+tilt+' '+cx+' '+cy+')"/>';
-  // limb darkening + glow
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="url(#'+slid+')"/>';
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+1)+'" fill="none" stroke="#F0E2A8" stroke-width="1.5" stroke-opacity=".3"/>';
-
-  // FRONT half of the rings — drawn last, in front of the planet's lower edge
-  s+='<g transform="translate('+cx+','+cy+') rotate('+tilt+')">';
-  // need only the FRONT semicircle of each ring — use a path that goes the other way
-  s+='<path d="M '+(-r*2.25)+' 0 A '+r*2.25+' '+r*.68+' 0 0 0 '+(r*2.25)+' 0" fill="none" stroke="#A89868" stroke-width="'+r*.06+'" stroke-opacity=".55"/>';
-  s+='<path d="M '+(-r*2.05)+' 0 A '+r*2.05+' '+r*.62+' 0 0 0 '+(r*2.05)+' 0" fill="none" stroke="#EEDCA8" stroke-width="'+r*.18+'" stroke-opacity=".88"/>';
-  s+='<path d="M '+(-r*2.0)+' 0 A '+r*2.0+' '+r*.605+' 0 0 0 '+(r*2.0)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.012+'" stroke-opacity=".95"/>';
-  s+='<path d="M '+(-r*1.85)+' 0 A '+r*1.85+' '+r*.56+' 0 0 0 '+(r*1.85)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.03+'" stroke-opacity="1"/>';
-  s+='<path d="M '+(-r*1.7)+' 0 A '+r*1.7+' '+r*.51+' 0 0 0 '+(r*1.7)+' 0" fill="none" stroke="#F8E8B8" stroke-width="'+r*.22+'" stroke-opacity=".95"/>';
-  s+='<path d="M '+(-r*1.4)+' 0 A '+r*1.4+' '+r*.42+' 0 0 0 '+(r*1.4)+' 0" fill="none" stroke="#A89868" stroke-width="'+r*.12+'" stroke-opacity=".65"/>';
-  s+='</g>';
-
-  // labels
-  s+='<text x="'+cx+'" y="'+(cy+r*1.7+8)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="2.5" fill="#8A6E32">SATURN</text>';
-  // Cassini Division callout — pull it well clear of the ring
-  s+='<text x="'+(cx-r*2.05)+'" y="'+(cy-r*.95)+'" text-anchor="start" font-family="Montserrat" font-size="9" font-style="italic" fill="#9A875C">Cassini Division</text>';
-  s+='<line x1="'+(cx-r*1.55)+'" y1="'+(cy-r*.85)+'" x2="'+(cx-r*1.85)+'" y2="'+(cy-r*.45)+'" stroke="#9A875C" stroke-width=".6" stroke-opacity=".5"/>';
-  return s;
-}
-
-var f=$('zcl-pl-field');
-f.innerHTML=discMars(460,210,100);
+/* ── Oppositions and the size curve for the next ten years ── */
+var NOW=Date.now(), series=[], opps=[];
+(function(){
+  var prev=null, prev2=null;
+  for(var t=NOW-60*DAY;t<NOW+3700*DAY;t+=DAY){
+    var m=mars(t);
+    if((t-NOW)%(4*DAY)===0||series.length===0) series.push(m);
+    if(prev2&&prev.elong>prev2.elong&&prev.elong>=m.elong&&prev.elong>170){
+      // closest approach falls within a couple of weeks of opposition
+      var best=prev; for(var k=-20;k<=20;k++){ var q=mars(prev.t+k*DAY); if(q.size>best.size) best=q; }
+      // the opposition itself: the hour Mars sits exactly opposite the Sun along the ecliptic
+      var dl=function(tt){ var w=ZCLSeason.vec('Mars',tt), a=(Math.atan2(w.P[1]-w.E[1],w.P[0]-w.E[0])-Math.atan2(-w.E[1],-w.E[0]))*R2D; return ((a%360)+360)%360-180; };
+      var lo=prev.t-3*DAY, hi=prev.t+3*DAY, ot=prev.t; if(dl(lo)*dl(hi)<0){ for(var b=0;b<40;b++){ var mid=(lo+hi)/2; if(dl(lo)*dl(mid)<=0) hi=mid; else lo=mid; } ot=(lo+hi)/2; }
+      if(ot>NOW-30*DAY) opps.push({t:ot, m:best});
+    }
+    prev2=prev; prev=m;
+  }
 })();
+var nowM=mars(NOW), nextOpp=opps.filter(function(o){return o.t>NOW-3*DAY})[0];
+var bestOpp=opps.reduce(function(a,o){return !a||o.m.size>a.m.size?o:a},null);
+
+/* ── Hero: the photo, shaded to the phase and drawn to relative scale ── */
+var img=new Image(); img.src='img/mars.jpg';
+var OPTS=[{lab:'Tonight',m:nowM,when:'Tonight'}];
+if(nextOpp) OPTS.push({lab:fmtMY(new Date(nextOpp.t)),m:mars(nextOpp.t),when:'Opposition · '+fmtD(new Date(nextOpp.t),1),best:nextOpp.m});
+if(bestOpp&&bestOpp!==nextOpp) OPTS.push({lab:fmtMY(new Date(bestOpp.t)),m:mars(bestOpp.t),when:'Opposition · '+fmtD(new Date(bestOpp.t),1),best:bestOpp.m});
+var sel=0, maxSize=Math.max.apply(null,OPTS.map(function(o){return (o.best||o.m).size}));
+$('mr-sizes').innerHTML=OPTS.map(function(o,i){return '<button class="zcl-vbtn'+(i===0?' on':'')+'" data-i="'+i+'"><span class="l">'+o.lab+'</span><span class="s">'+o.lab+'</span></button>'}).join('');
+[].forEach.call($('mr-sizes').children,function(b){ b.addEventListener('click',function(){ sel=+b.dataset.i;
+  [].forEach.call($('mr-sizes').children,function(x){x.classList.toggle('on',x===b)}); drawHero(); }); });
+function smooth(a,b,x){var t=Math.max(0,Math.min(1,(x-a)/(b-a)));return t*t*(3-2*t)}
+function disc(R,m){
+  var c=document.createElement('canvas'); c.width=c.height=2*R+2; var x=c.getContext('2d');
+  var SC=399.5, SCY=399, SR=340;                         // the disc inside the photo
+  x.drawImage(img,SC-SR,SCY-SR,2*SR,2*SR,1,1,2*R,2*R);
+  var id=x.getImageData(0,0,c.width,c.height), p=id.data, ca=Math.cos(m.phase*D2R);
+  var sx=-Math.sin(m.pa), sy=-Math.cos(m.pa);           // toward the Sun on screen (north up, east left)
+  var edge=Math.max(.012,1.5/R);
+  for(var j=0;j<c.height;j++) for(var i=0;i<c.width;i++){
+    var nx=(i-1-R+.5)/R, ny=(j-1-R+.5)/R, rr=nx*nx+ny*ny, o=(j*c.width+i)*4;
+    var cov=smooth(1+edge,1-edge,Math.sqrt(rr)); if(cov<=0){p[o+3]=0;continue;}
+    var u=nx*sx+ny*sy, v=-nx*sy+ny*sx, term=-ca*Math.sqrt(Math.max(0,1-v*v));
+    var lit=smooth(term-.035,term+.035,u), k=.035+.965*lit;
+    var haze=Math.pow(Math.min(1,rr),6)*.35*lit;             // thin bright limb haze on the sunlit edge
+    p[o]=Math.min(255,p[o]*k+200*haze); p[o+1]=Math.min(255,p[o+1]*k+190*haze); p[o+2]=Math.min(255,p[o+2]*k+205*haze); p[o+3]=255*cov;
+  }
+  x.putImageData(id,0,0); return c;
+}
+function drawHero(){
+  var cv=$('mr-cv'), dpr=Math.min(2,window.devicePixelRatio||1), W=Math.round(cv.clientWidth*dpr), H=Math.round(cv.clientHeight*dpr);
+  if(!W||!H) return; cv.width=W; cv.height=H; var ctx=cv.getContext('2d');
+  var o=OPTS[sel], m=o.best||o.m, lit=o.best?o.best:o.m;
+  var R=Math.max(3*dpr, Math.min(W,H)*.4*m.size/maxSize);
+  if(img.complete&&img.naturalWidth){
+    var d=disc(Math.round(R),lit);
+    ctx.save(); ctx.shadowColor='rgba(217,120,70,.35)'; ctx.shadowBlur=R*.35;
+    ctx.drawImage(d,W/2-d.width/2,H/2-d.height/2); ctx.restore();
+  }
+  // faint ring showing the biggest size, for comparison
+  if(sel!==OPTS.length-1||OPTS.length===1){ var Rm=Math.min(W,H)*.4; ctx.strokeStyle='rgba(203,168,90,.22)'; ctx.setLineDash([4*dpr,6*dpr]); ctx.lineWidth=dpr;
+    ctx.beginPath(); ctx.arc(W/2,H/2,Rm,0,7); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='rgba(203,168,90,.5)'; ctx.font=Math.round(10*dpr)+'px Montserrat, sans-serif'; ctx.textAlign='center';
+    ctx.fillText('size at '+OPTS[OPTS.length-1].lab, W/2, H/2+Rm+14*dpr); }
+  $('mr-tl').innerHTML=o.when+'<b>'+m.size.toFixed(1)+'″ across · '+Math.round(lit.lit*100)+'% lit</b>';
+  $('mr-tr').innerHTML='Distance<b>'+Math.round(m.d*AU/1e6)+' million km</b>';
+}
+img.onload=drawHero; window.addEventListener('resize',function(){drawHero();drawChart();});
+$('mr-note').innerHTML='Mars in true colour, photographed from space — shaded to its phase and drawn to <b>relative size</b>. Tonight it is '+nowM.size.toFixed(1)+'″ across; at '+(bestOpp?fmtMY(new Date(bestOpp.t)):'its best')+'’s opposition it will be '+(bestOpp?bestOpp.m.size.toFixed(1):'')+'″, about '+(bestOpp?(bestOpp.m.size/nowM.size).toFixed(1):'')+' times wider.';
+
+/* ── Tonight cards ── */
+function card(l,v,s,c){return '<div class="zcl-pcard'+(c?' '+c:'')+'"><div class="zcl-pclabel">'+l+'</div><div class="zcl-pcval">'+v+'</div>'+(s?'<div class="zcl-pcsub">'+s+'</div>':'')+'</div>'}
+(function(){
+  var dk=ZCLTZ.dayKey(new Date(NOW),TZ).split('-').map(Number), start=ZCLTZ.at(dk[0],dk[1]-1,dk[2],12,0,TZ).getTime();
+  if(NOW<start-6*3600000) start-=DAY;      // before 6 AM: the night still in progress; after that, the night to come
+  var h0=-0.5667*D2R, prev=null, rise=null, set=null, best=null, ba=-9, m=nowM;
+  for(var t=start;t<=start+DAY;t+=6*60000){ var a=alt(t,m.ra,m.dec)-h0;
+    if(prev!==null){ if(prev<0&&a>=0&&!rise) rise=new Date(t-6*60000*a/(a-prev)); if(prev>=0&&a<0&&!set) set=new Date(t-6*60000*a/(a-prev)); }
+    if(a>0&&a>ba&&alt(t,m.sun[0],m.sun[1])<-12*D2R){ba=a;best=new Date(t);} prev=a; }
+  var an=alt(NOW,m.ra,m.dec)*R2D, up=an>0, h='';
+  h+=card('Right now', up?Math.round(an)+'° up':'Below horizon', up?'Altitude above the horizon':(rise?'Rises '+fmtT(rise):''), up&&an>20?'accent':'');
+  h+=card('Best view', best?fmtT(best):'Daytime only', best?'Highest in darkness · '+Math.round((ba+h0)*R2D)+'° up':'Too close to the Sun tonight');
+  h+=card('Rises · sets', (rise?fmtT(rise):'—')+' · '+(set?fmtT(set):'—'), 'For your saved location');
+  h+=card('Phase', Math.round(m.lit*100)+'% lit', m.lit>.97?(m.elong>150?'Fully lit, near opposition':'Almost fully lit'):'A slightly gibbous disc');
+  h+=card('Size', m.size.toFixed(1)+'″', 'Across the equator');
+  h+=card('Brightness', 'mag '+m.mag.toFixed(1), m.mag<-1.5?'Brighter than Sirius':m.mag<0?'Brighter than all but a few stars':m.mag<1?'Like a first-magnitude star':'A modest reddish star');
+  h+=card('Distance', Math.round(m.d*AU/1e6)+' million km', 'Light takes '+Math.round(m.d*AU/299792.458/60)+' minutes');
+  if(nextOpp){ var dd=Math.round((nextOpp.t-NOW)/DAY);
+    h+=card('Next opposition', fmtD(new Date(nextOpp.t),1), dd>0?'In '+dd+' days · '+nextOpp.m.size.toFixed(1)+'″ across':'Now — closest & brightest'); }
+  $('mr-tonight').innerHTML=h;
+})();
+setTimeout(function(){ ZCLSeason.render($('zcl-season'),'Mars'); },60);
+
+/* ── Size chart ── */
+function drawChart(){
+  var box=$('mr-chart'), W=Math.max(300,box.clientWidth), phone=W<560, H=phone?210:240, ml=34, mr=12, mt=phone?44:40, mb=24;
+  var t0=series[0].t, t1=series[series.length-1].t, ymax=Math.ceil((maxSize+2)/5)*5;
+  var X=function(t){return ml+(t-t0)/(t1-t0)*(W-ml-mr)}, Y=function(v){return mt+(1-v/ymax)*(H-mt-mb)};
+  var s='<svg viewBox="0 0 '+W+' '+H+'" width="'+W+'" height="'+H+'" role="img" aria-label="Apparent size of Mars over the next ten years"><defs><linearGradient id="mrA" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#D98A5E" stop-opacity=".32"/><stop offset="1" stop-color="#D98A5E" stop-opacity="0"/></linearGradient></defs>';
+  for(var v=5;v<=ymax;v+=5) s+='<line x1="'+ml+'" x2="'+(W-mr)+'" y1="'+Y(v)+'" y2="'+Y(v)+'" stroke="rgba(203,168,90,.09)"/><text x="'+(ml-6)+'" y="'+(Y(v)+3)+'" text-anchor="end" font-size="9.5" fill="#7A6E55">'+v+'″</text>';
+  var y0=new Date(t0).getFullYear()+1;
+  for(var yr=y0;;yr++){ var ty=ZCLTZ.at(yr,0,1,0,0,TZ).getTime(); if(ty>t1) break; var xx=X(ty);
+    s+='<line x1="'+xx+'" x2="'+xx+'" y1="'+(H-mb)+'" y2="'+(H-mb+4)+'" stroke="rgba(203,168,90,.35)"/>';
+    if(!phone||yr%2===1) s+='<text x="'+xx+'" y="'+(H-6)+'" text-anchor="middle" font-size="9.5" fill="#7A6E55">'+yr+'</text>'; }
+  var pts=series.map(function(m){return X(m.t).toFixed(1)+','+Y(m.size).toFixed(1)}).join(' ');
+  s+='<polygon points="'+X(t0)+','+Y(0)+' '+pts+' '+X(t1)+','+Y(0)+'" fill="url(#mrA)"/>';
+  s+='<polyline points="'+pts+'" fill="none" stroke="#D98A5E" stroke-width="2" stroke-linejoin="round"/>';
+  s+='<line x1="'+ml+'" x2="'+(W-mr)+'" y1="'+Y(0)+'" y2="'+Y(0)+'" stroke="rgba(203,168,90,.35)"/>';
+  var nx=X(NOW); s+='<line x1="'+nx+'" x2="'+nx+'" y1="'+(mt-10)+'" y2="'+Y(0)+'" stroke="rgba(230,204,133,.55)" stroke-dasharray="3 3"/><text x="'+(nx+4)+'" y="'+(mt-2)+'" font-size="9.5" fill="#E6CC85">Now</text>';
+  s+='<circle cx="'+nx+'" cy="'+Y(nowM.size)+'" r="4" fill="#E6CC85" stroke="#141319" stroke-width="2"/>';
+  opps.forEach(function(o){ var x=X(o.m.t), y=Y(o.m.size), big=o===bestOpp;
+    s+='<circle cx="'+x+'" cy="'+y+'" r="4.5" fill="'+(big?'#F2E4BE':'#D98A5E')+'" stroke="#141319" stroke-width="2"/>';
+    s+='<text x="'+x+'" y="'+(y-22)+'" text-anchor="middle" font-size="'+(phone?9:10)+'" fill="#9A875C">'+ZCLTZ.fmtDate(new Date(o.t),{month:'short',year:phone?'2-digit':'numeric'},TZ).replace(' ',phone?" ’":' ').replace("’’","’")+'</text>';
+    s+='<text x="'+x+'" y="'+(y-10)+'" text-anchor="middle" font-size="'+(phone?10:11)+'" font-weight="600" fill="#F2E4BE">'+o.m.size.toFixed(1)+'″</text>'; });
+  s+='<line id="mr-xh" x1="0" x2="0" y1="'+mt+'" y2="'+Y(0)+'" stroke="rgba(242,228,190,.5)" opacity="0"/><circle id="mr-xd" r="4" fill="#F2E4BE" opacity="0"/>';
+  s+='<rect x="'+ml+'" y="0" width="'+(W-ml-mr)+'" height="'+H+'" fill="transparent" id="mr-hit"/></svg>';
+  var tip=$('mr-tip'); box.innerHTML=s; box.appendChild(tip);
+  var hit=$('mr-hit'), xh=$('mr-xh'), xd=$('mr-xd');
+  function move(e){ var r=box.getBoundingClientRect(), px=(e.touches?e.touches[0].clientX:e.clientX)-r.left, sx=px*W/r.width;
+    var t=t0+(sx-ml)/(W-ml-mr)*(t1-t0), i=Math.max(0,Math.min(series.length-1,Math.round((t-t0)/(4*DAY)))), m=series[i];
+    var x=X(m.t), y=Y(m.size); xh.setAttribute('x1',x); xh.setAttribute('x2',x); xh.setAttribute('opacity',1); xd.setAttribute('cx',x); xd.setAttribute('cy',y); xd.setAttribute('opacity',1);
+    tip.innerHTML='<b>'+fmtD(new Date(m.t),1)+'</b><br>'+m.size.toFixed(1)+'″ across · '+Math.round(m.d*AU/1e6)+' million km';
+    var lx=x*r.width/W; tip.style.left=Math.max(70,Math.min(r.width-70,lx))+'px'; tip.style.top=(y*r.height/H-10)+'px'; tip.style.opacity=1; }
+  function out(){ tip.style.opacity=0; xh.setAttribute('opacity',0); xd.setAttribute('opacity',0); }
+  hit.addEventListener('mousemove',move); hit.addEventListener('touchmove',move,{passive:true}); hit.addEventListener('touchstart',move,{passive:true});
+  hit.addEventListener('mouseleave',out); hit.addEventListener('touchend',function(){setTimeout(out,1500)});
+}
+drawChart(); if(document.fonts&&document.fonts.ready) document.fonts.ready.then(drawHero);
+})();
+
 </script>
 <nav class="pwa-nav">
 <a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)})})}
+(function(){try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(function(a){if(!a){navigator.storage.persist().catch(function(){});}}).catch(function(){navigator.storage.persist().catch(function(){});});}}catch(e){}})();
 </script>
 <script>
 (function(){
@@ -327,6 +546,18 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>

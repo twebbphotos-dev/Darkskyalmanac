@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Jupiter · Dark Sky Almanac">
 <meta property="og:description" content="Jupiter tonight — its cloud belts, the Great Red Spot, and the live positions of the four Galilean moons Io, Europa, Ganymede, and Callisto.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/jupiter">
 <meta property="og:url" content="https://app.darkskyalmanac.com/jupiter">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -72,156 +72,239 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 </head>
 <body><!-- ════════════════════════════════════════════════════════════
      ZION · JUPITER & THE GALILEAN MOONS
-     Self-contained Squarespace embed (paste into a Code block).
+     Self-contained page in the Dark Sky Almanac PWA.
      Sections:  1 CSS   2 MARKUP   3 ASTRO   4 ICONS
                 5 RENDER   6 INIT
      Astronomy validated: Galilean positions (Meeus Ch.44, checked
      against theskylive transit times); GRS transits (Project Pluto
      System-II central-meridian formula + Sky&Telescope longitude:
-     85° on 2026-02-01, drift +1.75°/month).
+     91° on 2026-06-01, drift +1.75°/month).
      ════════════════════════════════════════════════════════════ -->
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-
-<!-- ─────────────────────────  1 · CSS  ───────────────────────── -->
+<!-- JUPITER — live render + moon finder (matches the Saturn page) -->
 <style>
-#zcl-jup-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;
-  background:#141319;
+#zcl-pl-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;background:#141319;
   font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
-@media(max-width:640px){
-  #zcl-jup-wrap{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}
-}
-#zcl-jup-wrap *{box-sizing:border-box}
-#zcl-jup{width:100%;position:relative;overflow:hidden;
+@media(max-width:640px){#zcl-pl-wrap{width:100vw;max-width:100vw;margin-left:calc(50% - 50vw);margin-right:calc(50% - 50vw)}}
+#zcl-pl-wrap *{box-sizing:border-box}
+#zcl-pl{width:100%;position:relative;overflow:hidden;
   background:
     radial-gradient(ellipse 120% 80% at 50% -10%,rgba(72,68,86,.30),transparent 55%),
     radial-gradient(ellipse 100% 70% at 50% 110%,rgba(56,54,68,.26),transparent 55%),
     radial-gradient(circle at 50% 40%,#22212c 0%,#1a1922 55%,#141319 100%);
   border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
   box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
-#zcl-jup::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
-#zcl-jup::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
+#zcl-pl::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
 .zcl-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
-#zcl-jstars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
+#zcl-plstars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
 .zcl-fl{position:absolute;width:40px;height:40px;z-index:3;pointer-events:none;opacity:.58}
 .zcl-fl svg{width:100%;height:100%}
 .zcl-tl{top:14px;left:14px}.zcl-tr{top:14px;right:14px;transform:scaleX(-1)}
 .zcl-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-br{bottom:14px;right:14px;transform:scale(-1,-1)}
-.zcl-wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto}
-
-/* Title banner */
-.zcl-titlebar{text-align:center;padding:30px 24px 18px}
+.zcl-wrap{position:relative;z-index:4;max-width:1040px;margin:0 auto}
+.zcl-titlebar{text-align:center;padding:30px 24px 10px}
 .zcl-maintitle{font-size:clamp(22px,3.4vw,34px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
   text-transform:uppercase;line-height:1.2;text-shadow:0 0 24px rgba(203,168,90,.22)}
-.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 11px;max-width:360px}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 4px;max-width:360px}
 .zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
 .zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
 .zcl-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
-.zcl-subtitle{font-size:13px;letter-spacing:.02em;color:#9A8E6E;max-width:560px;margin:0 auto}
-@media(max-width:520px){.zcl-titlebar{padding:24px 16px 16px}.zcl-subtitle{font-size:12px}}
 
-/* time / controls bar */
-.zcl-hdr{display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:14px;
-  padding:20px 36px 18px;border-bottom:1px solid rgba(203,168,90,.2)}
-.zcl-loclabel{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#8A6E32;margin-bottom:4px}
-.zcl-hloc{font-size:15px;color:#9A8A66}
-.zcl-now{font-size:14px;color:#E4D9B8;margin-top:2px;letter-spacing:.02em}
-.zcl-tnav{display:flex;align-items:center;gap:9px;flex-wrap:wrap}
-.zcl-tbtn{background:rgba(203,168,90,.10);border:1px solid rgba(203,168,90,.34);border-radius:4px;
-  color:#CBA85A;font-family:inherit;font-size:11px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;
-  padding:7px 12px;cursor:pointer;transition:background .15s,border-color .15s;white-space:nowrap}
-.zcl-tbtn:hover{background:rgba(203,168,90,.2);border-color:#CBA85A}
-.zcl-tbtn.zcl-live{background:rgba(111,143,168,.14);border-color:rgba(111,143,168,.5);color:#9DB6CC}
-.zcl-tbtn.zcl-live.on{background:rgba(120,170,130,.18);border-color:rgba(140,190,150,.6);color:#9FD0A8}
-.zcl-nbtn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.3);background:none;color:#CBA85A;
-  font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;flex-shrink:0}
-.zcl-nbtn:hover{background:rgba(203,168,90,.09);border-color:#CBA85A}
-.zcl-stamp{font-size:11px;letter-spacing:.04em;color:#9A875C;min-width:172px;text-align:center;font-variant-numeric:tabular-nums}
+/* time bar */
+.zcl-hdr{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 20px 12px}
+.zcl-tnav{display:flex;align-items:center;gap:6px}
+.zcl-nbtn{width:34px;height:34px;border-radius:50%;background:#0d0a18;border:1px solid rgba(203,168,90,.3);
+  color:#CBA85A;font-size:19px;line-height:1;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.zcl-nbtn:active{background:rgba(203,168,90,.15)}
+.zcl-stamp{font-size:12.5px;letter-spacing:.03em;color:#E4D9B8;min-width:190px;text-align:center;font-variant-numeric:tabular-nums}
+.zcl-tbtn{background:none;border:1px solid rgba(203,168,90,.3);border-radius:18px;color:#9A875C;
+  font-family:inherit;font-size:11px;letter-spacing:.06em;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.zcl-tbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
 
-/* main stage: the eyepiece view */
-.zcl-stage{padding:8px 22px 4px}
-.zcl-eyepiece{position:relative;background:
-  radial-gradient(ellipse 80% 90% at 50% 50%,rgba(30,28,40,.7),#08070d 78%);
-  border:1px solid rgba(203,168,90,.22);border-radius:12px;padding:18px 14px 14px;overflow:hidden}
-.zcl-eyepiece::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%)}
-.zcl-fieldsvg{display:block;width:100%;position:relative;z-index:1}
-.zcl-vlabel{font-size:9.5px;letter-spacing:.16em;text-transform:uppercase;fill:#8A7340}
-.zcl-mnlabel{font-size:10px;letter-spacing:.05em}
-
-/* view-mode toggle */
-.zcl-viewbar{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:12px 0 2px}
+/* stages */
+.zcl-stage{padding:4px 22px 6px}
+.zcl-eyepiece{position:relative;background:radial-gradient(ellipse 80% 90% at 50% 50%,rgba(30,28,40,.7),#08070d 78%);
+  border:1px solid rgba(203,168,90,.22);border-radius:12px;overflow:hidden}
+.zcl-eyepiece canvas{display:block;width:100%;touch-action:manipulation}
+#zcl-hero{aspect-ratio:2.25/1}
+#zcl-field{aspect-ratio:2/1}
+@media(max-width:560px){#zcl-hero{aspect-ratio:1.9/1}#zcl-field{aspect-ratio:1.25/1}}
+.zcl-heroyr{position:absolute;left:14px;bottom:12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8A7340;pointer-events:none}
+.zcl-heroyr b{display:block;font-size:20px;letter-spacing:.04em;color:#E6CC85;font-weight:500;margin-top:2px}
+.zcl-bar{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
 .zcl-vbtn{background:none;border:1px solid rgba(203,168,90,.26);border-radius:20px;color:#9A875C;
-  font-family:inherit;font-size:10.5px;letter-spacing:.06em;padding:5px 13px;cursor:pointer;transition:all .15s}
+  font-family:inherit;font-size:11px;letter-spacing:.05em;padding:6px 13px;cursor:pointer;transition:all .15s}
 .zcl-vbtn:hover{border-color:rgba(203,168,90,.55);color:#CBA85A}
 .zcl-vbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
-.zcl-stagenote{text-align:center;font-size:12.5px;line-height:1.55;color:#9A875C;
-  max-width:680px;margin:12px auto 2px;padding:0 8px}
+.zcl-vbtn.round{width:32px;height:30px;padding:0;font-size:15px}
+.zcl-grp{display:inline-flex;align-items:center;gap:6px}
+@media(max-width:520px){#zcl-viewbar .zcl-sep{display:none}}
+.zcl-ibtn{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.4);color:#9A8A66;border:1px solid rgba(203,168,90,.32);
+  font-family:'Times New Roman',Georgia,serif;font-size:14px;line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.zcl-ibtn:hover{color:#CBA85A;border-color:#CBA85A}
+.zcl-ibtn.on{background:rgba(203,168,90,.18);color:#E4D9B8;border-color:#CBA85A}
+.zcl-infotxt{max-height:0;overflow:hidden;opacity:0;transition:max-height .3s ease,opacity .25s ease,margin .3s;font-size:12.5px;line-height:1.6;color:#C9BD97;margin:0 4px}
+.zcl-infotxt.open{max-height:420px;opacity:1;margin:8px 4px 10px}
+.zcl-infotxt b{color:#E6CC85;font-weight:500}
+.zcl-mkey{text-align:center;font-size:10.5px;color:#8A7340;letter-spacing:.03em;margin:2px 0 6px}
+.zcl-mkey i{display:inline-block;width:14px;height:8px;border-radius:2px;margin:0 4px 0 10px;vertical-align:0}
+.zcl-mkey i.nb{background:rgba(120,140,200,.22)}
+.zcl-mkey i.tw{height:2px;background:#CBA85A;vertical-align:2px}
+.zcl-stitle{display:flex;align-items:center;gap:14px;max-width:560px;margin:0 auto 12px;
+  font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;white-space:nowrap}
+#zcl-field{transition:opacity .2s ease}
+#zcl-field.fading{opacity:0}
+/* field controls: drift tools live in the eyepiece corner, view + zoom as two segmented bars */
+.zcl-ovl{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;align-items:center;z-index:2}
+.zcl-ovl .zcl-vbtn.round{width:30px;height:30px;background:rgba(8,7,13,.62);font-size:14px}
+.zcl-ovl .zcl-ibtn{width:30px;height:30px;background:rgba(8,7,13,.62)}
+.zcl-eyepiece.is-top .zcl-ovl{bottom:auto;top:10px}
+.zcl-eyepiece.is-top #zcl-rotl,.zcl-eyepiece.is-top #zcl-rotr{display:none}
+.zcl-eyepiece .zcl-fov{position:absolute;right:12px;bottom:9px;margin:0;pointer-events:none;font-size:10px}
+.zcl-ctlrow{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 4px}
+.zcl-seg{display:inline-flex;border:1px solid rgba(203,168,90,.24);border-radius:20px;padding:2px;background:rgba(0,0,0,.22)}
+.zcl-seg .zcl-vbtn{border:none;border-radius:17px;padding:6px 13px;white-space:nowrap}
+.zcl-seg .zcl-vbtn.on{background:rgba(203,168,90,.2);color:#E4D9B8}
+.zcl-seg .s{display:none}
+@media(max-width:600px){
+  .zcl-ctlrow{flex-direction:column;align-items:stretch;gap:7px;margin-top:10px}
+  .zcl-seg{display:flex}
+  .zcl-seg .zcl-vbtn{flex:1;padding:8px 2px;font-size:11.5px;letter-spacing:.02em}
+  .zcl-seg .l{display:none}.zcl-seg .s{display:inline}
+  .zcl-ovl{left:8px;bottom:8px}.zcl-eyepiece .zcl-fov{right:9px;bottom:7px;font-size:9.5px}
+}
+#zcl-rotl,#zcl-rotr{transition:opacity .2s ease}
+#zcl-rotl:disabled,#zcl-rotr:disabled{opacity:.25;cursor:default}
+@media(max-width:560px){.zcl-stitle{font-size:12.5px;gap:10px}}
+.zcl-zlab{min-width:34px;text-align:center;font-size:11px;color:#CBA85A;font-variant-numeric:tabular-nums}
+.zcl-yrs{max-width:760px;margin:12px auto 0;padding:10px 12px 4px;border:1px solid rgba(203,168,90,.18);border-radius:10px;background:rgba(13,10,24,.55)}
+.zcl-yrs-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
+#zcl-ylab,#zcl-mlab{font-size:12.5px;color:#E4D9B8;letter-spacing:.02em}
+.zcl-yrs-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.zcl-ytrack{position:relative;flex:1;height:40px;margin-bottom:16px}
+.zcl-spark{position:absolute;inset:0;width:100%;height:40px;pointer-events:none}
+.zcl-range{position:absolute;inset:0;width:100%;height:40px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:pan-y}
+.zcl-range::-webkit-slider-runnable-track{height:40px;background:transparent}
+.zcl-range::-moz-range-track{height:40px;background:transparent}
+.zcl-range::-webkit-slider-thumb{-webkit-appearance:none;width:4px;height:40px;border-radius:2px;background:#E6CC85;box-shadow:0 0 0 3px rgba(230,204,133,.22),0 0 10px rgba(230,204,133,.6)}
+.zcl-range::-moz-range-thumb{width:4px;height:40px;border:0;border-radius:2px;background:#E6CC85;box-shadow:0 0 0 3px rgba(230,204,133,.22)}
+.zcl-range:focus{outline:none}
+.zcl-range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(230,204,133,.5)}
+.zcl-yticks{position:absolute;left:0;right:0;top:42px;height:14px}
+.zcl-yticks span{position:absolute;transform:translateX(-50%);font-size:9.5px;color:#8A7340;letter-spacing:.04em}
+@media(max-width:520px){.zcl-yticks span:nth-child(even){display:none}}
+.zcl-fov{text-align:right;font-size:10.5px;letter-spacing:.04em;color:#8A7340;margin:6px 4px 0}
+.zcl-sep{width:1px;height:18px;background:rgba(203,168,90,.2);margin:0 4px}
+.zcl-stagenote{text-align:center;font-size:12.5px;line-height:1.55;color:#9A875C;max-width:700px;margin:10px auto 2px;padding:0 8px}
+.zcl-stagenote b{color:#CBA85A;font-weight:500}
 
-/* sections + cards (shared antique style) */
-.zcl-body{padding:6px 28px 26px}
-.zcl-psec{margin-bottom:22px;padding-top:4px}
+/* body */
+.zcl-body{padding:10px 28px 26px}
+.zcl-psec{margin-bottom:24px;padding-top:4px}
+.zcl-evfold summary{cursor:pointer;list-style:none;display:flex;align-items:baseline;gap:10px}
+.zcl-evfold summary::-webkit-details-marker{display:none}
+.zcl-evsum{font-size:11px;font-weight:400;letter-spacing:.04em;text-transform:none;color:#8A7C5C;flex:1}
+.zcl-evchev{font-style:normal;font-size:18px;line-height:1;color:#CBA85A;transition:transform .2s}
+.zcl-evfold[open] .zcl-evchev{transform:rotate(90deg)}
+.zcl-evfold:not([open]){margin-bottom:18px}
 .zcl-psec-label{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;
   margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.28)}
 .zcl-pcards{display:grid;gap:9px}
-.zcl-pcards.cols2{grid-template-columns:1fr 1fr}
 .zcl-pcards.cols3{grid-template-columns:1fr 1fr 1fr}
-.zcl-pcards.cols4{grid-template-columns:1fr 1fr 1fr 1fr}
-@media(max-width:560px){.zcl-pcards.cols3,.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
+.zcl-pcards.cols4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:640px){.zcl-pcards.cols3,.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
 .zcl-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:11px 13px}
 .zcl-pcard.accent{border-color:rgba(203,168,90,.38);background:rgba(203,168,90,.06)}
 .zcl-pclabel{font-size:10px;letter-spacing:.13em;color:#8A6E32;text-transform:uppercase;margin-bottom:6px}
 .zcl-pcval{font-size:16px;color:#E4D9B8;line-height:1.2}
-.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px}
+.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px;line-height:1.4}
+.zcl-note{font-size:12.5px;line-height:1.6;color:#9A875C;margin-top:10px}
+.zcl-note b{color:#C9BD97;font-weight:500}
 
-/* GRS banner */
-.zcl-grsnow{display:flex;align-items:center;gap:11px;padding:11px 15px;border-radius:8px;margin-bottom:11px;
-  font-size:13.5px;line-height:1.45}
+.zcl-moonrow{display:grid;grid-template-columns:14px 1fr auto;gap:4px 11px;align-items:start;
+  background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:8px;padding:10px 13px;margin-bottom:8px}
+.zcl-moonrow i{width:11px;height:11px;border-radius:50%;margin-top:4px}
+.zcl-moonrow .mn{font-size:14.5px;color:#E4D9B8}
+.zcl-moonrow .mw{font-size:12.5px;color:#C9BD97;margin-top:2px}
+.zcl-moonrow .ms{font-size:12px;color:#8A7C5C;margin-top:3px;line-height:1.45}
+.zcl-moonrow .vis{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.vis.easy{background:rgba(203,168,90,.18);color:#E6CC85}
+.vis.good{background:rgba(203,168,90,.10);color:#CBA85A}
+.vis.hard{background:rgba(160,140,110,.10);color:#9A875C}
+.vis.no{background:rgba(120,120,120,.10);color:#7c7a74}
+.zcl-moonrow.dim{opacity:.62}
+
+.zcl-anat canvas{display:block;width:100%}
+.zcl-anat{background:#08070d;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:8px 6px}
+.zcl-gaplist{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+@media(max-width:640px){.zcl-gaplist{grid-template-columns:1fr}}
+
+.zcl-tilt svg{display:block;width:100%;height:auto}
+.zcl-tilt{background:#08070d;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:10px 8px 6px}
+
+@media(max-width:520px){#zcl-yspeed .zcl-sep{display:none}.zcl-body{padding:6px 14px 22px}.zcl-stage{padding:4px 10px 6px}.zcl-stamp{min-width:0;font-size:12px}.zcl-hdr{padding:6px 10px 10px}}
+/* fit */
+@media(max-width:640px){#zcl-pl::after{inset:7px}.zcl-tl,.zcl-tr{top:7px}.zcl-bl,.zcl-br{bottom:7px}.zcl-tl,.zcl-bl{left:7px}.zcl-tr,.zcl-br{right:7px}}
+@media(max-width:520px){.zcl-stage{padding-left:14px;padding-right:14px}}
+@media(max-width:1100px){.zcl-body{padding-bottom:58px}}
+@media(max-width:520px){.zcl-evfold summary{flex-wrap:wrap;gap:3px 10px}.zcl-evsum{order:3;flex:1 1 100%}.zcl-evchev{margin-left:auto}}
+.zcl-yticks span{white-space:nowrap}.zcl-yticks span[style*="left:100"]{transform:translateX(-100%)}
+.zcl-mkey span{white-space:nowrap}
+.zcl-evrow .ev{display:flex;flex-wrap:wrap;align-items:baseline;gap:3px 8px}.zcl-evrow .tag{margin-left:0;white-space:nowrap}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style>
+<style>
+#zcl-hero{aspect-ratio:2/1}
+@media(max-width:560px){#zcl-hero{aspect-ratio:1.35/1}}
+.zcl-grsnow{display:flex;align-items:center;gap:11px;padding:11px 15px;border-radius:8px;margin:12px auto 2px;max-width:700px;font-size:13px;line-height:1.5}
 .zcl-grsnow.vis{border:1px solid rgba(214,132,74,.45);background:rgba(214,120,60,.08);color:#E6A66A}
-.zcl-grsnow.soon{border:1px solid rgba(203,168,90,.34);background:rgba(203,168,90,.06);color:#CBA85A}
-.zcl-grsnow.hidden{border:1px solid rgba(128,128,128,.24);background:rgba(128,128,128,.05);color:#9a9a9a}
-.zcl-grsdot{width:13px;height:13px;border-radius:50%;flex-shrink:0;box-shadow:0 0 8px rgba(214,120,60,.5)}
-
-/* moon legend chips */
-.zcl-moonlist{display:flex;flex-wrap:wrap;gap:8px 12px;margin-top:4px}
-.zcl-moonchip{font-size:12.5px;color:#C9BD97;display:inline-flex;align-items:center;gap:7px;
-  background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:7px;padding:7px 11px;flex:1;min-width:150px}
-.zcl-moonchip i{width:10px;height:10px;border-radius:50%;display:inline-block;flex-shrink:0;box-shadow:0 0 5px rgba(255,240,200,.4)}
-.zcl-moonchip .mn{font-weight:500;color:#E4D9B8}
-.zcl-moonchip .ms{font-size:11px;color:#8A7C5C}
-.zcl-moonstate{margin-left:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:10px}
-.zcl-moonstate.front{background:rgba(214,120,60,.16);color:#E6A66A}
-.zcl-moonstate.behind{background:rgba(120,140,170,.16);color:#9DB6CC}
-.zcl-moonstate.east,.zcl-moonstate.west{background:rgba(203,168,90,.12);color:#CBA85A}
-
-.zcl-transit-row{display:flex;align-items:baseline;justify-content:space-between;gap:10px;
-  padding:8px 2px;border-bottom:1px solid rgba(203,168,90,.1);font-size:13.5px}
-.zcl-transit-row:last-child{border-bottom:none}
-.zcl-transit-when{color:#E4D9B8;font-variant-numeric:tabular-nums}
-.zcl-transit-rel{color:#8A7C5C;font-size:12px}
-.zcl-note{font-size:12.5px;line-height:1.55;color:#9A875C;margin-top:9px}
-
+.zcl-grsnow.hidden{border:1px solid rgba(128,128,128,.24);background:rgba(128,128,128,.05);color:#a6a29a}
+.zcl-grsdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 8px rgba(214,120,60,.5)}
+.zcl-evrow{display:grid;grid-template-columns:1fr auto;gap:2px 12px;align-items:baseline;padding:9px 2px;border-bottom:1px solid rgba(203,168,90,.1);font-size:13.5px}
+.zcl-evrow:last-child{border-bottom:none}
+.zcl-evrow .ev{color:#E4D9B8}
+.zcl-evrow .when{color:#C9BD97;font-variant-numeric:tabular-nums;text-align:right}
+.zcl-evrow .sub{grid-column:1/-1;font-size:11.5px;color:#8A7C5C}
+.zcl-evrow .tag{font-size:9.5px;letter-spacing:.08em;text-transform:uppercase;padding:2px 7px;border-radius:9px;margin-left:6px}
+.zcl-evrow .tag.up{background:rgba(203,168,90,.16);color:#E6CC85}
+.zcl-evrow .tag.down{background:rgba(128,128,128,.12);color:#8a877f}
+@media(max-width:600px){.zcl-evrow{grid-template-columns:1fr}.zcl-evrow .when{text-align:left;font-size:12.5px}}
+.zcl-moonchip{font-size:12.5px;color:#C9BD97;display:flex;align-items:center;gap:10px;
+  background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:8px;padding:9px 12px;margin-bottom:8px}
+.zcl-moonchip img{width:34px;height:34px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid rgba(203,168,90,.3);cursor:pointer;background:#000}
+.zcl-moonchip .mn{font-size:14px;color:#E4D9B8}
+.zcl-moonchip .ms{font-size:12px;color:#8A7C5C}
+.zcl-moonstate{margin-left:auto;font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.zcl-moonstate.transit{background:rgba(214,120,60,.16);color:#E6A66A}
+.zcl-moonstate.behind,.zcl-moonstate.eclipsed{background:rgba(120,140,170,.16);color:#9DB6CC}
+.zcl-moonstate.clear{background:rgba(203,168,90,.12);color:#CBA85A}
 .zcl-tgtwhy{font-size:13.5px;line-height:1.55;color:#C9BD97;margin-top:6px}
-
-@media(max-width:520px){
-  .zcl-hdr{padding:18px 16px 14px}
-  .zcl-body{padding:6px 14px 22px}
-  .zcl-stage{padding:8px 10px 4px}
-  .zcl-stamp{min-width:0}
-}
+.zcl-moon-thumb{background:#000}
+/* moon photo lightbox */
+#zcl-moon-lb{position:fixed;inset:0;z-index:20000;display:none;flex-direction:column;align-items:center;justify-content:center;
+  background:rgba(0,0,0,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+#zcl-moon-lb.on{display:flex}
+#zcl-moon-lb-img{width:min(72vw,72vh);height:min(72vw,72vh);border-radius:50%;object-fit:cover;background:#000;
+  border:2px solid rgba(203,168,90,.4);box-shadow:0 0 60px rgba(0,0,0,.8);display:block;flex-shrink:0}
+#zcl-moon-lb-nav{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:18px}
+.zcl-lb-arrow{background:none;border:1px solid rgba(203,168,90,.35);border-radius:50%;width:38px;height:38px;color:#CBA85A;font-size:22px;cursor:pointer;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.zcl-lb-arrow:hover{background:rgba(203,168,90,.15)}
+#zcl-moon-lb-title{font-family:'Montserrat',sans-serif;font-size:15px;letter-spacing:.12em;color:#F2E4BE;text-transform:uppercase;text-align:center;min-width:140px}
+#zcl-moon-lb-caption{font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;color:#9A8E6E;text-align:center;max-width:min(480px,90vw);margin-top:10px;padding:0 16px}
+#zcl-moon-lb-close{position:absolute;top:18px;right:22px;background:none;border:none;color:#7A6E55;font-size:26px;cursor:pointer;line-height:1;padding:4px}
 </style>
 
-<!-- ────────────────────────  2 · MARKUP  ──────────────────────── -->
-<div id="zcl-jup-wrap">
-<div id="zcl-jup">
+<div id="zcl-pl-wrap">
+<div id="zcl-pl">
   <div class="zcl-goldbar"></div>
   <div class="zcl-fl zcl-tl"></div><div class="zcl-fl zcl-tr"></div>
   <div class="zcl-fl zcl-bl"></div><div class="zcl-fl zcl-br"></div>
-  <svg id="zcl-jstars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
+  <svg id="zcl-plstars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
   <div class="zcl-wrap">
     <div class="zcl-titlebar">
-      <div class="zcl-maintitle">Jupiter &amp; the Galilean Moons</div>
+      <div class="zcl-maintitle">Jupiter &amp; Its Moons</div>
       <div class="zcl-titlerule">
         <span class="zcl-rline"></span>
         <svg class="zcl-rstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
@@ -229,517 +312,868 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
       </div>
     </div>
 
-    <header class="zcl-hdr">
-      <div>
-        <div class="zcl-loclabel">Showing the sky at</div>
-        <div class="zcl-now" id="zcl-now">—</div>
-      </div>
+    <div class="zcl-hdr">
       <div class="zcl-tnav">
         <button class="zcl-nbtn" id="zcl-back" aria-label="Back one hour">&#8249;</button>
         <span class="zcl-stamp" id="zcl-stamp">—</span>
         <button class="zcl-nbtn" id="zcl-fwd" aria-label="Forward one hour">&#8250;</button>
-        <button class="zcl-tbtn zcl-live on" id="zcl-nowbtn">● Now</button>
       </div>
-    </header>
-
-    <div class="zcl-stage">
-      <div class="zcl-eyepiece">
-        <svg id="zcl-field" viewBox="0 0 920 420" class="zcl-fieldsvg" preserveAspectRatio="xMidYMid meet"></svg>
-      </div>
-      <div class="zcl-viewbar" id="zcl-viewbar">
-        <button class="zcl-vbtn on" data-mode="direct">Direct / Binocular</button>
-        <button class="zcl-vbtn" data-mode="inverted">Newtonian (inverted)</button>
-        <button class="zcl-vbtn" data-mode="mirrored">SCT + diagonal (mirrored)</button>
-      </div>
-      <div class="zcl-stagenote">Choose your instrument above to flip the field the way your eyepiece shows it. A moon “in transit” is drifting across Jupiter’s face; one “behind” is briefly hidden behind the planet.</div>
+      <button class="zcl-tbtn on" id="zcl-nowbtn">● Now</button>
     </div>
 
-    <div class="zcl-body" id="zcl-body"></div>
+    <!-- Stage 1: the planet -->
+    <div class="zcl-stage">
+      <div class="zcl-eyepiece">
+        <canvas id="zcl-hero" aria-label="Jupiter, rendered for the selected time"></canvas>
+      </div>
+      <div class="zcl-bar">
+        <button class="zcl-vbtn on" id="zcl-labels">Labels</button>
+        <span class="zcl-sep"></span>
+        <button class="zcl-vbtn round" id="zcl-zout" aria-label="Zoom out">&minus;</button>
+        <span class="zcl-zlab" id="zcl-hzoomlab"></span>
+        <button class="zcl-vbtn round" id="zcl-zin" aria-label="Zoom in">+</button>
+        <button class="zcl-vbtn" id="zcl-zreset">Fit</button>
+      </div>
+      <div class="zcl-grsnow" id="zcl-grsnow"></div>
+      <div class="zcl-stagenote" id="zcl-heronote"></div>
+    </div>
+
+    <!-- Stage 2: the moons — in the eyepiece, or from above -->
+    <div class="zcl-stage" style="margin-top:22px">
+      <div class="zcl-stitle"><span class="zcl-rline"></span><span>The Moons of Jupiter</span><span class="zcl-rline"></span></div>
+      <div class="zcl-eyepiece" id="zcl-eye">
+        <canvas id="zcl-field" aria-label="Jupiter's moons in the eyepiece"></canvas>
+        <div class="zcl-ovl"><button class="zcl-vbtn round" id="zcl-rotl" aria-label="Rotate left">&#8634;</button><button class="zcl-vbtn round" id="zcl-rotr" aria-label="Rotate right">&#8635;</button><button type="button" class="zcl-ibtn" id="zcl-dinfo" aria-label="How to match your eyepiece" aria-expanded="false">i</button></div>
+        <div class="zcl-fov" id="zcl-fov"></div>
+      </div>
+      <div class="zcl-ctlrow">
+        <div class="zcl-seg" id="zcl-viewbar" role="group" aria-label="View"><button class="zcl-vbtn" data-mode="sky"><span class="l">Sky · north up</span><span class="s">Sky</span></button><button class="zcl-vbtn on" data-mode="dob"><span class="l">Dobsonian</span><span class="s">Dob</span></button><button class="zcl-vbtn" data-mode="diag"><span class="l">Star diagonal</span><span class="s">Diagonal</span></button><button class="zcl-vbtn" data-mode="top"><span class="l">From above</span><span class="s">Above</span></button></div>
+        <div class="zcl-seg" id="zcl-zoombar" role="group" aria-label="Zoom"><button class="zcl-vbtn" data-zoom="inner"><span class="l">Inner moons</span><span class="s">Inner</span></button><button class="zcl-vbtn" data-zoom="titan"><span class="l">Out to Ganymede</span><span class="s">Ganymede</span></button><button class="zcl-vbtn on" data-zoom="wide"><span class="l">Out to Callisto</span><span class="s">Callisto</span></button></div>
+      </div>
+      <div class="zcl-infotxt" id="zcl-dinfotxt" style="max-width:640px;margin-left:auto;margin-right:auto">
+        <b>To match your eyepiece:</b> stop nudging the telescope and watch which way Jupiter slides — it always drifts toward the <b>DRIFT</b> arrow. Turn the view with <b>&#8634; &#8635;</b> until the arrow points the same way. Jupiter’s belts and every moon will then line up with what you see.
+      </div>
+      <div class="zcl-infotxt" id="zcl-orbnote" style="max-width:640px;margin-left:auto;margin-right:auto"></div>
+      <div class="zcl-yrs" id="zcl-mpanel">
+        <div class="zcl-yrs-top"><span id="zcl-mlab">Now</span><button class="zcl-vbtn" id="zcl-mnow" hidden>Back to now</button></div>
+        <div class="zcl-yrs-row">
+          <button class="zcl-vbtn round" id="zcl-mplay" aria-label="Play">&#9654;</button>
+          <div class="zcl-ytrack">
+            <svg class="zcl-spark" id="zcl-mspark" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <input type="range" class="zcl-range" id="zcl-mslider" min="0" max="2880" step="1" aria-label="Date and time, next 30 days">
+            <div class="zcl-yticks" id="zcl-mticks"></div>
+          </div>
+        </div>
+        <div class="zcl-bar" id="zcl-mspeed">
+          <button class="zcl-vbtn" data-speed="1">1 hour / sec</button>
+          <button class="zcl-vbtn on" data-speed="6">6 hours / sec</button>
+          <button class="zcl-vbtn" data-speed="24">1 day / sec</button>
+        </div>
+        <div class="zcl-mkey"><span><i class="nb"></i> night at your location</span> <span><i class="tw"></i> Ganymede swinging east &harr; west</span></div>
+      </div>
+    </div>
+
+    <div class="zcl-body">
+      <div class="zcl-psec"><div class="zcl-psec-label">Jupiter Tonight</div>
+        <div class="zcl-pcards cols4" id="zcl-tonight"></div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">When to See It</div>
+        <div class="zcl-seasongrid" id="zcl-season"></div>
+        <div class="zcl-note">Dates for your saved location. Each year the planet slips behind the Sun’s glare for a few weeks, then reappears in the morning sky.</div>
+      </div>
+
+      <details class="zcl-psec zcl-evfold"><summary class="zcl-psec-label">Coming Up on Jupiter<span class="zcl-evsum" id="zcl-evsum"></span><i class="zcl-evchev">&#8250;</i></summary>
+        <div class="zcl-pcard" id="zcl-events"></div>
+        <div class="zcl-note">A moon’s shadow crossing Jupiter’s face shows in a small telescope as a crisp black dot. The moon itself is harder to pick out against the bright clouds. Events marked <b>visible</b> happen while Jupiter is up and the sky is dark at your location.</div>
+      </details>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">The Galilean Moons Right Now</div>
+        <div id="zcl-moonsnow"></div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">The Four Worlds</div>
+        <div class="zcl-pcards" id="zcl-worlds"></div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">The Planet Itself</div>
+        <div class="zcl-pcards cols3">
+          <div class="zcl-pcard"><div class="zcl-pclabel">One day</div><div class="zcl-pcval">9h 56m</div><div class="zcl-pcsub">The fastest spin of any planet — it bulges 7% at the equator</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Diameter</div><div class="zcl-pcval">139,820 km</div><div class="zcl-pcsub">11 Earths across</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Mass</div><div class="zcl-pcval">318 Earths</div><div class="zcl-pcsub">More than all the other planets combined, twice over</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Year</div><div class="zcl-pcval">11.9 years</div><div class="zcl-pcsub">About one zodiac constellation per year</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Great Red Spot</div><div class="zcl-pcval">~1.3 Earths</div><div class="zcl-pcsub">Wide — a storm watched for over 150 years, slowly shrinking</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Known moons</div><div class="zcl-pcval">95+</div><div class="zcl-pcsub">Four big enough to see in binoculars</div></div>
+        </div>
+        <div class="zcl-note">The dark stripes are <b>belts</b> — warmer, sinking gas — and the bright stripes are <b>zones</b> of cool, rising cloud topped with ammonia ice. The two dark equatorial belts show in the smallest telescope; the Great Red Spot sits in a notch on the south edge of the southern one.</div>
+      </div>
+    </div>
   </div>
 </div>
 </div>
 
+<div id="zcl-moon-lb">
+  <button id="zcl-moon-lb-close" aria-label="Close">&#10005;</button>
+  <img id="zcl-moon-lb-img" src="" alt="">
+  <div id="zcl-moon-lb-nav">
+    <button class="zcl-lb-arrow" id="zcl-lb-prev" aria-label="Previous">&#8249;</button>
+    <div id="zcl-moon-lb-title"></div>
+    <button class="zcl-lb-arrow" id="zcl-lb-next" aria-label="Next">&#8250;</button>
+  </div>
+  <div id="zcl-moon-lb-caption"></div>
+</div>
+
+<script src="zcl-tz.js"></script>
+<script src="zcl-season.js"></script>
+<script src="jupiter-ephem.js"></script>
 <script>
 "use strict";
 (function(){
+var $=function(id){return document.getElementById(id)};
+var D2R=Math.PI/180, R2D=180/Math.PI, DAY=86400000;
+(function(){var s='';for(var i=0;i<150;i++){s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>'}$('zcl-plstars').innerHTML=s})();
+(function(){var fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
+  +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
+  +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
+  +'<path d="M2 19 C9 19 9 12 2 12" opacity=".55"/><path d="M19 2 C19 9 12 9 12 2" opacity=".55"/>'
+  +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
+  var els=document.querySelectorAll('.zcl-fl');for(var i=0;i<els.length;i++)els[i].innerHTML=fl})();
 
-// ════════════════════════  CONSTANTS  ════════════════════════
-// Display timezone (matches the rest of the almanac suite). The math is
-// UTC-based, so this only affects what clock the times are printed in.
-let TZ = 'America/Denver';
-const D2R = Math.PI/180;
+var KM=71492, POLAR=JupiterEphem.POLAR, MOON_R=JupiterEphem.MOON_R;
+var MOONS={
+  Io:      {col:'#E8C14E', mag:5.0, km:3643, per:'1.77 days', short:'1.8 d', size:'3,643 km',
+            why:'The most volcanically active world in the solar system — over 400 active volcanoes, some flinging plumes hundreds of kilometres high. Squeezed and flexed by Jupiter’s immense gravity and its sibling moons, its interior never cools.'},
+  Europa:  {col:'#D8E0E8', mag:5.3, km:3122, per:'3.55 days', short:'3.6 d', size:'3,122 km',
+            why:'A smooth ball of water-ice criss-crossed with reddish fractures, hiding a salty ocean beneath its frozen shell that holds more liquid water than all of Earth’s oceans combined. One of the most promising places to look for life beyond Earth.'},
+  Ganymede:{col:'#C9B79A', mag:4.6, km:5268, per:'7.15 days', short:'7.2 d', size:'5,268 km',
+            why:'The largest moon in the solar system — bigger than the planet Mercury — and the only moon known to generate its own magnetic field. Its ancient surface mixes dark cratered terrain with bright grooved ridges, and it too is thought to hide a buried ocean.'},
+  Callisto:{col:'#9C8C76', mag:5.7, km:4821, per:'16.69 days', short:'16.7 d', size:'4,821 km',
+            why:'The most heavily cratered object in the solar system, its dark icy surface a near-pristine record of 4 billion years of bombardment. The outermost Galilean orbits well clear of Jupiter’s harsh radiation, which is why it has been proposed as a base for future human exploration.'}
+};
+var NAMES=JupiterEphem.NAMES;
+// moon photos for drawing moons close-up on the planet
+var MIMG={}; NAMES.forEach(function(n){ var im=new Image(); im.src='img/'+n.toLowerCase()+'.jpg'; im.onload=function(){ if(G) drawHero(false); }; MIMG[n]=im; });
 
-const MOON_INFO = [
-  {name:'Io',       col:'#E8C14E', size:'3,643 km', period:'1.77 days',
-   why:'The most volcanically active world in the solar system — over 400 active volcanoes, some flinging plumes hundreds of kilometres high. Squeezed and flexed by Jupiter\u2019s immense gravity and the tug of the outer moons, its interior stays molten. The innermost Galilean, it never strays far from the planet.'},
-  {name:'Europa',   col:'#D8E0E8', size:'3,122 km', period:'3.55 days',
-   why:'A smooth ball of water-ice criss-crossed with reddish fractures, hiding a salty ocean beneath its frozen shell that holds more liquid water than all of Earth\u2019s oceans combined. One of the most promising places to search for life beyond Earth, and the target of NASA\u2019s Europa Clipper mission.'},
-  {name:'Ganymede', col:'#C9B79A', size:'5,268 km', period:'7.15 days',
-   why:'The largest moon in the solar system — bigger than the planet Mercury — and the only moon known to generate its own magnetic field. Its ancient surface mixes dark cratered terrain with bright grooved ridges, and it too is thought to hide a buried ocean.'},
-  {name:'Callisto', col:'#9C8C76', size:'4,821 km', period:'16.69 days',
-   why:'The most heavily cratered object in the solar system, its dark icy surface a near-pristine record of 4 billion years of bombardment. The outermost Galilean orbits well clear of Jupiter\u2019s harsh radiation, making it a likely staging post for future human exploration.'},
-];
+/* ════════════════ Great Red Spot longitude ════════════════
+   System II longitude, anchored to Sky & Telescope's published value
+   (91° on 2026 June 1) and its measured drift of about +1.75° a month. */
+function grsLongitude(date){
+  var months=(date.getTime()-Date.UTC(2026,5,1))/DAY/30.4375;
+  return (((91+1.75*months)%360)+360)%360;
+}
+function wrap180(a){ return ((a%360)+540)%360-180; }
 
-// ═══════════════════════  3 · ASTRONOMY  ═══════════════════════
-function jdUTC(d){ return d.getTime()/86400000 + 2440587.5 }
+/* ════════════════ Cloud colours ════════════════ */
+var BANDS=[[-90,[.55,.55,.56]],[-60,[.66,.62,.56]],[-45,[.72,.64,.54]],[-38,[.86,.82,.74]],[-31,[.70,.58,.46]],[-26,[.92,.88,.80]],
+  [-20,[.68,.52,.38]],[-13,[.62,.46,.32]],[-8,[.86,.78,.66]],[0,[.94,.90,.81]],[7,[.83,.72,.58]],[11,[.60,.42,.29]],[17,[.64,.48,.34]],
+  [20,[.92,.87,.77]],[25,[.71,.57,.43]],[30,[.88,.83,.74]],[38,[.73,.65,.55]],[55,[.68,.64,.58]],[90,[.55,.56,.58]]];
+function hash(x,y){ var s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+function vnoise(x,y){ var i=Math.floor(x), j=Math.floor(y), fx=x-i, fy=y-j, a=hash(i,j), b=hash(i+1,j), c=hash(i,j+1), e=hash(i+1,j+1);
+  var ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy); return a+(b-a)*ux+(c-a)*uy+(a-b-c+e)*ux*uy; }
+function sstep(e0,e1,x){ var t=Math.min(1,Math.max(0,(x-e0)/(e1-e0))); return t*t*(3-2*t); }
+function cloud(lat, lon, grsL, out){
+  // wavy band edges and festoons from low-frequency noise along longitude
+  var L=lon*D2R;
+  var wob=1.3*Math.sin(L*4+lat*.3)+1.6*(vnoise(lon/9,lat/5)-.5)+.8*(vnoise(lon/3.5,lat/2)-.5);
+  var la=lat+wob, i=1; while(i<BANDS.length-1&&BANDS[i][0]<la) i++;
+  var p=BANDS[i-1], q=BANDS[i], f=Math.min(1,Math.max(0,(la-p[0])/(q[0]-p[0])));
+  var r=p[1][0]+(q[1][0]-p[1][0])*f, g=p[1][1]+(q[1][1]-p[1][1])*f, b=p[1][2]+(q[1][2]-p[1][2])*f;
+  var tex=.93+.1*vnoise(lon/1.6,lat/1.1)+.05*vnoise(lon/.5,lat/.4);
+  r*=tex; g*=tex; b*=tex;
+  // The Great Red Spot sits in a pale "hollow" notched into the belt. Every
+  // layer fades in with a smooth ramp and a noise-ragged edge, so the spot
+  // melts into the clouds instead of sitting on them like a sticker.
+  var dl=wrap180(lon-grsL), dx=dl/6.8, dy=(lat+22.4)/4.8, dd=Math.sqrt(dx*dx+dy*dy);
+  if(dd<2.3){
+    var th=Math.atan2(dy,dx), rag=.14*(vnoise(Math.cos(th)*2.2+7,Math.sin(th)*2.2+3)-.5);
+    var de=dd+rag;
+    var hol=sstep(1.95,1.15,de)*.42;                                    // pale collar
+    r+=(.93-r)*hol; g+=(.88-g)*hol; b+=(.78-b)*hol;
+    var w=sstep(1.22,.6,de);                                        // the spot
+    if(w>0){
+      var sp=th+(1-Math.min(1,dd))*2.6, sn=vnoise(Math.cos(sp)*dd*3.2+11,Math.sin(sp)*dd*3.2+5);
+      var core=sstep(.8,.1,dd), rim=1-.07*sstep(.45,.85,dd)*sstep(1.2,.9,dd), t2=(.95+.1*sn)*rim;
+      var sr=(.80+.05*core)*t2, sg=(.47+.09*core)*t2, sb=(.32+.07*core)*t2;
+      w*=.96; r+=(sr-r)*w; g+=(sg-g)*w; b+=(sb-b)*w;
+    }
+  }
+  out[0]=r; out[1]=g; out[2]=b;
+}
 
-// ---- Galilean satellite positions (Meeus, Astronomical Algorithms ch.44,
-//      low-accuracy method). Returns, per moon: X (Jupiter equatorial radii,
-//      +X = WEST in the sky / sky-direct view), Z (+ = behind disc, < 0 = in
-//      front / transiting). Validated against theskylive transit timings. ----
-function galilean(date){
-  const JD = jdUTC(date);
-  const d  = JD - 2451545.0;
-  const V = (172.74 + 0.00111588*d)*D2R;
-  const M = (357.529 + 0.9856003*d)*D2R;
-  const N = (20.020 + 0.0830853*d + 0.329*Math.sin(V))*D2R;
-  const J = (66.115 + 0.9025179*d - 0.329*Math.sin(V))*D2R;
-  const A = (1.915*Math.sin(M) + 0.020*Math.sin(2*M))*D2R;
-  const B = (5.555*Math.sin(N) + 0.168*Math.sin(2*N))*D2R;
-  const K = J + A - B;
-  const R = 1.00014 - 0.01671*Math.cos(M) - 0.00014*Math.cos(2*M);
-  const r = 5.20872 - 0.25208*Math.cos(N) - 0.00611*Math.cos(2*N);
-  const Delta = Math.sqrt(r*r + R*R - 2*r*R*Math.cos(K));
-  const psi = Math.asin(R/Delta*Math.sin(K));
-  const lt = Delta/173;                      // light-time, days
-  const u1 = (163.8067 + 203.4058643*(d-lt) + (psi-B)/D2R)*D2R;
-  const u2 = (358.4108 + 101.2916334*(d-lt) + (psi-B)/D2R)*D2R;
-  const u3 = (5.7129   +  50.2345179*(d-lt) + (psi-B)/D2R)*D2R;
-  const u4 = (224.8151 +  21.4879801*(d-lt) + (psi-B)/D2R)*D2R;
-  const G = (331.18 + 50.310482*(d-lt))*D2R;
-  const H = (87.40  + 21.569231*(d-lt))*D2R;
-  const corr = [
-    0.473*Math.sin(2*(u1-u2)),
-    1.065*Math.sin(2*(u2-u3)),
-    0.165*Math.sin(G),
-    0.843*Math.sin(H)
-  ];
-  const radii = [5.9057, 9.3966, 14.9883, 26.3617];
-  const us = [u1,u2,u3,u4];
-  return MOON_INFO.map((m,i)=>{
-    const u = us[i] + corr[i]*D2R;
-    return {
-      name:m.name, col:m.col,
-      X: radii[i]*Math.sin(u),    // +west
-      Z: -radii[i]*Math.cos(u),   // +behind, <0 in front
-    };
+/* ════════════════ Ray-traced Jupiter ════════════════
+   Same approach as the Saturn page: every pixel is traced to the oblate
+   globe, shaded for the real Sun direction (Jupiter shows a slight phase
+   away from opposition), and coloured by System II longitude so the Great
+   Red Spot sits where it really is right now. Moon shadows are painted on
+   where they actually fall. */
+function rasterize(g, img, W, H, M){
+  var B=g.DE, sB=Math.sin(B), cB=Math.cos(B), c2=POLAR*POLAR, px=img.data;
+  var s=g.sun, A=sB*sB/c2+cB*cB, kB=2*sB*cB*(1/c2-1), kC=cB*cB/c2+sB*sB, cyl=Math.sqrt(c2*cB*cB+sB*sB);
+  var inv=Math.hypot(M.ux,M.uy), pprL=1/inv, col=[0,0,0], grsL=grsLongitude(g.date), cm=g.cm2;
+  var sh=(g.shadowsForRender||[]).filter(function(q){return q.onDisc;});
+  for(var j=0;j<H;j++){
+    var rowx=M.ox+j*M.vx, rowy=M.oy+j*M.vy;
+    for(var i=0;i<W;i++){
+      var sx=rowx+i*M.ux, sy=rowy+i*M.uy, o=(j*W+i)*4;
+      var ell=Math.sqrt(sx*sx+(sy/cyl)*(sy/cyl)), cov=Math.max(0,Math.min(1,(1-ell)*pprL*cyl+.5));
+      if(cov<=0){ px[o+3]=0; continue; }
+      var ssx=sx, ssy=sy; if(ell>.999){ var k=.999/ell; ssx*=k; ssy*=k; }
+      var cq=ssx*ssx+ssy*ssy*kC-1, bq=ssy*kB, dsc=Math.max(0,bq*bq-4*A*cq), tg=(-bq+Math.sqrt(dsc))/(2*A);
+      var qx=ssx, qy=ssy*cB+tg*sB, qz=-ssy*sB+tg*cB;
+      var nx=qx, ny=qy/c2, nz=qz, nl=Math.sqrt(nx*nx+ny*ny+nz*nz); nx/=nl; ny/=nl; nz/=nl;
+      var muE=nx*0+ny*sB+nz*cB, muS=nx*s[0]+ny*s[1]+nz*s[2];
+      var lat=Math.asin(Math.max(-1,Math.min(1,ny)))*R2D, lon=cm-Math.atan2(qx,qz)*R2D;
+      cloud(lat,lon,grsL,col);
+      var tw=Math.min(1,Math.max(0,(muS+.02)/.05)); tw=tw*tw*(3-2*tw);
+      var I=1.05*Math.pow(Math.max(muS,1e-3),.9)*Math.pow(Math.max(muE,1e-3),-.1)*tw;
+      for(var q=0;q<sh.length;q++){                               // moon shadows
+        var dxs=(sx-sh[q].X)/sh[q].r, dys=(sy-sh[q].Y)/sh[q].r, dq=Math.sqrt(dxs*dxs+dys*dys);
+        if(dq<1.35) I*= dq<1 ? .03 : .03+.97*(dq-1)/.35;
+      }
+      var inA=1/cov;
+      px[o]=255*tone(col[0]*I); px[o+1]=255*tone(col[1]*I); px[o+2]=255*tone(col[2]*I); px[o+3]=255*cov;
+    }
+  }
+}
+var TONE_N=1/(1-Math.exp(-1.35*1.6));
+function tone(x){ return x<=0?0:Math.min(1,(1-Math.exp(-1.35*x))*TONE_N); }
+function renderPlanet(g, ppr, ext){
+  var W=Math.ceil(2*ext*ppr)+4, H=W, cx=W/2, cy=H/2;
+  var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  var ctx=cv.getContext('2d'), img=ctx.createImageData(W,H);
+  rasterize(g,img,W,H,{ox:(.5-cx)/ppr, oy:(cy-.5)/ppr, ux:1/ppr, uy:0, vx:0, vy:-1/ppr});
+  ctx.putImageData(img,0,0);
+  return {canvas:cv, cx:cx, cy:cy, ppr:ppr};
+}
+
+/* ════════════════ State ════════════════ */
+var viewDate=new Date(), live=true, liveTimer=null;
+var st={ mode:'dob', rot:{sky:0,dob:180,diag:0}, zoom:'wide', labels:true };
+try{ var sv=JSON.parse(localStorage.getItem('dsa-jupiter-view')||'null');
+  if(sv){ if(sv.mode) st.mode=sv.mode; if(sv.rot) for(var k0 in sv.rot) st.rot[k0]=sv.rot[k0]; if(sv.zoom) st.zoom=sv.zoom; } }catch(e){}
+function saveView(){ try{ localStorage.setItem('dsa-jupiter-view',JSON.stringify({mode:st.mode,rot:st.rot,zoom:st.zoom})); }catch(e){} }
+var TZ=ZCLTZ.zone();
+function fmtT(d){ return ZCLTZ.fmtTime(d,TZ); }
+function fmtFull(d){ return ZCLTZ.fmtDate(d,{weekday:'short',month:'short',day:'numeric'},TZ)+' · '+fmtT(d); }
+function fmtDay(d){ return ZCLTZ.fmtDate(d,{weekday:'short',month:'short',day:'numeric'},TZ); }
+var G=null;
+function compute(){
+  G=JupiterEphem.compute(viewDate);
+  G.shadowsForRender=G.shadows.map(function(s,i){ return {X:s.X,Y:s.Y,onDisc:s.onDisc,r:MOON_R[i]*1.05}; });
+  G.moonsSun=JupiterEphem.e5(JupiterEphem.jdeOf(viewDate),'sun');
+}
+function fitCanvas(cv){
+  var r=cv.getBoundingClientRect(), dpr=Math.min(2.5,window.devicePixelRatio||1);
+  var w=Math.max(10,Math.round(r.width*dpr)), h=Math.max(10,Math.round(r.height*dpr));
+  if(cv.width!==w||cv.height!==h){ cv.width=w; cv.height=h; }
+  return {w:w,h:h,dpr:dpr};
+}
+function arc(sec){ return sec<90? Math.round(sec)+'″' : (sec/60).toFixed(1)+'′'; }
+
+/* Moon status, shared by every view and list. */
+function moonState(i){
+  var m=G.moons[i], cyl=Math.sqrt(POLAR*POLAR*Math.cos(G.DE)*Math.cos(G.DE)+Math.sin(G.DE)*Math.sin(G.DE));
+  var onDisc=(m.X*m.X+(m.Y/cyl)*(m.Y/cyl))<1;
+  if(onDisc&&m.Z>0) return 'behind';
+  if(onDisc&&m.Z<0) return 'transit';
+  var s=G.moonsSun[i];                                   // in Jupiter's shadow = hidden behind it, seen from the Sun
+  if(s.Z>0 && (s.X*s.X+(s.Y/POLAR)*(s.Y/POLAR))<1) return 'eclipsed';
+  return 'clear';
+}
+
+/* ════════════════ Stage 1 — hero ════════════════ */
+var hz={zoom:1,cx:0,cy:0};
+function heroBasePpr(W,H){ return Math.min(W*.3, H*.43/POLAR); }
+/* The hero is drawn in the same orientation as the eyepiece view below
+   (Sky, Dobsonian or Star diagonal, with its rotation), so the planet matches
+   what's in the telescope. A = screen direction per body unit (X west, Y north pole). */
+function viewName(){ var m=(st.mode==='top')?(st.lastEye||'dob'):st.mode; return {sky:'north up, as in the sky',dob:'turned to match the Dobsonian view below',diag:'mirrored to match the star-diagonal view below'}[m]; }
+function heroAffine(g){
+  var mode=(st.mode==='top')?(st.lastEye||'dob'):st.mode, rot=(st.rot[mode]||0)*D2R, mir=(mode==='diag')?-1:1, c=Math.cos(rot), s=Math.sin(rot);
+  function V(e,n){ var x=-e*mir, y=-n; return [x*c-y*s, x*s+y*c]; }
+  var P=g.P, a=V(Math.sin(P-Math.PI/2),Math.cos(P-Math.PI/2)), b=V(Math.sin(P),Math.cos(P));
+  return [a[0],b[0],a[1],b[1]];
+}
+function heroXf(W,H,g){
+  var s1=heroBasePpr(W,H)*hz.zoom, A=heroAffine(g), det=A[0]*A[3]-A[1]*A[2], I=[A[3]/det,-A[1]/det,-A[2]/det,A[0]/det];
+  return { s:s1, A:A, I:I,
+    toScr:function(sx,sy){ var dx=sx-hz.cx, dy=sy-hz.cy; return [W/2+s1*(A[0]*dx+A[1]*dy), H/2+s1*(A[2]*dx+A[3]*dy)]; },
+    toRing:function(X,Y){ var dx=(X-W/2)/s1, dy=(Y-H/2)/s1; return [hz.cx+I[0]*dx+I[1]*dy, hz.cy+I[2]*dx+I[3]*dy]; } };
+}
+var heroLive=0, heroFullTimer=0;
+function paintHero(res){
+  var cv=$('zcl-hero'), f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h, dpr=f.dpr, g=G, X=heroXf(W,H,g);
+  var Wr=Math.max(8,Math.round(W*res)), Hr=Math.max(8,Math.round(H*res)), s1=X.s*res, d0x=.5-Wr/2, d0y=.5-Hr/2;
+  var I=X.I, M={ux:I[0]/s1, uy:I[2]/s1, vx:I[1]/s1, vy:I[3]/s1, ox:hz.cx+(I[0]*d0x+I[1]*d0y)/s1, oy:hz.cy+(I[2]*d0x+I[3]*d0y)/s1};
+  var off=paintHero.off||(paintHero.off=document.createElement('canvas')); off.width=Wr; off.height=Hr;
+  var octx=off.getContext('2d'), img=octx.createImageData(Wr,Hr);
+  rasterize(g,img,Wr,Hr,M); octx.putImageData(img,0,0);
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high'; ctx.drawImage(off,0,0,W,H);
+  heroBoxes=[]; var mlab=heroMoons(ctx,W,H,X,dpr);
+  if(st.labels && !moonAnim.playing && !gest.active) (hz.zoom<1.05? heroLabels : zoomLabels)(ctx,W,H,g,X,dpr);
+  moonLabels(ctx,W,H,mlab,dpr);
+  if(hz.zoom>=1.3) scaleBar(ctx,W,H,X,dpr);
+  cv.style.touchAction = hz.zoom>1.01 ? 'none' : 'pan-y';
+  $('zcl-hzoomlab').textContent='×'+(hz.zoom<1.05?'1':hz.zoom<10?hz.zoom.toFixed(1):Math.round(hz.zoom));
+}
+function drawHero(fast){
+  cancelAnimationFrame(heroLive);
+  heroLive=requestAnimationFrame(function(){ paintHero(fast?.5:1); });
+  clearTimeout(heroFullTimer);
+  if(fast) heroFullTimer=setTimeout(function(){ if(!moonAnim.playing&&!gest.active) paintHero(1); },220);
+}
+/* Moons near the planet, drawn with their photos at true size. */
+var heroBoxes=[];
+function heroMoons(ctx,W,H,X,dpr){
+  var jobs=[];
+  G.moons.forEach(function(m,i){
+    var stt=moonState(i); if(stt==='behind') return;
+    var p=X.toScr(m.X,m.Y), r=Math.max(2*dpr, MOON_R[i]*X.s);
+    if(p[0]<-r||p[0]>W+r||p[1]<-r||p[1]>H+r) return;
+    ctx.save(); ctx.globalAlpha= stt==='eclipsed'?.18:1;
+    ctx.beginPath(); ctx.arc(p[0],p[1],r,0,7); ctx.clip();
+    var im=MIMG[m.name];
+    if(im&&im.complete&&im.naturalWidth&&r>3*dpr) ctx.drawImage(im,p[0]-r*1.02,p[1]-r*1.02,r*2.04,r*2.04);
+    else { ctx.fillStyle=MOONS[m.name].col; ctx.fillRect(p[0]-r,p[1]-r,2*r,2*r); }
+    ctx.restore();
+    if(st.labels && hz.zoom<1.05 && !moonAnim.playing)
+      jobs.push({x:p[0],y:p[1],r:r,col:stt==='eclipsed'?'rgba(154,135,92,.7)':MOONS[m.name].col,
+        txt:m.name+(stt==='transit'?' (in front)':stt==='eclipsed'?' (eclipsed)':'')});
+  });
+  return jobs;
+}
+/* Moon names go on last, above or below the moon — wherever they don't
+   collide with a belt label. */
+function moonLabels(ctx,W,H,jobs,dpr){
+  var fs=Math.round(10.5*dpr); ctx.font='500 '+fs+'px Montserrat, sans-serif'; ctx.textAlign='center';
+  jobs.forEach(function(j){
+    var tw=ctx.measureText(j.txt).width, x=Math.max(tw/2+4*dpr,Math.min(W-tw/2-4*dpr,j.x));
+    var ys=[j.y-j.r-7*dpr, j.y+j.r+fs+5*dpr];
+    for(var k=0;k<ys.length;k++){
+      var b={x:x-tw/2-3*dpr,y:ys[k]-fs-2*dpr,w:tw+6*dpr,h:fs+6*dpr};
+      if(heroBoxes.some(function(o){return !(b.x>o.x+o.w||b.x+b.w<o.x||b.y>o.y+o.h||b.y+b.h<o.y)})) continue;
+      heroBoxes.push(b); ctx.fillStyle=j.col; ctx.fillText(j.txt,x,ys[k]); return;
+    }
   });
 }
-
-// Classify a moon's apparent state for the reader.
-function moonState(m){
-  const front = m.Z < 0;
-  if(Math.abs(m.X) < 1.02){          // projected onto the disc
-    if(front)  return {key:'front',  label:'In transit'};
-    return {key:'behind', label:'Behind Jupiter'};
+/* Fit view: belts and zones named in the margins, with leaders to the limb. */
+var FEAT=[[26,'North Temperate Belt',-1],[13,'North Equatorial Belt',-1],[-14,'South Equatorial Belt',-1],[-30,'South Temperate Belt',-1],
+          [20,'N. Tropical Zone',1],[0,'Equatorial Zone',1],[-25,'S. Tropical Zone',1]];
+function limbPoint(lat,side){ var la=lat*D2R; return [side*Math.cos(la)*.97, POLAR*Math.sin(la)*.99]; }
+function heroLabels(ctx,W,H,g,X,dpr){
+  var fs=Math.round(10.5*dpr); ctx.font='italic '+fs+'px Montserrat, sans-serif';
+  FEAT.forEach(function(f){
+    var pa=X.toScr.apply(null,limbPoint(f[0],-1)), pb=X.toScr.apply(null,limbPoint(f[0],1));
+    var p = (f[2]<0) === (pa[0]<pb[0]) ? pa : pb, lx= f[2]<0 ? 14*dpr : W-14*dpr;
+    ctx.strokeStyle='rgba(203,168,90,.45)'; ctx.lineWidth=Math.max(1,.8*dpr);
+    var tw=ctx.measureText(f[1]).width, ex = f[2]<0 ? lx+tw+6*dpr : lx-tw-6*dpr;
+    if((f[2]<0 && ex>p[0]-6*dpr) || (f[2]>0 && ex<p[0]+6*dpr)) return;       // no room at this width
+    ctx.beginPath(); ctx.moveTo(ex,p[1]); ctx.lineTo(p[0],p[1]); ctx.stroke();
+    ctx.fillStyle='rgba(230,204,133,.95)'; ctx.beginPath(); ctx.arc(p[0],p[1],1.7*dpr,0,7); ctx.fill();
+    ctx.fillStyle='#D8C18A'; ctx.textAlign=f[2]<0?'left':'right'; ctx.textBaseline='middle';
+    ctx.fillText(f[1],lx,p[1]); ctx.textBaseline='alphabetic';
+    heroBoxes.push({x:Math.min(lx,ex)-4*dpr,y:p[1]-fs*.8,w:Math.abs(ex-lx)+8*dpr,h:fs*1.6});
+  });
+  var gp=grsScreen(X); if(gp){                                              // the Red Spot, when it faces us
+    ctx.strokeStyle='rgba(233,162,122,.55)'; ctx.lineWidth=Math.max(1,.8*dpr);
+    ctx.beginPath(); ctx.arc(gp[0],gp[1],X.s*.13,0,7); ctx.stroke();
+    ctx.font='600 '+fs+'px Montserrat, sans-serif'; ctx.fillStyle='#E9A27A'; ctx.textAlign='center';
+    ctx.fillText('Great Red Spot',gp[0],gp[1]+X.s*.13+14*dpr);
   }
-  return m.X > 0
-    ? {key:'west', label:'West of Jupiter'}     // +X = west in the sky
-    : {key:'east', label:'East of Jupiter'};
+}
+function grsScreen(X){
+  var dl=wrap180(grsLongitude(G.date)-G.cm2); if(Math.abs(dl)>80) return null;
+  var la=-22.4*D2R, th=-dl*D2R;                     // east of the central meridian = negative x (west positive)
+  var qx=Math.cos(la)*Math.sin(th), qy=POLAR*Math.sin(la), qz=Math.cos(la)*Math.cos(th);
+  var sB=Math.sin(G.DE), cB=Math.cos(G.DE);
+  return X.toScr(qx, qy*cB-qz*sB);
+}
+/* Zoomed: pill labels placed on the visible bands. */
+function zoomLabels(ctx,W,H,g,X,dpr){
+  var fs=Math.round(10.5*dpr), padX=6*dpr, m=30*dpr, sB=Math.sin(g.DE), cB=Math.cos(g.DE);
+  ctx.font='italic '+fs+'px Montserrat, sans-serif';
+  var placed=[{x:W-270*dpr,y:H-52*dpr,w:270*dpr,h:52*dpr}];
+  var targets=[[.5,.5],[.3,.4],[.7,.6],[.5,.25],[.5,.75],[.2,.65],[.8,.35]];
+  var list=FEAT.map(function(f){return {lat:f[0],txt:f[1]};});
+  var gp=grsScreen(X);
+  if(gp){ ctx.strokeStyle='rgba(233,162,122,.55)'; ctx.lineWidth=Math.max(1,.8*dpr); ctx.beginPath(); ctx.arc(gp[0],gp[1],X.s*.13,0,7); ctx.stroke();
+    placed.push({x:gp[0]-X.s*.13,y:gp[1]-X.s*.13,w:X.s*.26,h:X.s*.26}); }
+  if(gp) list.unshift({grs:true,txt:'Great Red Spot'});
+  list.forEach(function(f){
+    var cands=[];
+    if(f.grs) cands=[[gp[0],gp[1]-X.s*.13]];
+    else for(var k=-80;k<=80;k+=2){
+      var la=f.lat*D2R, th=k*D2R, qx=Math.cos(la)*Math.sin(th), qy=POLAR*Math.sin(la), qz=Math.cos(la)*Math.cos(th);
+      var p=X.toScr(qx,qy*cB-qz*sB); if(p[0]<m||p[0]>W-m||p[1]<m+fs||p[1]>H-m) continue; cands.push(p);
+    }
+    if(!cands.length) return;
+    var tw=ctx.measureText(f.txt).width, bw=tw+2*padX, bh=fs+9*dpr;
+    for(var t=0;t<targets.length;t++){
+      var tx=targets[t][0]*W, ty=targets[t][1]*H, best=null, bd=1e9;
+      cands.forEach(function(p){ var d=Math.hypot(p[0]-tx,p[1]-ty); if(d<bd){bd=d;best=p;} });
+      if(!best||(!f.grs&&bd>Math.hypot(W,H)*.22)) continue;
+      var bx=Math.max(4,Math.min(W-bw-4,best[0]-bw/2)), by=best[1]-22*dpr-bh; if(by<4){ by=best[1]+22*dpr; }
+      var box={x:bx-3*dpr,y:by-3*dpr,w:bw+6*dpr,h:bh+6*dpr};
+      if(placed.some(function(b){return !(box.x>b.x+b.w||box.x+box.w<b.x||box.y>b.y+b.h||box.y+box.h<b.y)})) continue;
+      placed.push(box);
+      ctx.strokeStyle='rgba(230,204,133,.7)'; ctx.lineWidth=Math.max(1,.9*dpr);
+      ctx.beginPath(); ctx.moveTo(best[0],best[1]); ctx.lineTo(best[0], by<best[1]? by+bh : by); ctx.stroke();
+      ctx.fillStyle='rgba(8,7,13,.74)'; if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,bh/2); ctx.fill(); } else ctx.fillRect(bx,by,bw,bh);
+      ctx.fillStyle=f.grs?'#E9A27A':'#E6CC85'; ctx.textAlign='left'; ctx.textBaseline='middle'; ctx.fillText(f.txt,bx+padX,by+bh/2+.5*dpr); ctx.textBaseline='alphabetic';
+      return;
+    }
+  });
+}
+function scaleBar(ctx,W,H,X,dpr){
+  var kmPerPx=KM/X.s, target=W*.18*kmPerPx, nice=[1000,2000,5000,10000,20000,50000], km=nice[0];
+  for(var i=0;i<nice.length;i++) if(nice[i]<=target) km=nice[i];
+  var L=km/kmPerPx, x1=W-18*dpr, x0=x1-L, y=H-18*dpr;
+  ctx.fillStyle='rgba(8,7,13,.72)'; if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x0-10*dpr,y-24*dpr,L+20*dpr,32*dpr,6*dpr); ctx.fill(); }
+  ctx.strokeStyle='rgba(230,204,133,.85)'; ctx.lineWidth=1.5*dpr;
+  ctx.beginPath(); ctx.moveTo(x0,y-4*dpr); ctx.lineTo(x0,y); ctx.lineTo(x1,y); ctx.lineTo(x1,y-4*dpr); ctx.stroke();
+  ctx.font=Math.round(10*dpr)+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(230,204,133,.9)'; ctx.textAlign='center';
+  ctx.fillText(km.toLocaleString()+' km',(x0+x1)/2,y-7*dpr);
+}
+/* zoom & pan (same gestures as the Saturn page) */
+var ZMAX=10;
+function clampPan(){ if(hz.zoom<=1.001){ hz.zoom=1; hz.cx=0; hz.cy=0; return; } var lim=1.05; hz.cx=Math.max(-lim,Math.min(lim,hz.cx)); hz.cy=Math.max(-lim,Math.min(lim,hz.cy)); }
+function zoomAt(f,X0,Y0){ var cv=$('zcl-hero'), W=cv.width, H=cv.height; if(X0==null){X0=W/2;Y0=H/2;}
+  var b=heroXf(W,H,G).toRing(X0,Y0); hz.zoom=Math.max(1,Math.min(ZMAX,hz.zoom*f)); var a=heroXf(W,H,G).toRing(X0,Y0);
+  hz.cx+=b[0]-a[0]; hz.cy+=b[1]-a[1]; clampPan(); drawHero(true); heroNote(); }
+function panBy(dx,dy){ var cv=$('zcl-hero'), X=heroXf(cv.width,cv.height,G); hz.cx-=(X.I[0]*dx+X.I[1]*dy)/X.s; hz.cy-=(X.I[2]*dx+X.I[3]*dy)/X.s; clampPan(); drawHero(true); }
+var gest={active:false,pts:{},lastDist:0,lastMid:null,lastTap:0};
+(function(){
+  var cv=$('zcl-hero');
+  function loc(e){ var r=cv.getBoundingClientRect(), k=cv.width/r.width; return [(e.clientX-r.left)*k,(e.clientY-r.top)*k]; }
+  cv.addEventListener('pointerdown',function(e){
+    gest.pts[e.pointerId]=loc(e); gest.active=true; try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+    var ids=Object.keys(gest.pts);
+    if(ids.length===2){ var a=gest.pts[ids[0]], b=gest.pts[ids[1]]; gest.lastDist=Math.hypot(a[0]-b[0],a[1]-b[1]); gest.lastMid=[(a[0]+b[0])/2,(a[1]+b[1])/2]; }
+    var now=Date.now(), p=gest.pts[e.pointerId];
+    if(ids.length===1&&now-gest.lastTap<300){ if(hz.zoom>=ZMAX-.01){ hz.zoom=1; clampPan(); drawHero(true); heroNote(); } else zoomAt(2,p[0],p[1]); gest.lastTap=0; } else gest.lastTap=now;
+  });
+  cv.addEventListener('pointermove',function(e){
+    if(!gest.pts[e.pointerId]) return; var prev=gest.pts[e.pointerId], cur=loc(e); gest.pts[e.pointerId]=cur;
+    var ids=Object.keys(gest.pts);
+    if(ids.length===2){ var a=gest.pts[ids[0]], b=gest.pts[ids[1]], d=Math.hypot(a[0]-b[0],a[1]-b[1]), mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+      if(gest.lastDist>0) zoomAt(d/gest.lastDist,mid[0],mid[1]); if(gest.lastMid) panBy(mid[0]-gest.lastMid[0],mid[1]-gest.lastMid[1]); gest.lastDist=d; gest.lastMid=mid; }
+    else if(ids.length===1&&hz.zoom>1.01) panBy(cur[0]-prev[0],cur[1]-prev[1]);
+  });
+  function end(e){ delete gest.pts[e.pointerId]; if(!Object.keys(gest.pts).length){ gest.active=false; gest.lastDist=0; gest.lastMid=null; drawHero(true); } }
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end);
+  cv.addEventListener('wheel',function(e){ if(!e.ctrlKey&&!e.metaKey) return; e.preventDefault(); var p=loc(e); zoomAt(Math.exp(-e.deltaY*.01),p[0],p[1]); },{passive:false});
+})();
+function grsStatus(){
+  var dl=wrap180(grsLongitude(viewDate)-G.cm2), nx=nextGRSTransits(viewDate,1)[0], el=$('zcl-grsnow');
+  var msg, cls;
+  if(Math.abs(dl)<8){ cls='vis'; msg='<b>The Great Red Spot is crossing the centre of the disc right now</b> — the best moment to catch it.'; }
+  else if(Math.abs(dl)<55){ cls='vis'; msg='<b>The Great Red Spot is facing us</b>, '+(dl>0?'rotating toward the centre (crosses at '+fmtT(nx)+')':'past the centre and heading for the edge')+'.'; }
+  else { cls='hidden'; msg='The Great Red Spot is on the far side right now. It next crosses the centre at <b>'+fmtT(nx)+'</b>'+(ZCLTZ.dayKey(nx,TZ)!==ZCLTZ.dayKey(viewDate,TZ)?' '+fmtDay(nx):'')+'.'; }
+  el.className='zcl-grsnow '+cls;
+  el.innerHTML='<span class="zcl-grsdot" style="background:'+(cls==='vis'?'#E07B4A':'#6a6a6a')+'"></span><span>'+msg+'</span>';
+}
+function heroNote(){
+  var txt='Rendered from the real geometry for this moment, '+viewName()+': the belts, the Great Red Spot at its measured longitude, and any moon or shadow crossing the disc. Jupiter spins once every 10 hours, so play the time slider below to watch it turn.';
+  txt+= hz.zoom>=1.3 ? ' Drag to move around; double-tap to zoom closer.' : ' Pinch, double-tap or use <b>+</b> to zoom in.';
+  $('zcl-heronote').innerHTML=txt;
 }
 
-// ---- Jupiter central meridian (System II) & Great Red Spot transits ----
-// CM formula: Project Pluto (accurate ~1°). GRS longitude anchored to
-// Sky & Telescope: 85° (System II) on 2026-02-01, drifting +1.75°/month.
-const JUP_ROT_II = 870.1869147;            // deg/day, System II
-function cmII(date){
-  const jd = jdUTC(date);
-  const jup_mean = (jd-2455636.938)*360/4332.89709;
-  const eqn = 5.55*Math.sin(jup_mean*D2R);
-  const ang = (jd-2451870.628)*360/398.884 - eqn;
-  const corr = 11*Math.sin(ang*D2R) + 5*Math.cos(ang*D2R)
-             - 1.25*Math.cos(jup_mean*D2R) - eqn;
-  let cm = 181.62 + JUP_ROT_II*jd + corr;
-  return ((cm%360)+360)%360;
+/* ════════════════ Stage 2 — eyepiece field & view from above ════════════════ */
+var ZOOM={inner:11, titan:17, wide:29}, lblMem={};
+function viewMatrix(){
+  var rot=(st.rot[st.mode]||0)*D2R, mir=(st.mode==='diag')?-1:1, c=Math.cos(rot), s=Math.sin(rot);
+  return function(east,north){ var x=-east*mir, y=-north; return [x*c-y*s, x*s+y*c]; };
 }
-function grsLongitude(date){
-  const ref = Date.UTC(2026,1,1);          // 2026-02-01
-  const months = (date.getTime()-ref)/86400000/30.4375;
-  return (((85 + 1.75*months)%360)+360)%360;
+function ringToSky(X,Y){ var P=G.P; return [X*Math.sin(P-Math.PI/2)+Y*Math.sin(P), X*Math.cos(P-Math.PI/2)+Y*Math.cos(P)]; }
+var fieldPlanet={key:'',img:null};
+function drawField(){
+  var top=(st.mode==='top');
+  $('zcl-rotl').disabled=$('zcl-rotr').disabled=top; $('zcl-eye').classList.toggle('is-top',top);
+  $('zcl-fov').style.visibility=top?'hidden':'';
+  var infoOn=$('zcl-dinfo').classList.contains('on');
+  $('zcl-dinfotxt').classList.toggle('open',infoOn&&!top); $('zcl-orbnote').classList.toggle('open',infoOn&&top);
+  if(top){ drawOrbits(); return; }
+  var cv=$('zcl-field'), f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h, dpr=f.dpr;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  var V=viewMatrix(), e=ringToSky(1,0), u=V(e[0],e[1]), ext=ZOOM[st.zoom], m=26*dpr;
+  var ppr=Math.min((W/2-m)/Math.max(.05,Math.abs(u[0])),(H/2-m)/Math.max(.05,Math.abs(u[1])))/ext;
+  ppr=Math.min(ppr,(Math.min(W,H)/2-m)/1.3);
+  var cx=W/2, cy=H/2;
+  ctx.strokeStyle='rgba(203,168,90,.10)'; ctx.lineWidth=dpr;
+  ctx.beginPath(); ctx.moveTo(cx-u[0]*ext*1.3*ppr,cy-u[1]*ext*1.3*ppr); ctx.lineTo(cx+u[0]*ext*1.3*ppr,cy+u[1]*ext*1.3*ppr); ctx.stroke();
+  var key=[Math.round(ppr*10),Math.round(G.cm2),G.shadows.map(function(s){return s.onDisc?s.X.toFixed(2):'-'}).join(',')].join('|');
+  if(fieldPlanet.key!==key){ fieldPlanet.img=renderPlanet(G,ppr,1.08); fieldPlanet.key=key; }
+  var P=fieldPlanet.img, ax=V.apply(null,ringToSky(1,0)), ay=V.apply(null,ringToSky(0,1));
+  ctx.save(); ctx.setTransform(ax[0],ax[1],-ay[0],-ay[1],cx,cy); ctx.drawImage(P.canvas,-P.cx,-P.cy); ctx.restore();
+  var ms=G.moons.map(function(mm,i){ var sk=ringToSky(mm.X,mm.Y), p=V(sk[0],sk[1]); return {m:mm,i:i,x:cx+p[0]*ppr,y:cy+p[1]*ppr,state:moonState(i)}; });
+  var nx=-u[1], ny=u[0]; if(ny>0){nx=-nx;ny=-ny;}
+  var placed=[{x:0,y:H-132*dpr,w:130*dpr,h:132*dpr},{x:W-190*dpr,y:H-26*dpr,w:190*dpr,h:26*dpr}], offList=[];
+  ms.forEach(function(o){ if(o.state!=='behind') placed.push({x:o.x-7*dpr,y:o.y-7*dpr,w:14*dpr,h:14*dpr}); });
+  ms.forEach(function(o){
+    if(o.state==='behind') return;
+    var inField=o.x>6*dpr&&o.x<W-6*dpr&&o.y>6*dpr&&o.y<H-6*dpr; if(!inField){ offList.push(o); return; }
+    var rad=Math.max(2.2*dpr, MOON_R[o.i]*ppr), alpha=o.state==='eclipsed'?.25:1;
+    var gr=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,rad*3); gr.addColorStop(0,'rgba(255,248,230,'+(.5*alpha)+')'); gr.addColorStop(1,'rgba(255,248,230,0)');
+    ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(o.x,o.y,rad*3,0,7); ctx.fill();
+    ctx.globalAlpha=alpha; ctx.fillStyle=MOONS[o.m.name].col; ctx.beginPath(); ctx.arc(o.x,o.y,rad,0,7); ctx.fill(); ctx.globalAlpha=1;
+    var fs=Math.round(11*dpr); ctx.font='500 '+fs+'px Montserrat, sans-serif';
+    var txt=o.m.name, tw=ctx.measureText(txt).width, mem=lblMem[txt]||(lblMem[txt]={sgn:1,tier:1,off:null});
+    function slotBox(sgn,tier){ var off=(10+tier*14)*dpr*sgn, lx=o.x+nx*off, ly=o.y+ny*off, box={x:lx-tw/2-3*dpr,y:ly-fs,w:tw+6*dpr,h:fs+5*dpr};
+      var hit=placed.some(function(b){return !(box.x>b.x+b.w||box.x+box.w<b.x||box.y>b.y+b.h||box.y+box.h<b.y)});
+      if(box.x<2||box.x+box.w>W-2||box.y<2||box.y+box.h>H-2) hit=true; return hit?null:{sgn:sgn,tier:tier,off:off,box:box}; }
+    var first=null; for(var tier=1;tier<6&&!first;tier++){ first=slotBox(mem.sgn,tier)||slotBox(-mem.sgn,tier); }
+    var keep=slotBox(mem.sgn,mem.tier), best=(keep&&first&&keep.tier<=first.tier+1)?keep:first;
+    if(!best){ mem.off=null; return; }
+    placed.push(best.box); mem.sgn=best.sgn; mem.tier=best.tier;
+    var cur=(moonAnim.playing&&mem.off!=null)? mem.off+(best.off-mem.off)*.14 : best.off; mem.off=cur;
+    var lx=o.x+nx*cur, ly=o.y+ny*cur; ctx.globalAlpha=Math.min(1,Math.abs(cur)/(18*dpr));
+    ctx.strokeStyle='rgba(203,168,90,.28)'; ctx.lineWidth=.8*dpr;
+    ctx.beginPath(); ctx.moveTo(o.x+(lx-o.x)*.18,o.y+(ly-o.y)*.18); ctx.lineTo(lx,ly-(ly<o.y?-3*dpr:fs*.95)); ctx.stroke();
+    ctx.fillStyle=o.state==='eclipsed'?'rgba(154,135,92,.7)':MOONS[o.m.name].col; ctx.textAlign='center'; ctx.fillText(txt,lx,ly); ctx.globalAlpha=1;
+  });
+  offList.forEach(function(o){ offField(ctx,o,cx,cy,W,H,dpr,placed); });
+  compass(ctx,V,W,H,dpr);
+  var fov=2*ext*G.radiusArcsec/60;
+  $('zcl-fov').textContent=(fov<2?(fov*60).toFixed(0)+'″':fov.toFixed(1)+'′')+' field · true scale';
 }
-// How far (deg) the GRS is from the central meridian right now.
-// 0 = transiting (dead centre); positive = still approaching from the east.
-function grsOffset(date){
-  let off = grsLongitude(date) - cmII(date);
-  off = ((off%360)+360)%360;
-  if(off>180) off -= 360;                  // -180..180; <0 = just past centre
-  return off;
+function offField(ctx,o,cx,cy,W,H,dpr,placed){
+  var dx=o.x-cx, dy=o.y-cy, m=16*dpr, t=Math.min((W/2-m)/Math.max(1e-6,Math.abs(dx)),(H/2-m)/Math.max(1e-6,Math.abs(dy)));
+  var ex=cx+dx*t, ey=cy+dy*t, a=Math.atan2(dy,dx);
+  ctx.save(); ctx.translate(ex,ey); ctx.rotate(a); ctx.fillStyle='rgba(203,168,90,.75)';
+  ctx.beginPath(); ctx.moveTo(6*dpr,0); ctx.lineTo(-3*dpr,-4.5*dpr); ctx.lineTo(-3*dpr,4.5*dpr); ctx.closePath(); ctx.fill(); ctx.restore();
+  var fs=Math.round(10*dpr); ctx.font=fs+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(203,168,90,.85)';
+  var inx=-Math.cos(a), iny=-Math.sin(a); ctx.textAlign=Math.abs(inx)<.3?'center':(inx>0?'left':'right');
+  var sep=Math.hypot(o.m.X,o.m.Y)*G.radiusArcsec, txt=o.m.name+' '+arc(sep), tw=ctx.measureText(txt).width, bx0=ex+inx*14*dpr, by0=ey+iny*14*dpr+fs*.35;
+  for(var k=0;k<8;k++){ var ly=by0+(k%2?1:-1)*Math.ceil(k/2)*(fs+4*dpr), left=ctx.textAlign==='left'?bx0:ctx.textAlign==='right'?bx0-tw:bx0-tw/2;
+    var box={x:left-3*dpr,y:ly-fs,w:tw+6*dpr,h:fs+5*dpr}, hit=placed.some(function(b){return !(box.x>b.x+b.w||box.x+box.w<b.x||box.y>b.y+b.h||box.y+box.h<b.y)});
+    if(!hit||k===7){ placed.push(box); ctx.fillText(txt,bx0,ly); break; } }
 }
-// Next N times the GRS crosses the central meridian, from `date` forward.
+function compass(ctx,V,W,H,dpr){
+  var ox=62*dpr, oy=H-88*dpr, L=18*dpr;
+  function arrow(v,len,col,lab,bold){
+    var x2=ox+v[0]*len, y2=oy+v[1]*len; ctx.strokeStyle=col; ctx.lineWidth=(bold?1.6:1)*dpr;
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(x2,y2); ctx.stroke();
+    var a=Math.atan2(v[1],v[0]); ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2+Math.cos(a)*4*dpr,y2+Math.sin(a)*4*dpr);
+    ctx.lineTo(x2+Math.cos(a+2.5)*5*dpr,y2+Math.sin(a+2.5)*5*dpr); ctx.lineTo(x2+Math.cos(a-2.5)*5*dpr,y2+Math.sin(a-2.5)*5*dpr); ctx.fill();
+    ctx.font=(bold?'600 ':'')+Math.round(9.5*dpr)+'px Montserrat, sans-serif';
+    var lx=ox+v[0]*(len+7*dpr), ly=oy+v[1]*(len+7*dpr);
+    ctx.textAlign=Math.abs(v[0])<.45?'center':(v[0]<0?'right':'left'); ctx.textBaseline=Math.abs(v[1])<.45?'middle':(v[1]<0?'alphabetic':'top');
+    var tw=ctx.measureText(lab).width, al=ctx.textAlign, x0=al==='center'?lx-tw/2:al==='right'?lx-tw:lx;
+    if(x0<6*dpr) lx+=6*dpr-x0;                                   // keep the label inside the field
+    ctx.fillText(lab,lx,ly); ctx.textBaseline='alphabetic';
+  }
+  arrow(V(0,1),L*.8,'rgba(154,135,92,.8)','N'); arrow(V(1,0),L*.8,'rgba(154,135,92,.8)','E'); arrow(V(-1,0),L*1.25,'rgba(230,204,133,.95)','DRIFT',true);
+}
+/* View from above Jupiter's sunlit pole. */
+var OZ={inner:11, titan:17, wide:29}, orbMem={}, orbPlanet={key:'',img:null};
+function drawOrbits(){
+  var cv=$('zcl-field'), f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h, dpr=f.dpr;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  var vs=G.DS<0?-1:1, k=(Math.min(W,H)/2-30*dpr)/OZ[st.zoom], cx=W/2, cy=H/2, sB=Math.sin(G.DE), cB=Math.cos(G.DE);
+  function top(m){ var x3=m.X, z3=-m.Y*sB-m.Z*cB; return [cx+(vs>0?x3:-x3)*k, cy+z3*k]; }
+  var sunx=(vs>0?1:-1)*G.sun[0], suny=G.sun[2], sl=Math.hypot(sunx,suny)||1; sunx/=sl; suny/=sl;
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.atan2(-suny,-sunx));
+  var sg=ctx.createLinearGradient(0,0,Math.hypot(W,H),0); sg.addColorStop(0,'rgba(0,0,0,.28)'); sg.addColorStop(.6,'rgba(0,0,0,.12)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=sg; ctx.fillRect(0,-k,Math.hypot(W,H),2*k); ctx.restore();
+  var later=JupiterEphem.e5(JupiterEphem.jdeOf(new Date(viewDate.getTime()+1800000)),'earth');
+  var pos=G.moons.map(function(m,i){ var p=top(m), q=top(later[i]), ang=Math.atan2(p[1]-cy,p[0]-cx), ang2=Math.atan2(q[1]-cy,q[0]-cx);
+    return {m:m,i:i,x:p[0],y:p[1],r:Math.hypot(p[0]-cx,p[1]-cy),ang:ang,dir:((ang2-ang+3*Math.PI)%(2*Math.PI))-Math.PI>0?1:-1}; });
+  pos.forEach(function(o){
+    ctx.strokeStyle='rgba(230,214,170,.13)'; ctx.lineWidth=dpr; ctx.beginPath(); ctx.arc(cx,cy,o.r,0,7); ctx.stroke();
+    for(var s=0;s<12;s++){ var a0=o.ang-o.dir*(s+1)*5*D2R, a1=o.ang-o.dir*s*5*D2R;
+      ctx.strokeStyle='rgba(230,204,133,'+(.55*(1-s/12)).toFixed(3)+')'; ctx.lineWidth=1.6*dpr; ctx.beginPath(); ctx.arc(cx,cy,o.r,Math.min(a0,a1),Math.max(a0,a1)); ctx.stroke(); }
+  });
+  var ppr=Math.max(2,k), key=[vs,Math.round(ppr*4),(G.DS*R2D).toFixed(1),(G.phi*R2D).toFixed(1),Math.round(G.cm2)].join('|');
+  if(orbPlanet.key!==key){
+    var gT={DE:vs*89.9*D2R, sun:G.sun, cm2:G.cm2, date:G.date, shadowsForRender:[]};
+    orbPlanet.img=renderPlanet(gT,ppr,1.08); orbPlanet.key=key;
+  }
+  var P=orbPlanet.img; ctx.save(); ctx.translate(cx,cy); if(vs<0) ctx.rotate(Math.PI); ctx.drawImage(P.canvas,-P.cx,-P.cy); ctx.restore();
+  var ORD=['Ganymede','Callisto','Io','Europa'];
+  var jobs=[];
+  pos.sort(function(a,b){return ORD.indexOf(a.m.name)-ORD.indexOf(b.m.name)});
+  var placed=[{x:cx-110*dpr,y:H-44*dpr,w:220*dpr,h:44*dpr},{x:0,y:H-40*dpr,w:150*dpr,h:40*dpr},{x:W-90*dpr,y:H-26*dpr,w:90*dpr,h:26*dpr},{x:W-170*dpr,y:0,w:170*dpr,h:34*dpr}], fs=Math.round(11*dpr);
+  pos.forEach(function(o){
+    if(o.x<-20||o.x>W+20||o.y<-20||o.y>H+20) return;
+    var rad=Math.max(2.4,Math.min(6.5,Math.sqrt(MOONS[o.m.name].km)/11))*dpr, ecl=(moonState(o.i)==='eclipsed');
+    ctx.save(); ctx.beginPath(); ctx.arc(o.x,o.y,rad,0,7); ctx.clip(); ctx.fillStyle='#16151b'; ctx.fillRect(o.x-rad,o.y-rad,2*rad,2*rad);
+    if(!ecl){ var lx=o.x+sunx*rad*.55, ly=o.y+suny*rad*.55, gr=ctx.createRadialGradient(lx,ly,0,lx,ly,rad*1.45);
+      gr.addColorStop(0,MOONS[o.m.name].col); gr.addColorStop(.62,MOONS[o.m.name].col); gr.addColorStop(1,'rgba(22,21,27,0)'); ctx.fillStyle=gr; ctx.fillRect(o.x-rad,o.y-rad,2*rad,2*rad); }
+    ctx.restore();
+    jobs.push({name:o.m.name,sub:MOONS[o.m.name].short,x:o.x,y:o.y,rad:rad,col:ecl?'#9A875C':MOONS[o.m.name].col});
+  });
+  pinLabels(ctx,jobs,['Io','Europa','Ganymede','Callisto'],cx,cy,W,H,dpr);
+  ctx.font='600 '+Math.round(9.5*dpr)+'px Montserrat, sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(157,182,204,.85)'; ctx.fillText('▼  TO EARTH',cx,H-10*dpr);
+  var sx2=cx+sunx*(Math.min(W,H)/2-14*dpr), sy2=cy+suny*(Math.min(W,H)/2-14*dpr);
+  if(sy2>H-40*dpr) sy2=H-40*dpr;                                   // keep clear of the TO EARTH label
+  if(Math.abs(sunx)>.08){ ctx.fillStyle='rgba(255,214,120,.9)'; ctx.beginPath(); ctx.arc(sx2,sy2,4*dpr,0,7); ctx.fill(); ctx.fillText('SUN',sx2,sy2-8*dpr); }
+  else { ctx.fillStyle='rgba(255,214,120,.8)'; ctx.fillText('SUN BEHIND EARTH',cx,H-24*dpr); }
+  ctx.textAlign='left'; ctx.fillStyle='rgba(138,115,64,.9)'; ctx.font=Math.round(9.5*dpr)+'px Montserrat, sans-serif';
+  var eastLeft=vs>0; ctx.fillText(eastLeft?'◀ east':'◀ west',12*dpr,H-10*dpr); ctx.textAlign='right'; ctx.fillText(eastLeft?'west ▶':'east ▶',W-12*dpr,H-10*dpr);
+  ctx.textAlign='left'; ctx.fillText('as seen from Earth',12*dpr,H-22*dpr);
+  var kmPerPx=KM/k, target=W*.2*kmPerPx, nice=[50000,100000,200000,500000,1000000], km0=nice[0]; nice.forEach(function(v){ if(v<=target) km0=v; });
+  var Lb=km0/kmPerPx, x1=W-14*dpr, x0=x1-Lb, yb=18*dpr;
+  ctx.strokeStyle='rgba(230,204,133,.8)'; ctx.lineWidth=1.3*dpr; ctx.beginPath(); ctx.moveTo(x0,yb+4*dpr); ctx.lineTo(x0,yb+8*dpr); ctx.lineTo(x1,yb+8*dpr); ctx.lineTo(x1,yb+4*dpr); ctx.stroke();
+  ctx.fillStyle='rgba(230,204,133,.9)'; ctx.textAlign='center'; ctx.fillText(km0.toLocaleString()+' km',(x0+x1)/2,yb);
+  $('zcl-orbnote').innerHTML='Looking down on Jupiter from above its <b>'+(vs<0?'south':'north')+'</b> pole, with every orbit at true scale. From here the moons circle <b>'+(vs<0?'clockwise':'counter-clockwise')+'</b>, and the closer in, the faster. The three inner moons run like clockwork: for every orbit Ganymede makes, Europa makes almost exactly two and Io almost exactly four — so the three can never all line up on the same side of Jupiter. The dark band is Jupiter’s shadow; a moon passing through it is eclipsed.';
+}
+
+/* From-above labels: pinned to each moon at a fixed, smoothly varying offset
+   (no collision juggling, so nothing jumps or vanishes while they orbit),
+   60% opacity, and layered by orbit — inner moons underneath, outer on top. */
+function pinLabels(ctx,jobs,order,cx,cy,W,H,dpr){
+  var fs=Math.round(11*dpr), fs2=Math.round(10*dpr);
+  jobs.sort(function(a,b){return order.indexOf(a.name)-order.indexOf(b.name)});
+  jobs.forEach(function(j){
+    ctx.font='500 '+fs+'px Montserrat, sans-serif'; var nw=ctx.measureText(j.name+'  ').width;
+    ctx.font=fs2+'px Montserrat, sans-serif'; var tw=nw+ctx.measureText(j.sub).width;
+    var r=Math.hypot(j.x-cx,j.y-cy)||1, ux=(j.x-cx)/r, uy=(j.y-cy)/r;
+    // label centre rides an ellipse around the moon (wide enough to clear the text sideways,
+    // shallow enough above/below) — linear in the moon's direction, so it moves as smoothly as the moon
+    var A=j.rad+8*dpr+tw/2, B=j.rad+6*dpr+fs*.7;
+    var tx=Math.max(4*dpr,Math.min(W-tw-4*dpr,j.x+ux*A-tw/2)), ty=Math.max(fs+2*dpr,Math.min(H-4*dpr,j.y+uy*B+fs*.35));
+    ctx.save(); ctx.globalAlpha=.6; ctx.textAlign='left'; ctx.shadowColor='rgba(8,7,13,.95)'; ctx.shadowBlur=5*dpr;
+    ctx.font='500 '+fs+'px Montserrat, sans-serif'; ctx.fillStyle=j.col; ctx.fillText(j.name,tx,ty);
+    ctx.font=fs2+'px Montserrat, sans-serif'; ctx.fillStyle='#9A875C'; ctx.fillText(j.sub,tx+nw,ty);
+    ctx.restore();
+  });
+}
+/* fade between views */
+var fadeT=0;
+function fadeField(){ var cv=$('zcl-field'); clearTimeout(fadeT); cv.classList.add('fading');
+  fadeT=setTimeout(function(){ lblMem={}; orbMem={}; drawField(); cv.classList.remove('fading'); },200); }
+
+/* ════════════════ Time slider (30 days) ════════════════ */
+var MSTEP=15*60000, MSPAN=30*DAY, moonAnim={start:0,playing:false,speed:6,raf:0,last:0,listT:0};
+function localMidnight(d){ var k=ZCLTZ.dayKey(d,TZ).split('-').map(Number); return ZCLTZ.at(k[0],k[1]-1,k[2],0,0,TZ).getTime(); }
+function mEnsureRange(){ var t=viewDate.getTime(); if(!moonAnim.start||t<moonAnim.start||t>moonAnim.start+MSPAN){ moonAnim.start=localMidnight(viewDate); drawMoonSpark(); } }
+function mSync(){ mEnsureRange(); $('zcl-mslider').value=Math.round((viewDate.getTime()-moonAnim.start)/MSTEP); $('zcl-mlab').textContent=(live?'Now · ':'')+fmtFull(viewDate); $('zcl-mnow').hidden=live; }
+function gmst(date){ var dd=date.getTime()/86400000+2440587.5-2451545; return ((280.46061837+360.98564736629*dd)%360+360)%360*D2R; }
+function altOf(date,ra,dec,lat,lng){ var H=gmst(date)+lng*D2R-ra; return Math.asin(Math.sin(lat*D2R)*Math.sin(dec)+Math.cos(lat*D2R)*Math.cos(dec)*Math.cos(H)); }
+function sunAltAt(date,lat,lng){ var dd=date.getTime()/86400000+2440587.5-2451545, g=(357.529+0.98560028*dd)*D2R, q=280.459+0.98564736*dd;
+  var L=(q+1.915*Math.sin(g)+0.020*Math.sin(2*g))*D2R, e=(23.439-0.00000036*dd)*D2R;
+  return altOf(date,Math.atan2(Math.cos(e)*Math.sin(L),Math.cos(L)),Math.asin(Math.sin(e)*Math.sin(L)),lat,lng); }
+function drawMoonSpark(){
+  var L=ZCLTZ.loc(), t0=moonAnim.start, svg='', ns=null, path='';
+  for(var t=t0;t<=t0+MSPAN;t+=30*60000){
+    var x=(t-t0)/MSPAN*1000, dark=sunAltAt(new Date(t),L.lat,L.lng)<-12*D2R;
+    if(dark&&ns===null) ns=x;
+    if((!dark||t+30*60000>t0+MSPAN)&&ns!==null){ svg+='<rect x="'+ns.toFixed(1)+'" y="0" width="'+(x-ns).toFixed(1)+'" height="40" fill="rgba(120,140,200,.16)"/>'; ns=null; }
+    if(((t-t0)/(30*60000))%3===0){ var ga=JupiterEphem.e5(JupiterEphem.jdeOf(new Date(t)),'earth')[2]; path+=(path?'L':'M')+x.toFixed(1)+' '+(20-ga.X/15.5*16).toFixed(1); }
+  }
+  svg+='<path d="'+path+'" fill="none" stroke="rgba(203,168,90,.75)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+  var nx=(Date.now()-t0)/MSPAN*1000; if(nx>=0&&nx<=1000) svg+='<line x1="'+nx.toFixed(1)+'" x2="'+nx.toFixed(1)+'" y1="0" y2="40" stroke="rgba(242,228,190,.5)" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>';
+  $('zcl-mspark').innerHTML=svg;
+  var ticks=''; for(var dd=0;dd<=30;dd+=5) ticks+='<span style="left:'+(dd/30*100).toFixed(2)+'%">'+ZCLTZ.fmtDate(new Date(t0+dd*DAY+12*3600000),{month:'short',day:'numeric'},TZ)+'</span>';
+  $('zcl-mticks').innerHTML=ticks;
+}
+function moonFrame(){ compute(); stamp(); drawField(); drawHero(true); grsStatus(); mSync();
+  var now=performance.now(); if(now-moonAnim.listT>450){ moonAnim.listT=now; renderMoonsNow(); } }
+function mPlay(on,quiet){
+  moonAnim.playing=on; var b=$('zcl-mplay'); b.innerHTML=on?'&#10074;&#10074;':'&#9654;'; b.classList.toggle('on',on); b.setAttribute('aria-label',on?'Pause':'Play');
+  cancelAnimationFrame(moonAnim.raf);
+  if(!on){ if(!quiet) refresh(); return; }
+  if(live){ live=false; var nb=$('zcl-nowbtn'); nb.classList.remove('on'); nb.textContent='○ Now'; }
+  mEnsureRange(); if(viewDate.getTime()>=moonAnim.start+MSPAN-MSTEP) viewDate=new Date(moonAnim.start);
+  moonAnim.last=performance.now();
+  function step(now){ if(!moonAnim.playing) return; var dt=Math.min(80,now-moonAnim.last); moonAnim.last=now;
+    var t=viewDate.getTime()+dt/1000*moonAnim.speed*3600000;
+    if(t>=moonAnim.start+MSPAN){ viewDate=new Date(moonAnim.start+MSPAN); mPlay(false); return; }
+    viewDate=new Date(t); moonFrame(); moonAnim.raf=requestAnimationFrame(step); }
+  moonAnim.raf=requestAnimationFrame(step);
+}
+
+/* ════════════════ Events: GRS, transits, shadow transits ════════════════ */
 function nextGRSTransits(date,n){
-  const out=[]; let t=date.getTime();
-  for(let i=0;i<n;i++){
-    const dCur=new Date(t);
-    let ahead = grsLongitude(dCur) - cmII(dCur);
-    ahead = ((ahead%360)+360)%360;          // 0..360 deg until next transit
-    if(ahead < 2) ahead += 360;             // if essentially now, take the following one
-    t += ahead/JUP_ROT_II*86400000;
-    out.push(new Date(t));
-    t += 60000;                             // nudge past
+  var out=[], t=date.getTime();
+  for(var i=0;i<n;i++){
+    var cm=JupiterEphem.physical(JupiterEphem.jdeOf(new Date(t))).cm2;
+    var ahead=(((grsLongitude(new Date(t))-cm)%360)+360)%360; if(ahead<2) ahead+=360;
+    t+=ahead/870.27*DAY;
+    // one refinement step for the drift and ephemeris
+    var cm2=JupiterEphem.physical(JupiterEphem.jdeOf(new Date(t))).cm2; t+=wrap180(grsLongitude(new Date(t))-cm2)/870.27*DAY;
+    out.push(new Date(t)); t+=60000;
   }
   return out;
 }
-
-// ═══════════════════════  4 · TIME HELPERS  ═══════════════════════
-function fmtClock(d){
-  return new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'2-digit',hour12:true}).format(d);
-}
-function fmtFull(d){
-  return new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short',month:'short',day:'numeric',
-    hour:'numeric',minute:'2-digit',hour12:true}).format(d);
-}
-function fmtDayTime(d){
-  return new Intl.DateTimeFormat('en-US',{timeZone:TZ,month:'short',day:'numeric',
-    hour:'numeric',minute:'2-digit',hour12:true}).format(d);
-}
-function relTime(d, from){
-  let mins = Math.round((d-from)/60000);
-  if(mins<0) mins=0;
-  if(mins<60) return 'in '+mins+' min';
-  const h=Math.floor(mins/60), m=mins%60;
-  if(h<24) return 'in '+h+'h '+(m?m+'m':'').trim();
-  const days=Math.floor(h/24);
-  return 'in '+days+'d '+(h%24)+'h';
-}
-
-
-// ═══════════════════════  5 · RENDER  ═══════════════════════
-const $=id=>document.getElementById(id);
-
-// background star field
-(function(){
-  let s='';
-  for(let i=0;i<150;i++){
-    s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)
-      +'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>';
+var evCache={key:'',list:[]};
+function upcomingEvents(){
+  var start=viewDate.getTime()-3600000, key=Math.floor(start/(6*3600000));
+  if(evCache.key===key) return evCache.list;
+  var L=ZCLTZ.loc(), step=4*60000, prev=null, open={}, list=[];
+  for(var t=start;t<=start+3*DAY;t+=step){
+    var d=new Date(t), g=JupiterEphem.compute(d), cyl=Math.sqrt(POLAR*POLAR*Math.cos(g.DE)*Math.cos(g.DE)+Math.sin(g.DE)*Math.sin(g.DE));
+    var now={};
+    g.moons.forEach(function(m,i){
+      now[m.name+'|t']= (m.X*m.X+(m.Y/cyl)*(m.Y/cyl))<1 && m.Z<0;
+      now[m.name+'|s']= g.shadows[i].onDisc;
+    });
+    if(prev) Object.keys(now).forEach(function(k){
+      if(now[k]&&!prev[k]) open[k]=d;
+      if(!now[k]&&prev[k]&&open[k]){ list.push({k:k,start:open[k],end:d}); delete open[k]; }
+    });
+    prev=now;
   }
-  $('zcl-jstars').innerHTML=s;
-})();
-// corner flourishes
-(function(){
-  const fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
-    +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
-    +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
-    +'<path d="M2 19 C9 19 9 12 2 12" opacity=".55"/><path d="M19 2 C19 9 12 9 12 2" opacity=".55"/>'
-    +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
-  document.querySelectorAll('.zcl-fl').forEach(el=>el.innerHTML=fl);
-})();
-
-let gradSeq=0;
-
-// Draw Jupiter's banded disc into an SVG <g>, radius rPx, centred at (cx,cy).
-// `cm` is the System-II central meridian; the GRS is drawn when its longitude
-// sits within ~70° of the meridian (i.e. on the near hemisphere).
-function jupiterDisc(cx,cy,rPx,date,flipX){
-  const gid='zcljg'+(++gradSeq), cid='zcljc'+(++gradSeq);
-  const ry=rPx*0.935;
-  let s='<defs>';
-  // sphere base — warm cream-tan gradient matching the real Jupiter palette
-  s+='<radialGradient id="'+gid+'" cx="42%" cy="38%" r="68%">'
-    +'<stop offset="0%" stop-color="#F3E4C4"/><stop offset="38%" stop-color="#E4CDA0"/>'
-    +'<stop offset="72%" stop-color="#C9A977"/><stop offset="100%" stop-color="#8A6E45"/></radialGradient>';
-  s+='<clipPath id="'+cid+'"><ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rPx+'" ry="'+ry+'"/></clipPath>';
-  s+='</defs>';
-  s+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rPx+'" ry="'+ry+'" fill="url(#'+gid+')"/>';
-  // belt system
-  const belts=[
-    [-0.64,0.10,'rgba(150,120,84,.30)'],
-    [-0.40,0.13,'rgba(150,116,78,.55)'],
-    [-0.17,0.16,'rgba(120,86,54,.72)'],
-    [ 0.05,0.10,'rgba(176,140,96,.30)'],
-    [ 0.22,0.15,'rgba(126,90,58,.70)'],
-    [ 0.45,0.12,'rgba(150,116,78,.50)'],
-    [ 0.66,0.10,'rgba(150,120,84,.30)'],
-  ];
-  s+='<g clip-path="url(#'+cid+')">';
-  belts.forEach(b=>{
-    const yc=cy+b[0]*ry, hh=b[1]*ry;
-    s+='<rect x="'+(cx-rPx)+'" y="'+(yc-hh)+'" width="'+(2*rPx)+'" height="'+(2*hh)+'" fill="'+b[2]+'"/>';
+  // visibility: Jupiter at least 10° up and the sky dark at mid-event
+  list.forEach(function(e){
+    var mid=new Date((e.start.getTime()+e.end.getTime())/2), ph=JupiterEphem.physical(JupiterEphem.jdeOf(mid));
+    e.visible = altOf(mid,ph.ra,ph.dec,L.lat,L.lng)>10*D2R && sunAltAt(mid,L.lat,L.lng)<-10*D2R;
   });
-  // Great Red Spot
-  const off=grsOffset(date);
-  if(Math.abs(off) < 78){
-    let frac=Math.sin(off*D2R);
-    if(flipX) frac=-frac;
-    const gx=cx + frac*rPx*0.92;
-    const gy=cy + 0.22*ry;
-    const vis=Math.cos(off*D2R);
-    const gw=rPx*0.20*(0.4+0.6*vis), gh=rPx*0.12;
-    const ggid='zclgrs'+(++gradSeq);
-    s+='<defs><radialGradient id="'+ggid+'" cx="50%" cy="42%" r="60%">'
-      +'<stop offset="0%" stop-color="#E07B4A"/><stop offset="55%" stop-color="#C25A2E"/>'
-      +'<stop offset="100%" stop-color="#9A4322"/></radialGradient></defs>';
-    s+='<ellipse cx="'+gx.toFixed(1)+'" cy="'+gy.toFixed(1)+'" rx="'+gw.toFixed(1)+'" ry="'+gh.toFixed(1)
-      +'" fill="url(#'+ggid+')" opacity="'+(0.45+0.55*vis).toFixed(2)+'" stroke="rgba(120,50,28,.5)" stroke-width=".7"/>';
-  }
-  s+='</g>';
-  s+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rPx+'" ry="'+ry+'" fill="none" stroke="rgba(60,40,24,.5)" stroke-width="1.4"/>';
-  s+='<ellipse cx="'+cx+'" cy="'+cy+'" rx="'+rPx+'" ry="'+ry+'" fill="none" stroke="rgba(203,168,90,.25)" stroke-width=".6"/>';
-  return s;
+  list.sort(function(a,b){return a.start-b.start});
+  evCache={key:key,list:list}; return list;
+}
+function renderEvents(){
+  var html='', ev=upcomingEvents(), grs=nextGRSTransits(viewDate,3), L=ZCLTZ.loc();
+  var rows=[];
+  ev.forEach(function(e){ var p=e.k.split('|'); rows.push({t:e.start, html:'<div class="zcl-evrow"><span class="ev">'+(p[1]==='s'?p[0]+'’s shadow crosses Jupiter':p[0]+' crosses in front of Jupiter')
+      +'<span class="tag '+(e.visible?'up':'down')+'">'+(e.visible?'visible':'not visible here')+'</span></span><span class="when">'+fmtDay(e.start)+' · '+fmtT(e.start)+' – '+fmtT(e.end)+'</span></div>'}); });
+  grs.forEach(function(t){ var ph=JupiterEphem.physical(JupiterEphem.jdeOf(t)), vis=altOf(t,ph.ra,ph.dec,L.lat,L.lng)>10*D2R&&sunAltAt(t,L.lat,L.lng)<-10*D2R;
+    rows.push({t:t, html:'<div class="zcl-evrow"><span class="ev">Great Red Spot crosses the centre<span class="tag '+(vis?'up':'down')+'">'+(vis?'visible':'not visible here')+'</span></span><span class="when">'+fmtDay(t)+' · '+fmtT(t)+'</span><span class="sub">Well placed for about an hour either side.</span></div>'}); });
+  rows.sort(function(a,b){return a.t-b.t});
+  html=rows.map(function(r){return r.html}).join('') || '<div class="zcl-note">No transits in the next three days.</div>';
+  $('zcl-events').innerHTML=html;
+  var nv=ev.filter(function(e){return e.visible}).length + grs.filter(function(t){ var ph=JupiterEphem.physical(JupiterEphem.jdeOf(t)); return altOf(t,ph.ra,ph.dec,L.lat,L.lng)>10*D2R&&sunAltAt(t,L.lat,L.lng)<-10*D2R; }).length;
+  $('zcl-evsum').textContent=rows.length+' moon & Red Spot events in the next 3 days'+(nv?' · '+nv+' visible from here':'');
 }
 
-// Render the full eyepiece field for `date` in the current view mode.
-let viewMode='direct';
-function renderField(date){
-  const W=920, H=420, cy=H*0.46;
-  const cx=W/2;
-  const flipX = (viewMode==='inverted'||viewMode==='mirrored');
-  const flipY = (viewMode==='inverted');
-
-  const moons=galilean(date);
-
-  // Jupiter is the star of the show, so we keep the disc large and detailed
-  // every night. The moons span up to 26 radii (Callisto) but most sit much
-  // closer; rather than let a far-flung Callisto shrink the planet, we map
-  // distance through a gentle square-root compression. Moons keep their correct
-  // order, side, and near/far ranking — the disc just stays big and legible.
-  const rPx=70;                                  // generous fixed Jupiter radius
-  const halfW=W/2 - 64;                          // usable half-width in px
-  // largest apparent distance tonight (floor so a tight night isn't over-spread)
-  const maxOut=Math.max(7, ...moons.map(m=>Math.abs(m.X)));
-  // compressed screen-x: sign * (disc + k*sqrt(dist beyond limb))
-  const k = (halfW - rPx) / Math.sqrt(maxOut);
-  function mapX(Xr){
-    const a=Math.abs(Xr);
-    if(a < 1.05) return Xr*rPx;                  // on/near the disc: linear, true position
-    const px = rPx + k*(Math.sqrt(a) - Math.sqrt(1.05));
-    return Math.sign(Xr)*px;
-  }
-
-  let svg='';
-  // orbital-plane guide line
-  svg+='<line x1="40" y1="'+cy+'" x2="'+(W-40)+'" y2="'+cy+'" stroke="rgba(203,168,90,.16)" stroke-width="1"/>';
-
-  // direction labels (depend on view flip)
-  const leftLab = flipX ? 'WEST' : 'EAST';
-  const rightLab= flipX ? 'EAST' : 'WEST';
-  svg+='<text x="44" y="'+(H-16)+'" class="zcl-vlabel" text-anchor="start">'+leftLab+'</text>';
-  svg+='<text x="'+(W-44)+'" y="'+(H-16)+'" class="zcl-vlabel" text-anchor="end">'+rightLab+'</text>';
-
-  function sx(Xr){ let x=mapX(Xr); if(flipX) x=-x; return cx + x }
-
-  // split behind/front so the disc occludes correctly
-  const behind=[], front=[];
-  moons.forEach(m=>{
-    const onDisc = Math.abs(m.X) < 1.05;
-    const hidden = onDisc && m.Z>0;
-    (m.Z>0 ? behind : front).push({m,onDisc,hidden});
+/* ════════════════ Tonight cards ════════════════ */
+function card(label,val,sub,cls){ return '<div class="zcl-pcard'+(cls?' '+cls:'')+'"><div class="zcl-pclabel">'+label+'</div><div class="zcl-pcval">'+val+'</div>'+(sub?'<div class="zcl-pcsub">'+sub+'</div>':'')+'</div>'; }
+var oppCache=null;
+function oppositionNear(date){
+  var best=null, bv=-1;
+  for(var t=date.getTime()-200*DAY;t<date.getTime()+420*DAY;t+=DAY){ var e=JupiterEphem.physical(JupiterEphem.jdeOf(new Date(t))).elong; if(e>bv){bv=e;best=t;} }
+  // pick the opposition nearest in the future if one is within reach
+  var f=null, fv=-1; for(var t2=date.getTime()-5*DAY;t2<date.getTime()+420*DAY;t2+=DAY){ var e2=JupiterEphem.physical(JupiterEphem.jdeOf(new Date(t2))).elong; if(e2>fv){fv=e2;f=t2;} }
+  return new Date(fv>175*D2R?f:best);
+}
+function renderTonight(){
+  var L=ZCLTZ.loc(), g=G, dk=ZCLTZ.dayKey(viewDate,TZ).split('-').map(Number), start=ZCLTZ.at(dk[0],dk[1]-1,dk[2],12,0,TZ).getTime();
+  if(viewDate.getTime()<start-6*3600000) start-=DAY;      // before 6 AM: the night still in progress; after that, the night to come
+  var h0=-0.5667*D2R, prev=null, rise=null, set=null, best=null, ba=-9;
+  for(var t=start;t<=start+DAY;t+=6*60000){ var a=altOf(new Date(t),g.ra,g.dec,L.lat,L.lng)-h0;
+    if(prev!==null){ if(prev<0&&a>=0&&!rise) rise=new Date(t-6*60000*a/(a-prev)); if(prev>=0&&a<0&&!set) set=new Date(t-6*60000*a/(a-prev)); }
+    if(a>0&&a>ba&&sunAltAt(new Date(t),L.lat,L.lng)<-12*D2R){ba=a;best=new Date(t);} prev=a; }
+  var altNow=altOf(viewDate,g.ra,g.dec,L.lat,L.lng)*R2D, up=altNow>0;
+  if(!oppCache||Math.abs(oppCache.from-viewDate)>20*DAY) oppCache={from:viewDate.getTime(),d:oppositionNear(viewDate)};
+  var od=oppCache.d, days=Math.round((od-viewDate)/DAY), grs=nextGRSTransits(viewDate,1)[0];
+  var html='';
+  html+=card('Right now', up? Math.round(altNow)+'° up':'Below horizon', up?'Altitude above the horizon':(rise?'Rises '+fmtT(rise):''), up&&altNow>25?'accent':'');
+  html+=card('Best view', best?fmtT(best):'Daytime only', best?'Highest in darkness · '+Math.round((ba+h0)*R2D)+'° up':'Too close to the Sun tonight');
+  html+=card('Rises · sets', (rise?fmtT(rise):'—')+' · '+(set?fmtT(set):'—'), 'For your saved location');
+  html+=card('Red Spot next', fmtT(grs), ZCLTZ.dayKey(grs,TZ)===ZCLTZ.dayKey(viewDate,TZ)?'Crosses the centre of the disc':fmtDay(grs));
+  html+=card('Size', arc(2*g.radiusArcsec), 'Across the equator');
+  html+=card('Brightness', 'mag '+g.mag.toFixed(1), 'Brighter than any star');
+  html+=card('Distance', (g.delta*149.598).toFixed(0)+' million km', 'Light takes '+Math.round(g.delta*8.317)+' minutes');
+  html+=card('Opposition', fmtDay(od), days===0?'Tonight — closest & brightest':days>0?'In '+days+' days':Math.abs(days)+' days ago');
+  $('zcl-tonight').innerHTML=html;
+}
+/* The moons right now + the four worlds (with their photos) */
+function renderMoonsNow(){
+  var html='';
+  G.moons.map(function(m,i){ return {m:m,i:i}; }).sort(function(a,b){ return b.m.X-a.m.X; }).forEach(function(o){
+    var s=moonState(o.i), sk=ringToSky(o.m.X,o.m.Y), sep=Math.hypot(sk[0],sk[1])*G.radiusArcsec, dir=sk[0]>0?'east':'west';
+    var lab={transit:'In front of Jupiter',behind:'Behind Jupiter',eclipsed:'In Jupiter’s shadow',clear:(dir==='east'?'East':'West')+' of Jupiter'}[s];
+    var sub = s==='transit'?'crossing Jupiter’s face':s==='behind'?'hidden behind the planet':s==='eclipsed'?'eclipsed — gone dark':arc(sep)+' '+dir+' · '+(Math.abs(o.m.X)/2).toFixed(1)+' Jupiter-widths out';
+    var img='img/'+o.m.name.toLowerCase()+'.jpg';
+    html+='<div class="zcl-moonchip"><img src="'+img+'" alt="'+o.m.name+'" class="zcl-moon-thumb" data-name="'+o.m.name+'">'
+      +'<span><span class="mn" style="color:'+MOONS[o.m.name].col+'">'+o.m.name+'</span><br><span class="ms">'+sub+'</span></span>'
+      +'<span class="zcl-moonstate '+s+'">'+lab+'</span></div>';
   });
-
-  // ---- label placement: stagger into tiers so names never collide ----
-  const visible=moons.filter(m=>!(Math.abs(m.X)<1.05 && m.Z>0))
-                     .map(m=>({m, x:sx(m.X)}))
-                     .sort((a,b)=>a.x-b.x);
-  const TIER=20, LBL_HALF=34;
-  const labelY={};
-  const placedAbove=[], placedBelow=[];   // x-positions used per side
-  visible.forEach((v,i)=>{
-    let up = (i%2===0);                    // alternate above/below by default
-    const lane = up?placedAbove:placedBelow;
-    // tier 1,2,3... until clear of neighbours on this side
-    let tier=1;
-    while(lane.some(px=>Math.abs(px.x - v.x) < LBL_HALF*2 && px.tier===tier)) tier++;
-    lane.push({x:v.x,tier});
-    const base = rPx + 16;
-    labelY[v.m.name] = up ? cy - base - (tier-1)*TIER
-                          : cy + base + (tier-1)*TIER + 4;
-  });
-
-  function drawMoon(o){
-    const m=o.m;
-    if(o.hidden) return '';
-    const x=sx(m.X), y=cy;
-    const rad = (m.name==='Ganymede')?7:(m.name==='Callisto')?6.5:(m.name==='Io')?6:6;
-    const imgFile = m.name.toLowerCase()+'.jpg';
-    const cid='zclmc'+(++gradSeq);
-    let g='';
-    g+='<defs><clipPath id="'+cid+'"><circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+rad+'"/></clipPath></defs>';
-    g+='<image href="img/'+imgFile+'" x="'+(x-rad).toFixed(1)+'" y="'+(y-rad).toFixed(1)+'" width="'+(rad*2)+'" height="'+(rad*2)+'" clip-path="url(#'+cid+')" preserveAspectRatio="xMidYMid slice"/>';
-    // subtle rim
-    g+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+rad+'" fill="none" stroke="'+m.col+'" stroke-opacity=".6" stroke-width=".8"/>';
-    g+='<circle cx="'+x.toFixed(1)+'" cy="'+y.toFixed(1)+'" r="'+(rad+3.5)+'" fill="none" stroke="'+m.col+'" stroke-opacity=".25" stroke-width=".7"/>';
-    const ly=labelY[m.name];
-    if(Math.abs(ly-y) > rad+18){
-      const tgt = ly<y ? ly+9 : ly-11;
-      g+='<line x1="'+x.toFixed(1)+'" y1="'+(y+(ly<y?-rad-2:rad+2)).toFixed(1)+'" x2="'+x.toFixed(1)+'" y2="'+tgt.toFixed(1)
-        +'" stroke="'+m.col+'" stroke-opacity=".3" stroke-width=".7"/>';
-    }
-    g+='<text x="'+x.toFixed(1)+'" y="'+ly.toFixed(1)+'" class="zcl-mnlabel" text-anchor="middle" '
-      +'style="fill:'+m.col+'">'+m.name+'</text>';
-    return g;
-  }
-
-  behind.forEach(o=>{ svg+=drawMoon(o) });
-  svg+=jupiterDisc(cx,cy,rPx,date,flipX);
-  front.forEach(o=>{ svg+=drawMoon(o) });
-
-  // "N" tick so flips are legible
-  const ny = flipY ? cy+rPx*0.935+16 : cy-rPx*0.935-10;
-  svg+='<text x="'+cx+'" y="'+ny.toFixed(1)+'" class="zcl-vlabel" text-anchor="middle">N</text>';
-
-  $('zcl-field').innerHTML=svg;
+  $('zcl-moonsnow').innerHTML=html;
+}
+function renderWorlds(){
+  $('zcl-worlds').innerHTML=NAMES.map(function(n){ var m=MOONS[n], img='img/'+n.toLowerCase()+'.jpg';
+    return '<div class="zcl-pcard" style="display:flex;gap:12px;align-items:flex-start">'
+      +'<img src="'+img+'" alt="'+n+'" class="zcl-moon-thumb" data-name="'+n+'" style="width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid rgba(203,168,90,.3);cursor:pointer">'
+      +'<div><div class="zcl-pcval" style="color:'+m.col+';font-size:15px">'+n+'</div><div class="zcl-pcsub" style="margin-top:2px">'+m.size+' across · orbits in '+m.per+'</div>'
+      +'<div class="zcl-tgtwhy">'+m.why+'</div></div></div>'; }).join('');
 }
 
-
-// ═══════════════════════  6 · DETAIL PANELS  ═══════════════════════
-function card(label,val,sub,cls){
-  return '<div class="zcl-pcard'+(cls?' '+cls:'')+'">'
-    +'<div class="zcl-pclabel">'+label+'</div>'
-    +'<div class="zcl-pcval">'+val+'</div>'
-    +(sub?'<div class="zcl-pcsub">'+sub+'</div>':'')+'</div>';
-}
-
-function renderBody(date){
-  let html='';
-
-  // ── Great Red Spot ──
-  const off=grsOffset(date);
-  const transiting = Math.abs(off) < 8;       // within ~13 min of dead centre
-  const wellPlaced = Math.abs(off) < 50;      // S&T: well placed ±50 min ≈ ±50°
-  html+='<div class="zcl-psec"><div class="zcl-psec-label">The Great Red Spot</div>';
-  let cls, dotcol, msg;
-  if(transiting){
-    cls='vis'; dotcol='#E07B4A';
-    msg='<b>Crossing the centre right now.</b> The Red Spot is squarely facing Earth, dead-centre on Jupiter’s disc — the best possible moment to catch it.';
-  }else if(wellPlaced){
-    cls='vis'; dotcol='#D6844A';
-    const side = off>0 ? 'rotating into view and heading toward the centre' : 'past the centre and rotating toward the edge';
-    msg='<b>Visible now.</b> The Red Spot is on the side of Jupiter facing us, '+side+'.';
-  }else{
-    cls='hidden'; dotcol='#6a6a6a';
-    msg='Right now it’s turned to the far side of Jupiter, out of view. Jupiter spins once every 10 hours, so the spot comes back around to face us a couple of times a day.';
-  }
-  html+='<div class="zcl-grsnow '+cls+'"><span class="zcl-grsdot" style="background:'+dotcol+'"></span><span>'+msg+'</span></div>';
-
-  const trs=nextGRSTransits(date,3);
-  html+='<div class="zcl-pcard">';
-  html+='<div class="zcl-pclabel">Next times it faces us</div>';
-  trs.forEach(t=>{
-    html+='<div class="zcl-transit-row"><span class="zcl-transit-when">'+fmtDayTime(t)
-      +'</span><span class="zcl-transit-rel">'+relTime(t,date)+'</span></div>';
-  });
-  html+='<div class="zcl-note">These are the moments the Red Spot crosses the middle of Jupiter\u2019s disc, when it faces Earth most directly. It stays well placed for about an hour before and after. Times follow Sky &amp; Telescope\u2019s tracking of the spot and can run a few minutes off as the storm slowly drifts.</div>';
-  html+='</div></div>';
-
-  // ── The moons right now ──
-  const moons=galilean(date);
-  html+='<div class="zcl-psec"><div class="zcl-psec-label">The Galilean Moons Right Now</div>';
-  html+='<div class="zcl-moonlist">';
-  // order them as they appear in the sky (west→east by signed X), like the view
-  const flipX=(viewMode==='inverted'||viewMode==='mirrored');
-  const ordered=moons.slice().sort((a,b)=> (flipX? a.X-b.X : b.X-a.X));
-  ordered.forEach(m=>{
-    const st=moonState(m);
-    const elong=Math.abs(m.X).toFixed(1);
-    let sub;
-    if(st.key==='front') sub='passing across the disc';
-    else if(st.key==='behind') sub='hidden behind the planet';
-    else sub=elong+' Jupiter-radii out';
-    html+='<div class="zcl-moonchip"><i style="background:'+m.col+'"></i>'
-      +'<span><span class="mn">'+m.name+'</span><br><span class="ms">'+sub+'</span></span>'
-      +'<span class="zcl-moonstate '+st.key+'">'+st.label+'</span></div>';
-  });
-  html+='</div>';
-  html+='</div>';
-
-  // ── Meet the moons ──
-  html+='<div class="zcl-psec"><div class="zcl-psec-label">The Four Worlds</div>';
-  html+='<div class="zcl-pcards">';
-  MOON_INFO.forEach(m=>{
-    const img='img/'+m.name.toLowerCase()+'.jpg';
-    html+='<div class="zcl-pcard" style="display:flex;gap:12px;align-items:flex-start">'
-      +'<img src="'+img+'" alt="'+m.name+'" class="zcl-moon-thumb" data-src="'+img+'" data-name="'+m.name
-      +'" style="width:58px;height:58px;border-radius:50%;object-fit:cover;flex-shrink:0;border:1px solid rgba(203,168,90,.3);cursor:pointer">'
-      +'<div><div class="zcl-pcval" style="color:'+m.col+';font-size:15px">'+m.name+'</div>'
-      +'<div class="zcl-pcsub" style="margin-top:2px">'+m.size+' across · orbits in '+m.period+'</div>'
-      +'<div class="zcl-tgtwhy">'+m.why+'</div></div>'
-      +'</div>';
-  });
-  html+='</div></div>';
-
-  // ── Jupiter facts ──
-  html+='<div class="zcl-psec"><div class="zcl-psec-label">The Planet Itself</div>';
-  html+='<img id="zcl-jupiter-photo" src="img/jupiter.jpg" alt="Jupiter" style="width:100%;border-radius:7px;object-fit:cover;max-height:180px;margin-bottom:11px;border:1px solid rgba(203,168,90,.2);cursor:pointer" title="Tap to enlarge">';
-  html+='<div class="zcl-pcards cols3">'
-    +card('Disc rotation','9h 56m','One Jupiter \u201Cday\u201D')
-    +card('Diameter','139,820 km','11 Earths across')
-    +card('Cloud bands','Belts &amp; zones','Dark belts, bright zones')
-    +'</div>';
-  html+='<div class="zcl-note">The dark stripes are <i>belts</i> — warmer, sinking gas — and the bright stripes are <i>zones</i> of cool, rising cloud. The Great Red Spot is a storm wider than Earth, churning in the South Equatorial Belt for at least 190 years.</div>';
-  html+='</div>';
-
-  $('zcl-body').innerHTML=html;
-}
-
-// ═══════════════════════  7 · INIT  ═══════════════════════
-let viewDate=new Date();
-let liveTimer=null, live=true;
-
-function refresh(){
-  $('zcl-now').textContent=fmtFull(viewDate);
-  $('zcl-stamp').textContent=fmtFull(viewDate);
-  renderField(viewDate);
-  renderBody(viewDate);
-}
+/* ════════════════ Wiring ════════════════ */
+function stamp(){ $('zcl-stamp').textContent=fmtFull(viewDate); }
+function refresh(){ compute(); stamp(); drawHero(false); grsStatus(); heroNote(); drawField(); mSync(); renderTonight(); renderEvents(); renderMoonsNow(); }
 function setLive(on){
-  live=on;
-  const b=$('zcl-nowbtn');
-  b.classList.toggle('on',on);
-  b.textContent = on ? '● Now' : '○ Now';
-  if(on){
-    viewDate=new Date();
-    refresh();
-    if(!liveTimer) liveTimer=setInterval(()=>{ if(live){ viewDate=new Date(); refresh() } },60000);
-  }
+  live=on; var b=$('zcl-nowbtn'); b.classList.toggle('on',on); b.textContent=on?'● Now':'○ Now';
+  if(on){ if(moonAnim.playing) mPlay(false,true); viewDate=new Date(); refresh();
+    if(!liveTimer) liveTimer=setInterval(function(){ if(live&&!document.hidden){ viewDate=new Date(); compute(); stamp(); drawField(); drawHero(false); grsStatus(); mSync(); renderMoonsNow(); } },60000); }
 }
-function stepHours(h){
-  if(live) setLive(false);
-  else { viewDate=new Date(viewDate.getTime()+h*3600000); refresh(); return }
-  viewDate=new Date(viewDate.getTime()+h*3600000);
-  refresh();
+function stepHours(h){ if(moonAnim.playing) mPlay(false,true); if(live) setLive(false); viewDate=new Date(viewDate.getTime()+h*3600000); refresh(); }
+$('zcl-back').addEventListener('click',function(){stepHours(-1)});
+$('zcl-fwd').addEventListener('click',function(){stepHours(1)});
+$('zcl-nowbtn').addEventListener('click',function(){setLive(true)});
+$('zcl-labels').addEventListener('click',function(){ st.labels=!st.labels; this.classList.toggle('on',st.labels); drawHero(false); });
+$('zcl-zin').addEventListener('click',function(){ zoomAt(1.6); });
+$('zcl-zout').addEventListener('click',function(){ zoomAt(1/1.6); });
+$('zcl-zreset').addEventListener('click',function(){ hz.zoom=1; clampPan(); drawHero(false); heroNote(); });
+$('zcl-mplay').addEventListener('click',function(){ mPlay(!moonAnim.playing); });
+$('zcl-mslider').addEventListener('input',function(){ if(moonAnim.playing) mPlay(false,true);
+  if(live){ live=false; var nb=$('zcl-nowbtn'); nb.classList.remove('on'); nb.textContent='○ Now'; }
+  viewDate=new Date(moonAnim.start+(+this.value)*MSTEP); moonFrame(); });
+$('zcl-mslider').addEventListener('change',function(){ refresh(); });
+$('zcl-mnow').addEventListener('click',function(){ setLive(true); });
+[].forEach.call(document.querySelectorAll('#zcl-mspeed [data-speed]'),function(b){ b.addEventListener('click',function(){ moonAnim.speed=+b.dataset.speed;
+  [].forEach.call(document.querySelectorAll('#zcl-mspeed [data-speed]'),function(x){ x.classList.toggle('on',x===b); }); }); });
+$('zcl-dinfo').addEventListener('click',function(){ var o=!this.classList.contains('on'); this.classList.toggle('on',o); this.setAttribute('aria-expanded',o);
+  $('zcl-dinfotxt').classList.toggle('open',o&&st.mode!=='top'); $('zcl-orbnote').classList.toggle('open',o&&st.mode==='top'); });
+function syncBars(){
+  if(st.mode!=='top' && st.lastEye!==st.mode){ st.lastEye=st.mode; if(G){ drawHero(); heroNote(); } }
+  [].forEach.call(document.querySelectorAll('#zcl-viewbar [data-mode]'),function(b){ b.classList.toggle('on',b.dataset.mode===st.mode); });
+  [].forEach.call(document.querySelectorAll('#zcl-zoombar [data-zoom]'),function(b){ b.classList.toggle('on',b.dataset.zoom===st.zoom); });
 }
-
-$('zcl-back').addEventListener('click',()=>stepHours(-1));
-$('zcl-fwd').addEventListener('click',()=>stepHours(1));
-$('zcl-nowbtn').addEventListener('click',()=>setLive(true));
-
-// arrow keys step by an hour
-document.addEventListener('keydown',e=>{
-  const ae=document.activeElement;
-  if(ae && ae.tagName==='INPUT') return;
-  if(e.key==='ArrowRight'){ e.preventDefault(); stepHours(1) }
-  else if(e.key==='ArrowLeft'){ e.preventDefault(); stepHours(-1) }
-});
-
-// view-mode toggle
-document.querySelectorAll('#zcl-viewbar .zcl-vbtn').forEach(b=>{
-  b.addEventListener('click',()=>{
-    document.querySelectorAll('#zcl-viewbar .zcl-vbtn').forEach(x=>x.classList.remove('on'));
-    b.classList.add('on');
-    viewMode=b.getAttribute('data-mode');
-    refresh();
-  });
-});
-
-setLive(true);
-
+[].forEach.call(document.querySelectorAll('#zcl-viewbar [data-mode]'),function(b){ b.addEventListener('click',function(){ if(st.mode===b.dataset.mode) return; st.mode=b.dataset.mode; saveView(); syncBars(); fadeField(); }); });
+[].forEach.call(document.querySelectorAll('#zcl-zoombar [data-zoom]'),function(b){ b.addEventListener('click',function(){ if(st.zoom===b.dataset.zoom) return; st.zoom=b.dataset.zoom; saveView(); syncBars(); fadeField(); }); });
+function rotate(d){ st.rot[st.mode]=(((st.rot[st.mode]||0)+d)%360+360)%360; saveView(); drawField(); drawHero(); }
+$('zcl-rotl').addEventListener('click',function(){rotate(-15)});
+$('zcl-rotr').addEventListener('click',function(){rotate(15)});
+document.addEventListener('keydown',function(e){ var ae=document.activeElement; if(ae&&ae.tagName==='INPUT') return;
+  if($('zcl-moon-lb').classList.contains('on')) return;
+  if(e.key==='ArrowRight'){e.preventDefault();stepHours(1)} else if(e.key==='ArrowLeft'){e.preventDefault();stepHours(-1)} });
+var rz=null; window.addEventListener('resize',function(){ clearTimeout(rz); rz=setTimeout(function(){ drawHero(false); drawField(); },120); });
+document.addEventListener('visibilitychange',function(){ if(!document.hidden&&live){ viewDate=new Date(); refresh(); } });
+syncBars(); renderWorlds(); compute(); drawMoonSpark();
+(function(){ var q=/[?&]t=([^&]+)/.exec(location.search), d=q&&new Date(decodeURIComponent(q[1]));
+  if(d&&!isNaN(d)){ live=false; viewDate=d; var b=$('zcl-nowbtn'); b.classList.remove('on'); b.textContent='○ Now'; refresh(); } else setLive(true); })();
 })();
 </script>
+<script>
+/* Moon photo lightbox — Jupiter's moons, as before. */
+(function(){
+  var GALLERY=[
+    {src:'img/io.jpg',name:'Io',caption:'The most volcanically active world in the solar system. Squeezed by Jupiter’s immense tidal forces and the gravitational tug of the outer moons, Io’s interior is kept hot enough to drive over 400 active volcanoes, which resurface it constantly.'},
+    {src:'img/europa.jpg',name:'Europa',caption:'A global ocean of liquid water, estimated to hold twice as much water as all of Earth’s oceans, lies beneath Europa’s smooth ice shell. The reddish cracks are fractures in the ice, stained by salts welling up from below.'},
+    {src:'img/ganymede.jpg',name:'Ganymede',caption:'The largest moon in the solar system — bigger than the planet Mercury — and the only moon known to generate its own magnetic field. Its surface mixes ancient dark cratered terrain with younger bright grooved ice.'},
+    {src:'img/callisto.jpg',name:'Callisto',caption:'The most heavily cratered object in the solar system, Callisto’s dark icy surface is a near-pristine record of four billion years of bombardment. Orbiting well outside Jupiter’s harsh radiation belts, it is a candidate base for future exploration.'}
+  ];
+  var idx=0, lb=document.getElementById('zcl-moon-lb');
+  function show(i){ idx=((i%GALLERY.length)+GALLERY.length)%GALLERY.length; var it=GALLERY[idx];
+    var im=document.getElementById('zcl-moon-lb-img'); im.src=it.src; im.alt=it.name;
+    document.getElementById('zcl-moon-lb-title').textContent=it.name; document.getElementById('zcl-moon-lb-caption').textContent=it.caption; }
+  document.addEventListener('click',function(e){ var t=e.target.closest&&e.target.closest('.zcl-moon-thumb'); if(!t) return;
+    var n=t.getAttribute('data-name'), i=GALLERY.findIndex(function(g){return g.name===n}); show(i<0?0:i); lb.classList.add('on'); });
+  document.getElementById('zcl-lb-prev').addEventListener('click',function(e){ e.stopPropagation(); show(idx-1); });
+  document.getElementById('zcl-lb-next').addEventListener('click',function(e){ e.stopPropagation(); show(idx+1); });
+  document.getElementById('zcl-moon-lb-close').addEventListener('click',function(e){ e.stopPropagation(); lb.classList.remove('on'); });
+  lb.addEventListener('click',function(e){ if(e.target===this) lb.classList.remove('on'); });
+  document.addEventListener('keydown',function(e){ if(!lb.classList.contains('on')) return;
+    if(e.key==='ArrowLeft'||e.key==='ArrowUp') show(idx-1); else if(e.key==='ArrowRight'||e.key==='ArrowDown') show(idx+1); else if(e.key==='Escape') lb.classList.remove('on'); });
+})();
+</script>
+
+<script>setTimeout(function(){ZCLSeason.render(document.getElementById('zcl-season'),'Jupiter')},300);</script>
 <nav class="pwa-nav">
 <a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
 <script>
-if('serviceWorker' in navigator){
-  window.addEventListener('load',function(){
-    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
-  });
-}
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)})})}
+(function(){try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(function(a){if(!a){navigator.storage.persist().catch(function(){});}}).catch(function(){navigator.storage.persist().catch(function(){});});}}catch(e){}})();
 </script>
 <script>
 (function(){
@@ -753,25 +1187,7 @@ if('serviceWorker' in navigator){
 #zcl-set-modal{position:fixed;inset:0;z-index:10050;display:none;
   align-items:center;justify-content:center;padding:env(safe-area-inset-top) 16px 16px}
 #zcl-set-modal.on{display:flex}
-/* Moon/planet photo lightbox */
-#zcl-moon-lb{position:fixed;inset:0;z-index:20000;display:none;flex-direction:column;
-  align-items:center;justify-content:center;
-  background:rgba(0,0,0,.92);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
-#zcl-moon-lb.on{display:flex}
-#zcl-moon-lb-img{width:min(72vw,72vh);height:min(72vw,72vh);border-radius:50%;object-fit:cover;
-  border:2px solid rgba(203,168,90,.4);box-shadow:0 0 60px rgba(0,0,0,.8);display:block;flex-shrink:0}
-#zcl-moon-lb-nav{display:flex;align-items:center;justify-content:center;gap:20px;margin-top:18px;pointer-events:all}
-.zcl-lb-arrow{background:none;border:1px solid rgba(203,168,90,.35);border-radius:50%;
-  width:38px;height:38px;color:#CBA85A;font-size:22px;cursor:pointer;display:flex;
-  align-items:center;justify-content:center;flex-shrink:0;transition:background .15s}
-.zcl-lb-arrow:hover{background:rgba(203,168,90,.15)}
-#zcl-moon-lb-title{font-family:'Montserrat',sans-serif;font-size:15px;letter-spacing:.12em;
-  color:#F2E4BE;text-transform:uppercase;text-align:center;min-width:140px}
-#zcl-moon-lb-caption{font-family:'Montserrat',sans-serif;font-size:12px;line-height:1.6;
-  color:#9A8E6E;text-align:center;max-width:min(480px,90vw);margin-top:10px;
-  padding:0 16px}
-#zcl-moon-lb-close{position:absolute;top:18px;right:22px;background:none;border:none;
-  color:#7A6E55;font-size:26px;cursor:pointer;line-height:1;padding:4px}
+#zcl-set-backdrop{position:absolute;inset:0;background:rgba(0,0,0,.6);
   backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px)}
 #zcl-set-sheet{position:relative;width:100%;max-width:520px;max-height:88vh;
   background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
@@ -779,91 +1195,19 @@ if('serviceWorker' in navigator){
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
-<div id="zcl-moon-lb">
-  <button id="zcl-moon-lb-close" aria-label="Close">&#10005;</button>
-  <img id="zcl-moon-lb-img" src="" alt="">
-  <div id="zcl-moon-lb-nav">
-    <button class="zcl-lb-arrow" id="zcl-lb-prev" aria-label="Previous">&#8249;</button>
-    <div id="zcl-moon-lb-title"></div>
-    <button class="zcl-lb-arrow" id="zcl-lb-next" aria-label="Next">&#8250;</button>
-  </div>
-  <div id="zcl-moon-lb-caption"></div>
-</div>
-<script>
-(function(){
-  // Gallery: Jupiter first, then the four moons in order.
-  // Captions are short, factual, and in the same voice as the rest of the almanac.
-  var GALLERY = [
-    { src:'img/jupiter.jpg', name:'Jupiter',
-      caption:'A NASA/Hubble composite showing Jupiter\u2019s cloud bands. The dark belts are warmer, descending gas; the bright zones are cool, rising cloud. The Great Red Spot \u2014 the oval storm in the South Equatorial Belt \u2014 has been churning for at least 190 years and is wider than Earth.' },
-    { src:'img/io.jpg', name:'Io',
-      caption:'The most volcanically active world in the solar system. Squeezed by Jupiter\u2019s immense tidal forces and the gravitational tug of the outer moons, Io\u2019s interior stays permanently molten \u2014 over 400 active volcanoes erupt continuously, some hurling plumes hundreds of kilometres high.' },
-    { src:'img/europa.jpg', name:'Europa',
-      caption:'A global ocean of liquid water, estimated to hold twice as much water as all of Earth\u2019s oceans, lies beneath Europa\u2019s smooth ice shell. The reddish cracks are fractures in the ice, stained by salts welling up from below. NASA\u2019s Europa Clipper mission launched in 2024 to study its habitability.' },
-    { src:'img/ganymede.jpg', name:'Ganymede',
-      caption:'The largest moon in the solar system \u2014 bigger than the planet Mercury \u2014 and the only moon known to generate its own magnetic field. Its surface mixes ancient dark cratered terrain with younger bright grooved ridges, and it too is thought to harbour a buried ocean.' },
-    { src:'img/callisto.jpg', name:'Callisto',
-      caption:'The most heavily cratered object in the solar system, Callisto\u2019s dark icy surface is a near-pristine record of four billion years of bombardment. Orbiting well outside Jupiter\u2019s harsh radiation belts, it is considered a likely staging point for future human exploration of the Jovian system.' },
-  ];
-
-  var idx = 0;
-
-  function show(i){
-    idx = ((i % GALLERY.length) + GALLERY.length) % GALLERY.length;
-    var item = GALLERY[idx];
-    document.getElementById('zcl-moon-lb-img').src = item.src;
-    document.getElementById('zcl-moon-lb-img').alt = item.name;
-    document.getElementById('zcl-moon-lb-title').textContent = item.name;
-    document.getElementById('zcl-moon-lb-caption').textContent = item.caption;
-  }
-
-  function open(startIdx){
-    show(startIdx);
-    document.getElementById('zcl-moon-lb').classList.add('on');
-  }
-
-  function close(){
-    document.getElementById('zcl-moon-lb').classList.remove('on');
-  }
-
-  // Thumbnail clicks — moons
-  document.addEventListener('click', function(e){
-    var t = e.target.closest('.zcl-moon-thumb');
-    if(t){
-      var name = t.getAttribute('data-name');
-      var i = GALLERY.findIndex(function(g){ return g.name === name });
-      open(i >= 0 ? i : 1);
-    }
-  });
-
-  // Jupiter planet photo click
-  document.addEventListener('click', function(e){
-    if(e.target.id === 'zcl-jupiter-photo') open(0);
-  });
-
-  document.getElementById('zcl-lb-prev').addEventListener('click', function(e){
-    e.stopPropagation(); show(idx - 1);
-  });
-  document.getElementById('zcl-lb-next').addEventListener('click', function(e){
-    e.stopPropagation(); show(idx + 1);
-  });
-  document.getElementById('zcl-moon-lb-close').addEventListener('click', function(e){
-    e.stopPropagation(); close();
-  });
-  // Tap background to close (but not nav controls)
-  document.getElementById('zcl-moon-lb').addEventListener('click', function(e){
-    if(e.target === this) close();
-  });
-  // Keyboard arrows
-  document.addEventListener('keydown', function(e){
-    if(!document.getElementById('zcl-moon-lb').classList.contains('on')) return;
-    if(e.key === 'ArrowLeft' || e.key === 'ArrowUp') show(idx - 1);
-    else if(e.key === 'ArrowRight' || e.key === 'ArrowDown') show(idx + 1);
-    else if(e.key === 'Escape') close();
-  });
-})();
-</script>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>
   <div id="zcl-set-sheet"><iframe id="zcl-set-frame" title="Settings"></iframe></div>

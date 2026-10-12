@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Sky Finder · Dark Sky Almanac">
 <meta property="og:description" content="Point your phone's camera at the sky to identify stars, planets, and deep-sky objects in augmented reality, with a live compass and altitude readout.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/finder">
 <meta property="og:url" content="https://app.darkskyalmanac.com/finder">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -62,7 +62,8 @@ body{padding-top:calc(env(safe-area-inset-top) + 56px);overscroll-behavior:none}
      ════════════════════════════════════════════════════════════ -->
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
 
 <style>
 #zcl-sf-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;overflow-x:hidden;
@@ -95,12 +96,12 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
 .zcl-sf-titlebar{display:none}     /* hidden in AR mode — readouts and date-box are enough */
 
 /* Before camera is started, restore the normal stacked layout. */
-.zcl-sf-titlebar.intro-mode{display:block;position:static;padding:30px 24px 8px;background:none}
-.zcl-sf-titlebar.intro-mode .zcl-sf-maintitle{color:#F2E4BE;font-size:clamp(22px,3.6vw,32px);font-weight:600;letter-spacing:.06em}
-.zcl-sf-intro{max-width:560px;margin:0 auto 22px;padding:20px;border-radius:9px;
-  background:rgba(203,168,90,.04);border:1px solid rgba(203,168,90,.22)}
-.zcl-sf-intro p{font-size:13.5px;line-height:1.65;color:#B5A983;margin:0 0 14px;text-align:center}
-.zcl-sf-intro p:last-of-type{margin-bottom:0}
+.zcl-sf-pill{display:none;position:fixed;left:50%;bottom:120px;transform:translateX(-50%);z-index:10050;
+  background:rgba(13,10,24,.92);border:1px solid rgba(203,168,90,.6);border-radius:24px;padding:13px 22px;
+  color:#E6CC85;font-family:'Montserrat',sans-serif;font-size:14px;font-weight:600;letter-spacing:.04em;
+  cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  box-shadow:0 4px 24px rgba(0,0,0,.55)}
+.zcl-sf-pill.on{display:block}
 .zcl-sf-perms{display:flex;flex-direction:column;gap:8px;margin:14px 0}
 .zcl-sf-perm{display:flex;align-items:center;gap:12px;padding:9px 12px;border-radius:6px;
   background:rgba(0,0,0,.25);border:1px solid rgba(203,168,90,.15);font-size:12.5px;color:#9A8A66}
@@ -135,12 +136,14 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
 .zcl-sf-rbox.az{top:10px;left:10px}
 .zcl-sf-rbox.alt{top:10px;right:10px;text-align:right}
 /* Low-profile date box, centered at top between the two readouts. */
-.zcl-sf-datebox{position:absolute;top:10px;left:50%;transform:translateX(-50%);
+.zcl-sf-datebox{position:absolute;top:16px;left:50%;transform:translateX(-50%);
   background:rgba(10,8,20,.65);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);
   border:1px solid rgba(203,168,90,.28);border-radius:5px;
   color:#E4D9B8;font-family:'Montserrat',-apple-system,sans-serif;font-size:12px;
-  letter-spacing:.04em;padding:5px 11px;cursor:pointer;z-index:6;line-height:1;
-  white-space:nowrap;transition:border-color .15s,background .15s}
+  letter-spacing:.04em;padding:7px 15px;cursor:pointer;z-index:20;line-height:1;
+  white-space:nowrap;transition:border-color .15s,background .15s;
+  pointer-events:auto;
+  -webkit-tap-highlight-color:rgba(203,168,90,.25);touch-action:manipulation}
 .zcl-sf-datebox:hover{border-color:rgba(203,168,90,.5);background:rgba(10,8,20,.8)}
 .zcl-sf-datebox.changed{border-color:rgba(203,168,90,.6);color:#F2E4BE}
 /* Date slider modal: tap the date box to scrub through nights. */
@@ -199,6 +202,14 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
 
 /* ── AR sky-object markers ── */
 .zcl-sf-ar{position:absolute;inset:0;pointer-events:none;overflow:hidden;z-index:2}
+/* Constellation line-art — sits just under the star markers, fades in near crosshair */
+.zcl-sf-constel{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
+  z-index:1;overflow:visible;opacity:0;transition:opacity .35s ease}
+.zcl-sf-constel.show{opacity:1}
+.zcl-sf-constel .cline{stroke:#FF9D6E;stroke-width:1.6;stroke-opacity:.5;fill:none;
+  stroke-linecap:round;stroke-linejoin:round}
+.zcl-sf-constel .ctitle{fill:#FF9D6E;font:600 10px Montserrat,sans-serif;
+  letter-spacing:.12em;text-transform:uppercase;opacity:.85}
 /* Summer Triangle connector lines — sit just under the star markers */
 .zcl-sf-triangle{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;
   z-index:1;overflow:visible}
@@ -247,6 +258,8 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
   background:rgba(255,200,50,.15);text-shadow:0 0 8px rgba(255,200,50,.6)}
 .zcl-sf-moonbtn{color:#8A6E32;border:1px solid rgba(203,168,90,.3)}
 .zcl-sf-moonbtn.on{color:#E4D9B8;border-color:rgba(203,168,90,.6);background:rgba(203,168,90,.12)}
+.zcl-sf-sunbtn{color:#9A7A34;border:1px solid rgba(230,180,90,.32)}
+.zcl-sf-sunbtn.on{color:#F6E4B0;border-color:rgba(240,190,90,.65);background:rgba(240,190,90,.14)}
 .zcl-sf-arbtn{color:#8A6E32;border:1px solid rgba(203,168,90,.3)}
 .zcl-sf-arbtn.on{color:#CBA85A;border-color:rgba(203,168,90,.6);background:rgba(203,168,90,.12)}
 .zcl-sf-mwbtn{color:#8A6E32;border:1px solid rgba(203,168,90,.3)}
@@ -262,52 +275,11 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
 
 /* Align button — gold-accented so it reads as the primary "fix my aim" action,
    distinct from the on/off overlay toggles. */
-.zcl-sf-alignbtn{color:#E6CC85;border:1px solid rgba(203,168,90,.65);
-  background:rgba(203,168,90,.12)}
-.zcl-sf-alignbtn:active{background:rgba(203,168,90,.28)}
 
 /* ── Quick Align overlay ── */
-.zcl-sf-align{position:absolute;inset:0;z-index:40;display:none;
-  pointer-events:none}
-.zcl-sf-align.on{display:block}
 /* big centered crosshair the user lines up on the reference object */
-.zcl-sf-align-cross{position:absolute;left:50%;top:50%;width:120px;height:120px;
-  transform:translate(-50%,-50%);pointer-events:none}
-.zcl-sf-align-ring{position:absolute;inset:0;border-radius:50%;
-  border:2px solid rgba(230,204,133,.9);box-shadow:0 0 16px rgba(230,204,133,.5),inset 0 0 16px rgba(230,204,133,.25);
-  animation:zcl-sf-alignpulse 1.8s ease-in-out infinite}
-@keyframes zcl-sf-alignpulse{0%,100%{transform:scale(1);opacity:.9}50%{transform:scale(1.08);opacity:1}}
-.zcl-sf-align-hair{position:absolute;background:rgba(230,204,133,.9)}
-.zcl-sf-align-hair-v{left:50%;top:-22px;width:2px;height:164px;transform:translateX(-50%)}
-.zcl-sf-align-hair-h{top:50%;left:-22px;height:2px;width:164px;transform:translateY(-50%)}
-.zcl-sf-align-dot{position:absolute;left:50%;top:50%;width:8px;height:8px;
-  border-radius:50%;background:#FFF4CC;box-shadow:0 0 10px rgba(255,244,204,.9);
-  transform:translate(-50%,-50%)}
 /* instruction banner, docked at the top so the crosshair stays clear */
-.zcl-sf-align-banner{position:absolute;top:74px;left:14px;right:14px;
-  background:rgba(10,8,20,.92);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
-  border:1px solid rgba(203,168,90,.5);border-radius:10px;padding:12px 15px;
-  text-align:center;pointer-events:none}
-.zcl-sf-align-step{font-size:9px;letter-spacing:.18em;color:#CBA85A;
-  text-transform:uppercase;margin-bottom:5px}
-.zcl-sf-align-msg{font-size:14.5px;color:#F2E4BE;line-height:1.32;font-weight:500;margin-bottom:3px}
-.zcl-sf-align-msg b{color:#FFE8A8}
-.zcl-sf-align-hint{font-size:11.5px;color:#B7A988;line-height:1.4}
-.zcl-sf-align-hint.danger{color:#F2B48C;font-style:normal;font-weight:600}
-.zcl-sf-align-btns{position:absolute;bottom:120px;left:50%;transform:translateX(-50%);
-  display:flex;gap:10px;pointer-events:all}
-.zcl-sf-align-btns button{font-family:inherit;font-size:13px;font-weight:600;
-  letter-spacing:.04em;border-radius:8px;padding:11px 26px;cursor:pointer;
-  background:rgba(10,8,20,.92);border:1px solid rgba(203,168,90,.45);color:#CBA85A;
-  transition:all .15s}
-.zcl-sf-align-btns button.primary{border-color:#E6CC85;color:#15110d;
-  background:linear-gradient(180deg,#E6CC85,#CBA85A);font-weight:700;
-  box-shadow:0 2px 14px rgba(203,168,90,.4)}
-.zcl-sf-align-btns button:active{transform:scale(.96)}
 /* while aligning, hide the regular overlays so the crosshair is unobstructed */
-.sf-aligning .zcl-sf-ar,
-.sf-aligning #zcl-sf-grid,
-.sf-aligning #zcl-sf-lens{display:none !important}
 /* confirmation flash reuses .zcl-sf-calibflash defined elsewhere */
 
 /* In Scale / Lens mode the marker .dot container drops its fixed 14×14 sizing
@@ -436,6 +408,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-sf-statusico.stars{background:#F2E4BE;box-shadow:0 0 4px rgba(242,228,190,.7)}
 .zcl-sf-statusico.mess{background:#D6B8E0;box-shadow:0 0 4px rgba(214,184,224,.7)}
 .zcl-sf-statusico.planets{background:#FFE9B8;box-shadow:0 0 4px rgba(255,225,160,.7)}
+.zcl-sf-statusico.sun{background:#F6D25A;box-shadow:0 0 5px rgba(246,210,90,.8)}
 .zcl-sf-statuslbl{color:#9A8E6E;flex:1;min-width:0;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zcl-sf-statuslbl b{color:#E4D9B8;font-style:normal;font-weight:500}
@@ -557,6 +530,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .sf-calibrating #zcl-sf-lens{display:none !important}
 
 /* Moon AR marker and dot trail */
+.zcl-sf-sunmk{position:absolute;transform:translate(-50%,-50%);z-index:6;pointer-events:none;text-align:center}
+.zcl-sf-sunmk-lbl{font-size:10px;letter-spacing:.06em;color:#FBEAB8;white-space:nowrap;text-shadow:0 1px 3px rgba(0,0,0,.9);margin-top:2px}
 .zcl-sf-moonmk{position:absolute;transform:translate(-50%,-50%);
   display:flex;flex-direction:column;align-items:center;gap:4px;pointer-events:none}
 .zcl-sf-moonmk-lbl{font-size:10px;letter-spacing:.06em;color:#F2E4BE;white-space:nowrap;
@@ -588,12 +563,15 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-sf-err b{color:#F2C4C4;font-weight:600}
 
 @media(max-width:480px){
-  .zcl-sf-titlebar.intro-mode{padding:28px 14px 16px}
-  .zcl-sf-inner{padding:0 14px 28px}
+    .zcl-sf-inner{padding:0 14px 28px}
   .zcl-sf-rbox{padding:8px 10px;min-width:90px}
   .zcl-sf-rval{font-size:22px}
-  .zcl-sf-intro p{font-size:13px}
-}
+  }
+/* fit */
+@media(max-width:640px){#zcl-sf-page::after{inset:7px}.zcl-sf-tl,.zcl-sf-tr{top:7px}.zcl-sf-bl,.zcl-sf-br{bottom:7px}.zcl-sf-tl,.zcl-sf-bl{left:7px}.zcl-sf-tr,.zcl-sf-br{right:7px}}
+@media(max-width:350px){.zcl-sf-sliderwrap{gap:4px}.zcl-sf-timetitle{min-width:0}.zcl-sf-sliderlbl{letter-spacing:0}}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 
 <div id="zcl-sf-wrap">
@@ -603,20 +581,12 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   <div class="zcl-sf-fl zcl-sf-bl"></div><div class="zcl-sf-fl zcl-sf-br"></div>
   <div class="zcl-sf-inner">
 
-    <div class="zcl-sf-titlebar intro-mode" id="zcl-sf-titlebar">
+    <div class="zcl-sf-titlebar" id="zcl-sf-titlebar">
       <div class="zcl-sf-maintitle">Sky Finder</div>
     </div>
 
-    <!-- intro / permission screen -->
-    <div class="zcl-sf-intro" id="zcl-sf-intro">
-      <p>Point your phone's camera at a canyon wall, a mountain peak, or any part of the sky. A crosshair marks the center of the frame, and live readouts show exactly where it's pointing — compass direction and degrees above the horizon. Glowing markers float over the live view pointing to Polaris and the brightest stars — Vega, Deneb, Altair, and Arcturus — so you can find your bearings and learn the sky.</p>
-      <p style="color:#9A8E6E;font-size:13px;margin-top:-2px">If the markers don't line up with the real sky, tap <b style="color:#C9BD97">Align</b> in the tools row — it points you at the brightest object up right now and fixes your phone's compass in one tap.</p>
-      <div class="zcl-sf-perms">
-        <div class="zcl-sf-perm"><span class="zcl-sf-perm-icon">📷</span><span><b style="color:#C9BD97">Camera</b> — to see the sky and horizon</span></div>
-        <div class="zcl-sf-perm"><span class="zcl-sf-perm-icon">🧭</span><span><b style="color:#C9BD97">Motion sensors</b> — to read compass direction and tilt</span></div>
-      </div>
-      <button class="zcl-sf-btn" id="zcl-sf-startbtn">Start Sky Finder</button>
-      </div>
+    <!-- in-view pills: shown only when a user gesture is genuinely required -->
+    <button class="zcl-sf-pill" id="zcl-sf-motionpill">&#129517; Tap to enable compass</button>
 
     <!-- camera view -->
     <div class="zcl-sf-stage" id="zcl-sf-stage">
@@ -640,6 +610,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <svg class="zcl-sf-grid off" id="zcl-sf-grid"></svg>
         <!-- Lens-frame overlay (toggled via the Lens cycling button) -->
         <svg class="zcl-sf-lens off" id="zcl-sf-lens"></svg>
+        <!-- Constellation line-art (drawn below the star markers) -->
+        <svg class="zcl-sf-constel" id="zcl-sf-constel"></svg>
         <!-- AR sky-object markers -->
         <div class="zcl-sf-ar" id="zcl-sf-ar"></div>
         <svg class="zcl-sf-triangle" id="zcl-sf-triangle"></svg>
@@ -686,40 +658,18 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
             <div class="zcl-sf-statuslist" id="zcl-sf-statuslist"></div>
           </div>
           <div class="zcl-sf-btnrow">
-            <button class="zcl-sf-starsbtn on" id="zcl-sf-starsbtn">&#10022; Stars</button>
-            <button class="zcl-sf-messbtn on" id="zcl-sf-messbtn">&#9711; Objects</button>
-            <button class="zcl-sf-moonbtn" id="zcl-sf-moonbtn">&#9790; Moon</button>
-            <button class="zcl-sf-mwbtn" id="zcl-sf-mwbtn">&#10042; MW</button>
+            <button class="zcl-sf-starsbtn on" id="zcl-sf-starsbtn" aria-label="Toggle star markers" aria-pressed="true">&#10022; Stars</button>
+            <button class="zcl-sf-messbtn on" id="zcl-sf-messbtn" aria-label="Toggle deep-sky object markers" aria-pressed="true">&#9711; Objects</button>
+            <button class="zcl-sf-moonbtn" id="zcl-sf-moonbtn" aria-label="Toggle moon overlay" aria-pressed="false">&#9790; Moon</button>
+            <button class="zcl-sf-sunbtn" id="zcl-sf-sunbtn" aria-label="Toggle sun overlay" aria-pressed="false">&#9788; Sun</button>
+            <button class="zcl-sf-mwbtn" id="zcl-sf-mwbtn" aria-label="Toggle Milky Way band" aria-pressed="false">&#10042; MW</button>
           </div>
           <div class="zcl-sf-btnrow">
-            <button class="zcl-sf-alignbtn" id="zcl-sf-alignbtn">&#10043; Align</button>
-            <button class="zcl-sf-boostbtn" id="zcl-sf-boostbtn">&#9728; Boost</button>
-            <button class="zcl-sf-gridbtn" id="zcl-sf-gridbtn">&#8862; Grid</button>
-            <button class="zcl-sf-lensbtn" id="zcl-sf-lensbtn">&#9974; Lens</button>
-            <button class="zcl-sf-stopbtn" id="zcl-sf-stopbtn">Stop</button>
+            <button class="zcl-sf-boostbtn" id="zcl-sf-boostbtn" aria-label="Toggle low-light camera boost" aria-pressed="false">&#9728; Boost</button>
+            <button class="zcl-sf-gridbtn" id="zcl-sf-gridbtn" aria-label="Toggle alt-azimuth grid" aria-pressed="false">&#8862; Grid</button>
+            <button class="zcl-sf-lensbtn" id="zcl-sf-lensbtn" aria-label="Cycle camera lens framing guides">&#9974; Lens</button>
           </div>
         </div>
-      </div>
-    </div>
-
-    <!-- Quick Align overlay: guided one-tap calibration against the brightest
-         unmistakable object up right now (Moon / bright planet / bright star /
-         Sun). Replaces the old circular "tap two named stars" flow. -->
-    <div class="zcl-sf-align" id="zcl-sf-align" aria-hidden="true">
-      <div class="zcl-sf-align-cross" id="zcl-sf-align-cross">
-        <div class="zcl-sf-align-ring"></div>
-        <div class="zcl-sf-align-hair zcl-sf-align-hair-v"></div>
-        <div class="zcl-sf-align-hair zcl-sf-align-hair-h"></div>
-        <div class="zcl-sf-align-dot"></div>
-      </div>
-      <div class="zcl-sf-align-banner" id="zcl-sf-align-banner">
-        <div class="zcl-sf-align-step" id="zcl-sf-align-step">Quick Align</div>
-        <div class="zcl-sf-align-msg" id="zcl-sf-align-msg">Finding a reference object…</div>
-        <div class="zcl-sf-align-hint" id="zcl-sf-align-hint"></div>
-      </div>
-      <div class="zcl-sf-align-btns">
-        <button id="zcl-sf-align-cancel">Cancel</button>
-        <button id="zcl-sf-align-do" class="primary">Align</button>
       </div>
     </div>
 
@@ -763,7 +713,7 @@ const DECL = 10.5;
 // ── AR sky-object overlay ────────────────────────────────────
 // Observer location (Zion). Camera field of view used to project
 // sky positions onto the screen relative to where the phone points.
-const SF_LAT = 37.1986, SF_LNG = -112.9869;
+const __dsaLoc=(function(){try{var r=JSON.parse(localStorage.getItem('dsa-location'));if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)return r;}catch(e){}return null;})(), SF_LAT = __dsaLoc?+__dsaLoc.lat:37.1986, SF_LNG = __dsaLoc?+__dsaLoc.lng:-112.9869;
 
 // ╔══════════════════════════════════════════════════════════════╗
 // ║  SKY FINDER CALIBRATION DEFAULTS                               ║
@@ -871,6 +821,10 @@ function sfApplyManualNudge(az, alt){
   if(smoothAz !== null && smoothAlt !== null) updateReadouts(smoothAz, smoothAlt);
   if(typeof updateTimePanel === 'function') updateTimePanel();
 }
+// Exposed for the Settings bridge: this file's main script is an IIFE, so the
+// message handler in the later script block cannot see the function otherwise.
+// (Without this the Settings az/alt nudge sliders silently threw ReferenceError.)
+window.sfApplyManualNudge = sfApplyManualNudge;
 
 // Exposed so the Settings iframe's "Reset to defaults" button can wipe the
 // in-memory calibration immediately, without forcing a page reload.
@@ -962,10 +916,10 @@ function sfRenderCalibTarget(W, H){
   }
   const tgt = sfCalibState.pool[sfCalibState.idx];
   if(!tgt || arAz === null){ ring.style.opacity = '0'; return }
-  const dAz = sfAngDiff(tgt.az, arAz);
-  const dAlt = tgt.alt - arAlt;
+  const tp = sfTanProject(tgt.az, tgt.alt, arAz, arAlt);
+  const dAz = tp.e, dAlt = tp.n;
   const hf = getHFOV();
-  const onScreen = Math.abs(dAz) <= hf*0.7 && Math.abs(dAlt) <= VFOV*0.7;
+  const onScreen = tp.front && Math.abs(dAz) <= hf*0.7 && Math.abs(dAlt) <= VFOV*0.7;
   if(!onScreen){ ring.style.opacity = '0'; return }
   const x = W/2 + (dAz / (hf/2)) * (W/2);
   const y = H/2 - (dAlt / (VFOV/2)) * (H/2);
@@ -1681,9 +1635,170 @@ const SF_STARS = [
   ['Capella',      5.278,  45.998,'#FFE9B8'],   // warm yellow
   ['Rigel',        5.242,  -8.20, '#DCE6FF'],   // blue-white
   ['Betelgeuse',   5.919,   7.41, '#FF8F5E'],   // red supergiant
+  ['Sirius',       6.752, -16.716,'#DCE6FF'],   // brightest star in the sky, blue-white
+  ['Procyon',      7.655,   5.225,'#FFF4E6'],   // white, Canis Minor
+  ['Aldebaran',    4.599,  16.509,'#FFC890'],   // orange, eye of Taurus
+  ['Pollux',       7.755,  28.026,'#FFD9A0'],   // golden, the brighter Gemini twin
+  ['Regulus',     10.139,  11.967,'#DCE6FF'],   // blue-white, heart of Leo
+  ['Fomalhaut',   22.961, -29.622,'#EAF0FF'],   // lone bright star of autumn
+  // ── Scorpius: Antares is above. Only Shaula (the bright, famous stinger tip)
+  //   keeps a label; the rest are minor (glyph, no text) to reduce clutter.
+  ['Shaula',      17.560, -37.104,'#CFE0FF'],     // lambda Sco, the stinger tip, blue — named
+  ['Sargas',      17.622, -42.998,'#FFF0D8',1],   // theta Sco, tail — minor
+  ['Dschubba',    16.005, -22.622,'#DCE6FF',1],   // delta Sco, the head — minor
+  ['Larawag',     17.708, -37.296,'#FFE3B0',1],   // epsilon Sco — minor
+  ['Acrab',       16.091, -19.805,'#DCE6FF',1],   // beta Sco, the head — minor
+  // ── Cygnus (Northern Cross): Deneb is above as the named anchor ──
+  //   5th element = 1 marks a 'minor' star: it shows a glyph but no text label.
+  ['Sadr',  20.371,  40.257,'#EAF0FF',0],   // named
+  ['Albireo',  19.512,  27.960,'#FFD9A0',0],   // named
+  ['Aljanah',     20.770,  33.970,'#FFE3B0',1],   // minor
+  ['Fawaris',  19.749,  45.131,'#DCE6FF',1],   // minor
+  // ── Leo: Regulus is above as the named anchor ──
+  ['Denebola',  11.818,  14.572,'#DCE6FF',0],   // named
+  ['Algieba',  10.333,  19.842,'#FFD9A0',0],   // named
+  ['Zosma',  11.235,  20.524,'#EAF0FF',1],   // minor
+  ['Chertan',  11.237,  15.430,'#EAF0FF',1],   // minor
+  ['Adhafera',  10.278,  23.417,'#FFF4E0',1],   // minor
+  ['Algenubi',   9.764,  23.774,'#FFE3B0',1],   // minor
+  // ── Hercules: no bright anchor, so its two famous stars carry the labels and
+  //   the four Keystone corners show as minor glyphs (the recognizable asterism).
+  ['Kornephoros', 16.5037,  21.490,'#FFE3B0',0],   // beta Her, brightest — named
+  ['Rasalgethi',  17.2441,  14.390,'#FF9D6E',0],   // alpha Her, famous red double — named
+  ['Zeta Her',    16.6881,  31.603,'#FFF0D8',1],   // Keystone corner — minor
+  ['Eta Her',     16.7149,  38.922,'#FFE9B8',1],   // Keystone corner — minor
+  ['Pi Her',      17.2508,  36.809,'#FFC890',1],   // Keystone corner — minor
+  ['Epsilon Her', 17.0048,  30.926,'#DCE6FF',1],   // Keystone corner — minor
+  // ── Zodiac anchors: the brightest star of each remaining zodiac figure gets a
+  //   label so the constellation is identifiable; dim companions stay minor.
+  ['Hamal',        2.1196,  23.462,'#FFCF9A',0],   // alpha Ari — Aries
+  ['Castor',       7.5766,  31.888,'#EAF0FF',0],   // alpha Gem — Gemini (Pollux already labeled)
+  ['Zubeneschamali',15.2834, -9.383,'#DDEBFF',0],  // beta Lib, brightest — Libra
+  ['Zubenelgenubi',14.8480, -16.042,'#EAF0FF',1],  // alpha Lib — minor companion
+  ['Deneb Algedi', 21.7840, -16.127,'#FFF0D8',0],  // delta Cap, brightest — Capricornus
+  ['Sadalsuud',    21.5260,  -5.571,'#FFF4E0',0],  // beta Aqr, brightest — Aquarius
+  ['Sadalmelik',   22.0964,  -0.320,'#FFF0D8',1],  // alpha Aqr — minor companion
+  ['Alrescha',      2.0341,   2.764,'#EAF0FF',1],  // alpha Psc — Pisces (faint) minor
+  // ── Anchors for the additional major constellations (brightest star labeled).
+  //   Vega, Altair, Arcturus, Sirius, Capella are already labeled above.
+  ['Rasalhague',   17.5822,  12.560,'#EAF0FF',0],  // alpha Oph — Ophiuchus
+  ['Alphecca',     15.5781,  26.715,'#DDEBFF',0],  // alpha CrB — Corona Borealis
+  ['Eltanin',      17.9434,  51.489,'#FFCF9A',0],  // gamma Dra, brightest — Draco
+  ['Mirfak',        3.4054,  49.861,'#FFF4E0',0],  // alpha Per — Perseus
+  ['Alpheratz',     0.1398,  29.090,'#EAF0FF',0],  // alpha And — Andromeda (shared NE corner of Pegasus)
+  ['Enif',         21.7364,   9.875,'#FFCF9A',0],  // epsilon Peg, the nose — Pegasus
+  ['Markab',       23.0793,  15.205,'#EAF0FF',1],  // alpha Peg — Great Square corner, minor
 ];
 
-// ── The 5 classical (naked-eye) planets ──
+// ── Constellation line-art for the Sky Finder ──────────────────
+// Self-contained figures (independent of SF_STARS) so the whole recognizable
+// shape draws even when some member stars are below the horizon or off-screen.
+// Each figure: { name, verts:[[RA_h,Dec_deg],...], lines:[[i,j],...] }.
+// Figures are H.A. Rey's ("The Stars: A New Way to See Them"), drawn so each
+// looks like what it is named for; lines from Stellarium's modern_rey sky
+// culture, star positions Hipparcos (J2000).
+// Shown when the crosshair (frame centre) is pointing near the figure.
+const SF_CONSTELLATIONS = [
+  { name:'Scorpius',
+    verts:[[17.831,-37.04],[17.560,-37.10],[17.513,-37.30],[17.609,-38.63],[17.708,-39.03],[17.793,-40.13],[17.622,-43.00],[17.203,-43.24],[16.910,-42.36],[16.865,-38.05],[16.836,-34.29],[16.598,-28.22],[16.490,-26.43],[16.353,-25.59],[16.205,-27.93],[15.948,-29.21],[15.981,-26.11],[16.200,-19.46],[16.091,-19.80],[16.006,-22.62]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[13,17],[17,18],[18,19]] },
+  { name:'Big Dipper',
+    verts:[[13.792,49.31],[13.399,54.92],[12.900,55.96],[12.257,57.03],[11.062,61.75],[11.031,56.38],[11.897,53.70]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]] },
+  { name:'Cassiopeia',
+    verts:[[2.057,72.42],[1.907,63.67],[1.430,60.23],[0.945,60.72],[0.675,56.54],[0.153,59.15]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5]] },
+  { name:'Leo',
+    verts:[[11.818,14.57],[11.235,20.52],[11.237,15.43],[11.399,10.53],[11.352,6.03],[10.547,9.31],[10.122,16.76],[10.140,11.97],[9.686,9.89],[10.333,19.84],[11.039,20.18],[10.278,23.42],[9.879,26.01],[9.411,26.18],[9.529,22.97],[9.764,23.77]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[2,6],[6,7],[6,8],[6,9],[9,10],[10,1],[9,11],[11,12],[12,13],[13,14],[14,15],[15,12],[15,6]] },
+  { name:'Orion',
+    verts:[[5.679,-1.94],[5.604,-1.20],[5.533,-0.30],[6.065,20.14],[6.199,14.21],[6.126,14.77],[5.906,20.28],[6.165,14.85],[6.040,9.65],[5.920,7.41],[5.796,-9.67],[5.242,-8.20],[5.408,-2.40],[5.419,6.35],[5.513,5.95],[5.586,9.93],[4.831,6.96],[4.853,5.61],[4.904,2.44],[4.976,1.71],[4.844,8.90],[4.915,10.15],[4.940,13.51]],
+    lines:[[0,1],[1,2],[3,4],[4,5],[5,6],[6,3],[7,8],[8,9],[9,0],[0,10],[11,12],[12,2],[2,13],[13,14],[14,15],[14,9],[13,16],[16,17],[17,18],[18,19],[16,20],[20,21],[21,22]] },
+  { name:'Sagittarius',
+    verts:[[18.097,-30.42],[18.350,-29.83],[18.403,-34.38],[18.294,-36.76],[18.229,-21.06],[18.466,-25.42],[18.761,-26.99],[18.921,-26.30],[19.163,-21.02],[19.361,-17.85],[19.362,-15.96],[18.962,-21.11],[19.116,-27.67],[19.044,-29.88],[19.996,-35.28],[19.921,-41.87],[19.377,-44.46],[19.398,-40.62]],
+    lines:[[0,1],[1,2],[2,3],[3,0],[0,4],[4,5],[5,1],[1,6],[6,7],[7,8],[8,9],[9,10],[8,11],[11,7],[7,12],[12,13],[13,6],[12,14],[14,15],[16,17],[17,14],[17,13]] },
+  { name:'Taurus',
+    verts:[[5.438,28.61],[4.704,22.96],[4.438,22.81],[3.791,24.11],[5.627,21.14],[4.599,16.51],[4.478,15.87],[4.330,15.63],[4.382,17.54],[4.425,17.93],[4.477,19.18],[4.636,12.51],[4.594,10.16],[4.259,8.89],[4.011,12.49],[3.453,9.73],[3.515,12.94],[3.414,9.03],[3.615,0.40],[4.053,5.99]],
+    lines:[[0,1],[1,2],[2,3],[1,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,2],[7,11],[11,12],[7,13],[7,14],[14,15],[15,16],[15,17],[17,18],[17,19]] },
+  { name:'Cygnus',
+    verts:[[19.285,53.37],[19.750,45.13],[20.370,40.26],[20.691,45.28],[21.082,43.93],[20.258,47.71],[19.495,51.73],[20.770,33.97],[21.216,30.23],[20.953,41.17],[21.290,39.40],[21.247,38.05],[19.938,35.08],[19.656,30.15],[19.512,27.96]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[3,5],[5,6],[6,0],[2,7],[7,8],[8,9],[9,3],[9,10],[10,11],[2,12],[12,13],[13,14]] },
+  { name:'Hercules',
+    verts:[[17.244,14.39],[17.251,24.84],[17.512,26.11],[17.774,27.72],[18.126,28.76],[18.025,21.60],[18.146,20.82],[18.395,21.77],[18.761,20.55],[18.784,18.18],[17.963,29.25],[17.251,36.81],[17.395,37.15],[17.938,37.25],[17.658,46.01],[16.568,42.44],[16.146,44.94],[16.329,46.31],[17.005,30.93],[16.688,31.60],[16.715,38.92],[16.504,21.49],[16.365,19.15]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[4,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,14],[3,18],[18,19],[19,20],[20,11],[11,18],[18,21],[21,22]] },
+  { name:'Aries',
+    verts:[[3.194,19.73],[2.987,21.34],[2.213,21.21],[1.892,19.29],[2.833,27.26],[2.798,29.25],[2.724,27.71],[2.120,23.46],[1.965,23.60],[1.911,20.81]],
+    lines:[[0,1],[1,2],[2,3],[1,4],[4,5],[5,6],[6,4],[6,7],[7,8],[8,9],[9,7],[7,2]] },
+  { name:'Gemini',
+    verts:[[6.629,16.40],[7.068,20.57],[7.335,21.98],[7.302,16.54],[6.755,12.90],[7.599,26.90],[7.741,24.40],[7.755,28.03],[7.429,27.80],[7.186,30.25],[7.485,31.79],[7.577,31.89],[6.880,33.96],[6.732,25.13],[6.483,20.21],[6.383,22.51],[6.248,22.51],[6.069,23.26]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[5,7],[5,8],[8,9],[9,10],[10,11],[9,12],[9,13],[13,14],[13,15],[15,16],[16,17]] },
+  { name:'Cancer',
+    verts:[[8.778,28.76],[8.721,21.47],[8.204,17.65],[8.275,9.19],[8.745,18.15],[8.975,11.86]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,1],[4,5]] },
+  { name:'Virgo',
+    verts:[[11.764,6.53],[11.845,1.76],[12.332,-0.67],[12.694,-1.45],[12.087,8.73],[13.166,-5.54],[13.420,-11.16],[14.215,-10.27],[14.267,-6.00],[14.718,-5.66],[13.578,-0.60],[14.027,1.54],[14.771,1.89],[12.927,3.40],[13.036,10.96]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,0],[3,5],[5,6],[6,7],[7,8],[8,9],[6,10],[10,11],[11,12],[10,13],[13,14],[13,3],[8,11]] },
+  { name:'Libra',
+    verts:[[15.068,-25.28],[14.848,-16.04],[15.283,-9.38],[15.592,-14.79],[15.617,-28.14],[15.644,-29.78]],
+    lines:[[0,1],[1,2],[2,3],[3,1],[3,4],[4,5]] },
+  { name:'Capricornus',
+    verts:[[20.301,-12.54],[20.350,-14.78],[21.099,-17.23],[21.371,-16.83],[21.668,-16.66],[21.784,-16.13],[21.479,-21.81],[21.444,-22.41],[21.073,-19.86],[21.119,-25.01],[20.481,-17.81],[20.768,-25.27],[20.864,-26.92]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[3,6],[6,7],[7,2],[2,8],[8,9],[8,10],[1,10],[10,11],[11,12]] },
+  { name:'Aquarius',
+    verts:[[20.795,-9.50],[20.878,-8.98],[21.160,-11.37],[21.526,-5.57],[22.107,-13.87],[22.096,-0.32],[22.361,-1.39],[22.589,-0.12],[22.421,1.38],[22.281,-7.78],[22.877,-7.58],[23.265,-9.09],[23.239,-6.05],[22.827,-13.59],[22.911,-15.82],[23.157,-21.17],[23.165,-22.46],[23.111,-23.74],[23.383,-20.10],[23.434,-20.64],[23.555,-20.91]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[3,5],[5,6],[6,7],[7,8],[8,5],[5,9],[9,10],[10,11],[11,12],[12,10],[10,13],[13,14],[14,11],[11,15],[15,16],[16,17],[11,18],[18,19],[19,20]] },
+  { name:'Pisces',
+    verts:[[1.194,30.09],[1.229,24.58],[1.324,27.26],[1.438,19.17],[1.525,15.35],[1.757,9.16],[2.034,2.76],[1.691,5.49],[1.503,6.14],[1.229,7.58],[1.049,7.89],[0.811,7.58],[23.989,6.86],[23.666,5.63],[23.701,1.78],[23.449,1.26],[23.286,3.28],[23.339,5.38],[23.466,6.38]],
+    lines:[[0,1],[0,2],[2,1],[1,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,18],[18,13]] },
+  { name:'Ophiuchus',
+    verts:[[17.456,-29.87],[17.256,-26.60],[17.367,-25.00],[17.440,-24.18],[17.350,-21.11],[17.173,-15.72],[17.444,-5.09],[17.725,4.57],[17.798,2.71],[18.091,2.50],[17.582,12.56],[16.961,9.38],[16.900,10.16],[16.515,1.98],[16.239,-3.69],[16.619,-10.57],[16.519,-16.61],[16.450,-18.46],[16.402,-20.04],[16.536,-21.47]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[7,10],[10,11],[11,7],[11,12],[12,13],[13,14],[11,15],[15,16],[16,17],[17,18],[18,19],[15,5]] },
+  { name:'Serpens',
+    verts:[[18.937,4.20],[18.122,9.56],[18.091,2.50],[18.355,-2.90],[17.984,-9.77],[17.690,-12.88],[17.626,-15.40],[17.347,-12.85],[16.463,-8.37],[16.305,-4.69],[16.239,-3.69],[15.827,-3.43],[15.847,4.48],[15.738,6.43],[15.774,7.35],[15.580,10.54],[15.770,15.42],[15.941,15.66],[15.812,18.14],[15.693,19.67]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[8,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[15,16],[16,17],[17,18],[18,19],[19,16]] },
+  { name:'Draco',
+    verts:[[17.892,56.87],[17.943,51.49],[17.507,52.30],[17.538,55.17],[19.209,67.66],[19.803,70.27],[18.346,71.34],[18.351,72.73],[17.146,65.72],[16.400,61.51],[16.031,58.56],[15.415,58.97],[14.073,64.38],[12.558,69.79],[11.523,69.33]],
+    lines:[[0,1],[1,2],[2,3],[3,0],[0,4],[4,5],[4,6],[7,6],[6,8],[8,9],[9,10],[10,11],[11,12],[12,13],[13,14]] },
+  { name:'Lyra',   // the familiar triangle + parallelogram, not Rey's
+    verts:[[18.616,38.78],[18.739,39.67],[18.746,37.60],[18.835,33.36],[18.982,32.69],[18.908,36.90]],
+    lines:[[0,1],[1,2],[2,0],[2,3],[3,4],[4,5],[5,2]] },
+  { name:'Aquila',
+    verts:[[19.922,6.41],[19.846,8.87],[19.771,10.61],[19.568,7.38],[19.425,3.12],[19.875,1.01],[20.188,-0.82],[19.090,13.86],[18.994,15.07],[19.104,-4.88],[19.028,-5.74]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[6,5],[4,7],[7,8],[4,9],[9,10]] },
+  { name:'Ursa Major',
+    verts:[[13.792,49.31],[13.399,54.92],[12.900,55.96],[12.257,57.03],[11.062,61.75],[11.031,56.38],[11.897,53.70],[9.525,63.06],[8.504,60.72],[8.987,48.04],[9.060,47.16],[10.372,41.50],[10.285,42.91],[9.548,51.68],[9.850,59.04],[11.303,31.53],[11.308,33.09],[11.161,44.50],[11.768,47.78],[13.214,51.90]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3],[4,7],[7,8],[8,9],[9,10],[10,11],[12,13],[13,14],[14,7],[11,15],[16,17],[17,18],[18,0]] },
+  { name:'Bootes',
+    verts:[[13.788,17.46],[13.825,15.80],[13.911,18.40],[14.261,19.18],[14.686,13.73],[14.750,27.07],[15.258,33.31],[15.408,37.38],[15.032,40.39],[14.535,38.31],[14.531,30.37],[14.578,29.75],[14.273,46.09],[14.420,51.85],[14.225,51.79]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,3],[5,6],[6,7],[7,8],[8,6],[8,9],[9,10],[10,11],[11,5],[9,12],[12,13],[13,14],[14,12]] },
+  { name:'Andromeda',
+    verts:[[0.140,29.09],[0.655,30.86],[0.615,33.72],[1.162,35.62],[0.643,29.31],[0.789,24.27],[0.953,23.42],[1.613,41.41],[2.065,42.33],[0.946,38.50],[0.830,41.08],[1.158,47.24],[1.633,48.63],[23.636,43.27],[23.626,46.46],[23.673,44.33],[23.032,42.33]],
+    lines:[[0,1],[1,2],[2,3],[3,1],[1,4],[4,5],[5,6],[3,7],[7,8],[3,9],[9,10],[10,11],[11,12],[14,15],[15,13],[13,16]] },
+  { name:'Pegasus',
+    verts:[[23.079,15.21],[23.063,28.08],[0.221,15.18],[22.776,23.57],[22.833,24.60],[22.717,30.22],[22.166,33.18],[23.196,8.72],[23.117,9.41],[22.778,12.17],[22.691,10.83],[22.170,6.20],[21.736,9.88],[22.117,25.34],[21.742,17.35],[21.744,25.64],[21.368,19.80]],
+    lines:[[0,1],[1,2],[2,0],[0,3],[3,4],[4,5],[5,6],[7,0],[0,8],[0,9],[9,10],[10,11],[10,12],[9,13],[13,14],[3,13],[13,15],[15,16]] },
+  { name:'Perseus',
+    verts:[[3.739,32.29],[3.902,31.88],[3.983,35.79],[3.964,40.01],[3.136,40.96],[3.086,38.84],[2.843,38.32],[3.753,42.58],[3.510,47.99],[3.405,49.86],[3.608,48.19],[3.715,47.79],[4.144,47.71],[4.248,48.41],[4.304,50.30],[4.110,50.35],[3.158,44.86],[3.151,49.61],[2.904,52.76],[2.845,55.90],[3.080,53.51],[2.737,49.23],[1.728,50.69]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[3,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13],[13,14],[14,15],[4,16],[16,17],[17,18],[18,19],[19,20],[20,18],[20,9],[9,17],[17,21],[21,22]] },
+  { name:'Auriga',
+    verts:[[4.950,33.17],[5.995,37.21],[5.992,44.95],[5.992,54.28],[5.278,46.00],[5.109,41.23],[5.033,43.82],[5.041,41.08]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,2],[0,5],[5,4],[4,6],[6,7],[7,5]] },
+  { name:'Corona Borealis',
+    verts:[[15.549,31.36],[15.464,29.11],[15.578,26.71],[15.712,26.30],[15.827,26.07],[15.960,26.88]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5]] },
+  { name:'Canis Major',
+    verts:[[6.903,-12.04],[7.063,-15.63],[6.936,-17.05],[6.752,-16.72],[7.050,-23.83],[7.140,-26.39],[7.247,-26.77],[7.402,-29.30],[6.977,-28.97],[7.029,-27.93],[6.902,-24.18],[6.611,-19.26],[6.531,-23.42],[6.378,-17.96],[6.831,-32.51],[6.339,-30.06]],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[8,9],[9,5],[8,10],[10,11],[11,12],[11,13],[11,3],[8,14],[15,8],[2,0]] },
+  { name:'Canis Minor',
+    verts:[[7.655,5.22],[7.453,8.29]],
+    lines:[[0,1]] },
+  { name:'Delphinus',
+    verts:[[20.554,11.30],[20.652,10.09],[20.630,11.38],[20.646,13.31],[20.724,15.07],[20.778,16.12],[20.661,15.91],[20.626,14.60],[20.566,13.03]],
+    lines:[[0,1],[0,2],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,2]] },
+  { name:'Sagitta',
+    verts:[[19.979,19.49],[19.790,18.53],[19.684,17.48],[19.668,18.01]],
+    lines:[[0,1],[1,2],[1,3]] }
+];
 // Keplerian J2000 mean elements from the JPL Solar System Dynamics tables.
 // Each element is [value at J2000, rate per Julian century]. These are the
 // same elements used by the main Almanac's Planets page, so positions match.
@@ -1762,97 +1877,6 @@ function planetRaDec(name, date){
   return { ra, dec };
 }
 
-// ── Quick Align reference picker ──────────────────────────────────────────
-// The single most useful thing the calibration can do is let the user aim at
-// ONE unmistakable bright object and tap. The old flow asked the user to tap
-// two *named stars* on the live view — but identifying stars is the very thing
-// the Sky Finder exists to help with, so it was circular and nobody could make
-// it work. Instead we pick the brightest, most unmistakable object currently
-// above the horizon and tell the user exactly what to aim at.
-//
-// Priority: the Moon (impossible to mistake) → the brightest planet up
-// (Venus, then Jupiter, Mars, Saturn) → the brightest star up → the Sun
-// (daytime fallback, with an eye-safety warning). Returns:
-//   { name, az, alt, kind, hint, danger }  or  null if literally nothing is up.
-function sfPickAlignTarget(date){
-  date = date || new Date();
-  const cands = [];
-
-  // Moon — by far the best target when it's up and not too low.
-  const m = moonAltAz(date);
-  if(m && m.alt >= 8){
-    cands.push({ name:'the Moon', az:m.az, alt:m.alt, kind:'moon', rank:0,
-      hint:'The Moon is the easiest target — line the crosshair up on the middle of the disc.' });
-  }
-
-  // Bright planets — Venus and Jupiter are the brightest objects in the sky
-  // after the Moon and read as brilliant "stars" that don't twinkle.
-  const planetRank = { Venus:1, Jupiter:2, Mars:3, Saturn:4, Mercury:9 };
-  const planetHint = {
-    Venus:'Venus is the brilliant white \u201Cstar\u201D — the brightest point in the sky right now.',
-    Jupiter:'Jupiter is the bright, steady cream-colored \u201Cstar\u201D — it doesn\u2019t twinkle.',
-    Mars:'Mars is the distinctly orange-red bright \u201Cstar.\u201D',
-    Saturn:'Saturn is the steady pale-gold \u201Cstar.\u201D',
-    Mercury:'Mercury is the low, fast \u201Cstar\u201D near the horizon at dusk or dawn.'
-  };
-  for(const p of SF_PLANETS){
-    const rd = planetRaDec(p.name, date);
-    const aa = eqToAltAz(rd.ra, rd.dec, date);
-    // Only Venus/Jupiter are reliably unmistakable; require a decent altitude
-    // so they're clearly above terrain and haze.
-    if(aa.alt >= 12 && (p.name==='Venus' || p.name==='Jupiter' || p.name==='Mars' || p.name==='Saturn')){
-      cands.push({ name:p.name, az:aa.az, alt:aa.alt, kind:'planet',
-        rank:planetRank[p.name]||8, hint:planetHint[p.name] });
-    }
-  }
-
-  // Brightest stars — only the very brightest, and only well clear of the
-  // horizon, so the user has a fighting chance of picking the right one.
-  // We tag each with a short locating hint.
-  const starHint = {
-    Vega:'Vega is a brilliant blue-white star high overhead in summer.',
-    Arcturus:'Arcturus is the bright golden-orange star in the spring/summer sky.',
-    Capella:'Capella is the bright yellow star high in the winter sky.',
-    Rigel:'Rigel is the brilliant blue-white star at Orion\u2019s foot.',
-    Betelgeuse:'Betelgeuse is the orange-red star at Orion\u2019s shoulder.',
-    Altair:'Altair is the bright white star in the Summer Triangle.',
-    Deneb:'Deneb is the bright star at the top of the Summer Triangle.',
-    Antares:'Antares is the red star at the heart of Scorpius, low in the south.',
-    Spica:'Spica is the bright blue-white star low in the spring/summer south.'
-  };
-  const starRank = { Vega:5, Arcturus:5, Capella:5, Rigel:6, Betelgeuse:6,
-                     Altair:6, Deneb:7, Antares:7, Spica:7 };
-  for(const s of SF_STARS){
-    const aa = eqToAltAz(s[1], s[2], date);
-    if(aa.alt >= 25){
-      cands.push({ name:s[0], az:aa.az, alt:aa.alt, kind:'star',
-        rank:starRank[s[0]]||8, hint:starHint[s[0]]||(s[0]+' is a bright star.') });
-    }
-  }
-
-  if(cands.length){
-    // Lowest rank wins; break ties by highest altitude (easiest to aim at).
-    cands.sort((a,b)=> a.rank - b.rank || b.alt - a.alt);
-    return cands[0];
-  }
-
-  // Daytime fallback — the Sun. Aiming a phone camera at the Sun is fine; the
-  // user looking through the viewfinder is fine; but we warn them not to stare
-  // directly, out of an abundance of caution.
-  if(typeof SunCalc !== 'undefined'){
-    try{
-      const s = SunCalc.getPosition(date, SF_LAT, SF_LNG);
-      const alt = s.altitude*180/Math.PI;
-      if(alt >= 5){
-        return { name:'the Sun', az:(s.azimuth*180/Math.PI+180+360)%360, alt:alt,
-          kind:'sun', danger:true,
-          hint:'Aim the crosshair at the Sun on screen \u2014 but do NOT look directly at the Sun. Use the screen only.' };
-      }
-    }catch(e){}
-  }
-  return null;
-}
-
 // The 40 largest / brightest / most photogenic deep-sky objects, positioned
 // from J2000 RA/Dec via the same eqToAltAz transform. Each has a "type" used
 // to draw a distinct glyph (galaxy spiral, nebula cloud, or open-cluster dots),
@@ -1896,7 +1920,7 @@ const SF_MESSIER = [
   ['M57 Ring',              18.893,  33.03, 'nebula',    1.4,  1 ],
   ['NGC 1499 California',    4.055,  36.42, 'nebula',  145,   40 ],
   ['NGC 2237 Rosette',       6.532,   5.04, 'nebula',   80,   80 ],
-  ['NGC 2392 Eskimo',        7.486,  20.91, 'nebula',    0.8,  0.7],
+  ['NGC 2392 Clown Face',   7.486,  20.91, 'nebula',    0.8,  0.7],
   ['NGC 6543 Cat\u2019s Eye',17.976,  66.63, 'nebula',    5,    4 ],
   ['NGC 6888 Crescent',     20.202,  38.36, 'nebula',   18,   12 ],
   ['NGC 6992 Veil',         20.940,  31.72, 'nebula',   60,    8 ],
@@ -1961,7 +1985,7 @@ function sfSkyObjects(date){
     out.push({ name:'Polaris', az:SF_POLARIS.az, alt:SF_POLARIS.alt, kind:'star', pin:false, tint:'#F2E4BE' });
     for(const s of SF_STARS){
       const aa = eqToAltAz(s[1], s[2], date);
-      if(aa.alt > 0) out.push({ name:s[0], az:aa.az, alt:aa.alt, kind:'star', pin:false, tint:s[3] });
+      if(aa.alt > 0) out.push({ name:s[0], az:aa.az, alt:aa.alt, kind:'star', pin:false, tint:s[3], minor:!!s[4] });
     }
     // Planets bundled with the Stars overlay (button is "Stars+" to hint at it).
     // To the unaided eye Venus, Jupiter and Mars look like the brightest stars
@@ -2074,7 +2098,7 @@ function sfInitMarkers(){
   // above the horizon. The render loop shows or hides each based on the
   // active overlays and visibility.
   const all = [ { name:'Polaris', tint:'#F2E4BE', kind:'star' } ]
-    .concat(SF_STARS.map(s=>({ name:s[0], tint:s[3], kind:'star' })))
+    .concat(SF_STARS.map(s=>({ name:s[0], tint:s[3], kind:'star', minor:!!s[4] })))
     .concat(SF_PLANETS.map(p=>({ name:p.name, tint:p.tint, kind:'planet' })))
     .concat(SF_MESSIER.map(m=>({ name:m[0], tint:SF_MESS_TINT, kind:'messier',
       mtype:m[3], sizeMaj:m[4]||0, sizeMin:m[5]||m[4]||0 })));
@@ -2088,7 +2112,7 @@ function sfInitMarkers(){
                 : o.kind==='planet'  ? sfPlanetGlyph(o.tint)
                 :                      sfGlyph(o.tint);
     el.innerHTML = '<div class="zcl-sf-mk-dot">'+glyph+'</div>'
-      + '<div class="zcl-sf-mk-lbl">'+o.name+'</div>';
+      + '<div class="zcl-sf-mk-lbl">'+(o.minor ? '' : o.name)+'</div>';
     layer.appendChild(el);
     sfMarkers[o.name] = { el, x:null, y:null, shown:false,
       mtype:o.mtype||null, sizeMaj:o.sizeMaj||0, sizeMin:o.sizeMin||0,
@@ -2137,6 +2161,28 @@ function sfRollProject(W, H, dxPx, dyPxUp){
   const rx =  c*dxPx - s*dyPxUp;
   const ry =  s*dxPx + c*dyPxUp;
   return { x: W/2 + rx, y: H/2 - ry };
+}
+
+// ── Exact tangent-plane projection ──────────────────────────────
+// Build the camera basis at the pointing direction (forward / east / up) and
+// read each object's true angular offsets with spherical trig. Unlike the
+// first-order cos(alt) fix this stays correct all the way to the zenith, where
+// azimuth wraps and any azimuth-difference model twists figures apart.
+// Returns { e, n } — degrees east/up of frame centre — plus `front`, false when
+// the object is at/behind the camera plane (callers must cull those; drawing
+// them is what makes lines shoot across the screen). The clamp keeps e/n
+// finite and direction-preserving for edge-pinning (Polaris arrow).
+function sfTanProject(oAz, oAlt, rAz, rAlt){
+  const D = Math.PI/180;
+  const a = oAlt*D, z = oAz*D, a0 = rAlt*D, z0 = rAz*D;
+  const ox = Math.cos(a)*Math.cos(z), oy = Math.cos(a)*Math.sin(z), oz = Math.sin(a);
+  // camera basis: forward = pointing; east = horizontal right; up = zenith-ward
+  const fx = Math.cos(a0)*Math.cos(z0), fy = Math.cos(a0)*Math.sin(z0), fz = Math.sin(a0);
+  const eE = ox*(-Math.sin(z0)) + oy*Math.cos(z0);
+  const nU = ox*(-Math.sin(a0)*Math.cos(z0)) + oy*(-Math.sin(a0)*Math.sin(z0)) + oz*Math.cos(a0);
+  const f  = ox*fx + oy*fy + oz*fz;
+  const fc = Math.max(f, 0.05);
+  return { e: Math.atan2(eE, fc)/D, n: Math.atan2(nU, fc)/D, front: f > 0.05 };
 }
 
 // Render AR markers given the latest (already lightly smoothed) pointing az/alt.
@@ -2192,14 +2238,15 @@ function sfRenderAR(ptAz, ptAlt){
     const mk = sfMarkers[o.name];
     if(!mk) return;
     seen[o.name] = true;
-    const dAz = sfAngDiff(o.az, arAz);
-    const dAlt = o.alt - arAlt;
+    const dAzRaw = sfAngDiff(o.az, arAz);
+    const tp = sfTanProject(o.az, o.alt, arAz, arAlt);
+    const dAz = tp.e, dAlt = tp.n;
     const hf = getHFOV();
 
     if(o.pin){
       // Polaris: a persistent "find north" guide. Pin to the nearest frame edge
       // when off-screen; only hide it when it's well behind you (>110° az).
-      if(Math.abs(dAz) > 110){
+      if(Math.abs(dAzRaw) > 110){
         if(mk.shown){ mk.el.style.opacity = '0'; mk.shown = false }
         return;
       }
@@ -2385,13 +2432,32 @@ function moonAltAz(date){
   }catch(e){ return null }
 }
 
+// Sun az/alt at a given Date via SunCalc (same azimuth convention as the Moon).
+function sunAltAz(date){
+  if(typeof SunCalc === 'undefined') return null;
+  try{
+    const p = SunCalc.getPosition(date, SF_LAT, SF_LNG);
+    const az = (p.azimuth*180/Math.PI + 180 + 360) % 360;
+    const alt = p.altitude*180/Math.PI;
+    return { az, alt };
+  }catch(e){ return null }
+}
+// A short phrase for what the daylight is doing right now.
+function sunPhase(alt){
+  if(alt < -6)  return 'night';
+  if(alt < -0.5) return 'twilight';
+  if(alt < 6)   return 'golden hour';
+  return 'daytime';
+}
+
 // Format a Date as e.g. "9:45 PM"
 function sfFmtTime(d){
-  return new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',
+  return new Intl.DateTimeFormat('en-US',{timeZone:ZCLTZ.zone(),
     hour:'numeric',minute:'2-digit',hour12:true}).format(d);
 }
 
 let moonOn = false;
+let sunOn = false;    // Sun marker + daytime arc (live position, not the night slider)
 let messOn = true;    // Messier deep-sky overlay (default on; independent from Stars)
 let gridOn = false;   // 10° alt/az grid overlay
 
@@ -2400,7 +2466,8 @@ let gridOn = false;   // 10° alt/az grid overlay
 //   1  Scale only         — markers at true angular size, no frame
 //   2  70mm full-frame    — true-scale markers + 70mm frame outline
 //   3  135mm full-frame   — true-scale markers + 135mm frame outline
-//   4  300mm full-frame   — true-scale markers + 300mm frame outline
+//   4  200mm full-frame   — true-scale markers + 200mm frame outline
+//   5  300mm full-frame   — true-scale markers + 300mm frame outline
 // Frame outlines assume a 36×24mm full-frame sensor held in LANDSCAPE
 // orientation (the long axis along the phone's horizontal screen edge),
 // which is by far the most common deep-sky framing.
@@ -2408,16 +2475,29 @@ let lensMode = 0;
 const LENS_PRESETS = [
   { label:'Lens',    focal:0   },
   { label:'Scale',   focal:0   },
-  { label:'135mm',   focal:135 },
-  { label:'200mm',   focal:200 },
-  { label:'300mm',   focal:300 },
+  // Each focal length appears twice: horizontal (landscape) then vertical
+  // (portrait) orientation of the same lens, cycling wide → long.
+  { label:'24mm H',  focal:24,  vert:false },
+  { label:'24mm V',  focal:24,  vert:true  },
+  { label:'35mm H',  focal:35,  vert:false },
+  { label:'35mm V',  focal:35,  vert:true  },
+  { label:'50mm H',  focal:50,  vert:false },
+  { label:'50mm V',  focal:50,  vert:true  },
+  { label:'70mm H',  focal:70,  vert:false },
+  { label:'70mm V',  focal:70,  vert:true  },
+  { label:'135mm H', focal:135, vert:false },
+  { label:'135mm V', focal:135, vert:true  },
+  { label:'200mm H', focal:200, vert:false },
+  { label:'200mm V', focal:200, vert:true  },
+  { label:'300mm H', focal:300, vert:false },
+  { label:'300mm V', focal:300, vert:true  },
 ];
 // The slider covers 6 PM → 6 AM = 12 hrs in 15-min steps (0..48). Shared
 // across all overlays via timeSliderVal, declared with the unified panel.
 function sliderToDate(val){
   const now = new Date();
   // Today's date + hour in Mountain Time.
-  const parts = new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',
+  const parts = new Intl.DateTimeFormat('en-US',{timeZone:ZCLTZ.zone(),
     year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',hour12:false}).formatToParts(now);
   const get = t => parseInt(parts.find(p=>p.type===t).value);
   const yr=get('year'), mo=get('month')-1, dy=get('day'), hr=get('hour');
@@ -2432,7 +2512,7 @@ function sliderToDate(val){
 
   // Real UTC offset for Mountain Time on the anchor date (handles MST/MDT; reads
   // the offset off the Date so a half-hour zone wouldn't get truncated).
-  const offParts = new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',
+  const offParts = new Intl.DateTimeFormat('en-US',{timeZone:ZCLTZ.zone(),
     timeZoneName:'shortOffset'}).formatToParts(anchor);
   const m = offParts.find(p=>p.type==='timeZoneName').value.match(/GMT([+-]\d+)(?::(\d+))?/);
   const offsetHours = m ? -(parseInt(m[1]) + (m[2]?Math.sign(parseInt(m[1]))*parseInt(m[2])/60:0)) : 6;
@@ -2539,6 +2619,70 @@ function updateMoonARLayer(moonPos, sliderVal){
   }
 }
 
+// Render the Sun on the AR layer at the SLIDER's time (same timeline as the
+// Moon and stars), with a dot trail across the observing window. The Sun is
+// below the horizon through the middle of the night but visible near both ends
+// — sunset/golden hour at dusk and dawn — which is exactly the planning range.
+function updateSunARLayer(sliderVal){
+  const old = $('zcl-sf-ar').querySelectorAll('.zcl-sf-sunmk,.zcl-sf-sundots');
+  old.forEach(e=>e.remove());
+  if(!sunOn) return;
+  if(sliderVal == null) sliderVal = timeSliderVal;
+  const pos = sunAltAz(sliderToDate(sliderVal));
+  if(!pos) return;
+
+  const layer = $('zcl-sf-ar');
+  const W = layer.clientWidth || window.innerWidth;
+  const H = layer.clientHeight || window.innerHeight;
+  const refAz  = arAz  !== null ? arAz  : (smoothAz  || 0);
+  const refAlt = arAlt !== null ? arAlt : (smoothAlt || 0);
+
+  // 2-hour dot trail across the window (every 8 steps = 2 hrs), plotting only
+  // the portion above the horizon so you can see where the Sun sets and rises.
+  const dots = document.createElement('div');
+  dots.className = 'zcl-sf-sundots';
+  let inner = '<svg width="'+W+'" height="'+H+'" viewBox="0 0 '+W+' '+H+'" fill="none">';
+  for(let i=0;i<=48;i+=8){
+    const dt = sliderToDate(i);
+    const dp = sunAltAz(dt);
+    if(!dp || dp.alt < 0) continue;
+    const dAz = sfAngDiff(dp.az, refAz);
+    const dAlt = dp.alt - refAlt;
+    const _hf = getHFOV();
+    if(Math.abs(dAz) > _hf*0.85 || Math.abs(dAlt) > VFOV*0.85) continue;
+    const _mp = sfRollProject(W, H, (dAz/(_hf/2))*(W/2), (dAlt/(VFOV/2))*(H/2));
+    const x = _mp.x.toFixed(1), y = _mp.y.toFixed(1);
+    const isCurrent = Math.abs(i - sliderVal) <= 4;
+    inner += '<circle cx="'+x+'" cy="'+y+'" r="'+(isCurrent?0:2.4)+'" fill="#F4C64E" opacity="'+(isCurrent?0:.45)+'"/>';
+    if(i % 16 === 0 && !isCurrent){
+      inner += '<text x="'+(+x+7)+'" y="'+(+y+4)+'" font-family="Montserrat" font-size="9" fill="#E7C878" opacity=".6">'
+        + sfFmtTime(dt) + '</text>';
+    }
+  }
+  inner += '</svg>';
+  dots.innerHTML = inner;
+  layer.appendChild(dots);
+
+  // Current Sun marker at the slider time (only when above the horizon + in frame).
+  const dAz = sfAngDiff(pos.az, refAz);
+  const dAlt = pos.alt - refAlt;
+  const _hf2 = getHFOV();
+  if(pos.alt >= 0 && Math.abs(dAz) <= _hf2*0.85 && Math.abs(dAlt) <= VFOV*0.85){
+    const _cmp = sfRollProject(W, H, (dAz/(_hf2/2))*(W/2), (dAlt/(VFOV/2))*(H/2));
+    const mk = document.createElement('div');
+    mk.className = 'zcl-sf-sunmk';
+    mk.style.left = _cmp.x.toFixed(0)+'px'; mk.style.top = _cmp.y.toFixed(0)+'px';
+    mk.innerHTML = '<svg width="34" height="34" viewBox="0 0 34 34">'
+      + '<circle cx="17" cy="17" r="8.5" fill="#F6D25A" stroke="#E7B23A" stroke-width="1.5"/>'
+      + (function(){ let r=''; for(let a=0;a<8;a++){ const th=a*Math.PI/4;
+          const x1=17+11*Math.cos(th), y1=17+11*Math.sin(th), x2=17+15*Math.cos(th), y2=17+15*Math.sin(th);
+          r+='<line x1="'+x1.toFixed(1)+'" y1="'+y1.toFixed(1)+'" x2="'+x2.toFixed(1)+'" y2="'+y2.toFixed(1)+'" stroke="#F4C64E" stroke-width="1.6" stroke-linecap="round"/>'; } return r; })()
+      + '</svg>'
+      + '<div class="zcl-sf-sunmk-lbl">Sun \u00B7 '+sfFmtTime(sliderToDate(sliderVal))+' \u00B7 '+sunPhase(pos.alt)+'</div>';
+    layer.appendChild(mk);
+  }
+}
+
 // Wire up moon panel
 // Map the current clock time to a slider step (0..48) so opening the panel
 // lands on the moon's position right now. Clamps to the 6 PM–6 AM window.
@@ -2557,9 +2701,19 @@ function nowSliderStep(){
 let timeSliderVal = 6;     // 15-min steps from 6 PM; reset to "now" on first show
 let dayOffset = 0;         // nights from tonight, set by the "Today" date box (0 = tonight)
 
-function anyOverlayOn(){ return moonOn || mwOn || arOn || messOn || gridOn || lensMode > 0 }
+function anyOverlayOn(){ return moonOn || sunOn || mwOn || arOn || messOn || gridOn || lensMode > 0 }
 
 // Build and update the unified panel: time readout, slider fill, status rows.
+// Toggle buttons carry state in a CSS class, which assistive tech cannot see.
+// Mirror it into aria-pressed so screen readers announce on/off correctly.
+function sfSyncPressed(){
+  ['zcl-sf-starsbtn','zcl-sf-messbtn','zcl-sf-moonbtn','zcl-sf-sunbtn',
+   'zcl-sf-mwbtn','zcl-sf-boostbtn','zcl-sf-gridbtn'].forEach(function(id){
+    const el=$(id);
+    if(el) el.setAttribute('aria-pressed', el.classList.contains('on') ? 'true' : 'false');
+  });
+}
+
 function updateTimePanel(){
   const panel = $('zcl-sf-timepanel');
   const visible = anyOverlayOn();
@@ -2577,8 +2731,10 @@ function updateTimePanel(){
   if(arOn)   rows.push('<div class="zcl-sf-statusrow">'+planetsStatusHtml(timeSliderVal)+'</div>');
   if(messOn) rows.push('<div class="zcl-sf-statusrow">'+messStatusHtml(timeSliderVal)+'</div>');
   if(moonOn) rows.push('<div class="zcl-sf-statusrow">'+moonStatusHtml(timeSliderVal)+'</div>');
+  if(sunOn)  rows.push('<div class="zcl-sf-statusrow">'+sunStatusHtml(timeSliderVal)+'</div>');
   if(mwOn)   rows.push('<div class="zcl-sf-statusrow">'+mwStatusHtml(timeSliderVal)+'</div>');
   $('zcl-sf-statuslist').innerHTML = rows.join('');
+  sfSyncPressed();
 }
 
 // Status text for Stars: count how many of the named bright stars are currently
@@ -2618,9 +2774,31 @@ function messStatusHtml(val){
   return ico+'<span class="zcl-sf-statuslbl"><b>'+up+'</b> of '+SF_MESSIER.length+' deep-sky objects up</span>';
 }
 
+// Sun status at the SLIDER's time: altitude/phase, plus the sunset or sunrise
+// bracketing this night so you can plan golden hour and blue hour.
+function sunStatusHtml(val){
+  const ico = '<span class="zcl-sf-statusico sun"></span>';
+  const date = sliderToDate(val);
+  const pos = sunAltAz(date);
+  if(!pos) return ico+'<span class="zcl-sf-statuslbl">Sun position unavailable</span>';
+  let bracket = '';
+  try{
+    // sunset that opens this observing night, and the sunrise that ends it
+    const tEve = SunCalc.getTimes(sliderToDate(0), SF_LAT, SF_LNG);
+    const tMorn = SunCalc.getTimes(sliderToDate(48), SF_LAT, SF_LNG);
+    if(tEve.sunset && tMorn.sunrise)
+      bracket = ' \u00B7 sunset '+sfFmtTime(tEve.sunset)+', sunrise '+sfFmtTime(tMorn.sunrise);
+  }catch(e){}
+  const where = pos.alt >= 0
+    ? Math.round(pos.alt)+'\u00B0 up in the '+['N','NE','E','SE','S','SW','W','NW'][Math.round(pos.az/45)%8]+' \u00B7 '+sunPhase(pos.alt)
+    : 'below the horizon';
+  return ico+'<span class="zcl-sf-statuslbl">Sun \u2014 '+where+bracket+'</span>';
+}
+
 // Re-run every active overlay's drawing logic for the current slider value.
 function refreshActiveOverlays(){
   if(moonOn) updateMoonOverlay(timeSliderVal);
+  if(sunOn)  updateSunARLayer(timeSliderVal);
   if(mwOn){
     updateMwPositions(sliderToDate(timeSliderVal));
     renderMwDots();
@@ -2640,6 +2818,23 @@ function setMoonOverlay(on){
     if(!anyOverlayOn()) _panelEverOpened = false;
   }
   sfBustObjCache();          // stars re-evaluate at the (possibly new) slider time
+  updateTimePanel();
+}
+
+// Toggle the Sun overlay. The Sun uses its LIVE position (not the night
+// slider), so opening the panel isn't required — but we keep the panel in sync
+// so its status line appears alongside the others.
+function setSunOverlay(on){
+  sunOn = on;
+  $('zcl-sf-sunbtn').classList.toggle('on', on);
+  if(on){
+    if(!_panelEverOpened){ timeSliderVal = nowSliderStep(); _panelEverOpened = true }
+    $('zcl-sf-timeslider').value = timeSliderVal;
+    updateSunARLayer(timeSliderVal);
+  } else {
+    $('zcl-sf-ar').querySelectorAll('.zcl-sf-sunmk,.zcl-sf-sundots').forEach(e=>e.remove());
+    if(!anyOverlayOn()) _panelEverOpened = false;
+  }
   updateTimePanel();
 }
 
@@ -2806,10 +3001,14 @@ function sfRenderLensFrame(){
   const H = (stage && stage.clientHeight) || window.innerHeight;
   svg.setAttribute('viewBox', '0 0 '+W+' '+H);
   svg.setAttribute('preserveAspectRatio', 'none');
-  // Lens FOV from focal length on full-frame (36×24mm). Long edge → horizontal.
+  // Lens FOV from focal length on full-frame (36×24mm). In horizontal (H)
+  // orientation the 36mm long edge maps to the screen's horizontal axis; in
+  // vertical (V) orientation the camera is turned 90° so the axes swap.
   const f = preset.focal;
-  const lensHFOV = 2 * Math.atan(36 / (2*f)) * 180/Math.PI;
-  const lensVFOV = 2 * Math.atan(24 / (2*f)) * 180/Math.PI;
+  const sensW = preset.vert ? 24 : 36;
+  const sensH = preset.vert ? 36 : 24;
+  const lensHFOV = 2 * Math.atan(sensW / (2*f)) * 180/Math.PI;
+  const lensVFOV = 2 * Math.atan(sensH / (2*f)) * 180/Math.PI;
   // Device pxPerDeg is the same in both axes (square pixels). Use VFOV as the
   // anchor since that's what's been calibrated; the device HFOV is derived
   // from screen aspect and used to confirm the px math.
@@ -2881,6 +3080,7 @@ function applyLensMode(){
 let _panelEverOpened = false;
 
 $('zcl-sf-moonbtn').addEventListener('click', function(){ setMoonOverlay(!moonOn) });
+$('zcl-sf-sunbtn').addEventListener('click', function(){ setSunOverlay(!sunOn) });
 $('zcl-sf-mwbtn').addEventListener('click',   function(){ setMwOverlay(!mwOn) });
 $('zcl-sf-starsbtn').addEventListener('click',function(){ setStarsOverlay(!arOn) });
 $('zcl-sf-messbtn').addEventListener('click', function(){ setMessOverlay(!messOn) });
@@ -2994,6 +3194,7 @@ $('zcl-sf-timeslider').addEventListener('input', function(){
 // X button on the unified panel closes every overlay at once.
 $('zcl-sf-timeclose').addEventListener('click', function(){
   if(moonOn)  setMoonOverlay(false);
+  if(sunOn)   setSunOverlay(false);
   if(mwOn)    setMwOverlay(false);
   if(messOn)  setMessOverlay(false);
   if(arOn)    setStarsOverlay(false);
@@ -3011,127 +3212,6 @@ $('zcl-sf-toolstoggle').addEventListener('click', function(){
   this.setAttribute('aria-label', expanded ? 'Hide overlay controls' : 'Show overlay controls');
   this.setAttribute('title',      expanded ? 'Hide overlay controls' : 'Show overlay controls');
 });
-
-// ── Quick Align ───────────────────────────────────────────────────────────
-// One-tap calibration: pick the brightest unmistakable object up right now,
-// tell the user exactly what to aim at, and capture the az/alt offset when
-// they tap Align. This is the calibration that actually works for people,
-// because it never asks them to identify a star they can't find yet.
-let sfAlignTarget = null;
-let sfAlignTick = null;
-
-function sfOpenAlign(){
-  const stage = $('zcl-sf-stage');
-  if(!stage || !stage.classList.contains('on')){
-    showErr('<b>Start the Sky Finder first.</b><br>Tap \u201CStart Sky Finder,\u201D then tap Align.');
-    return;
-  }
-  sfAlignTarget = sfPickAlignTarget(new Date());
-  const msgEl  = $('zcl-sf-align-msg');
-  const hintEl = $('zcl-sf-align-hint');
-  const doBtn  = $('zcl-sf-align-do');
-  if(!sfAlignTarget){
-    // Nothing bright is up — offer the manual nudge instead.
-    msgEl.innerHTML = 'Nothing bright is up to align against right now.';
-    hintEl.className = 'zcl-sf-align-hint';
-    hintEl.textContent = 'Try again when the Moon, a bright planet, or a bright star is above the horizon — or use the manual nudge in Settings.';
-    doBtn.style.display = 'none';
-  } else {
-    doBtn.style.display = '';
-    sfRenderAlignTarget();
-    // Refresh the target's position every second so the printed compass
-    // direction stays current while the user gets the phone pointed.
-    if(sfAlignTick) clearInterval(sfAlignTick);
-    sfAlignTick = setInterval(()=>{
-      const fresh = sfPickAlignTarget(new Date());
-      if(fresh && sfAlignTarget && fresh.name === sfAlignTarget.name){
-        sfAlignTarget = fresh; sfRenderAlignTarget();
-      }
-    }, 1000);
-  }
-  $('zcl-sf-align').classList.add('on');
-  $('zcl-sf-align').setAttribute('aria-hidden','false');
-  document.body.classList.add('sf-aligning');
-}
-
-function sfRenderAlignTarget(){
-  const t = sfAlignTarget; if(!t) return;
-  const dir = cdir(t.az, false);
-  $('zcl-sf-align-msg').innerHTML =
-    'Point your phone at <b>'+t.name+'</b> and center it in the crosshair, then tap <b>Align</b>.';
-  const hintEl = $('zcl-sf-align-hint');
-  hintEl.className = 'zcl-sf-align-hint' + (t.danger ? ' danger' : '');
-  hintEl.innerHTML = (t.hint || '') +
-    '<br>(Currently '+Math.round(t.alt)+'\u00B0 up, toward '+dir+'.)';
-}
-
-function sfCloseAlign(){
-  $('zcl-sf-align').classList.remove('on');
-  $('zcl-sf-align').setAttribute('aria-hidden','true');
-  document.body.classList.remove('sf-aligning');
-  if(sfAlignTick){ clearInterval(sfAlignTick); sfAlignTick = null }
-  sfAlignTarget = null;
-}
-
-function sfApplyAlign(){
-  const t = sfAlignTarget;
-  if(!t || smoothAz === null || smoothAlt === null){ sfCloseAlign(); return }
-  // Recompute the target's true position at the instant of the tap.
-  const fresh = sfPickAlignTarget(new Date());
-  const tgt = (fresh && fresh.name === t.name) ? fresh : t;
-  // Current raw (uncalibrated) reading = applied-out of the smoothed value.
-  const rawAz  = (smoothAz - calibAzOffset + 360) % 360;
-  const rawAlt = smoothAlt - calibAltOffset;
-  // We want raw + newOffset = trueTarget → newOffset = trueTarget − raw.
-  let dAz = tgt.az - rawAz;
-  if(dAz > 180) dAz -= 360;
-  if(dAz < -180) dAz += 360;
-  let newAz = ((dAz) + 360) % 360;
-  if(newAz > 180) newAz -= 360;
-  const newAlt = tgt.alt - rawAlt;
-  // Sanity: a sane phone compass is within ~60°; reject a wild solve (e.g. the
-  // user aimed at the wrong object) rather than flipping the whole sky.
-  if(Math.abs(newAz) > 90 || Math.abs(newAlt) > 45){
-    const hintEl = $('zcl-sf-align-hint');
-    hintEl.className = 'zcl-sf-align-hint danger';
-    hintEl.innerHTML = 'That would shift the sky by '+Math.round(newAz)+'\u00B0 \u2014 that\u2019s too far to be right. '
-      + 'Make sure you\u2019re aimed at <b>'+t.name+'</b> and try again.';
-    return;
-  }
-  calibAzOffset = newAz;
-  calibAltOffset = newAlt;
-  // Quick Align defines a fresh base; re-anchor the manual nudge so its current
-  // slider values stay meaningful relative to the new alignment.
-  sfAlignBaseAz  = newAz  - sfManualNudgeAz;
-  sfAlignBaseAlt = newAlt - sfManualNudgeAlt;
-  saveCalibration();
-  // Persist a friendly read-back for Settings.
-  try{
-    localStorage.setItem('sfCalibResult', JSON.stringify({
-      azOffset:+newAz.toFixed(2), altOffset:+newAlt.toFixed(2),
-      when:new Date().toISOString(), via:'Quick Align', target:t.name
-    }));
-  }catch(e){}
-  // Re-seed AR + refresh, then confirmation flash.
-  smoothAz  = (rawAz  + calibAzOffset  + 360) % 360;
-  smoothAlt = rawAlt + calibAltOffset;
-  arAz = null; arAlt = null;
-  sfBustObjCache && sfBustObjCache();
-  updateReadouts(smoothAz, smoothAlt);
-  updateTimePanel && updateTimePanel();
-  const layer = $('zcl-sf-ar');
-  if(layer){
-    const flash = document.createElement('div');
-    flash.className = 'zcl-sf-calibflash';
-    layer.appendChild(flash);
-    setTimeout(()=>flash.remove(), 700);
-  }
-  sfCloseAlign();
-}
-
-$('zcl-sf-alignbtn').addEventListener('click', sfOpenAlign);
-$('zcl-sf-align-cancel').addEventListener('click', sfCloseAlign);
-$('zcl-sf-align-do').addEventListener('click', sfApplyAlign);
 
 // Calibrate to Moon — captures the offset between where the moon really is
 // (according to ephemeris) and where the phone is currently pointing, on the
@@ -3213,13 +3293,13 @@ let lastAz=null, lastAlt=null;
 let smoothAz=null, smoothAlt=null, smoothRoll=null;
 const ALPHA=0.15;  // lower = smoother but slower
 
-function smoothAngle(prev, next){
+function smoothAngle(prev, next, k){
   if(prev===null) return next;
   // handle 360→0 wraparound
   let diff = next - prev;
   if(diff > 180) diff -= 360;
   if(diff < -180) diff += 360;
-  return (prev + ALPHA * diff + 360) % 360;
+  return (prev + (k===undefined?ALPHA:k) * diff + 360) % 360;
 }
 
 // ── orientation handler ──────────────────────────────────────
@@ -3242,6 +3322,7 @@ let alphaCompassOffset = null;   // additive correction making azDeg absolute
 let alphaBootstrapStart = null;  // ms timestamp of first compass reading after reset
 
 function onOrient(e){
+  _lastOrientTs = Date.now();          // liveness marker for the resume watchdog
   if(typeof e.beta !== 'number' || typeof e.gamma !== 'number') return;
   // v116: iOS Safari occasionally emits orientation events with NaN beta/gamma
   // (or NaN alpha) right after the tab is brought back to the foreground —
@@ -3274,6 +3355,16 @@ function onOrient(e){
   // Azimuth: 0° = North (vy axis), increasing clockwise toward East (vx axis).
   let azDeg = (Math.atan2(vx, vy) * 180/Math.PI + 360) % 360;
 
+  // ── Zenith yaw damping ─────────────────────────────────────
+  // Pointing near straight up, the camera azimuth (and screen roll) are
+  // ill-conditioned: a tiny hand wobble can legitimately swing them ~180° in
+  // a single frame, which the projection renders as the whole overlay
+  // spinning about the crosshair (gimbal lock). Scale the yaw/roll smoothing
+  // response down with cos(alt): unnoticeable below ~55° altitude, ~4× slower
+  // at 80°, ~16× at the floor when parked dead-overhead. The floor keeps
+  // convergence alive so the overlay still settles, just calmly.
+  const zenithK = Math.max(0.06, Math.min(1, 1.6*Math.cos(altDeg*Math.PI/180)));
+
   // Camera ROLL about its pointing axis, relative to true vertical (zenith).
   // Needed so overlays stay glued to the sky when the phone is rotated rather
   // than rotating with the screen. We take the device +X (screen-right) and +Y
@@ -3284,7 +3375,7 @@ function onOrient(e){
   const uz =  sB;      // z-up component of device +Y (screen-up)
   let rollDeg = Math.atan2(rz, uz) * 180/Math.PI;
   smoothRoll = (smoothRoll === null) ? rollDeg
-             : smoothRoll + ALPHA*(((rollDeg - smoothRoll + 540) % 360) - 180);
+             : smoothRoll + ALPHA*zenithK*(((rollDeg - smoothRoll + 540) % 360) - 180);
 
   // Use webkitCompassHeading as an absolute reference. iOS reports e.alpha as
   // relative to device startup, not magnetic north, so we need an offset to
@@ -3325,7 +3416,7 @@ function onOrient(e){
   azDeg  = (azDeg  + calibAzOffset  + 360) % 360;
   altDeg = altDeg + calibAltOffset;
 
-  smoothAz  = smoothAngle(smoothAz, azDeg);
+  smoothAz  = smoothAngle(smoothAz, azDeg, ALPHA*zenithK);
   smoothAlt = smoothAlt === null ? altDeg : smoothAlt + ALPHA*(altDeg-smoothAlt);
 
   if(smoothAz !== null && smoothAlt !== null){
@@ -3592,6 +3683,13 @@ function updateMwPositions(date){
 function renderMwDots(){
   const layer = $('zcl-sf-ar');
   if(!layer) return;
+  // No live pose (e.g. orientation events not yet resumed after an app
+  // switch) → hide the band entirely rather than drawing it pinned to a
+  // fake az/alt of 0, which reads as a horizon line unrelated to sensors.
+  if(arAz === null && smoothAz === null){
+    for(let i = 0; i < sfMwDots.length; i++) sfMwDots[i].el.style.opacity = '0';
+    return;
+  }
   const W = layer.clientWidth || window.innerWidth;
   const H = layer.clientHeight || window.innerHeight;
   const refAz  = (arAz  !== null) ? arAz  : (smoothAz  || 0);
@@ -3602,8 +3700,8 @@ function renderMwDots(){
   for(let i = 0; i < sfMwDots.length; i++){
     const d = sfMwDots[i];
     if(d.alt === null || d.alt < 0){ d.el.style.opacity = '0'; continue }
-    const dAz = sfAngDiff(d.az, refAz);
-    const dAlt = d.alt - refAlt;
+    const tp = sfTanProject(d.az, d.alt, refAz, refAlt);
+    const dAz = tp.e, dAlt = tp.n;
     // Distance beyond visible edge, where 1.0 = right at the frame edge.
     const xFrac = Math.abs(dAz) / halfH;
     const yFrac = Math.abs(dAlt) / halfV;
@@ -3687,6 +3785,95 @@ function sfEaseAR(ptAz, ptAlt){
 // not the raw sensor rate), reading the latest smoothed angles and easing the
 // markers toward their targets. This is what keeps the labels steady.
 let sfArRAF = null;
+// Draw constellation line-art (and its title) when the crosshair is pointing
+// near a figure. Uses the SAME projection as the markers, so lines glue to the
+// sky and stay aligned with the star glyphs. Every vertex is projected even if
+// it's below the horizon or off-screen, so the whole recognizable shape shows.
+let sfConstelShown = null;   // name of the figure currently displayed (or null)
+function sfRenderConstellations(ptAz, ptAlt){
+  const svg = $('zcl-sf-constel');
+  if(!svg) return;
+  // Hide during guided calibration so the view stays uncluttered.
+  const calibrating = (typeof sfCalibState !== 'undefined' && sfCalibState && sfCalibState.active)
+                   || (typeof sfDragCalib !== 'undefined' && sfDragCalib && sfDragCalib.active)
+                   || document.body.classList.contains('sf-calibrating');
+  // Only relevant when the star overlay is on and we have a pointing direction.
+  if(calibrating || !arOn || ptAz === null || ptAlt === null){
+    if(sfConstelShown){ svg.classList.remove('show'); svg.innerHTML=''; sfConstelShown=null; }
+    return;
+  }
+  const W = svg.clientWidth || window.innerWidth;
+  const H = svg.clientHeight || window.innerHeight;
+  const hf = getHFOV();
+  // Use the SAME time source the star markers use, so shared stars project to
+  // the exact same spot and the line-art vertices sit right on the glyphs.
+  const date = (typeof timeSliderVal !== 'undefined' && anyOverlayOn())
+    ? sliderToDate(timeSliderVal) : new Date(sfObjCacheT || Date.now());
+
+  // Pick the figure the crosshair is actually INSIDE (or nearly so). We measure
+  // how far the pointing direction is from the figure's centroid AND compare it
+  // to the figure's own angular radius, so a big figure like Scorpius only
+  // triggers once you're within its span — not from far across the sky.
+  let best=null, bestScore=1e9;
+  for(const fig of SF_CONSTELLATIONS){
+    let sx=0, sy=0, sz=0, anyUp=false;
+    const pts=[];
+    for(const [ra,dec] of fig.verts){
+      const aa = eqToAltAz(ra, dec, date);
+      pts.push(aa);
+      if(aa.alt > -2) anyUp=true;
+      const azR=aa.az*Math.PI/180, altR=aa.alt*Math.PI/180;
+      sx+=Math.cos(altR)*Math.cos(azR); sy+=Math.cos(altR)*Math.sin(azR); sz+=Math.sin(altR);
+    }
+    const cAz=Math.atan2(sy,sx)*180/Math.PI, cAlt=Math.atan2(sz,Math.hypot(sx,sy))*180/Math.PI;
+    // Figure radius = max angular distance from centroid to any vertex.
+    let radius=0;
+    for(const aa of pts){
+      const r=Math.hypot(sfAngDiff(aa.az,cAz), aa.alt-cAlt);
+      if(r>radius) radius=r;
+    }
+    const dAz=sfAngDiff(cAz, ptAz), dAlt=cAlt-ptAlt;
+    const sep=Math.hypot(dAz, dAlt);
+    // "Inside": within the figure's own radius plus a small margin (8°), so the
+    // title/lines appear only when you're actually on the constellation.
+    if(anyUp && sep < radius + 8 && sep < bestScore){ bestScore=sep; best={fig, pts, cAz, cAlt}; }
+  }
+
+  if(!best){
+    if(sfConstelShown){ svg.classList.remove('show'); svg.innerHTML=''; sfConstelShown=null; }
+    return;
+  }
+
+  // Project each vertex through the exact tangent-plane projection. Segments
+  // with an endpoint at/behind the camera plane are culled — near the zenith
+  // those are the lines that used to shoot and twist across the frame.
+  const proj = aa => {
+    const t = sfTanProject(aa.az, aa.alt, arAz, arAlt);
+    return sfRollProject(W, H, (t.e/(hf/2))*(W/2), (t.n/(VFOV/2))*(H/2));
+  };
+  const T = best.pts.map(aa => sfTanProject(aa.az, aa.alt, arAz, arAlt));
+  const P = T.map(t => sfRollProject(W, H, (t.e/(hf/2))*(W/2), (t.n/(VFOV/2))*(H/2)));
+
+  // Build the line paths + a title placed at the figure's centroid on screen.
+  let paths='';
+  for(const [a,b] of best.fig.lines){
+    if(!T[a].front || !T[b].front) continue;
+    paths += '<line class="cline" x1="'+P[a].x.toFixed(1)+'" y1="'+P[a].y.toFixed(1)
+          +  '" x2="'+P[b].x.toFixed(1)+'" y2="'+P[b].y.toFixed(1)+'"/>';
+  }
+  const cProj = proj({ az:best.cAz, alt:best.cAlt });
+  // Place the title a little above the centroid so it clears the crosshair,
+  // and keep it on-screen even if the centroid drifts to an edge.
+  const tx = Math.max(60, Math.min(W-60, cProj.x));
+  const ty = Math.max(24, Math.min(H-16, cProj.y - 46));
+  const title = '<text class="ctitle" x="'+tx.toFixed(1)+'" y="'+ty.toFixed(1)
+             +  '" text-anchor="middle">'+best.fig.name+'</text>';
+
+  svg.innerHTML = paths + title;
+  if(!svg.classList.contains('show')) svg.classList.add('show');
+  sfConstelShown = best.fig.name;
+}
+
 function sfArLoop(){
   // Ease arAz/arAlt every frame as long as ANY AR-dependent overlay is active.
   // Doing this BEFORE the per-overlay renders means MW and moon can rely on a
@@ -3697,9 +3884,16 @@ function sfArLoop(){
   if((arOn || messOn) && smoothAz !== null && smoothAlt !== null){
     sfRenderAR(smoothAz, smoothAlt);
   }
+  // Constellation line-art overlay (shown when the crosshair is near a figure).
+  sfRenderConstellations(smoothAz, smoothAlt);
   // Refresh moon dots every 6 frames so they track pointing direction changes
   if(moonOn && smoothAz !== null && smoothAlt !== null){
     if(++sfMoonRefreshN % 6 === 0) updateMoonARLayer(moonAltAz(sliderToDate(timeSliderVal)), timeSliderVal);
+  }
+  // Sun tracks the live sky, so reposition it on the same cadence as the phone
+  // sweeps — it must follow pointing changes just like the moon.
+  if(sunOn && smoothAz !== null && smoothAlt !== null){
+    if(sfMoonRefreshN % 6 === 0) updateSunARLayer(timeSliderVal);
   }
   // Milky Way: recompute alt/az every 5 seconds (~300 frames) to track sidereal
   // drift; reposition every 4 frames so the dots track pointing without re-running
@@ -3739,88 +3933,93 @@ function updateReadouts(az, alt){
 }
 
 // ── start ────────────────────────────────────────────────────
-// CRITICAL ORDER: the motion-sensor permission MUST be requested FIRST,
-// synchronously inside the tap handler, BEFORE any `await`. iOS only shows
-// the orientation prompt while a "user gesture" is active; an intervening
-// await (e.g. awaiting the camera) consumes that gesture and iOS then
-// throws NotAllowedError "requires a user gesture to prompt". So we request
-// motion first, then the camera.
-async function start(){
-  hideErr();
-  $('zcl-sf-startbtn').disabled = true;
-  $('zcl-sf-startbtn').textContent = 'Starting\u2026';
+// NO INTRO: the page boots straight into the live camera view. The camera
+// needs no user gesture, so it starts immediately. Motion permission is tried
+// silently; iOS resolves it without any prompt when the site's grant is
+// remembered. Only when iOS genuinely demands a fresh prompt (which requires
+// a user gesture) does a small in-view pill appear — that tap is the gesture.
+function sfShowPill(id){ const el=$(id); if(el) el.classList.add('on') }
+function sfHidePill(id){ const el=$(id); if(el) el.classList.remove('on') }
 
-  // 1. MOTION FIRST — kick off the permission request immediately on tap,
-  //    without awaiting anything before it.
-  let motionPromise = null;
-  if(typeof DeviceOrientationEvent !== 'undefined'
-     && typeof DeviceOrientationEvent.requestPermission === 'function'){
-    try{
-      // Do NOT await anything before this call. Capture the promise now,
-      // while the user gesture is still valid, and await it below.
-      motionPromise = DeviceOrientationEvent.requestPermission();
-    }catch(err){
-      motionPromise = Promise.reject(err);
-    }
-  }
-
-  // 2. Await the motion result (the prompt is already showing at this point)
-  if(motionPromise){
-    try{
-      const perm = await motionPromise;
-      if(perm !== 'granted'){
-        showErr('<b>Motion sensor access denied.</b><br>To re-enable: iPhone Settings \u2192 Apps \u2192 Safari \u2192 turn on <b>Motion &amp; Orientation Access</b>, then reopen and tap Start.');
-        resetBtn(); return;
-      }
-    }catch(err){
-      var ua = navigator.userAgent || '';
-      var inApp = /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|GSA/i.test(ua)
-                || (/iPhone|iPad/i.test(ua) && !/Safari/i.test(ua) && !window.navigator.standalone);
-      if(inApp){
-        showErr('<b>Please open in Safari.</b><br>This page is running inside another app\u2019s browser, which blocks the compass. Tap the share icon and choose <b>Open in Safari</b>, then try again.');
-      } else {
-        showErr('<b>Motion sensor error:</b> ' + (err && err.name ? err.name : 'unknown')
-              + (err && err.message ? '<br>' + err.message : '')
-              + '<br><br>Close the app fully and reopen it, then tap Start.');
-      }
-      resetBtn(); return;
-    }
-  }
-
-  // 3. Attach orientation listener now that permission is granted
+function sfAttachMotion(){
   orientCB = onOrient;
-  if('ondeviceorientationabsolute' in window){
-    window.addEventListener('deviceorientationabsolute', orientCB);
-  }
-  window.addEventListener('deviceorientation', orientCB);
+  sfAttachOrient();
+}
 
-  // 4. NOW request the camera (awaiting here is fine — motion is already granted)
+async function startCamera(){
   try{
+    if(stream){ try{ stream.getTracks().forEach(t=>t.stop()) }catch(e){} stream=null; }
     stream = await navigator.mediaDevices.getUserMedia({
       video:{ facingMode:{ideal:'environment'}, width:{ideal:1920} },
       audio:false
     });
-    $('zcl-sf-video').srcObject = stream;
+    const v=$('zcl-sf-video'); if(v){ v.srcObject = stream; try{ await v.play() }catch(e){} }
+    return true;
   }catch(err){
-    showErr('<b>Camera access denied.</b><br>Allow camera access when prompted, or enable it in your browser settings, then try again.');
-    stopStream(); resetBtn(); return;
+    showErr('<b>Camera access needed.</b><br>Allow camera access when prompted, or enable it via Safari\u2019s <b>aA \u2192 Website Settings \u2192 Camera \u2192 Allow</b>, then reload.');
+    return false;
   }
+}
 
-  // 5. Show camera stage
-  $('zcl-sf-intro').style.display = 'none';
+function sfMotionDeniedMsg(err){
+  var ua = navigator.userAgent || '';
+  var inApp = /FBAN|FBAV|Instagram|Line|Twitter|MicroMessenger|GSA/i.test(ua)
+            || (/iPhone|iPad/i.test(ua) && !/Safari/i.test(ua) && !window.navigator.standalone);
+  if(inApp){
+    showErr('<b>Please open in Safari.</b><br>This page is running inside another app\u2019s browser, which blocks the compass. Tap the share icon and choose <b>Open in Safari</b>.');
+  } else {
+    showErr('<b>Motion sensor access denied.</b><br>To re-enable: iPhone Settings \u2192 Apps \u2192 Safari \u2192 turn on <b>Motion &amp; Orientation Access</b>, then reload.'
+      + (err && err.name && err.name!=='NotAllowedError' ? '<br><br>(' + err.name + ')' : ''));
+  }
+}
+
+function startMotion(){
+  if(typeof DeviceOrientationEvent === 'undefined'
+     || typeof DeviceOrientationEvent.requestPermission !== 'function'){
+    sfAttachMotion();                     // Android / desktop: no prompt at all
+    return;
+  }
+  // iOS: silent attempt first — resolves without UI when the grant is remembered
+  DeviceOrientationEvent.requestPermission()
+    .then(function(p){
+      if(p === 'granted'){ sfAttachMotion(); }
+      else { sfMotionDeniedMsg(null); }
+    })
+    .catch(function(){
+      // A fresh prompt is required, and that needs a user gesture → pill.
+      sfShowPill('zcl-sf-motionpill');
+    });
+}
+
+// Pill tap = the user gesture iOS wants. Request synchronously inside it.
+$('zcl-sf-motionpill').addEventListener('click', function(){
+  let mp;
+  try{ mp = DeviceOrientationEvent.requestPermission(); }
+  catch(err){ mp = Promise.reject(err); }
+  mp.then(function(p){
+    sfHidePill('zcl-sf-motionpill');
+    if(p === 'granted'){ hideErr(); sfAttachMotion(); }
+    else { sfMotionDeniedMsg(null); }
+  }).catch(function(err){
+    sfHidePill('zcl-sf-motionpill');
+    sfMotionDeniedMsg(err);
+  });
+});
+
+async function enterStage(){
+  hideErr();
   $('zcl-sf-stage').classList.add('on');
-  $('zcl-sf-titlebar').classList.remove('intro-mode');
   document.body.classList.add('sf-stage-active');
-  // 6. Begin the AR animation loop (steady, refresh-rate-capped)
   sfArInited = false; arAz = null; arAlt = null;
   sfStartArLoop();
   // Stars overlay is on by default — open the time panel snapped to "now"
-  // so the slider is immediately available for scrubbing.
   if(arOn){
     if(!_panelEverOpened){ timeSliderVal = nowSliderStep(); _panelEverOpened = true }
     $('zcl-sf-timeslider').value = timeSliderVal;
     updateTimePanel();
   }
+  startCamera();       // no gesture needed — fire immediately
+  startMotion();       // silent when possible; pill only if iOS insists
 }
 
 function stopStream(){
@@ -3907,6 +4106,18 @@ window.addEventListener('pageshow', function(e){
 //   arAz/arAlt → null forces the AR loop to re-seed its eased targets without
 //   long sweeps from stale values. Defensively re-start the rAF chain in case
 //   it was somehow severed during backgrounding.
+let _lastOrientTs = 0;
+function sfAttachOrient(){
+  if(!orientCB) return;
+  try{
+    if('ondeviceorientationabsolute' in window){
+      window.removeEventListener('deviceorientationabsolute', orientCB);
+      window.addEventListener('deviceorientationabsolute', orientCB);
+    }
+    window.removeEventListener('deviceorientation', orientCB);
+    window.addEventListener('deviceorientation', orientCB);
+  }catch(e){}
+}
 function sfResumeFromBackground(){
   const stage = $('zcl-sf-stage');
   if(!stage || !stage.classList.contains('on')) return;   // not in finder view
@@ -3915,35 +4126,40 @@ function sfResumeFromBackground(){
   alphaBootstrapStart = null;
   arAz = null; arAlt = null;
   if(!sfArRAF) sfStartArLoop();
+  // iOS sometimes silently stops delivering orientation events after an app
+  // switch — and our own visibilitychange handler tears the listener down
+  // (stopStream nulls orientCB). Fully restore the callback + listeners, then
+  // watchdog: if nothing arrives within a second, try a silent permission
+  // re-grant; if even that needs a gesture, rearm on the next tap.
+  sfAttachMotion();
+  const resumedAt = Date.now();
+  setTimeout(function(){
+    if(_lastOrientTs >= resumedAt) return;                 // events flowing again
+    if(typeof DeviceOrientationEvent !== 'undefined'
+       && typeof DeviceOrientationEvent.requestPermission === 'function'){
+      DeviceOrientationEvent.requestPermission()
+        .then(function(p){ if(p === 'granted') sfAttachMotion(); })
+        .catch(function(){
+          // Needs a user gesture — rearm on the next touch anywhere.
+          const rearm = function(){
+            document.removeEventListener('touchend', rearm, true);
+            DeviceOrientationEvent.requestPermission()
+              .then(function(p){ if(p === 'granted') sfAttachMotion(); })
+              .catch(function(){});
+          };
+          document.addEventListener('touchend', rearm, true);
+        });
+    } else {
+      sfAttachMotion();
+    }
+  }, 1000);
 }
 
-function resetBtn(){
-  $('zcl-sf-startbtn').disabled=false;
-  $('zcl-sf-startbtn').textContent='Start Sky Finder';
-}
 
-function stop(){
-  stopStream();
-  sfStopArLoop();
-  moonOn = false;
-  $('zcl-sf-moonbtn').classList.remove('on');
-  $('zcl-sf-stage').classList.remove('on');
-  $('zcl-sf-intro').style.display='';
-  $('zcl-sf-titlebar').classList.add('intro-mode');
-  document.body.classList.remove('sf-stage-active');
-  $('zcl-sf-azval').textContent='---';
-  $('zcl-sf-altval').textContent='---';
-  $('zcl-sf-ar').innerHTML='';
-  sfArInited=false; arAz=null; arAlt=null;
-  // Clear boost — video element filter and hardware state
-  boostOn = false;
-  const b=$('zcl-sf-boostbtn'); if(b) b.classList.remove('on');
-  const v=$('zcl-sf-video');    if(v) v.style.filter='';
-  resetBtn();
-}
 
-$('zcl-sf-startbtn').addEventListener('click', start);
-$('zcl-sf-stopbtn').addEventListener('click', stop);
+// Boot straight in — no intro page.
+enterStage();
+
 // ── Two-point calibration: stage tap listener + postMessage trigger ─
 // When calibration is active, capture taps on the stage to record where
 // the user thinks the named stars actually are. Otherwise pass through.
@@ -4037,7 +4253,7 @@ function resetBoostOnStop(){
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem active" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
@@ -4047,6 +4263,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 <!-- ════ Settings popup (shared) ════ -->
 <style>
@@ -4061,6 +4292,18 @@ if('serviceWorker' in navigator){
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>
@@ -4097,11 +4340,11 @@ if('serviceWorker' in navigator){
     }
     else if(d.type==='zcl-az-nudge' || d.type==='zcl-alt-nudge'){
       // Manual fine-tune from Settings. The nudge is an absolute setting on its
-      // own axis (not cumulative), applied on top of whatever Quick Align set —
-      // so we keep the Quick-Align base in a side variable and add the nudge.
-      if(typeof sfManualNudgeAz === 'undefined'){ window.sfManualNudgeAz = 0; window.sfManualNudgeAlt = 0 }
-      if(d.type==='zcl-az-nudge')  sfApplyManualNudge(+d.value, null);
-      else                          sfApplyManualNudge(null, +d.value);
+      // own axis (not cumulative), applied on top of the stored calibration —
+      // the base offset is kept in a side variable and the nudge added to it.
+      if(typeof window.sfApplyManualNudge !== 'function') return;
+      if(d.type==='zcl-az-nudge')  window.sfApplyManualNudge(+d.value, null);
+      else                          window.sfApplyManualNudge(null, +d.value);
     }
     // zcl-fov: nothing to do live; finder re-reads sfVFOV on open
   });

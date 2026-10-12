@@ -1,0 +1,39 @@
+andromeda-135mm                pass1  RA 0.71h  Dec 41.3  135 mm  n 314  rms 0.21 px
+andromeda-135mm_str            pass1  RA 0.71h  Dec 41.3  135 mm  n 183  rms 0.58 px
+andromeda-135mm_rot            pass1  RA 0.71h  Dec 41.3  178 mm  n 175  rms 0.34 px
+andromeda-135mm_jpg            pass1  RA 0.71h  Dec 41.3  135 mm  n 164  rms 1.49 px
+andromeda-135mm_curve          pass1  RA 0.71h  Dec 41.3  135 mm  n 106  rms 0.13 px
+andromeda-135mm_A              pass1  RA 0.71h  Dec 41.3  135 mm  n 101  rms 1.14 px
+andromeda-135mm_B              pass1  RA 0.71h  Dec 41.3  135 mm  n 220  rms 0.72 px
+andromeda-135mm_C              pass1  RA 0.71h  Dec 41.3  135 mm  n 144  rms 0.65 px
+heart-soul-edited              pass1  RA 2.74h  Dec 61.2  408 mm  n 54  rms 1.22 px
+heart-soul-edited_str          FAIL
+heart-soul-edited_rot          pass1  RA 2.74h  Dec 61.2  537 mm  n 31  rms 1.51 px
+heart-soul-edited_jpg          pass1  RA 2.74h  Dec 61.2  408 mm  n 55  rms 1.29 px
+heart-soul-edited_curve        pass1  RA 2.74h  Dec 61.2  408 mm  n 53  rms 1.68 px
+orion-300mm                    pass1  RA 5.59h  Dec -5.4  300 mm  n 89  rms 0.37 px
+orion-300mm_str                pass1  RA 5.59h  Dec -5.4  300 mm  n 62  rms 0.44 px
+orion-300mm_rot                pass1  RA 5.59h  Dec -5.4  395 mm  n 54  rms 0.28 px
+orion-300mm_jpg                pass1  RA 5.59h  Dec -5.4  300 mm  n 87  rms 0.73 px
+orion-300mm_curve              pass1  RA 5.59h  Dec -5.4  300 mm  n 78  rms 0.23 px
+orion-300mm_A                  pass1  RA 5.59h  Dec -5.4  300 mm  n 76  rms 0.85 px
+orion-300mm_B                  pass1  RA 5.59h  Dec -5.4  300 mm  n 76  rms 1.27 px
+orion-300mm_C                  pass1  RA 5.59h  Dec -5.4  300 mm  n 42  rms 1.26 px
+orion-user-362mm               pass1  RA 5.62h  Dec -4.5  362 mm  n 76  rms 1.16 px
+orion-user-362mm_str           pass1  RA 5.62h  Dec -4.5  362 mm  n 64  rms 1.42 px
+orion-user-362mm_rot           pass1  RA 5.62h  Dec -4.5  476 mm  n 47  rms 0.95 px
+orion-user-362mm_jpg           pass1  RA 5.62h  Dec -4.5  362 mm  n 71  rms 0.96 px
+orion-user-362mm_curve         pass1  RA 5.62h  Dec -4.5  362 mm  n 67  rms 1.02 px
+sagittarius-50mm               pass1  RA 18.80h  Dec -20.0  50 mm  n 390  rms 0.28 px
+sagittarius-50mm_str           pass1  RA 18.80h  Dec -20.0  50 mm  n 381  rms 0.71 px
+sagittarius-50mm_rot           pass1  RA 18.80h  Dec -20.0  66 mm  n 397  rms 0.29 px
+sagittarius-50mm_jpg           pass1  RA 18.80h  Dec -20.0  50 mm  n 376  rms 0.36 px
+sagittarius-50mm_curve         pass1  RA 18.80h  Dec -20.0  50 mm  n 358  rms 0.25 px
+sagittarius-50mm_A             pass1  RA 18.80h  Dec -20.0  50 mm  n 319  rms 0.44 px
+sagittarius-50mm_B             pass1  RA 18.80h  Dec -20.0  50 mm  n 284  rms 0.51 px
+sagittarius-50mm_C             pass1  RA 18.80h  Dec -20.0  50 mm  n 108  rms 0.75 px
+screenshot-unsolvable          FAIL
+noise                          FAIL
+dense                          FAIL
+
+33 of 37 solved

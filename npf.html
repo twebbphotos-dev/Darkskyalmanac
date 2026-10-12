@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>NPF Calculator · Dark Sky Almanac</title>
+<meta name="description" content="The longest exposure before stars trail — the NPF rule, tuned to your camera and lens.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="NPF Calculator · Dark Sky Almanac">
+<meta property="og:description" content="The longest exposure before stars trail — the NPF rule, tuned to your camera and lens.">
+<meta property="og:image" content="social.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/npf">
+<meta property="og:url" content="https://app.darkskyalmanac.com/npf">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#141319;min-height:100dvh;font-family:'Montserrat',-apple-system,sans-serif;color:#E4D9B8}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);padding-bottom:40px;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+a{color:inherit}
+/* top nav */
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+/* page frame */
+.zcl-page{max-width:760px;margin:0 auto;padding:0 20px;position:relative}
+.zcl-stars{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.4;z-index:0}
+.zcl-page>*{position:relative;z-index:1}
+/* title banner */
+.zcl-titlebar{text-align:center;padding:26px 8px 14px}
+.zcl-kicker{font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#9A8A66;margin-bottom:9px}
+.zcl-maintitle{font-size:clamp(22px,5vw,30px);font-weight:600;letter-spacing:.05em;color:#F2E4BE;text-transform:uppercase;line-height:1.2}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:13px;margin:12px auto 10px;max-width:300px}
+.zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-rstar{width:15px;height:15px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-subtitle{font-size:13px;font-style:italic;color:#9A8E6E;max-width:500px;margin:0 auto;line-height:1.5}
+.zcl-back{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9A8A66;text-decoration:none;margin:6px 0 0}
+.zcl-back:hover{color:#CBA85A}
+.zcl-seclabel{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#CBA85A;
+  margin:22px 0 12px;padding-bottom:7px;border-bottom:1px solid rgba(203,168,90,.26)}
+
+.zcl-row{display:flex;flex-wrap:wrap;gap:13px}
+.zcl-field{flex:1 1 150px;min-width:0}
+.zcl-flabel{font-size:10.5px;letter-spacing:.10em;text-transform:uppercase;color:#9A8A66;margin-bottom:5px;display:flex;align-items:baseline;gap:6px}
+.zcl-flabel .zcl-hint{font-size:9.5px;letter-spacing:.04em;text-transform:none;color:#6E6450;font-style:italic}
+select,input[type=number]{width:100%;background:#0d0a18;border:1px solid rgba(203,168,90,.3);border-radius:7px;
+  color:#F2E4BE;font-size:15px;font-weight:500;padding:10px 12px;outline:none;appearance:none;-webkit-appearance:none;font-family:inherit}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23CBA85A' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:32px}
+select:focus,input:focus{border-color:#CBA85A}
+input[type=number]::-webkit-outer-spin-button,input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.zcl-sub{font-size:10.5px;color:#7E7257;margin-top:5px;line-height:1.4;min-height:14px}
+.zcl-chips{display:flex;flex-wrap:wrap;gap:6px;margin-top:7px}
+.zcl-chip{font-size:11px;color:#9A8A66;background:rgba(203,168,90,.08);border:1px solid rgba(203,168,90,.22);border-radius:14px;padding:4px 11px;cursor:pointer;transition:all .15s}
+.zcl-chip:hover{border-color:#CBA85A;color:#E4D9B8}
+.zcl-chip.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#F2E4BE}
+.zcl-modetoggle{display:inline-flex;border:1px solid rgba(203,168,90,.3);border-radius:7px;padding:3px;background:rgba(0,0,0,.25)}
+.zcl-modebtn{font-size:11.5px;letter-spacing:.06em;font-weight:500;color:#9A8A66;background:none;border:none;border-radius:5px;padding:8px 16px;cursor:pointer;transition:all .15s;font-family:inherit}
+.zcl-modebtn:hover{color:#CBA85A}
+.zcl-modebtn.on{background:rgba(203,168,90,.18);color:#F2E4BE}
+.zcl-adv{margin-top:15px;display:none}
+.zcl-adv.show{display:block}
+input[type=range]{width:100%;-webkit-appearance:none;appearance:none;height:3px;border-radius:2px;background:linear-gradient(to right,#CBA85A,#6E5B36);outline:none;margin-top:4px}
+input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:18px;height:18px;border-radius:50%;background:#E6CC85;border:2px solid #141319;cursor:pointer;box-shadow:0 0 6px rgba(230,204,133,.5)}
+input[type=range]::-moz-range-thumb{width:18px;height:18px;border-radius:50%;background:#E6CC85;border:2px solid #141319;cursor:pointer}
+.zcl-slval{display:flex;justify-content:space-between;font-size:10.5px;color:#7E7257;margin-top:6px}
+.zcl-slval b{color:#E4D9B8;font-weight:500}
+.zcl-result{margin-top:24px;background:#0d0a18;border:1px solid rgba(203,168,90,.32);border-radius:12px;padding:24px 22px 22px;text-align:center;position:relative;overflow:hidden}
+.zcl-result::before{content:'';position:absolute;inset:0;background:radial-gradient(80% 120% at 50% 0%,rgba(203,168,90,.10),transparent 70%);pointer-events:none}
+.zcl-rlabel{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9A8A66;position:relative}
+.zcl-rbig{font-size:clamp(42px,11vw,58px);font-weight:600;color:#F2E4BE;line-height:1;margin:8px 0 4px;position:relative;text-shadow:0 0 24px rgba(230,204,133,.25)}
+.zcl-rbig .zcl-runit{font-size:.42em;font-weight:400;color:#CBA85A;margin-left:4px}
+.zcl-rwhole{font-size:12.5px;color:#9A8E6E;position:relative;font-style:italic;min-height:16px}
+.zcl-rgrid{display:flex;gap:10px;margin-top:20px;position:relative}
+.zcl-rmini{flex:1;background:rgba(0,0,0,.3);border:1px solid rgba(203,168,90,.14);border-radius:8px;padding:11px 9px}
+.zcl-rmini .l{font-size:9.5px;letter-spacing:.10em;text-transform:uppercase;color:#7E7257}
+.zcl-rmini .v{font-size:18px;font-weight:500;color:#E4D9B8;margin-top:3px}
+.zcl-rmini .v small{font-size:11px;color:#9A8A66;font-weight:400}
+.zcl-rnote{margin-top:16px;font-size:12px;line-height:1.55;color:#9A8E6E;position:relative}
+.zcl-rnote b{color:#CBA85A;font-weight:500}
+.zcl-foot{margin-top:20px;font-size:11px;line-height:1.6;color:#6E6450;text-align:center;padding-bottom:10px}
+.zcl-foot b{color:#8A7C5C;font-weight:500}
+@media(max-width:480px){.zcl-rgrid{flex-direction:column;gap:8px}.zcl-rmini{display:flex;align-items:baseline;justify-content:space-between;padding:9px 13px}.zcl-rmini .v{margin-top:0}}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+/* Render native controls (select popups, spinners, scrollbars) in dark mode.
+   Without this iOS draws dropdown lists on white, leaving the cream option
+   text unreadable. Explicit option colours cover Android/desktop, where the
+   list IS styleable. */
+html,body{color-scheme:dark}
+select,option,optgroup{color-scheme:dark}
+select option,select optgroup{background:#0d0a18;color:#F2E4BE}
+select:focus option:checked{background:#CBA85A;color:#15121d}
+input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
+::selection{background:rgba(203,168,90,.3);color:#F2E4BE}
+/* fit */
+
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style></head>
+<body>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem active" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<svg class="zcl-stars"></svg>
+<div class="zcl-page">
+  <div class="zcl-titlebar">
+    <div class="zcl-kicker">Astrophotography</div>
+    <div class="zcl-maintitle">Sharp-Star Exposure</div>
+    <div class="zcl-titlerule"><span class="zcl-rline"></span>
+      <svg class="zcl-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+      <span class="zcl-rline"></span></div>
+    <div class="zcl-subtitle">The longest exposure you can take before the stars begin to trail — the NPF rule, tuned to your camera and lens.</div>
+    <a class="zcl-back" href="photography">‹ All tools</a>
+  </div>
+
+  <div class="zcl-seclabel">Camera &amp; Sensor</div>
+  <div class="zcl-row">
+    <div class="zcl-field" style="flex:1 1 100%">
+      <div class="zcl-flabel">Camera body</div>
+      <select id="zcl-npf-cam"></select>
+      <div class="zcl-sub" id="zcl-npf-camsub"></div>
+    </div>
+  </div>
+  <div class="zcl-row" id="zcl-npf-customrow" style="display:none;margin-top:13px">
+    <div class="zcl-field"><div class="zcl-flabel">Sensor width <span class="zcl-hint">mm</span></div><input type="number" id="zcl-npf-sw" step="0.1" min="1" value="35.6"></div>
+    <div class="zcl-field"><div class="zcl-flabel">Horizontal pixels</div><input type="number" id="zcl-npf-res" step="1" min="100" value="6000"></div>
+  </div>
+
+  <div class="zcl-seclabel">Lens</div>
+  <div class="zcl-row">
+    <div class="zcl-field"><div class="zcl-flabel">Focal length <span class="zcl-hint">mm</span></div><input type="number" id="zcl-npf-focal" step="1" min="1" value="24"><div class="zcl-chips" id="zcl-npf-focalchips"></div></div>
+    <div class="zcl-field"><div class="zcl-flabel">Aperture <span class="zcl-hint">f-number</span></div><input type="number" id="zcl-npf-aperture" step="0.1" min="0.7" value="2.8"><div class="zcl-chips" id="zcl-npf-apchips"></div></div>
+  </div>
+
+  <div class="zcl-seclabel">Sharpness</div>
+  <div style="display:flex;align-items:center;gap:14px;flex-wrap:wrap">
+    <div class="zcl-modetoggle" id="zcl-npf-mode"><button class="zcl-modebtn on" data-mode="default">Default</button><button class="zcl-modebtn" data-mode="accurate">Accurate</button></div>
+    <div class="zcl-sub" id="zcl-npf-modesub" style="flex:1 1 200px;margin-top:0"></div>
+  </div>
+  <div class="zcl-adv" id="zcl-npf-adv">
+    <div class="zcl-field" style="margin-top:4px">
+      <div class="zcl-flabel">Target declination <span class="zcl-hint">how far from the celestial equator</span></div>
+      <input type="range" id="zcl-npf-dec" min="0" max="80" step="5" value="0">
+      <div class="zcl-slval"><span>0° — equator (fastest trailing)</span><span><b id="zcl-npf-decval">0°</b></span></div>
+    </div>
+  </div>
+
+  <div class="zcl-result">
+    <div class="zcl-rlabel">Maximum shutter</div>
+    <div class="zcl-rbig"><span id="zcl-npf-secs">12.5</span><span class="zcl-runit">sec</span></div>
+    <div class="zcl-rwhole" id="zcl-npf-round"></div>
+    <div class="zcl-rgrid">
+      <div class="zcl-rmini"><div class="l">NPF rule</div><div class="v"><span id="zcl-npf-npf">12.5</span><small>s</small></div></div>
+      <div class="zcl-rmini"><div class="l">Old 500 rule</div><div class="v"><span id="zcl-npf-500">20.8</span><small>s</small></div></div>
+      <div class="zcl-rmini"><div class="l">Pixel pitch</div><div class="v"><span id="zcl-npf-pitch">5.9</span><small>µm</small></div></div>
+    </div>
+    <div class="zcl-rnote" id="zcl-npf-note"></div>
+  </div>
+  <div class="zcl-foot">The <b>NPF rule</b> (Frédéric Michaud, Société Astronomique du Havre) weighs aperture, pixel pitch, and focal length — far more reliable than the old 500 rule on today's high-resolution sensors. A sharp starting point; refine in the field.</div>
+</div>
+
+<script>(function(){var s='';for(var i=0;i<120;i++){s+='<circle cx="'+(Math.random()*100).toFixed(1)+'%" cy="'+(Math.random()*100).toFixed(1)+'%" r="'+(Math.random()*0.9+0.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*0.5+0.1).toFixed(2)+'"/>';}var el=document.querySelector('.zcl-stars');if(el)el.innerHTML=s;})();</script>
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var CAMERAS=[
+    {id:'a7iii',name:'Sony A7 III  ·  24 MP full-frame',sw:35.6,res:6000},
+    {id:'a7riv',name:'Sony A7R IV / V  ·  61 MP full-frame',sw:35.7,res:9504},
+    {id:'a7siii',name:'Sony A7S III  ·  12 MP full-frame',sw:35.6,res:4240},
+    {id:'seestar',name:'Seestar S30  ·  IMX662 (2.9 µm)',sw:5.6,res:1920},
+    {id:'r5',name:'Canon EOS R5  ·  45 MP full-frame',sw:36.0,res:8192},
+    {id:'r6',name:'Canon EOS R6  ·  20 MP full-frame',sw:35.9,res:5472},
+    {id:'z6',name:'Nikon Z6 / Z6 II  ·  24 MP full-frame',sw:35.9,res:6048},
+    {id:'z7',name:'Nikon Z7 / Z7 II  ·  46 MP full-frame',sw:35.9,res:8256},
+    {id:'apsc24',name:'APS-C  ·  24 MP (generic)',sw:23.5,res:6000},
+    {id:'m43',name:'Micro 4/3  ·  20 MP (generic)',sw:17.3,res:5184},
+    {id:'custom',name:'Custom sensor…',sw:35.6,res:6000}
+  ];
+  var FOCAL_CHIPS=[14,24,35,50,70,135], AP_CHIPS=[1.4,1.8,2.8,4];
+  var state={camId:'a7iii',sw:35.6,res:6000,focal:24,aperture:2.8,mode:'default',dec:0};
+  (function(){var sel=$('zcl-npf-cam'),h='';for(var i=0;i<CAMERAS.length;i++)h+='<option value="'+CAMERAS[i].id+'">'+CAMERAS[i].name+'</option>';sel.innerHTML=h;sel.value=state.camId;})();
+  (function(){var fc=$('zcl-npf-focalchips'),s='';for(var i=0;i<FOCAL_CHIPS.length;i++)s+='<span class="zcl-chip" data-f="'+FOCAL_CHIPS[i]+'">'+FOCAL_CHIPS[i]+'mm</span>';fc.innerHTML=s;var ac=$('zcl-npf-apchips'),a='';for(var j=0;j<AP_CHIPS.length;j++)a+='<span class="zcl-chip" data-a="'+AP_CHIPS[j]+'">f/'+AP_CHIPS[j]+'</span>';ac.innerHTML=a;})();
+  function pitch(){return (state.sw/state.res)*1000;}
+  function npfSimple(N,p,f){return (35*N+30*p)/f;}
+  function npfAccurate(N,f,p,d){return 1.0*(16.856*N+0.0997*f+13.713*p)/(f*Math.cos(d*Math.PI/180));}
+  function r500(f){return 500/f;}
+  function fmt(t){return (!isFinite(t)||t<=0)?'—':t.toFixed(1);}
+  function render(){
+    var p=pitch(),f=state.focal,N=state.aperture;
+    var npf=(state.mode==='accurate')?npfAccurate(N,f,p,state.dec):npfSimple(N,p,f);
+    var five=r500(f);
+    $('zcl-npf-secs').textContent=fmt(npf);$('zcl-npf-npf').textContent=fmt(npf);
+    $('zcl-npf-500').textContent=fmt(five);$('zcl-npf-pitch').textContent=isFinite(p)?p.toFixed(2):'—';
+    var whole='';if(isFinite(npf)&&npf>0)whole='Set your shutter to about '+(npf<1?npf.toFixed(1):Math.round(npf))+' seconds or faster.';
+    $('zcl-npf-round').textContent=whole;
+    var note='';if(isFinite(npf)&&isFinite(five)&&npf>0){var pct=Math.round((1-npf/five)*100);
+      if(pct>4)note='The 500 rule would let you go to <b>'+fmt(five)+'s</b> — about <b>'+pct+'% longer</b>, enough to streak the stars on this sensor.';
+      else if(pct<-4)note='On this setup the NPF rule is a touch more generous than the 500 rule.';
+      else note='Here the two rules land close together.';}
+    $('zcl-npf-note').innerHTML=note;
+  }
+  function applyCamera(id){var cam=null;for(var i=0;i<CAMERAS.length;i++)if(CAMERAS[i].id===id){cam=CAMERAS[i];break;}if(!cam)return;state.camId=id;var cr=$('zcl-npf-customrow');
+    if(id==='custom'){cr.style.display='flex';state.sw=parseFloat($('zcl-npf-sw').value)||35.6;state.res=parseInt($('zcl-npf-res').value,10)||6000;$('zcl-npf-camsub').textContent='Enter your sensor width and horizontal pixel count below — find them in your camera’s spec sheet.';}
+    else{cr.style.display='none';state.sw=cam.sw;state.res=cam.res;$('zcl-npf-camsub').textContent='Pixel pitch '+(cam.sw/cam.res*1000).toFixed(2)+' µm  ·  sensor '+cam.sw+' mm wide  ·  '+cam.res+' px across';}
+    render();}
+  function applyMode(m){state.mode=m;var b=document.querySelectorAll('.zcl-modebtn');for(var i=0;i<b.length;i++)b[i].classList.toggle('on',b[i].getAttribute('data-mode')===m);
+    $('zcl-npf-adv').classList.toggle('show',m==='accurate');
+    $('zcl-npf-modesub').innerHTML=(m==='accurate')?'Critical sharpness for large prints or 100% pixel-peeping — accounts for where your target sits in the sky.':'Sharp-looking stars for typical viewing and normal prints. A good default.';render();}
+  function syncChips(){document.querySelectorAll('#zcl-npf-focalchips .zcl-chip').forEach(function(c){c.classList.toggle('on',parseFloat(c.getAttribute('data-f'))===state.focal);});document.querySelectorAll('#zcl-npf-apchips .zcl-chip').forEach(function(c){c.classList.toggle('on',parseFloat(c.getAttribute('data-a'))===state.aperture);});}
+  $('zcl-npf-cam').addEventListener('change',function(){applyCamera(this.value);});
+  $('zcl-npf-sw').addEventListener('input',function(){state.sw=parseFloat(this.value)||0;render();});
+  $('zcl-npf-res').addEventListener('input',function(){state.res=parseInt(this.value,10)||0;render();});
+  $('zcl-npf-focal').addEventListener('input',function(){state.focal=parseFloat(this.value)||0;syncChips();render();});
+  $('zcl-npf-aperture').addEventListener('input',function(){state.aperture=parseFloat(this.value)||0;syncChips();render();});
+  document.querySelectorAll('#zcl-npf-focalchips .zcl-chip').forEach(function(c){c.addEventListener('click',function(){state.focal=parseFloat(c.getAttribute('data-f'));$('zcl-npf-focal').value=state.focal;syncChips();render();});});
+  document.querySelectorAll('#zcl-npf-apchips .zcl-chip').forEach(function(c){c.addEventListener('click',function(){state.aperture=parseFloat(c.getAttribute('data-a'));$('zcl-npf-aperture').value=state.aperture;syncChips();render();});});
+  document.querySelectorAll('.zcl-modebtn').forEach(function(b){b.addEventListener('click',function(){applyMode(b.getAttribute('data-mode'));});});
+  $('zcl-npf-dec').addEventListener('input',function(){state.dec=parseFloat(this.value)||0;$('zcl-npf-decval').textContent=state.dec+'°';render();});
+  applyCamera(state.camId);applyMode(state.mode);syncChips();render();
+})();
+</script>
+</body>
+</html>

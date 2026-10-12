@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Deep Sky Catalog · Dark Sky Almanac">
 <meta property="og:description" content="Messier, Caldwell, NGC, and IC deep-sky objects — nebulae, galaxies, and star clusters — ranked by how high they climb tonight under dark skies.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/catalog">
 <meta property="og:url" content="https://app.darkskyalmanac.com/catalog">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -75,12 +75,13 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
      Curated multi-catalog list (Messier, Caldwell, NGC, IC) of the
      best deep-sky objects, ranked tonight by altitude during
      astronomical dark hours from Zion.
-     Self-contained Squarespace embed (paste into a Code Block).
+     Self-contained page in the Dark Sky Almanac PWA.
      Sections:  1 CSS   2 MARKUP   3 DATA   4 ASTRO   5 RENDER   6 INIT
      ════════════════════════════════════════════════════════════ -->
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
 
 <!-- ─────────────────────────  1 · CSS  ───────────────────────── -->
 <style>
@@ -195,6 +196,11 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   .zcl-m-controls{padding:0 18px}
   .zcl-m-inner{padding:0 14px}
 }
+/* fit */
+@media(max-width:640px){#zcl-m-page::after{inset:7px}.zcl-m-tl,.zcl-m-tr{top:7px}.zcl-m-bl,.zcl-m-br{bottom:7px}.zcl-m-tl,.zcl-m-bl{left:7px}.zcl-m-tr,.zcl-m-br{right:7px}}
+@media(max-width:1100px){.zcl-m-inner{padding-bottom:34px}}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 
 <!-- ────────────────────────  2 · MARKUP  ──────────────────────── -->
@@ -222,7 +228,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
       <div class="zcl-m-catcard">
         <div class="zcl-m-catname">Messier</div>
         <div class="zcl-m-catcount" id="zcl-m-count-Messier">&nbsp;</div>
-        <div class="zcl-m-catdesc">A French comet hunter's 1771&ndash;1781 list of fuzzy "things to ignore" &mdash; now the most famous deep-sky list in history.</div>
+        <div class="zcl-m-catdesc">A French comet hunter's list of fuzzy "things to ignore" &mdash; published between 1774 and 1781 and now the most famous deep-sky list in history.</div>
       </div>
       <div class="zcl-m-catcard">
         <div class="zcl-m-catname">Caldwell</div>
@@ -232,7 +238,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
       <div class="zcl-m-catcard">
         <div class="zcl-m-catname">NGC</div>
         <div class="zcl-m-catcount" id="zcl-m-count-NGC">&nbsp;</div>
-        <div class="zcl-m-catdesc">The New General Catalogue, 1888 &mdash; nearly 7,840 nebulae, galaxies, and clusters. The master reference astronomers still use today.</div>
+        <div class="zcl-m-catdesc">The New General Catalogue, 1888 &mdash; 7,840 nebulae, galaxies, and clusters. The master reference astronomers still use today.</div>
       </div>
       <div class="zcl-m-catcard">
         <div class="zcl-m-catname">IC</div>
@@ -265,7 +271,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
     <div class="zcl-m-grid" id="zcl-m-grid"></div>
 
     <div class="zcl-m-intro">
-      In the 1770s, French astronomer <b>Charles Messier</b> was a comet hunter, and in his nightly sweeps of the sky he kept being fooled by fuzzy patches that looked tantalizingly like comets but never moved. Frustrated, he compiled a list of these annoyances — <b>things to ignore</b>. Two and a half centuries later, his comet discoveries are forgotten, and his catalogue of distractions is the most famous deep-sky observing list in history: the Crab Nebula, the Andromeda Galaxy, the Pleiades, the Orion Nebula. Messier worked from Paris, though, and missed plenty of bright southern and far-northern showpieces — which is why this page also draws from <b>Patrick Moore's Caldwell catalogue</b> (his 1995 complement list), the sprawling <b>New General Catalogue</b>, and its <b>Index Catalogue</b> supplements, the working reference astronomers still use to name almost everything else. Above are the brightest of all four, ranked by how high they will climb above Zion tonight.
+      In the mid-1700s, French astronomer <b>Charles Messier</b> was a comet hunter, and in his nightly sweeps of the sky he kept being fooled by fuzzy patches that looked tantalizingly like comets but never moved. Frustrated, he compiled a list of these annoyances — <b>things to ignore</b>. Nearly two and a half centuries later, his comet discoveries are largely forgotten, and his catalogue of distractions is the most famous deep-sky observing list in history: the Crab Nebula, the Andromeda Galaxy, the Pleiades, the Orion Nebula. Messier worked from Paris, though, and missed plenty of bright southern and far-northern showpieces — which is why this page also draws from <b>Patrick Moore's Caldwell catalogue</b> (his 1995 complement list), the sprawling <b>New General Catalogue</b>, and its <b>Index Catalogue</b> supplements, the working reference astronomers still use to name almost everything else. Above are the brightest of all four, ranked by how high they will climb tonight.
     </div>
   </div>
 </div>
@@ -277,8 +283,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 (function(){
 
 // ─────────────────────  CONSTANTS / LOCATION  ─────────────────
-const LAT = 37.1986, LNG = -112.9869;   // Zion
-const TZ = 'America/Denver';
+const __dsaLoc=(function(){try{var r=JSON.parse(localStorage.getItem('dsa-location'));if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)return r;}catch(e){}return null;})(), LAT = __dsaLoc?+__dsaLoc.lat:37.1986, LNG = __dsaLoc?+__dsaLoc.lng:-112.9869;   // Zion
+const TZ = ZCLTZ.zone();   // resolved from the saved location, not assumed
 const NOW = new Date();
 const $ = id => document.getElementById(id);
 
@@ -301,47 +307,47 @@ const OBJECTS = [
  ['M20','Trifid Nebula','Nebula','Sagittarius',18.0356,-23.0289,6.3,
   "Split into three petals by dark dust lanes (the name means \u201cthree-lobed\u201d), with both red emission and blue reflection nebulosity visible \u2014 a rare combination.",['Messier'],null],
  ['M27','Dumbbell Nebula','Nebula','Vulpecula',19.9934,22.7211,7.5,
-  "The first planetary nebula ever discovered (Messier himself, 1764) and the brightest in the sky \u2014 the cast-off shell of a dying Sun-like star, glowing in an apple-core shape.",['Messier'],null],
+  "The first planetary nebula ever discovered (Messier himself, 1764) and one of the brightest in the sky — the cast-off shell of a dying Sun-like star, glowing in an apple-core shape.",['Messier'],null],
  ['M42','Orion Nebula','Nebula','Orion',5.5881,-5.3911,4,
   "The closest major star-forming region to Earth at 1,344 light years \u2014 the single most spectacular nebula in the eyepiece, with four young Trapezium stars carving its glowing heart.",['Messier'],null],
  ['M57','Ring Nebula','Nebula','Lyra',18.8923,33.0292,8.8,
-  "A perfect glowing smoke-ring 2,300 light years away \u2014 the exhaled outer shell of a dying star. Unmistakable even in small scopes, and a preview of our Sun\u2019s distant fate.",['Messier'],null],
+  "A perfect glowing smoke-ring about 2,500 light years away — the exhaled outer shell of a dying star. Unmistakable even in small scopes, and a preview of our Sun’s distant fate.",['Messier'],null],
  ['M97','Owl Nebula','Nebula','Ursa Major',11.2461,55.019,9.9,
   "A planetary nebula 2,000 light years away whose two dark \u201ceyes\u201d give it an owlish face. Subtle but rewarding under dark skies in the Big Dipper.",['Messier'],null],
  ['M76','Little Dumbbell','Nebula','Perseus',1.7054,51.5754,10.1,
-  "A small, faint planetary nebula widely considered the toughest Messier object to observe well. Its twin-lobed shape mirrors its larger cousin M27 \u2014 a genuinely satisfying catch.",['Messier'],null],
+  "A small, faint planetary nebula, one of the faintest objects in Messier’s list. Its twin-lobed shape mirrors its larger cousin M27 — a genuinely satisfying catch.",['Messier'],null],
  ['M78','Reflection Nebula','Nebula','Orion',5.7794,0.0792,8.3,
   "Orion\u2019s quieter nebula \u2014 not glowing on its own but reflecting the blue light of hot young stars embedded within it, about 1,300 light years away. The brightest reflection nebula in the sky.",['Messier'],null],
  ['IC 1396','Elephant\u2019s Trunk Nebula','Nebula','Cepheus',21.652,57.5,3.5,
   "A vast, faint star-forming region wrapped around a young open cluster. Within it, a dark dust pillar known as the Elephant\u2019s Trunk has become one of the most photographed narrowband targets in the northern sky.",['IC'],null],
  ['NGC 1499','California Nebula','Nebula','Perseus',4.055,36.42,6.0,
   "An enormous, extremely faint emission nebula whose outline genuinely resembles the state of California. Nearly invisible to the eye, but a hydrogen-alpha filter reveals it spectacularly in long exposures.",['NGC'],null],
- ['NGC 2237','Rosette Nebula','Nebula','Monoceros',6.532,5.04,9.0,
+ ['NGC 2237','Rosette Nebula','Nebula','Monoceros',6.532,4.95,9.0,
   "A vast, circular emission nebula wrapped around the open cluster NGC 2244 \u2014 a blossoming star-forming region some 5,200 light years away, shaped uncannily like a rose.",['NGC','Caldwell'],'Caldwell 49'],
- ['NGC 2392','Eskimo Nebula','Nebula','Gemini',7.486,20.91,9.2,
-  "A planetary nebula with a double-shell structure that resembles a face peering out from a fur-lined parka hood \u2014 unmistakable in images, subtle but distinct in the eyepiece.",['NGC'],null],
+ ['NGC 2392','Clown Face Nebula','Nebula','Gemini',7.486,20.91,9.2,
+  "A planetary nebula with a double-shell structure: a bright inner disc ringed by a fringed outer halo, which earned it the nickname Clown Face Nebula. Unmistakable in images, subtle but distinct in the eyepiece.",['NGC','Caldwell'],'Caldwell 39'],
  ['NGC 6543','Cat\u2019s Eye Nebula','Nebula','Draco',17.976,66.63,8.1,
-  "One of the most structurally intricate planetary nebulae known \u2014 nested shells, knots, and arcs that made it one of the first targets imaged by Hubble in dramatic, multi-layered detail.",['NGC'],null],
+  "One of the most structurally intricate planetary nebulae known — nested shells, knots and arcs revealed in a famous 1994 Hubble image. In 1864 it became the first planetary nebula to have its spectrum studied, showing that such nebulae are glowing gas.",['NGC','Caldwell'],'Caldwell 6'],
  ['NGC 6826','Blinking Planetary','Nebula','Cygnus',19.745,50.52,8.8,
-  "Stares back at its observer: look straight at it and the faint outer shell vanishes, leaving only the bright central star; look slightly away and the shell flashes back into view \u2014 the source of its nickname.",['NGC'],null],
+  "Stares back at its observer: look straight at it and the faint outer shell vanishes, leaving only the bright central star; look slightly away and the shell flashes back into view \u2014 the source of its nickname.",['NGC','Caldwell'],'Caldwell 15'],
  ['NGC 6888','Crescent Nebula','Nebula','Cygnus',20.202,38.36,7.4,
   "A fast stellar wind from a rare Wolf-Rayet star is slamming into gas the star shed earlier in its life, sculpting a glowing crescent-shaped shock front \u2014 a prized narrowband imaging target.",['NGC','Caldwell'],'Caldwell 27'],
  ['NGC 6992','Veil Nebula (East)','Nebula','Cygnus',20.94,31.72,7.0,
   "The eastern arc of a 20,000-year-old supernova remnant \u2014 delicate, glowing lacework left behind by a star that exploded long before recorded history. Among the finest wide-field nebulae in the sky.",['NGC','Caldwell'],'Caldwell 33'],
- ['NGC 7000','North America Nebula','Nebula','Cygnus',20.98,44.33,4.0,
+ ['NGC 7000','North America Nebula','Nebula','Cygnus',20.988,44.53,4.0,
   "A vast emission nebula whose outline strikingly resembles the continent of North America. Under truly dark skies near Deneb, it is one of the few nebulae bright enough to glimpse with the naked eye.",['NGC','Caldwell'],'Caldwell 20'],
  ['NGC 7293','Helix Nebula','Nebula','Aquarius',22.494,-20.84,7.6,
   "The closest bright planetary nebula to Earth, just 650 light years away. Its uncanny resemblance to a giant eye staring back from space has earned it the nickname \u201cEye of God.\u201d",['NGC','Caldwell'],'Caldwell 63'],
  ['NGC 6960','Veil Nebula (West)','Nebula','Cygnus',20.76,30.71,7.0,
   "The western half of the same ancient supernova remnant as the Veil Nebula East, anchored by the bright foreground star 52 Cygni. Together the two arcs frame one of the sky\u2019s great wide-field nebula complexes.",['NGC','Caldwell'],'Caldwell 34'],
- ['NGC 281','Pacman Nebula','Nebula','Cassiopeia',0.865,56.6167,7.8,
+ ['NGC 281','Pacman Nebula','Nebula','Cassiopeia',0.8831,56.62,7.8,
   "An emission nebula whose dark dust lanes carve a grinning, chomping shape into the glowing gas \u2014 a popular narrowband target wrapped around a young embedded star cluster.",['NGC'],null],
  ['NGC 7023','Iris Nebula','Nebula','Cepheus',21.0167,68.1667,7.1,
   "A brilliant blue reflection nebula wrapped around a single hot young star, its delicate wisps of dust shaped like flower petals \u2014 a favorite target for color astrophotography.",['NGC','Caldwell'],'Caldwell 4'],
  // ── v116 IC additions: seven more genuinely interesting IC nebulae ──
- ['IC 405','Flaming Star Nebula','Nebula','Auriga',5.2750,34.4500,6.0,
+ ['IC 405','Flaming Star Nebula','Nebula','Auriga',5.2750,34.36,6.0,
   "The runaway star AE Aurigae plows headlong into a passing molecular cloud, lighting it up in streaks of red emission and blue reflection \u2014 emission and reflection nebulosity wrapped around a single luminous star.",['IC','Caldwell'],'Caldwell 31'],
- ['IC 434','Horsehead Nebula region','Nebula','Orion',5.6792,-2.4500,7.3,
+ ['IC 434','Horsehead Nebula region','Nebula','Orion',5.683,-2.458,7.3,
   "A faint pink emission curtain stretching south from Alnitak in Orion\u2019s belt. Silhouetted against its glow, the small dark dust cloud Barnard 33 takes the unmistakable shape of a horse\u2019s head \u2014 among the most photographed objects in the sky.",['IC'],null],
  ['IC 443','Jellyfish Nebula','Nebula','Gemini',6.2833,22.5167,7.5,
   "A supernova remnant about 5,000 light years away, its expanding shock front crumpled against a foreground cloud into the wispy \u201ctentacle\u201d filaments that earn it the nickname. A favorite hydrogen-alpha and sulfur-II target.",['IC'],null],
@@ -355,28 +361,28 @@ const OBJECTS = [
   "A small jewel of emission and reflection nebulosity at the eastern end of a long, conspicuous dark dust lane (Barnard 168). The combination \u2014 bright glowing cocoon dragging a dark wake \u2014 makes it a uniquely composed astrophotography target.",['IC','Caldwell'],'Caldwell 19'],
  // ── Galaxies (32) ──
  ['M31','Andromeda Galaxy','Galaxy','Andromeda',0.71231,41.2692,3.4,
-  "At 2.5 million light years, the most distant object visible to the naked eye and the nearest large galaxy \u2014 a trillion-star spiral on a collision course with the Milky Way.",['Messier'],null],
+  "At 2.5 million light years, the nearest large galaxy and the most distant object easily visible to the naked eye — a trillion-star spiral that may one day merge with the Milky Way.",['Messier'],null],
  ['M33','Triangulum Galaxy','Galaxy','Triangulum',1.56412,30.6602,5.7,
   "The third-largest galaxy in our Local Group at 2.7 million light years \u2014 a famously difficult naked-eye object whose light is spread thin across the sky.",['Messier'],null],
  ['M51','Whirlpool Galaxy','Galaxy','Canes Venatici',13.4979,47.1953,8.4,
   "The first galaxy ever recognized to have spiral structure, sketched by Lord Rosse in 1845. Caught mid-interaction with a smaller companion tugging at one arm.",['Messier'],null],
  ['M64','Black Eye Galaxy','Galaxy','Coma Berenices',12.9456,21.6828,8.5,
-  "A spiral 17 million light years away with a striking dark dust band across its bright nucleus, like a cosmic black eye. The dust band\u2019s gas rotates opposite to the rest of the galaxy.",['Messier'],null],
- ['M65','Leo Triplet','Galaxy','Leo',11.3155,13.0925,9.3,
+  "A spiral 17 million light years away with a striking dark dust band across its bright nucleus, like a cosmic black eye. Gas in its outer disc rotates the opposite way to the inner galaxy — the likely relic of a swallowed companion.",['Messier'],null],
+ ['M65','Leo Triplet (M65)','Galaxy','Leo',11.3155,13.0925,9.3,
   "Three galaxies 35 million light years away sharing a single eyepiece field (M65, M66, NGC 3628). NGC 3628 trails a faint 300,000-light-year tidal tail of stars drawn out by gravity.",['Messier'],null],
  ['M81','Bode\u2019s Galaxy','Galaxy','Ursa Major',9.9259,69.0653,6.9,
   "A grand orderly spiral 12 million light years away, locked in slow gravitational dance with M82. The two fit a single low-power field \u2014 a galactic before-and-after.",['Messier'],null],
  ['M82','Cigar Galaxy','Galaxy','Ursa Major',9.9319,69.6792,8.4,
   "A starburst galaxy so disrupted by its encounter with M81 that it\u2019s furiously birthing stars and venting plumes of glowing hydrogen from its core.",['Messier'],null],
  ['M101','Pinwheel Galaxy','Galaxy','Ursa Major',14.0537,54.3489,7.9,
-  "A huge face-on spiral 21 million light years away, nearly twice the diameter of the Milky Way. Needs truly dark, moonless skies; rewards them spectacularly.",['Messier'],null],
+  "A huge face-on spiral 21 million light years away and about 170,000 light years across \u2014 larger than the Milky Way. Needs truly dark, moonless skies; rewards them spectacularly.",['Messier'],null],
  ['M104','Sombrero Galaxy','Galaxy','Virgo',12.6669,-11.6231,8,
   "An edge-on galaxy tilted six degrees from edge-on, with a thick dark dust lane cutting across its glowing bulge like the brim of a hat. Hides a billion-Sun black hole.",['Messier'],null],
  ['M77','Cetus A','Galaxy','Cetus',2.7115,-0.0133,8.9,
   "An active galaxy 47 million light years away whose nucleus blazes with light from gas spiraling into a supermassive black hole \u2014 one of the brightest Seyfert galaxies in the sky.",['Messier'],null],
  ['M63','Sunflower Galaxy','Galaxy','Canes Venatici',13.2637,42.0292,8.6,
   "A spiral 27 million light years away whose patchy, feathered arms look like the petals of a sunflower. Belongs to the same galaxy group as M51.",['Messier'],null],
- ['M94','Cat\u2019s Eye Galaxy','Galaxy','Canes Venatici',12.8481,41.1206,8.2,
+ ['M94','Croc\u2019s Eye Galaxy','Galaxy','Canes Venatici',12.8481,41.1206,8.2,
   "A compact spiral 16 million light years away with a brilliant tight core ringed by a faint halo of young blue stars \u2014 a textbook \u201cstarburst ring\u201d galaxy, small and easy to find.",['Messier'],null],
  ['M106','Galaxy in Canes Venatici','Galaxy','Canes Venatici',12.316,47.3035,8.4,
   "A large bright spiral 24 million light years away with a violently active core firing \u201canomalous arms\u201d of superheated gas out through the galaxy. Badly underrated.",['Messier'],null],
@@ -393,21 +399,21 @@ const OBJECTS = [
  ['M96','Galaxy in Leo','Galaxy','Leo',10.7789,11.82,9.3,
   "The brightest member of the Leo I Group, its spiral arms visibly asymmetric \u2014 warped out of shape by gravitational tugging from its group neighbors, including M105 nearby.",['Messier'],null],
  ['M105','Galaxy in Leo','Galaxy','Leo',10.7972,12.5814,9.3,
-  "A giant elliptical in the Leo I Group harboring a supermassive black hole of roughly 200 million solar masses \u2014 enormous relative to the galaxy\u2019s modest size, among the densest known.",['Messier'],null],
+  "An elliptical galaxy in the Leo I Group with a central black hole of roughly 150–200 million solar masses — a textbook elliptical long used to test how such galaxies are built.",['Messier'],null],
  ['M108','Surfboard Galaxy','Galaxy','Ursa Major',11.1919,55.674,10.0,
   "A nearly edge-on barred spiral sitting just off the bowl of the Big Dipper, close in the sky to the Owl Nebula M97. It shows almost no central bulge, giving it a flat, surfboard-like profile.",['Messier'],null],
  ['M109','Barred Spiral in Ursa Major','Galaxy','Ursa Major',11.9605,53.3747,9.8,
   "A barred spiral near Phecda, at the bowl of the Big Dipper \u2014 among the most distant Messier objects at roughly 83 million light years, trailing several small companion galaxies.",['Messier'],null],
- ['M66','Leo Triplet','Galaxy','Leo',11.3382,12.9914,8.9,
+ ['M66','Leo Triplet (M66)','Galaxy','Leo',11.3382,12.9914,8.9,
   "The brightest of the Leo Triplet, its spiral arms visibly warped by the gravity of its two close neighbors, M65 and NGC 3628 \u2014 three galaxies sharing a single low-power eyepiece field.",['Messier'],null],
  ['NGC 3628','Hamburger Galaxy','Galaxy','Leo',11.3367,13.5886,9.5,
   "The third member of the Leo Triplet \u2014 a perfectly edge-on spiral split by a thick dust lane that gives it a stacked \u201chamburger bun\u201d profile, trailing a faint 300,000-light-year tidal tail of stars.",['NGC'],null],
  ['NGC 2403','Galaxy in Camelopardalis','Galaxy','Camelopardalis',7.614,65.6,8.4,
-  "One of the brightest galaxies outside our Local Group, similar in size and structure to M33. Easily picked up in binoculars from a dark sky, and a rewarding telescope target for its star-forming knots.",['NGC'],null],
+  "One of the brightest galaxies outside our Local Group, similar in size and structure to M33. Easily picked up in binoculars from a dark sky, and a rewarding telescope target for its star-forming knots.",['NGC','Caldwell'],'Caldwell 7'],
  ['NGC 253','Sculptor Galaxy','Galaxy','Sculptor',0.793,-25.29,7.1,
-  "One of the brightest galaxies in the sky outside the Local Group \u2014 a dusty, edge-tilted starburst galaxy and the brightest member of the nearby Sculptor Group, just 11 million light years away.",['NGC'],null],
+  "One of the brightest galaxies in the sky outside the Local Group \u2014 a dusty, edge-tilted starburst galaxy and the brightest member of the nearby Sculptor Group, just 11 million light years away.",['NGC','Caldwell'],'Caldwell 65'],
  ['NGC 4565','Needle Galaxy','Galaxy','Coma Berenices',12.606,25.99,9.6,
-  "Widely considered the finest edge-on spiral in the sky \u2014 a razor-thin needle of starlight split cleanly by a dark central dust lane. A favorite test of a dark, transparent night.",['NGC'],null],
+  "Widely considered the finest edge-on spiral in the sky \u2014 a razor-thin needle of starlight split cleanly by a dark central dust lane. A favorite test of a dark, transparent night.",['NGC','Caldwell'],'Caldwell 38'],
  ['NGC 6946','Fireworks Galaxy','Galaxy','Cepheus',20.581,60.15,9.6,
   "Has hosted ten recorded supernovae since 1917 \u2014 more than any other known galaxy \u2014 earning its \u201cFireworks\u201d nickname. A face-on spiral straddling the Cepheus-Cygnus border.",['NGC','Caldwell'],'Caldwell 12'],
  ['M32','Andromeda Companion','Galaxy','Andromeda',0.7122,40.8652,8.1,
@@ -417,7 +423,7 @@ const OBJECTS = [
  ['NGC 891','Silver Sliver Galaxy','Galaxy','Andromeda',2.376,42.349,9.9,
   "An edge-on spiral split by a razor-thin dust lane, often called the Milky Way\u2019s near-twin in size and structure. A demanding but beloved target for deep, dark-sky astrophotography.",['NGC','Caldwell'],'Caldwell 23'],
  ['NGC 7331','Deer Lick Group','Galaxy','Pegasus',22.6171,34.4154,9.5,
-  "A near-twin of our own Milky Way in size and shape, with a small chain of much fainter background galaxies \u2014 the Deer Lick Group \u2014 huddled beside it in the same field. Often imaged alongside Stephan\u2019s Quintet just to the south.",['NGC'],null],
+  "A near-twin of our own Milky Way in size and shape. With the small chain of much fainter galaxies huddled beside it in the same field, it forms the Deer Lick Group. Often imaged alongside Stephan’s Quintet just to the south.",['NGC','Caldwell'],'Caldwell 30'],
  // ── Globular Clusters (13) ──
  ['M2','Globular in Aquarius','Globular','Aquarius',21.5575,-0.8233,6.5,
   "A rich, slightly oval globular 37,000 light years away holding roughly 150,000 stars \u2014 13 billion years old, a relic of the early galaxy.",['Messier'],null],
@@ -425,22 +431,22 @@ const OBJECTS = [
   "Half a million stars bound 34,000 light years away, around 11 billion years old. One of the finest globulars in the northern sky.",['Messier'],null],
  ['M5','Globular in Serpens','Globular','Serpens',15.3092,2.0817,5.7,
   "One of the oldest known globulars at 13 billion years, packed with variable stars. Many observers quietly rank it above M13 \u2014 looser and beautifully asymmetric.",['Messier'],null],
- ['M13','Hercules Cluster','Globular','Hercules',16.6949,36.4611,5.8,
+ ['M13','Great Hercules Cluster','Globular','Hercules',16.6949,36.4611,5.8,
   "The showpiece globular of the northern sky \u2014 several hundred thousand stars 25,000 light years away. Target of the 1974 Arecibo Message, humanity\u2019s first deliberate radio broadcast to the stars.",['Messier'],null],
  ['M15','Globular in Pegasus','Globular','Pegasus',21.4995,12.167,6.2,
-  "One of the densest globulars known \u2014 core-collapsed, possibly harboring a black hole. The only globular known to contain a planetary nebula within it.",['Messier'],null],
+  "One of the densest globulars known — core-collapsed, possibly harboring a black hole. It was the first globular found to contain a planetary nebula (Pease 1, in 1928); only four such globulars are known.",['Messier'],null],
  ['M22','Globular in Sagittarius','Globular','Sagittarius',18.6066,-23.9047,5.1,
-  "One of the brightest globulars in the entire sky at 10,000 light years \u2014 closer than most. The first globular ever discovered, in 1665, and hides black holes among its stars.",['Messier'],null],
+  "One of the brightest globulars in the entire sky at about 10,000 light years — closer than most. Probably the first globular ever discovered, in 1665, and it hides both a planetary nebula and black holes among its stars.",['Messier'],null],
  ['M53','Globular in Coma Berenices','Globular','Coma Berenices',13.2153,18.1681,7.6,
-  "A bright globular 58,000 light years away \u2014 one of the most distant from the galactic center. Beautifully resolved at moderate power.",['Messier'],null],
+  "A bright globular 58,000 light years away — one of the more outlying Messier globulars. Beautifully resolved at moderate power.",['Messier'],null],
  ['M92','Globular in Hercules','Globular','Hercules',17.2853,43.1361,6.4,
-  "Forever in M13\u2019s shadow, but tighter, more concentrated, and one of the oldest objects in the galaxy at 14 billion years. Would be a celebrated showpiece in any other constellation.",['Messier'],null],
+  "Forever in M13’s shadow, but tighter, more concentrated, and one of the oldest objects in the galaxy — more than 12 billion years old, nearly as old as the universe itself. Would be a celebrated showpiece in any other constellation.",['Messier'],null],
  ['M4','Globular in Scorpius','Globular','Scorpius',16.3933,-26.5258,5.6,
-  "One of the closest globular clusters at 7,200 light years, sitting right beside red Antares. Loose enough that even a small scope resolves its stars, with a distinctive central bar.",['Messier'],null],
+  "One of the closest globular clusters at about 6,000 light years, sitting right beside red Antares. Loose enough that even a small scope resolves its stars, with a distinctive central bar.",['Messier'],null],
  ['M10','Globular in Ophiuchus','Globular','Ophiuchus',16.9521,-4.1003,6.6,
   "A bright, concentrated globular about 14,000 light years away near the center of Ophiuchus. Pairs with nearby M12 \u2014 two ancient star-cities just three degrees apart.",['Messier'],null],
  ['M12','Globular in Ophiuchus','Globular','Ophiuchus',16.7855,-1.9483,6.7,
-  "A loose, easily-resolved globular nicknamed the \u201cGumball Cluster,\u201d about 16,000 light years away. Its outer stars are sparse enough that astronomers once suspected the galaxy was stripping them away.",['Messier'],null],
+  "A loose, easily-resolved globular nicknamed the “Gumball Cluster,” about 16,000 light years away. It is oddly short of low-mass stars — astronomers think the Milky Way’s gravity has stripped them away.",['Messier'],null],
  ['M30','Globular in Capricornus','Globular','Capricornus',21.67,-23.1797,7.7,
   "A dense, core-collapsed globular 27,000 light years away, with striking chains of stars radiating outward from its compressed center \u2014 a visibly unusual shape among globulars.",['Messier'],null],
  ['M55','Globular in Sagittarius','Globular','Sagittarius',19.6664,-30.9628,6.3,
@@ -456,28 +462,28 @@ const OBJECTS = [
   "A big, bright cluster at the feet of Gemini, 2,800 light years away and roughly the size of the full moon. Tiny distant NGC 2158 sits beside it for a near-and-far contrast.",['Messier'],null],
  ['M36','Open Cluster in Auriga','Open Cluster','Auriga',5.6056,34.1364,6.3,
   "About 60 stars, only 25 million years old \u2014 practically newborn. Part of the rich Auriga trio with M37 and M38.",['Messier'],null],
- ['M37','Auriga Cluster','Open Cluster','Auriga',5.8717,32.5453,6.2,
+ ['M37','Salt and Pepper Cluster','Open Cluster','Auriga',5.8717,32.5453,6.2,
   "The richest of three Auriga clusters, with around 500 stars 350 million years old. A glittering field with a striking orange-red star at the center.",['Messier'],null],
  ['M38','Starfish Cluster','Open Cluster','Auriga',5.4783,35.855,7.4,
-  "A loose, irregular cluster 4,200 light years away whose star pattern traces a rough starfish shape. Companion to nearby NGC 1907 in the same field.",['Messier'],null],
+  "A loose, irregular cluster about 3,500 light years away whose star pattern traces a rough starfish shape. Companion to nearby NGC 1907 in the same field.",['Messier'],null],
  ['M44','Beehive Cluster','Open Cluster','Cancer',8.67,19.6231,3.7,
   "One of the nearest open clusters at 580 light years, known since antiquity \u2014 Galileo first resolved its haze in 1609. A naked-eye smudge that bursts into stars in binoculars.",['Messier'],null],
  ['M45','Pleiades','Open Cluster','Taurus',3.7903,24.1058,1.6,
-  "The most famous star cluster in the sky, known to virtually every culture for at least 30,000 years. A young blue cluster 444 light years away, only 100 million years old.",['Messier'],null],
+  "The most famous star cluster in the sky, known to cultures around the world since prehistory. A young blue cluster 444 light years away, only about 100 million years old.",['Messier'],null],
  ['M67','Open Cluster in Cancer','Open Cluster','Cancer',8.8556,11.8133,6.1,
   "One of the oldest known open clusters at 3.5\u20135 billion years \u2014 about the age of the Sun, and a rare survivor since most open clusters disperse young. A rich field of several hundred stars.",['Messier'],null],
  ['M46','Open Cluster in Puppis','Open Cluster','Puppis',7.6964,-14.8133,6.1,
   "A rich, even cluster of around 500 stars 5,500 light years away \u2014 with a surprise: the small planetary nebula NGC 2438 appears superimposed on it, a chance line-of-sight pairing.",['Messier'],null],
  ['M39','Open Cluster in Cygnus','Open Cluster','Cygnus',21.5292,48.4334,4.6,
-  "A large, loose, bright naked-eye cluster just 824 light years away \u2014 among the closest open clusters to Earth. Best appreciated in binoculars, where its sparse stars fill the field.",['Messier'],null],
+  "A large, loose, bright naked-eye cluster about 1,000 light years away — among the closer open clusters to Earth. Best appreciated in binoculars, where its sparse stars fill the field.",['Messier'],null],
  ['M48','Open Cluster in Hydra','Open Cluster','Hydra',8.2283,-5.8,5.8,
   "A bright, large cluster with an odd history: Messier\u2019s recorded position was off by several degrees, and for two centuries astronomers debated which cluster he actually meant before this one was confirmed.",['Messier'],null],
- ['M52','Open Cluster in Cassiopeia','Open Cluster','Cassiopeia',23.4231,61.5933,6.9,
-  "A rich, young cluster only about 35 million years old, sitting near the glowing arc of the Bubble Nebula. Compact enough to hold together nicely in a single binocular field.",['Messier'],null],
+ ['M52','Open Cluster in Cassiopeia','Open Cluster','Cassiopeia',23.4133,61.5933,6.9,
+  "A rich, young cluster — under 200 million years old — sitting near the glowing arc of the Bubble Nebula. Compact enough to hold together nicely in a single binocular field.",['Messier'],null],
  ['M93','Open Cluster in Puppis','Open Cluster','Puppis',7.7425,-23.8525,6.2,
   "A compact, bright cluster of about 80 stars in a butterfly-shaped pattern \u2014 discovered by Messier himself in 1781, his very last open-cluster find before completing the catalogue.",['Messier'],null],
  ['NGC 869 & 884','Double Cluster','Open Cluster','Perseus',2.334,57.13,4.3,
-  "Two enormous naked-eye open clusters side by side, roughly 7,500 and 6,800 light years away \u2014 among the most photogenic binocular targets in the entire sky, a true showpiece of the Perseus Milky Way.",['NGC','Caldwell'],'Caldwell 14'],
+  "Two enormous naked-eye open clusters side by side, both about 7,500 light years away — among the most photogenic binocular targets in the entire sky, a true showpiece of the Perseus Milky Way.",['NGC','Caldwell'],'Caldwell 14'],
  ['NGC 457','Owl Cluster','Open Cluster','Cassiopeia',1.323,58.29,6.4,
   "Two bright stars form unmistakable glowing \u201ceyes,\u201d giving this cluster its alternate nickname, the E.T. Cluster \u2014 one of the most recognizable open clusters in the sky.",['NGC','Caldwell'],'Caldwell 13'],
 ];
@@ -669,7 +675,7 @@ function render(){
     banner='Astronomical dark tonight runs <b>'+fmtMT(dark.duskUTC)+' to '+fmtMT(dark.dawnUTC)+
            '</b>. <b>'+upCount+'</b> of '+rows.length+' catalog objects climb above 15\u00B0 during that window.';
   } else {
-    banner='Showing tonight\u2019s sky for Zion National Park.';
+    banner='Showing tonight\u2019s sky for your location.';
   }
   $('zcl-m-tonight').innerHTML=banner;
 
@@ -744,7 +750,7 @@ render();
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
@@ -754,6 +760,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 <script>
 (function(){
@@ -775,6 +796,18 @@ if('serviceWorker' in navigator){
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>

@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Saturn · Dark Sky Almanac">
 <meta property="og:description" content="Saturn tonight — its rings, banding, and the tilt that changes the view from year to year.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/saturn">
 <meta property="og:url" content="https://app.darkskyalmanac.com/saturn">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -56,7 +56,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 </head>
 <body>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-<!-- SATURN — simplified planet page (generated from shared template) -->
+<!-- SATURN — live render + moon finder (v2.74) -->
 <style>
 #zcl-pl-wrap{position:relative;width:100%;max-width:100%;margin:0 auto;background:#141319;
   font-family:'Montserrat',-apple-system,sans-serif;box-sizing:border-box}
@@ -70,53 +70,174 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   border-top:1px solid rgba(203,168,90,.26);border-bottom:1px solid rgba(203,168,90,.26);
   box-shadow:inset 0 0 120px rgba(0,0,0,.5)}
 #zcl-pl::after{content:'';position:absolute;inset:14px;border:1px solid rgba(203,168,90,.10);pointer-events:none;z-index:2}
-#zcl-pl::before{content:'';position:absolute;inset:0;pointer-events:none;z-index:0;
-  background:radial-gradient(ellipse at 50% 45%,transparent 58%,rgba(0,0,0,.28) 100%)}
 .zcl-goldbar{height:2px;background:linear-gradient(to right,transparent,rgba(203,168,90,.7) 30%,rgba(203,168,90,.7) 70%,transparent)}
 #zcl-plstars{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:.5}
 .zcl-fl{position:absolute;width:40px;height:40px;z-index:3;pointer-events:none;opacity:.58}
 .zcl-fl svg{width:100%;height:100%}
 .zcl-tl{top:14px;left:14px}.zcl-tr{top:14px;right:14px;transform:scaleX(-1)}
 .zcl-bl{bottom:14px;left:14px;transform:scaleY(-1)}.zcl-br{bottom:14px;right:14px;transform:scale(-1,-1)}
-.zcl-wrap{position:relative;z-index:1;max-width:1040px;margin:0 auto}
-.zcl-titlebar{text-align:center;padding:30px 24px 18px}
+.zcl-wrap{position:relative;z-index:4;max-width:1040px;margin:0 auto}
+.zcl-titlebar{text-align:center;padding:30px 24px 10px}
 .zcl-maintitle{font-size:clamp(22px,3.4vw,34px);font-weight:600;letter-spacing:.06em;color:#F2E4BE;
   text-transform:uppercase;line-height:1.2;text-shadow:0 0 24px rgba(203,168,90,.22)}
-.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 11px;max-width:360px}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:14px;margin:13px auto 4px;max-width:360px}
 .zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
 .zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
 .zcl-rstar{width:16px;height:16px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
-.zcl-subtitle{font-size:13px;letter-spacing:.02em;color:#9A8E6E;max-width:560px;margin:0 auto}
-@media(max-width:520px){.zcl-titlebar{padding:24px 16px 16px}.zcl-subtitle{font-size:12px}}
-.zcl-stage{padding:8px 22px 4px}
+
+/* time bar */
+.zcl-hdr{display:flex;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap;padding:8px 20px 12px}
+.zcl-tnav{display:flex;align-items:center;gap:6px}
+.zcl-nbtn{width:34px;height:34px;border-radius:50%;background:#0d0a18;border:1px solid rgba(203,168,90,.3);
+  color:#CBA85A;font-size:19px;line-height:1;cursor:pointer;font-family:inherit;display:flex;align-items:center;justify-content:center}
+.zcl-nbtn:active{background:rgba(203,168,90,.15)}
+.zcl-stamp{font-size:12.5px;letter-spacing:.03em;color:#E4D9B8;min-width:190px;text-align:center;font-variant-numeric:tabular-nums}
+.zcl-tbtn{background:none;border:1px solid rgba(203,168,90,.3);border-radius:18px;color:#9A875C;
+  font-family:inherit;font-size:11px;letter-spacing:.06em;padding:7px 13px;cursor:pointer;white-space:nowrap}
+.zcl-tbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
+
+/* stages */
+.zcl-stage{padding:4px 22px 6px}
 .zcl-eyepiece{position:relative;background:radial-gradient(ellipse 80% 90% at 50% 50%,rgba(30,28,40,.7),#08070d 78%);
-  border:1px solid rgba(203,168,90,.22);border-radius:12px;padding:22px 14px 18px;overflow:hidden}
-.zcl-eyepiece::before{content:'';position:absolute;inset:0;pointer-events:none;
-  background:radial-gradient(circle at 50% 46%,transparent 52%,rgba(0,0,0,.5) 100%)}
-.zcl-fieldsvg{display:block;width:100%;position:relative;z-index:1}
-.zcl-stagenote{font-size:11.5px;color:#7A6E55;text-align:center;margin-top:10px;padding:0 12px;line-height:1.5}
-.zcl-body{padding:6px 28px 26px}
-.zcl-psec{margin-bottom:22px;padding-top:4px}
+  border:1px solid rgba(203,168,90,.22);border-radius:12px;overflow:hidden}
+.zcl-eyepiece canvas{display:block;width:100%;touch-action:manipulation}
+#zcl-hero{aspect-ratio:2.25/1}
+#zcl-field{aspect-ratio:2/1}
+@media(max-width:560px){#zcl-hero{aspect-ratio:1.9/1}#zcl-field{aspect-ratio:1.12/1}}
+.zcl-heroyr{position:absolute;left:14px;bottom:12px;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#8A7340;pointer-events:none}
+.zcl-heroyr b{display:block;font-size:20px;letter-spacing:.04em;color:#E6CC85;font-weight:500;margin-top:2px}
+.zcl-bar{display:flex;align-items:center;justify-content:center;gap:6px;flex-wrap:wrap;margin:10px 0 2px}
+.zcl-vbtn{background:none;border:1px solid rgba(203,168,90,.26);border-radius:20px;color:#9A875C;
+  font-family:inherit;font-size:11px;letter-spacing:.05em;padding:6px 13px;cursor:pointer;transition:all .15s}
+.zcl-vbtn:hover{border-color:rgba(203,168,90,.55);color:#CBA85A}
+.zcl-vbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
+.zcl-vbtn.round{width:32px;height:30px;padding:0;font-size:15px}
+.zcl-grp{display:inline-flex;align-items:center;gap:6px}
+@media(max-width:520px){#zcl-viewbar .zcl-sep{display:none}}
+.zcl-ibtn{width:26px;height:26px;border-radius:50%;background:rgba(0,0,0,.4);color:#9A8A66;border:1px solid rgba(203,168,90,.32);
+  font-family:'Times New Roman',Georgia,serif;font-size:14px;line-height:1;padding:0;cursor:pointer;display:inline-flex;align-items:center;justify-content:center;transition:all .15s}
+.zcl-ibtn:hover{color:#CBA85A;border-color:#CBA85A}
+.zcl-ibtn.on{background:rgba(203,168,90,.18);color:#E4D9B8;border-color:#CBA85A}
+.zcl-infotxt{max-height:0;overflow:hidden;opacity:0;transition:max-height .3s ease,opacity .25s ease,margin .3s;font-size:12.5px;line-height:1.6;color:#C9BD97;margin:0 4px}
+.zcl-infotxt.open{max-height:420px;opacity:1;margin:8px 4px 10px}
+.zcl-infotxt b{color:#E6CC85;font-weight:500}
+.zcl-mkey{text-align:center;font-size:10.5px;color:#8A7340;letter-spacing:.03em;margin:2px 0 6px}
+.zcl-mkey i{display:inline-block;width:14px;height:8px;border-radius:2px;margin:0 4px 0 10px;vertical-align:0}
+.zcl-mkey i.nb{background:rgba(120,140,200,.22)}
+.zcl-mkey i.tw{height:2px;background:#CBA85A;vertical-align:2px}
+.zcl-stitle{display:flex;align-items:center;gap:14px;max-width:560px;margin:0 auto 12px;
+  font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;white-space:nowrap}
+#zcl-field{transition:opacity .2s ease}
+#zcl-field.fading{opacity:0}
+/* field controls: drift tools live in the eyepiece corner, view + zoom as two segmented bars */
+.zcl-ovl{position:absolute;left:10px;bottom:10px;display:flex;gap:6px;align-items:center;z-index:2}
+.zcl-ovl .zcl-vbtn.round{width:30px;height:30px;background:rgba(8,7,13,.62);font-size:14px}
+.zcl-ovl .zcl-ibtn{width:30px;height:30px;background:rgba(8,7,13,.62)}
+.zcl-eyepiece.is-top .zcl-ovl{bottom:auto;top:10px}
+.zcl-eyepiece.is-top #zcl-rotl,.zcl-eyepiece.is-top #zcl-rotr{display:none}
+.zcl-eyepiece .zcl-fov{position:absolute;right:12px;bottom:9px;margin:0;pointer-events:none;font-size:10px}
+.zcl-ctlrow{display:flex;justify-content:center;align-items:center;gap:10px;flex-wrap:wrap;margin:12px 0 4px}
+.zcl-seg{display:inline-flex;border:1px solid rgba(203,168,90,.24);border-radius:20px;padding:2px;background:rgba(0,0,0,.22)}
+.zcl-seg .zcl-vbtn{border:none;border-radius:17px;padding:6px 13px;white-space:nowrap}
+.zcl-seg .zcl-vbtn.on{background:rgba(203,168,90,.2);color:#E4D9B8}
+.zcl-seg .s{display:none}
+@media(max-width:600px){
+  .zcl-ctlrow{flex-direction:column;align-items:stretch;gap:7px;margin-top:10px}
+  .zcl-seg{display:flex}
+  .zcl-seg .zcl-vbtn{flex:1;padding:8px 2px;font-size:11.5px;letter-spacing:.02em}
+  .zcl-seg .l{display:none}.zcl-seg .s{display:inline}
+  .zcl-ovl{left:8px;bottom:8px}.zcl-eyepiece .zcl-fov{right:9px;bottom:7px;font-size:9.5px}
+}
+#zcl-rotl,#zcl-rotr{transition:opacity .2s ease}
+#zcl-rotl:disabled,#zcl-rotr:disabled{opacity:.25;cursor:default}
+@media(max-width:560px){.zcl-stitle{font-size:12.5px;gap:10px}}
+.zcl-zlab{min-width:34px;text-align:center;font-size:11px;color:#CBA85A;font-variant-numeric:tabular-nums}
+.zcl-yrs{max-width:760px;margin:12px auto 0;padding:10px 12px 4px;border:1px solid rgba(203,168,90,.18);border-radius:10px;background:rgba(13,10,24,.55)}
+.zcl-yrs-top{display:flex;align-items:center;justify-content:space-between;gap:8px;min-height:30px}
+#zcl-ylab,#zcl-mlab{font-size:12.5px;color:#E4D9B8;letter-spacing:.02em}
+.zcl-yrs-row{display:flex;align-items:center;gap:10px;margin-top:4px}
+.zcl-ytrack{position:relative;flex:1;height:40px;margin-bottom:16px}
+.zcl-spark{position:absolute;inset:0;width:100%;height:40px;pointer-events:none}
+.zcl-range{position:absolute;inset:0;width:100%;height:40px;margin:0;background:transparent;-webkit-appearance:none;appearance:none;cursor:pointer;touch-action:pan-y}
+.zcl-range::-webkit-slider-runnable-track{height:40px;background:transparent}
+.zcl-range::-moz-range-track{height:40px;background:transparent}
+.zcl-range::-webkit-slider-thumb{-webkit-appearance:none;width:4px;height:40px;border-radius:2px;background:#E6CC85;box-shadow:0 0 0 3px rgba(230,204,133,.22),0 0 10px rgba(230,204,133,.6)}
+.zcl-range::-moz-range-thumb{width:4px;height:40px;border:0;border-radius:2px;background:#E6CC85;box-shadow:0 0 0 3px rgba(230,204,133,.22)}
+.zcl-range:focus{outline:none}
+.zcl-range:focus-visible::-webkit-slider-thumb{box-shadow:0 0 0 4px rgba(230,204,133,.5)}
+.zcl-yticks{position:absolute;left:0;right:0;top:42px;height:14px}
+.zcl-yticks span{position:absolute;transform:translateX(-50%);font-size:9.5px;color:#8A7340;letter-spacing:.04em}
+@media(max-width:520px){.zcl-yticks span:nth-child(even){display:none}}
+.zcl-fov{text-align:right;font-size:10.5px;letter-spacing:.04em;color:#8A7340;margin:6px 4px 0}
+.zcl-sep{width:1px;height:18px;background:rgba(203,168,90,.2);margin:0 4px}
+.zcl-stagenote{text-align:center;font-size:12.5px;line-height:1.55;color:#9A875C;max-width:700px;margin:10px auto 2px;padding:0 8px}
+.zcl-stagenote b{color:#CBA85A;font-weight:500}
+
+/* body */
+.zcl-body{padding:10px 28px 26px}
+.zcl-psec{margin-bottom:24px;padding-top:4px}
 .zcl-psec-label{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;
   margin-bottom:11px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.28)}
 .zcl-pcards{display:grid;gap:9px}
-.zcl-pcards.cols2{grid-template-columns:1fr 1fr}
 .zcl-pcards.cols3{grid-template-columns:1fr 1fr 1fr}
-@media(max-width:560px){.zcl-pcards.cols3{grid-template-columns:1fr 1fr}}
+.zcl-pcards.cols4{grid-template-columns:repeat(4,1fr)}
+@media(max-width:640px){.zcl-pcards.cols3,.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
 .zcl-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:11px 13px}
 .zcl-pcard.accent{border-color:rgba(203,168,90,.38);background:rgba(203,168,90,.06)}
 .zcl-pclabel{font-size:10px;letter-spacing:.13em;color:#8A6E32;text-transform:uppercase;margin-bottom:6px}
 .zcl-pcval{font-size:16px;color:#E4D9B8;line-height:1.2}
-.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px}
-.zcl-tgtwhy{font-size:13.5px;line-height:1.55;color:#C9BD97;margin-top:6px}
-.zcl-note{font-size:12.5px;line-height:1.55;color:#9A875C;margin-top:9px}
-.zcl-moonlist{display:grid;gap:8px}
-.zcl-moonchip{display:flex;align-items:center;gap:11px;background:#0d0a18;border:1px solid rgba(203,168,90,.16);
-  border-radius:8px;padding:10px 13px}
-.zcl-moonchip i{width:11px;height:11px;border-radius:50%;flex-shrink:0}
-.zcl-moonchip .mn{font-size:14px;color:#E4D9B8}
-.zcl-moonchip .ms{font-size:12px;color:#8A7C5C}
-@media(max-width:520px){.zcl-body{padding:6px 14px 22px}.zcl-stage{padding:8px 10px 4px}}
+.zcl-pcsub{font-size:12.5px;color:#8A7C5C;margin-top:4px;line-height:1.4}
+.zcl-note{font-size:12.5px;line-height:1.6;color:#9A875C;margin-top:10px}
+.zcl-note b{color:#C9BD97;font-weight:500}
+
+.zcl-moonrow{display:grid;grid-template-columns:32px 1fr auto;gap:0 11px;align-items:center;
+  background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:8px;padding:10px 13px;margin-bottom:8px}
+/* the moon itself, drawn to scale with the other seven */
+.zcl-moonrow .disc{display:flex;align-items:center;justify-content:center;height:32px}
+.zcl-moonrow .disc i{display:block;border-radius:50%;flex-shrink:0}
+/* where it sits along the ring line: Saturn in the middle, one tick per ring-width */
+.zcl-lane{grid-column:1/-1;position:relative;height:24px;margin:7px 0 4px;width:100%;max-width:560px;justify-self:center}
+.zcl-lane .ln{position:absolute;left:0;right:0;top:50%;height:1px;background:rgba(203,168,90,.24)}
+.zcl-lane .tk{position:absolute;top:50%;width:1px;height:7px;margin-top:-3.5px;background:rgba(203,168,90,.45)}
+.zcl-lane .sat{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);line-height:0}
+.zcl-lane .sat svg{display:block;width:100%;height:auto;overflow:visible}
+.zcl-lane .dot{position:absolute;top:50%;width:11px;height:11px;margin:-5.5px 0 0 -5.5px;border-radius:50%;box-shadow:0 0 9px 2px rgba(255,244,214,.55)}
+.zcl-lane .dot.hollow{background:none;border:2px solid;box-shadow:none;opacity:1}
+.zcl-lane .dot.hid{opacity:.5;box-shadow:none}
+.zcl-lane .far{position:absolute;top:50%;transform:translateY(-54%);font-size:15px;line-height:1;color:#CBA85A}
+.zcl-lanehdr{display:flex;justify-content:space-between;font-size:9.5px;letter-spacing:.13em;text-transform:uppercase;color:#8A7340;padding:0 14px;margin:0 auto 7px;max-width:588px}
+.zcl-seen{text-align:center;font-size:13px;line-height:1.55;color:#C9BD97;margin:11px auto 0;padding:0 6px;max-width:640px}
+.zcl-seen b{color:#F2E4BE;font-weight:600}
+.zcl-seen .t{color:#9A875C}
+.zcl-seenkey{text-align:center;font-size:11px;line-height:1.5;color:#8A7340;margin:4px auto 2px;padding:0 6px}
+.zcl-moonrow .mn{font-size:14.5px;color:#E4D9B8}
+.zcl-moonrow .mw{font-size:12.5px;color:#C9BD97;margin-top:2px}
+.zcl-moonrow .ms{grid-column:1/-1;font-size:12px;color:#8A7C5C;line-height:1.45}
+.zcl-moonrow .vis{font-size:10px;letter-spacing:.08em;text-transform:uppercase;padding:3px 8px;border-radius:10px;white-space:nowrap}
+.vis.easy{background:rgba(203,168,90,.18);color:#E6CC85}
+.vis.good{background:rgba(203,168,90,.10);color:#CBA85A}
+.vis.hard{background:rgba(160,140,110,.10);color:#9A875C}
+.vis.no{background:rgba(120,120,120,.10);color:#7c7a74}
+.zcl-moonrow.dim{opacity:.78}
+
+.zcl-anat canvas{display:block;width:100%}
+.zcl-anat{background:#08070d;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:8px 6px}
+.zcl-gaplist{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:11px}
+@media(max-width:640px){.zcl-gaplist{grid-template-columns:1fr}}
+
+.zcl-tilt svg{display:block;width:100%;height:auto}
+.zcl-tilt{background:#08070d;border:1px solid rgba(203,168,90,.18);border-radius:10px;padding:10px 8px 6px}
+
+@media(max-width:520px){#zcl-yspeed .zcl-sep{display:none}.zcl-body{padding:6px 14px 22px}.zcl-stage{padding:4px 10px 6px}.zcl-stamp{min-width:0;font-size:12px}.zcl-hdr{padding:6px 10px 10px}}
+/* fit */
+@media(max-width:640px){#zcl-pl::after{inset:7px}.zcl-tl,.zcl-tr{top:7px}.zcl-bl,.zcl-br{bottom:7px}.zcl-tl,.zcl-bl{left:7px}.zcl-tr,.zcl-br{right:7px}}
+@media(max-width:520px){.zcl-stage{padding-left:14px;padding-right:14px}}
+@media(max-width:1100px){.zcl-body{padding-bottom:58px}}
+@media(max-width:520px){.zcl-evfold summary{flex-wrap:wrap;gap:3px 10px}.zcl-evsum{order:3;flex:1 1 100%}.zcl-evchev{margin-left:auto}}
+.zcl-yticks span{white-space:nowrap}.zcl-yticks span[style*="left:100"]{transform:translateX(-100%)}
+.zcl-mkey span{white-space:nowrap}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 
 <div id="zcl-pl-wrap">
@@ -134,33 +255,147 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <span class="zcl-rline"></span>
       </div>
     </div>
+
+    <div class="zcl-hdr">
+      <div class="zcl-tnav">
+        <button class="zcl-nbtn" id="zcl-back" aria-label="Back one hour">&#8249;</button>
+        <span class="zcl-stamp" id="zcl-stamp">—</span>
+        <button class="zcl-nbtn" id="zcl-fwd" aria-label="Forward one hour">&#8250;</button>
+      </div>
+      <button class="zcl-tbtn on" id="zcl-nowbtn">● Now</button>
+    </div>
+
+    <!-- Stage 1: the planet itself -->
     <div class="zcl-stage">
       <div class="zcl-eyepiece">
-        <svg id="zcl-pl-field" viewBox="0 0 920 420" class="zcl-fieldsvg" preserveAspectRatio="xMidYMid meet"></svg>
+        <canvas id="zcl-hero" aria-label="Saturn, rendered for the selected time"></canvas>
+        <div class="zcl-heroyr" id="zcl-heroyr" hidden></div>
       </div>
-      <div class="zcl-stagenote">An artist’s rendering, not a live telescope view — Saturn shown roughly as a small scope would frame it.</div>
+      <div class="zcl-bar">
+        <button class="zcl-vbtn on" id="zcl-labels">Labels</button>
+        <span class="zcl-sep"></span>
+        <button class="zcl-vbtn round" id="zcl-zout" aria-label="Zoom out">&minus;</button>
+        <span class="zcl-zlab" id="zcl-hzoomlab"></span>
+        <button class="zcl-vbtn round" id="zcl-zin" aria-label="Zoom in">+</button>
+        <button class="zcl-vbtn" id="zcl-zreset">Fit</button>
+      </div>
+      <div class="zcl-yrs">
+        <div class="zcl-yrs-top"><span id="zcl-ylab">Tonight</span><button class="zcl-vbtn" id="zcl-ynow" hidden>Back to tonight</button></div>
+        <div class="zcl-yrs-row">
+          <button class="zcl-vbtn round" id="zcl-yplay" aria-label="Play">&#9654;</button>
+          <div class="zcl-ytrack">
+            <svg class="zcl-spark" id="zcl-yspark" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <input type="range" class="zcl-range" id="zcl-yslider" min="0" max="6575" step="1" aria-label="Date, 2024 to 2041">
+            <div class="zcl-yticks" id="zcl-yticks"></div>
+          </div>
+        </div>
+        <div class="zcl-bar" id="zcl-yspeed">
+          <button class="zcl-vbtn" data-speed="0.0833">1 month / sec</button>
+          <button class="zcl-vbtn on" data-speed="0.5">6 months / sec</button>
+          <button class="zcl-vbtn" data-speed="2">2 years / sec</button>
+          <span class="zcl-sep"></span>
+          <button class="zcl-vbtn" id="zcl-ysmooth">Earth’s yearly nod: off</button>
+          <button type="button" class="zcl-ibtn" id="zcl-yinfo" aria-label="What is Earth’s yearly nod?" aria-expanded="false">i</button>
+        </div>
+        <div class="zcl-infotxt" id="zcl-yinfotxt">
+          <b>Earth’s yearly nod.</b> Each year Earth carries us around the Sun, so we look at Saturn from slightly different angles — a little above its ring plane, then a little below. The rings seem to nod open and shut by 2–3°, and Saturn’s shadow on the rings swaps sides around each opposition. It’s real, and you can see it month to month in the eyepiece — but it hides the big picture.<br><br>
+          With the nod <b>off</b>, the slider shows the rings as the Sun sees them: one smooth 29-year cycle, from edge-on in 2025 to widest around 2032 and edge-on again in 2038–39. Turn it <b>on</b> to see exactly what Earth sees on each date. Tonight’s view at the top is always the real one.
+        </div>
+      </div>
+      <div class="zcl-stagenote" id="zcl-heronote"></div>
     </div>
-    <div class="zcl-body">
-      <div class="zcl-psec"><div class="zcl-psec-label">The Moons of Saturn</div>
-        <div class="zcl-moonlist"><div class="zcl-moonchip"><i style="background:#D8B45A"></i><span><span class="mn">Titan</span><br><span class="ms">5,150 km across · orbits in 16 days — bigger than the planet Mercury, the only moon with a thick atmosphere, and the easiest of Saturn’s moons to spot in a small scope.</span></span></div><div class="zcl-moonchip"><i style="background:#BFB59A"></i><span><span class="mn">Rhea</span><br><span class="ms">1,527 km across · orbits in 4.5 days — Saturn’s second-largest moon, an icy, heavily cratered world.</span></span></div><div class="zcl-moonchip"><i style="background:#A89878"></i><span><span class="mn">Iapetus</span><br><span class="ms">1,469 km across · orbits in 79 days — famously two-toned, one hemisphere bright as snow and the other dark as coal.</span></span></div><div class="zcl-moonchip"><i style="background:#CFE0E4"></i><span><span class="mn">Enceladus</span><br><span class="ms">504 km across · orbits in 1.4 days — a brilliant white iceball that jets plumes of water from a hidden ocean through cracks at its south pole.</span></span></div></div>
-        <div class="zcl-note">Saturn has 140-plus confirmed moons, but Titan is the one to hunt for — a steady point of light that swings from one side of the planet to the other over about eight days. On a good night a 6-inch scope will also pick up Rhea, Tethys, Dione and Iapetus.</div>
+
+    <!-- Stage 2: the moons — in the eyepiece, or from above -->
+    <div class="zcl-stage" style="margin-top:22px">
+      <div class="zcl-stitle"><span class="zcl-rline"></span><span>The Moons of Saturn</span><span class="zcl-rline"></span></div>
+      <div class="zcl-eyepiece" id="zcl-eye">
+        <canvas id="zcl-field" aria-label="Saturn's moons in the eyepiece"></canvas>
+        <div class="zcl-ovl"><button class="zcl-vbtn round" id="zcl-rotl" aria-label="Rotate left">&#8634;</button><button class="zcl-vbtn round" id="zcl-rotr" aria-label="Rotate right">&#8635;</button><button type="button" class="zcl-ibtn" id="zcl-dinfo" aria-label="How to match your eyepiece" aria-expanded="false">i</button></div>
+        <div class="zcl-fov" id="zcl-fov"></div>
       </div>
+      <div class="zcl-seen" id="zcl-seen"></div>
+      <div class="zcl-seenkey" id="zcl-seenkey">Bigger dot = brighter moon. A hollow ring is too faint for an 8-inch telescope.</div>
+      <div class="zcl-ctlrow">
+        <div class="zcl-seg" id="zcl-viewbar" role="group" aria-label="View"><button class="zcl-vbtn" data-mode="sky"><span class="l">Sky · north up</span><span class="s">Sky</span></button><button class="zcl-vbtn on" data-mode="dob"><span class="l">Dobsonian</span><span class="s">Dob</span></button><button class="zcl-vbtn" data-mode="diag"><span class="l">Star diagonal</span><span class="s">Diagonal</span></button><button class="zcl-vbtn" data-mode="top"><span class="l">From above</span><span class="s">Above</span></button></div>
+        <div class="zcl-seg" id="zcl-zoombar" role="group" aria-label="Zoom"><button class="zcl-vbtn on" data-zoom="fit"><span class="l">Tonight’s moons</span><span class="s">Tonight</span></button><button class="zcl-vbtn" data-zoom="inner"><span class="l">Inner moons</span><span class="s">Inner</span></button><button class="zcl-vbtn" data-zoom="titan"><span class="l">Out to Titan</span><span class="s">Titan</span></button><button class="zcl-vbtn" data-zoom="wide"><span class="l">Out to Iapetus</span><span class="s">Iapetus</span></button></div>
+      </div>
+      <div class="zcl-infotxt" id="zcl-dinfotxt" style="max-width:640px;margin-left:auto;margin-right:auto">
+        <b>To match your eyepiece:</b> stop nudging the telescope and watch which way Saturn slides — it always drifts toward the <b>DRIFT</b> arrow. Turn the view with <b>&#8634; &#8635;</b> until the arrow points the same way. The rings and every moon will then line up with what you see.
+      </div>
+      <div class="zcl-infotxt" id="zcl-orbnote" style="max-width:640px;margin-left:auto;margin-right:auto"></div>
+      <div class="zcl-yrs" id="zcl-mpanel">
+        <div class="zcl-yrs-top"><span id="zcl-mlab">Now</span><button class="zcl-vbtn" id="zcl-mnow" hidden>Back to now</button></div>
+        <div class="zcl-yrs-row">
+          <button class="zcl-vbtn round" id="zcl-mplay" aria-label="Play">&#9654;</button>
+          <div class="zcl-ytrack">
+            <svg class="zcl-spark" id="zcl-mspark" viewBox="0 0 1000 40" preserveAspectRatio="none" aria-hidden="true"></svg>
+            <input type="range" class="zcl-range" id="zcl-mslider" min="0" max="2880" step="1" aria-label="Date and time, next 30 days">
+            <div class="zcl-yticks" id="zcl-mticks"></div>
+          </div>
+        </div>
+        <div class="zcl-bar" id="zcl-mspeed">
+          <button class="zcl-vbtn" data-speed="1">1 hour / sec</button>
+          <button class="zcl-vbtn on" data-speed="6">6 hours / sec</button>
+          <button class="zcl-vbtn" data-speed="24">1 day / sec</button>
+        </div>
+        <div class="zcl-mkey"><span><i class="nb"></i> night at your location</span> <span><i class="tw"></i> Titan swinging east &harr; west</span></div>
+      </div>
+    </div>
+
+
+    <div class="zcl-body">
+      <div class="zcl-psec"><div class="zcl-psec-label">Saturn Tonight</div>
+        <div class="zcl-pcards cols4" id="zcl-tonight"></div>
+        <div class="zcl-note" id="zcl-tonightnote"></div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">When to See It</div>
+        <div class="zcl-seasongrid" id="zcl-season"></div>
+        <div class="zcl-note">Dates for your saved location. Each year the planet slips behind the Sun’s glare for a few weeks, then reappears in the morning sky.</div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">The Moons Right Now</div>
+        <div class="zcl-lanehdr"><span>&#9664; East</span><span>Saturn</span><span>West &#9654;</span></div>
+        <div id="zcl-moons"></div>
+        <div class="zcl-note" id="zcl-titannext"></div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">Anatomy of the Rings</div>
+        <div class="zcl-anat"><canvas id="zcl-anat" aria-label="Radial map of Saturn's rings"></canvas></div>
+        <div class="zcl-gaplist" id="zcl-gaps"></div>
+      </div>
+
+      <div class="zcl-psec"><div class="zcl-psec-label">The Tilting Rings</div>
+        <div class="zcl-tilt"><svg id="zcl-tiltsvg" viewBox="0 0 900 250" preserveAspectRatio="xMidYMid meet"></svg></div>
+        <div class="zcl-note" id="zcl-tiltnote"></div>
+      </div>
+
       <div class="zcl-psec"><div class="zcl-psec-label">The Planet Itself</div>
-        <div class="zcl-pcards cols3"><div class="zcl-pcard"><div class="zcl-pclabel">Disc rotation</div><div class="zcl-pcval">10h 33m</div><div class="zcl-pcsub">One Saturn day</div></div><div class="zcl-pcard"><div class="zcl-pclabel">Diameter</div><div class="zcl-pcval">116,460 km</div><div class="zcl-pcsub">9 Earths across</div></div><div class="zcl-pcard"><div class="zcl-pclabel">Ring span</div><div class="zcl-pcval">282,000 km</div><div class="zcl-pcsub">Yet only ~10 m thick</div></div></div>
-        <div class="zcl-note">Saturn’s rings are the showpiece of the whole sky — countless particles of water ice, from dust grains to house-sized boulders, spread across a span wider than the Earth-Moon distance yet only tens of metres thick. The dark Cassini Division splitting them shows in a 4-inch scope. The rings tilt over Saturn’s 29-year orbit; after the 2025 edge-on crossing they are opening wider each year through 2032, making this a superb stretch for viewing them.</div>
+        <div class="zcl-pcards cols3">
+          <div class="zcl-pcard"><div class="zcl-pclabel">One day</div><div class="zcl-pcval">10h 33m</div><div class="zcl-pcsub">Spins so fast it bulges — 10% wider than it is tall</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Diameter</div><div class="zcl-pcval">116,460 km</div><div class="zcl-pcsub">9 Earths across</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Main rings</div><div class="zcl-pcval">273,500 km</div><div class="zcl-pcsub">Edge to edge — mostly only ~10 m thick</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Density</div><div class="zcl-pcval">0.69 g/cm³</div><div class="zcl-pcsub">Less than water — it would float</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Year</div><div class="zcl-pcval">29.4 years</div><div class="zcl-pcsub">Two ring-plane crossings per orbit</div></div>
+          <div class="zcl-pcard"><div class="zcl-pclabel">Known moons</div><div class="zcl-pcval">274</div><div class="zcl-pcsub">More than any other planet</div></div>
+        </div>
+        <div class="zcl-note">Saturn’s rings are countless chunks of water ice, from dust grains to house-sized boulders, spanning nearly three-quarters of the distance from Earth to the Moon yet mostly thinner than a ten-storey building. They may be young — perhaps only a few hundred million years old, though their age is still debated — and they are slowly raining down onto the planet.</div>
       </div>
     </div>
   </div>
 </div>
 </div>
+<script src="zcl-tz.js"></script>
+<script src="zcl-season.js"></script>
+<script src="saturn-ephem.js"></script>
 <script>
 "use strict";
 (function(){
 
 var $=function(id){return document.getElementById(id)};
-// starfield
+var D2R=Math.PI/180, R2D=180/Math.PI;
+// starfield + corner flourishes (shared template)
 (function(){var s='';for(var i=0;i<150;i++){s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>'}$('zcl-plstars').innerHTML=s})();
-// corner flourishes
 (function(){var fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" stroke-linecap="round">'
   +'<path d="M2 2 L2 14" stroke-width="1.4"/><path d="M2 2 L14 2" stroke-width="1.4"/>'
   +'<path d="M2 7 C12 7 7 17 17 17" opacity=".9"/><path d="M7 2 C7 12 17 7 17 17" opacity=".9"/>'
@@ -168,144 +403,1299 @@ var $=function(id){return document.getElementById(id)};
   +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
   var els=document.querySelectorAll('.zcl-fl');for(var i=0;i<els.length;i++)els[i].innerHTML=fl})();
 
-function discEarth(cx,cy,r){
-  var ex=cx-130, ey=cy;
-  var er=r;
-  var mx=cx+170, my=cy-18;
-  var mr=r*0.27;
+var KM=60268;                 // Saturn equatorial radius, km
+var POLAR=54364/60268;        // polar / equatorial radius
+
+/* ════════════════ Ring structure ════════════════
+   Normal optical depth (tau) and particle colour by radius, from Cassini
+   occultation profiles, smoothed. Gaps are real widths — the renderer
+   averages every pixel over the exact radial span it covers, so a 42 km
+   gap dims a 250 km pixel by exactly 42/250 rather than vanishing or
+   being drawn fat. */
+var BANDS=[ // r_in km, r_out km, tau_in, tau_out, material
+  [66900,74490,.002,.002,'D'],
+  [74490,77760,.05,.09,'C'],[77760,77870,0,0,'-'],
+  [77870,87340,.08,.12,'C'],[87340,87610,0,0,'-'],
+  [87610,91980,.12,.2,'C'],
+  [91980,99000,.8,1.3,'B'],[99000,104500,1.9,2.6,'B'],[104500,110000,3.6,4.6,'B'],[110000,117580,2.3,1.5,'B'],
+  [117580,117930,0,0,'-'],
+  [117930,119850,.08,.12,'X'],[119850,120090,0,0,'-'],[120090,122170,.12,.3,'X'],
+  [122170,133410,.68,.5,'A'],[133410,133740,0,0,'-'],
+  [133740,136487,.45,.33,'A'],[136487,136529,0,0,'-'],[136529,136775,.33,.3,'A'],
+  [140130,140230,.45,.45,'F'],[139700,140130,.01,.01,'F'],[140230,140650,.01,.01,'F']
+];
+var MAT={ // albedo-weighted colour
+  D:[.3,.28,.26], C:[.40,.36,.31], B:[1.0,.92,.77], X:[.42,.39,.35], A:[.84,.79,.69], F:[.55,.54,.52], '-':[0,0,0]
+};
+var R0=66000, R1=141000, BIN=5, NB=(R1-R0)/BIN;
+var tauT=new Float32Array(NB), colT=new Float32Array(NB*3);
+(function(){
+  for(var k=0;k<NB;k++){
+    var r=R0+(k+.5)*BIN, tau=0, m='-';
+    for(var b=0;b<BANDS.length;b++){ var s=BANDS[b];
+      if(r>=s[0]&&r<s[1]){ var f=(r-s[0])/(s[1]-s[0]); tau=s[2]+(s[3]-s[2])*f; m=s[4]; }
+    }
+    // gentle ripple through the B ring so it reads as structure, not paint
+    if(m==='B') tau*=1+.18*Math.sin(r/310)+.1*Math.sin(r/97);
+    if(m==='A') tau*=1+.06*Math.sin(r/140);
+    var alb=1;
+    if(m==='B') alb=1+.07*Math.sin(r/730)+.045*Math.sin(r/211)+.03*Math.sin(r/67) - (r<99000? .12*(99000-r)/7000 : 0);
+    if(m==='A') alb=1+.04*Math.sin(r/390)-(r>133740? .07:0);
+    tauT[k]=tau; var c=MAT[m]; colT[k*3]=c[0]*alb; colT[k*3+1]=c[1]*alb; colT[k*3+2]=c[2]*alb;
+  }
+})();
+function tauAt(rkm){ var k=((rkm-R0)/BIN)|0; return (k<0||k>=NB)?0:tauT[k]; }
+
+/* Per-frame ring tables: opacity and scattered light for the current
+   viewing (mu) and lighting (mu0) angles, as prefix sums so any pixel can
+   average them over its own radial footprint in O(1). */
+var ringTab={key:''};
+function buildRingTab(mu, mu0, litFace, gain){
+  var key=mu.toFixed(4)+'|'+mu0.toFixed(4)+'|'+litFace+'|'+gain.toFixed(3);
+  if(ringTab.key===key) return ringTab;
+  var Sa=new Float64Array(NB+1), Sr=new Float64Array(NB+1), Sg=new Float64Array(NB+1), Sb=new Float64Array(NB+1), St=new Float64Array(NB+1);
+  for(var k=0;k<NB;k++){
+    var t=tauT[k], a=1-Math.exp(-t/mu), I;
+    if(litFace) I=mu0/(mu0+mu)*(1-Math.exp(-t*(1/mu+1/mu0)));
+    else I=Math.abs(mu0-mu)<1e-4 ? t/mu*Math.exp(-t/mu)*.5 : mu0/(mu0-mu)*(Math.exp(-t/mu0)-Math.exp(-t/mu))*.5;
+    I*=gain;
+    St[k+1]=St[k]+Math.exp(-t/mu0);
+    Sa[k+1]=Sa[k]+a; Sr[k+1]=Sr[k]+I*colT[k*3]; Sg[k+1]=Sg[k]+I*colT[k*3+1]; Sb[k+1]=Sb[k]+I*colT[k*3+2];
+  }
+  ringTab={key:key,Sa:Sa,Sr:Sr,Sg:Sg,Sb:Sb,St:St};
+  return ringTab;
+}
+// mean sunlight transmission through the rings over [a,b] km (1 outside them)
+function avgT(tab,a,b){
+  var len=b-a, ia=Math.max(a,R0), ib=Math.min(b,R1), inside=Math.max(0,ib-ia);
+  var sum=(len-inside);
+  if(inside>0) sum+=(pref(tab.St,(ib-R0)/BIN)-pref(tab.St,(ia-R0)/BIN))*BIN;
+  return sum/len;
+}
+function pref(S,x){ // prefix value at fractional bin x
+  if(x<=0) return 0; if(x>=NB) return S[NB];
+  var i=x|0; return S[i]+(S[i+1]-S[i])*(x-i);
+}
+
+/* Globe colour by latitude (deg). Visual palette of Saturn's belts and
+   zones — creamy equator, tan belts, greyer poles. */
+var GLAT=[[0,[.97,.88,.64]],[8,[.95,.86,.61]],[13,[.80,.66,.42]],[19,[.85,.72,.48]],[25,[.92,.81,.58]],
+  [32,[.81,.70,.48]],[40,[.88,.78,.57]],[50,[.76,.68,.51]],[60,[.68,.64,.53]],[72,[.58,.58,.54]],[90,[.52,.53,.52]]];
+function globeCol(lat, out){
+  var a=Math.abs(lat), i=1; while(i<GLAT.length-1&&GLAT[i][0]<a) i++;
+  var p=GLAT[i-1], q=GLAT[i], f=Math.min(1,Math.max(0,(a-p[0])/(q[0]-p[0])));
+  var rip=1+.035*Math.sin(a*.9)+.02*Math.sin(a*2.7);
+  out[0]=(p[1][0]+(q[1][0]-p[1][0])*f)*rip; out[1]=(p[1][1]+(q[1][1]-p[1][1])*f)*rip; out[2]=(p[1][2]+(q[1][2]-p[1][2])*f)*rip;
+}
+
+/* ════════════════ Ray-traced planet ════════════════
+   Draws Saturn in its own frame: north pole up, ring plane horizontal,
+   Earth tilted B above the ring plane, Sun at (Bs, dU). Each pixel casts a
+   ray at the oblate globe and the ring plane, so the rings pass correctly
+   in front of and behind the globe, the globe shadows the rings, the rings
+   shadow the globe, and the dark Cassini Division lets the globe show
+   through — all from the real geometry of the moment.
+   Returns an offscreen canvas centred on Saturn, `ppr` px per radius. */
+/* Core rasterizer. Fills ImageData `img` (W×H); pixel (i,j) maps to the ring
+   frame through the affine map M: sx = ox + i*ux + j*vx, sy = oy + i*uy + j*vy
+   (radii, sy up). Any rotation, zoom or pan is just a different M, so the
+   hero can zoom to 12× and re-render only what's on screen. */
+function rasterize(g, img, W, H, M){
+  var B=g.B, sB=Math.sin(B), cB=Math.cos(B);
+  if(Math.abs(sB)<2e-4){ sB=(sB<0?-1:1)*2e-4; }
+  var sx0=Math.cos(g.Bs)*Math.sin(g.dU), sy0=Math.sin(g.Bs), sz0=Math.cos(g.Bs)*Math.cos(g.dU);
+  var mu=Math.abs(sB), mu0=Math.max(1e-3,Math.abs(sy0));
+  var lit=(g.B<0)===(g.Bs<0);
+  var phase=Math.acos(Math.max(-1,Math.min(1,sy0*sB+sz0*cB)))*R2D;
+  var surge=1+.35*Math.exp(-phase/1.2);                  // opposition brightening
+  var tab=buildRingTab(mu,mu0,lit,1.72*surge);
+  var c2=POLAR*POLAR, px=img.data;
+  var A=sB*sB/c2+cB*cB, kB=2*sB*cB*(1/c2-1), kC=cB*cB/c2+sB*sB;
+  var cyl=Math.sqrt(c2*cB*cB+sB*sB);                       // silhouette semi-minor
+  var col=[0,0,0], inv=Math.hypot(M.ux,M.uy), pprL=1/inv, kmPerBin=1/BIN;
+  var eX=0, eY=sB, eZ=cB;
+  var gain=1.08*Math.pow(surge,.5);
+  for(var j=0;j<H;j++){
+    var rowx=M.ox+j*M.vx, rowy=M.oy+j*M.vy;
+    for(var i=0;i<W;i++){
+      var sx=rowx+i*M.ux, sy=rowy+i*M.uy, o=(j*W+i)*4;
+      // ---- globe coverage (anti-aliased silhouette) ----
+      var ell=Math.sqrt(sx*sx+(sy/cyl)*(sy/cyl));
+      var cov=Math.max(0,Math.min(1,(1-ell)*pprL*cyl+.5));
+      var gR=0,gG=0,gB=0, tg=-1e9;
+      if(cov>0){
+        var ssx=sx, ssy=sy;
+        if(ell>0.999){ var sh=0.999/ell; ssx*=sh; ssy*=sh; }
+        var cq=ssx*ssx+ssy*ssy*kC-1, bq=ssy*kB, dsc=bq*bq-4*A*cq;
+        if(dsc<0) dsc=0;
+        tg=(-bq+Math.sqrt(dsc))/(2*A);
+        var qx=ssx, qy=ssy*cB+tg*sB, qz=-ssy*sB+tg*cB;
+        var nx=qx, ny=qy/c2, nz=qz, nl=Math.sqrt(nx*nx+ny*ny+nz*nz); nx/=nl; ny/=nl; nz/=nl;
+        var muE=nx*eX+ny*eY+nz*eZ, muS=nx*sx0+ny*sy0+nz*sz0;
+        var lat=Math.asin(Math.max(-1,Math.min(1,ny)))*R2D;
+        globeCol(lat,col);
+        var I=0;
+        if(muS>-.02&&muE>0){
+          // soft terminator: a hard muS>0 cut aliases into a jagged dark rim
+          var tw=Math.min(1,Math.max(0,(muS+.02)/.05)); tw=tw*tw*(3-2*tw);
+          I=gain*Math.pow(Math.max(muS,1e-3),.88)*Math.pow(Math.max(muE,1e-3),-.12)*tw;
+          // shadow of the rings on the globe
+          if(Math.abs(sy0)>1e-4){
+            var t=-qy/sy0;
+            if(t>0){ var rx=qx+t*sx0, rz=qz+t*sz0, rr=Math.sqrt(rx*rx+rz*rz)*KM;
+              if(rr>R0-4000&&rr<R1+4000){ var wk=Math.min(4000,Math.max(BIN,inv*KM/Math.max(mu0,.03)*.7));
+                I*=avgT(tab,rr-wk/2,rr+wk/2); } }
+          }
+        }
+        gR=col[0]*I; gG=col[1]*I; gB=col[2]*I;
+      }
+      if(cov===0 && ell>2.4){ px[o+3]=0; continue; }      // empty sky: skip the ring maths
+      // ---- ring plane ----
+      var rX=sx, rZ=-sy/sB, r=Math.sqrt(rX*rX+rZ*rZ), rkm=r*KM;
+      var aR=0, iR=0, iG=0, iB=0, ringFront=false;
+      if(rkm>R0-2000&&rkm<R1+2000){
+        var dr=(Math.abs(rX)+Math.abs(rZ)/Math.abs(sB))/Math.max(r,1e-6)*inv*KM;   // km covered by this pixel
+        if(dr<BIN) dr=BIN;
+        var x0=(rkm-dr/2-R0)*kmPerBin, x1=(rkm+dr/2-R0)*kmPerBin, span=x1-x0;
+        aR=(pref(tab.Sa,x1)-pref(tab.Sa,x0))/span;
+        if(aR>0.0005){
+          iR=(pref(tab.Sr,x1)-pref(tab.Sr,x0))/span; iG=(pref(tab.Sg,x1)-pref(tab.Sg,x0))/span; iB=(pref(tab.Sb,x1)-pref(tab.Sb,x0))/span;
+          var tr=-sy*cB/sB;                                // ring point's t (toward Earth)
+          ringFront = tr>tg;
+          // shadow of the globe on the rings
+          var bx=rX, by=0, bz=rZ;
+          var qa=sx0*sx0+sz0*sz0+sy0*sy0/c2, qb=2*(bx*sx0+bz*sz0), qc=bx*bx+bz*bz-1;
+          var dd=qb*qb-4*qa*qc;
+          if(dd>0){ var t1=(-qb+Math.sqrt(dd))/(2*qa); if(t1>0){ iR*=.04; iG*=.04; iB*=.04; } }
+        }
+      }
+      // ---- composite ----
+      var oR,oG,oB,oA;
+      var skyR=iR, skyG=iG, skyB=iB, skyA=aR;               // ring over empty sky
+      var gpR,gpG,gpB;
+      if(ringFront&&aR>0){ gpR=iR+(1-aR)*gR; gpG=iG+(1-aR)*gG; gpB=iB+(1-aR)*gB; }
+      else { gpR=gR; gpG=gG; gpB=gB; }
+      oR=cov*gpR+(1-cov)*skyR; oG=cov*gpG+(1-cov)*skyG; oB=cov*gpB+(1-cov)*skyB;
+      oA=cov+(1-cov)*Math.min(1,skyA*1.0);
+      if(oA<=0.002){ px[o+3]=0; continue; }
+      // un-premultiply, gentle filmic curve
+      var inA=1/oA;
+      px[o]  =255*tone(oR*inA); px[o+1]=255*tone(oG*inA); px[o+2]=255*tone(oB*inA);
+      px[o+3]=255*Math.min(1,oA);
+    }
+  }
+}
+/* Whole planet as an axis-aligned offscreen image (used by the moon field). */
+function renderPlanet(g, ppr, extR){
+  var mu=Math.abs(Math.sin(g.B));
+  var halfH=Math.max(POLAR*1.02, extR*mu+0.05);
+  var W=Math.ceil(2*extR*ppr)+4, H=Math.ceil(2*halfH*ppr)+4, cx=W/2, cy=H/2;
+  var cv=document.createElement('canvas'); cv.width=W; cv.height=H;
+  var ctx=cv.getContext('2d'), img=ctx.createImageData(W,H);
+  rasterize(g,img,W,H,{ox:(.5-cx)/ppr, oy:(cy-.5)/ppr, ux:1/ppr, uy:0, vx:0, vy:-1/ppr});
+  ctx.putImageData(img,0,0);
+  return {canvas:cv, cx:cx, cy:cy, ppr:ppr};
+}
+var TONE_N=1/(1-Math.exp(-1.35*1.6));
+function tone(x){ return x<=0?0:Math.min(1,(1-Math.exp(-1.35*x))*TONE_N); }
+
+/* ════════════════ Time & state ════════════════ */
+var viewDate=new Date(), live=true, liveTimer=null, playTimer=null;
+var st={ mode:'dob', rot:{sky:0,dob:180,diag:0}, zoom:'fit', labels:true };
+try{ var sv=JSON.parse(localStorage.getItem('dsa-saturn-view')||'null');
+  if(sv){ if(sv.mode) st.mode=sv.mode; if(sv.rot) for(var k in sv.rot) st.rot[k]=sv.rot[k]; if(sv.zoom && sv.zv===2) st.zoom=sv.zoom; } }catch(e){}   // zv: zoom choices saved before "Tonight" existed start on it
+function saveView(){ try{ var o=JSON.parse(localStorage.getItem('dsa-saturn-view')||'{}'); o.mode=st.mode; o.rot=st.rot; o.zoom=st.zoom; o.zv=2; localStorage.setItem('dsa-saturn-view',JSON.stringify(o)); }catch(e){} }
+
+var TZ=ZCLTZ.zone();
+function fmtT(d){ return ZCLTZ.fmtTime(d,TZ); }
+function fmtFull(d){ return ZCLTZ.fmtDate(d,{weekday:'short',month:'short',day:'numeric'},TZ)+' · '+fmtT(d); }
+function fmtDay(d){ return ZCLTZ.fmtDate(d,{weekday:'short',month:'short',day:'numeric'},TZ); }
+
+var G=null;          // current ephemeris
+function compute(){ G=SaturnEphem.compute(viewDate); }
+
+/* ════════════════ Canvas helpers ════════════════ */
+function fitCanvas(cv){
+  var r=cv.getBoundingClientRect(), dpr=Math.min(2.5,window.devicePixelRatio||1);
+  var w=Math.max(10,Math.round(r.width*dpr)), h=Math.max(10,Math.round(r.height*dpr));
+  if(cv.width!==w||cv.height!==h){ cv.width=w; cv.height=h; }
+  return {w:w,h:h,dpr:dpr,cssW:r.width};
+}
+
+/* ════════════════ Stage 1 — hero ════════════════
+   The hero shows either the page's time (header) or a date picked on the
+   year slider. `hz` holds the zoom and the ring-frame point at the centre. */
+var hz={zoom:1, cx:0, cy:0};
+var YR0=Date.UTC(2024,0,1), YR1=Date.UTC(2042,0,1), DAY=86400000;
+var yr={date:null, smooth:true, speed:.5, playing:false, raf:0, last:0};
+var heroLive=null, heroFullTimer=0;
+
+function heroG(){
+  var g;
+  if(yr.date){ g=SaturnEphem.ring(SaturnEphem.jdeOf(yr.date)); }
+  else g=G;
+  if(yr.smooth && yr.date){      // Sun's-eye view (only when browsing years; tonight is always the real view)
+    g={B:g.Bs, Bs:g.Bs, dU:0, P:g.P, elong:g.elong, radiusArcsec:g.radiusArcsec};
+  }
+  return g;
+}
+function heroBasePpr(W,H){ return Math.min((W*.46)/2.36, (H*.44)/Math.max(POLAR, 2.36*Math.sin(27.2*D2R))); }
+/* The hero is drawn in the same orientation as the eyepiece view below
+   (Sky, Dobsonian or Star diagonal, with its rotation), so the planet matches
+   what's in the telescope. A = screen direction per body unit (X west, Y north pole). */
+function viewName(){ var m=(st.mode==='top')?(st.lastEye||'dob'):st.mode; return {sky:'north up, as in the sky',dob:'turned to match the Dobsonian view below',diag:'mirrored to match the star-diagonal view below'}[m]; }
+function heroAffine(g){
+  var mode=(st.mode==='top')?(st.lastEye||'dob'):st.mode, rot=(st.rot[mode]||0)*D2R, mir=(mode==='diag')?-1:1, c=Math.cos(rot), s=Math.sin(rot);
+  function V(e,n){ var x=-e*mir, y=-n; return [x*c-y*s, x*s+y*c]; }
+  var P=g.P, a=V(Math.sin(P-Math.PI/2),Math.cos(P-Math.PI/2)), b=V(Math.sin(P),Math.cos(P));
+  return [a[0],b[0],a[1],b[1]];
+}
+function heroXf(W,H,g){
+  var s1=heroBasePpr(W,H)*hz.zoom, A=heroAffine(g), det=A[0]*A[3]-A[1]*A[2], I=[A[3]/det,-A[1]/det,-A[2]/det,A[0]/det];
+  return { s:s1, A:A, I:I,
+    toScr:function(sx,sy){ var dx=sx-hz.cx, dy=sy-hz.cy; return [W/2+s1*(A[0]*dx+A[1]*dy), H/2+s1*(A[2]*dx+A[3]*dy)]; },
+    toRing:function(X,Y){ var dx=(X-W/2)/s1, dy=(Y-H/2)/s1; return [hz.cx+I[0]*dx+I[1]*dy, hz.cy+I[2]*dx+I[3]*dy]; } };
+}
+function paintHero(res){
+  var cv=$('zcl-hero'), f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h;
+  var g=heroG(), X=heroXf(W,H,g);
+  var Wr=Math.max(8,Math.round(W*res)), Hr=Math.max(8,Math.round(H*res)), s1=X.s*res;
+  var d0x=.5-Wr/2, d0y=.5-Hr/2;
+  var I=X.I, M={ux:I[0]/s1, uy:I[2]/s1, vx:I[1]/s1, vy:I[3]/s1, ox:hz.cx+(I[0]*d0x+I[1]*d0y)/s1, oy:hz.cy+(I[2]*d0x+I[3]*d0y)/s1};
+  var off=paintHero.off||(paintHero.off=document.createElement('canvas'));
+  off.width=Wr; off.height=Hr;
+  var octx=off.getContext('2d'), img=octx.createImageData(Wr,Hr);
+  rasterize(g,img,Wr,Hr,M); octx.putImageData(img,0,0);
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  ctx.imageSmoothingEnabled=true; ctx.imageSmoothingQuality='high';
+  ctx.drawImage(off,0,0,W,H);
+  if(hz.zoom<1.05 && st.labels && !yr.playing) heroLabels(ctx,W,H,g,X,f.dpr);
+  else if(hz.zoom>=1.05 && st.labels && !gest.active) zoomLabels(ctx,W,H,g,X,f.dpr);
+  if(hz.zoom>=1.3) scaleBar(ctx,W,H,X,f.dpr);
+  $('zcl-hero').style.touchAction = hz.zoom>1.01 ? 'none' : 'pan-y';
+  if((hz.zoom>=1.3)!==paintHero.zoomed){ paintHero.zoomed=hz.zoom>=1.3; heroNote(); }
+  $('zcl-hzoomlab').textContent = '×'+(hz.zoom<1.05?'1':hz.zoom<10?hz.zoom.toFixed(1):Math.round(hz.zoom));
+}
+/* Draw fast now, sharpen when things go quiet. */
+function drawHero(fast){
+  cancelAnimationFrame(heroLive);
+  heroLive=requestAnimationFrame(function(){ paintHero(fast?.5:1); });
+  clearTimeout(heroFullTimer);
+  if(fast) heroFullTimer=setTimeout(function(){ if(!yr.playing&&!gest.active) paintHero(1); },220);
+}
+function heroLabels(ctx,W,H,g,X,dpr){
+  // Labels sit in the empty corners above each ring tip, stacked so that no
+  // leader line crosses another label: on each side the label whose leader is
+  // farthest out takes the top row.
+  var sB=Math.sin(g.B);
+  var fs=Math.round(10.5*dpr), row=15*dpr, top=15*dpr;
+  ctx.font='italic '+fs+'px Montserrat, sans-serif';
+  var left=[ {r:133580/KM,t:'Encke Gap'}, {r:128500/KM,t:'A ring'}, {r:119900/KM,t:'Cassini Division'} ];
+  var right=[ {r:104500/KM,t:'B ring'}, {r:83000/KM,t:'C ring · “crepe ring”'} ];
+  var sl = X.toScr(-1,0)[0] <= X.toScr(1,0)[0] ? -1 : 1;     // which ring tip is on the left of the screen
+  function group(list,side){
+    var tipUp = X.toScr(side,0)[1] < H/2;
+    list.forEach(function(it,i){
+      var p=X.toScr(side*it.r, 0), y=tipUp ? top+i*row : H-top-(list.length-1-i)*row+fs*.5;
+      ctx.strokeStyle='rgba(203,168,90,.5)'; ctx.lineWidth=Math.max(1,.8*dpr);
+      ctx.beginPath(); ctx.moveTo(p[0],p[1]+(tipUp?-2:2)*dpr); ctx.lineTo(p[0],tipUp?y+3*dpr:y-fs); ctx.stroke();
+      ctx.fillStyle='rgba(230,204,133,.95)'; ctx.beginPath(); ctx.arc(p[0],p[1],1.7*dpr,0,7); ctx.fill();
+      var onLeft = side===sl; ctx.fillStyle='#D8C18A'; ctx.textAlign= onLeft?'left':'right';
+      ctx.fillText(it.t, p[0]+(onLeft?4:-4)*dpr, y);
+    });
+  }
+  group(left,sl); group(right,-sl);
+}
+/* Zoomed-in labels: each feature is named at a point on its own ring that is
+   on screen and not hidden behind the globe. Gaps only get a label once they
+   are wide enough on screen to actually see. */
+var ZFEAT=[ // radius km, name, width km (0 = a ring, labelled whenever visible)
+  [140180,'F ring',0],[136508,'Keeler Gap',42],[133580,'Encke Gap',325],[129000,'A ring',0],
+  [119900,'Cassini Division',4550],[117755,'Huygens Gap',350],[106000,'B ring',0],
+  [87475,'Maxwell Gap',270],[83000,'C ring',0],[77815,'Colombo Gap',110]
+];
+function zoomLabels(ctx,W,H,g,X,dpr){
+  var sB=Math.sin(g.B), cB=Math.cos(g.B); if(Math.abs(sB)<2e-4) sB=(sB<0?-1:1)*2e-4;
+  var cyl=Math.sqrt(POLAR*POLAR*cB*cB+sB*sB);
+  var fs=Math.round(10.5*dpr), m=34*dpr, padX=6*dpr;
+  ctx.font='italic '+fs+'px Montserrat, sans-serif';
+  var placed=[{x:W-270*dpr,y:H-52*dpr,w:270*dpr,h:52*dpr},{x:0,y:H-64*dpr,w:240*dpr,h:64*dpr}];
+  // preferred spots spread over the view; each label takes the nearest free one
+  var targets=[[.5,.5],[.3,.42],[.7,.58],[.5,.28],[.5,.72],[.22,.66],[.78,.34],[.15,.3],[.85,.7],[.35,.8],[.65,.2]];
+  ZFEAT.forEach(function(f){
+    var r=f[0]/KM, px=f[2]? f[2]/KM*X.s : 0;
+    if(f[2] && px<2.2) return;                                   // not resolved at this zoom
+    var txt=f[1]+(f[2]&&f[2]<1000?' · '+f[2]+' km':'');
+    var cands=[];
+    for(var k=0;k<720;k++){
+      var th=k*Math.PI/360, rx=r*Math.cos(th), rz=r*Math.sin(th), sx=rx, sy=-rz*sB;
+      if(rz<0 && sx*sx+(sy/cyl)*(sy/cyl)<1) continue;           // behind the globe
+      var p=X.toScr(sx,sy);
+      if(p[0]<m||p[0]>W-m||p[1]<m+fs||p[1]>H-m) continue;
+      cands.push(p);
+    }
+    if(!cands.length) return;
+    var tw=ctx.measureText(txt).width, bw=tw+2*padX, bh=fs+9*dpr;
+    for(var t=0;t<targets.length;t++){
+      var tx=targets[t][0]*W, ty=targets[t][1]*H, best=null, bd=1e9;
+      cands.forEach(function(p){ var d=Math.hypot(p[0]-tx,p[1]-ty); if(d<bd){bd=d;best=p;} });
+      if(!best||bd>Math.hypot(W,H)*.22) continue;
+      var up = best[1]-26*dpr-bh>2 ? -1 : 1;
+      var bx=Math.max(4,Math.min(W-bw-4,best[0]-bw/2)), by= up<0? best[1]-22*dpr-bh : best[1]+22*dpr;
+      var box={x:bx-3*dpr,y:by-3*dpr,w:bw+6*dpr,h:bh+6*dpr};
+      var hit=placed.some(function(b){return !(box.x>b.x+b.w||box.x+box.w<b.x||box.y>b.y+b.h||box.y+box.h<b.y)});
+      if(hit) continue;
+      placed.push(box);
+      ctx.strokeStyle='rgba(230,204,133,.7)'; ctx.lineWidth=Math.max(1,.9*dpr);
+      ctx.beginPath(); ctx.moveTo(best[0],best[1]); ctx.lineTo(best[0], up<0? by+bh : by); ctx.stroke();
+      ctx.fillStyle='rgba(230,204,133,.95)'; ctx.beginPath(); ctx.arc(best[0],best[1],2*dpr,0,7); ctx.fill();
+      ctx.fillStyle='rgba(8,7,13,.74)';
+      if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,bh/2); ctx.fill(); } else ctx.fillRect(bx,by,bw,bh);
+      ctx.strokeStyle='rgba(203,168,90,.35)'; ctx.lineWidth=dpr*.8;
+      if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(bx,by,bw,bh,bh/2); ctx.stroke(); }
+      ctx.fillStyle='#E6CC85'; ctx.textAlign='left'; ctx.textBaseline='middle';
+      ctx.fillText(txt,bx+padX,by+bh/2+.5*dpr); ctx.textBaseline='alphabetic';
+      return;
+    }
+  });
+}
+function scaleBar(ctx,W,H,X,dpr){
+  var kmPerPx=KM/X.s, target=W*.18*kmPerPx, nice=[100,200,500,1000,2000,5000,10000,20000,50000], km=nice[0];
+  for(var i=0;i<nice.length;i++) if(nice[i]<=target) km=nice[i];
+  var L=km/kmPerPx, x1=W-18*dpr, x0=x1-L, y=H-18*dpr;
+  ctx.fillStyle='rgba(8,7,13,.72)';                       // backing so it reads over bright ring
+  if(ctx.roundRect){ ctx.beginPath(); ctx.roundRect(x0-10*dpr,y-24*dpr,L+20*dpr,32*dpr,6*dpr); ctx.fill(); }
+  else ctx.fillRect(x0-10*dpr,y-24*dpr,L+20*dpr,32*dpr);
+  ctx.strokeStyle='rgba(230,204,133,.85)'; ctx.lineWidth=1.5*dpr;
+  ctx.beginPath(); ctx.moveTo(x0,y-4*dpr); ctx.lineTo(x0,y); ctx.lineTo(x1,y); ctx.lineTo(x1,y-4*dpr); ctx.stroke();
+  ctx.font=Math.round(10*dpr)+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(230,204,133,.9)'; ctx.textAlign='center';
+  ctx.fillText(km.toLocaleString()+' km',(x0+x1)/2,y-7*dpr);
+}
+
+/* ---------- zoom & pan ---------- */
+var ZMAX=12;
+function clampPan(){
+  if(hz.zoom<=1.001){ hz.zoom=1; hz.cx=0; hz.cy=0; return; }
+  var lim=2.45-1.2/hz.zoom; hz.cx=Math.max(-lim,Math.min(lim,hz.cx));
+  var limy=1.1; hz.cy=Math.max(-limy,Math.min(limy,hz.cy));
+}
+function zoomAt(factor, X, Y){
+  var cv=$('zcl-hero'), W=cv.width, H=cv.height, g=heroG();
+  if(X==null){ X=W/2; Y=H/2; }
+  var before=heroXf(W,H,g).toRing(X,Y);
+  hz.zoom=Math.max(1,Math.min(ZMAX,hz.zoom*factor));
+  var after=heroXf(W,H,g).toRing(X,Y);
+  hz.cx+=before[0]-after[0]; hz.cy+=before[1]-after[1];
+  clampPan(); drawHero(true);
+}
+function panBy(dx,dy){
+  var cv=$('zcl-hero'), X=heroXf(cv.width,cv.height,heroG());
+  hz.cx-=(X.I[0]*dx+X.I[1]*dy)/X.s; hz.cy-=(X.I[2]*dx+X.I[3]*dy)/X.s;
+  clampPan(); drawHero(true);
+}
+var gest={active:false, pts:{}, lastDist:0, lastMid:null, lastTap:0};
+(function(){
+  var cv=$('zcl-hero');
+  function dpr(){ return cv.width/cv.getBoundingClientRect().width; }
+  function loc(e){ var r=cv.getBoundingClientRect(), k=dpr(); return [(e.clientX-r.left)*k,(e.clientY-r.top)*k]; }
+  cv.addEventListener('pointerdown',function(e){
+    gest.pts[e.pointerId]=loc(e); gest.active=true;
+    try{ cv.setPointerCapture(e.pointerId); }catch(_){}
+    var ids=Object.keys(gest.pts);
+    if(ids.length===2){ var a=gest.pts[ids[0]], b=gest.pts[ids[1]]; gest.lastDist=Math.hypot(a[0]-b[0],a[1]-b[1]); gest.lastMid=[(a[0]+b[0])/2,(a[1]+b[1])/2]; }
+    // double tap / double click: zoom in 2× there; at full zoom, reset
+    var now=Date.now(), p=gest.pts[e.pointerId];
+    if(ids.length===1 && now-gest.lastTap<300){ if(hz.zoom>=ZMAX-.01){ hz.zoom=1; clampPan(); drawHero(true);} else zoomAt(2,p[0],p[1]); gest.lastTap=0; }
+    else gest.lastTap=now;
+  });
+  cv.addEventListener('pointermove',function(e){
+    if(!gest.pts[e.pointerId]) return;
+    var prev=gest.pts[e.pointerId], cur=loc(e); gest.pts[e.pointerId]=cur;
+    var ids=Object.keys(gest.pts);
+    if(ids.length===2){
+      var a=gest.pts[ids[0]], b=gest.pts[ids[1]], d=Math.hypot(a[0]-b[0],a[1]-b[1]), mid=[(a[0]+b[0])/2,(a[1]+b[1])/2];
+      if(gest.lastDist>0) zoomAt(d/gest.lastDist, mid[0], mid[1]);
+      if(gest.lastMid) panBy(mid[0]-gest.lastMid[0], mid[1]-gest.lastMid[1]);
+      gest.lastDist=d; gest.lastMid=mid;
+    } else if(ids.length===1 && hz.zoom>1.01){
+      panBy(cur[0]-prev[0], cur[1]-prev[1]);
+    }
+  });
+  function end(e){ delete gest.pts[e.pointerId]; if(!Object.keys(gest.pts).length){ gest.active=false; gest.lastDist=0; gest.lastMid=null; drawHero(true); } }
+  cv.addEventListener('pointerup',end); cv.addEventListener('pointercancel',end);
+  // trackpad pinch (and ctrl+wheel) zooms; a plain wheel still scrolls the page
+  cv.addEventListener('wheel',function(e){
+    if(!e.ctrlKey && !e.metaKey) return;
+    e.preventDefault(); var p=loc(e); zoomAt(Math.exp(-e.deltaY*.01), p[0], p[1]);
+  },{passive:false});
+})();
+
+/* ---------- year slider ---------- */
+function yrLabel(){
+  var g=heroG(), d=yr.date||viewDate;
+  var when = yr.date ? ZCLTZ.fmtDate(d,{month:'short',year:'numeric'},TZ) : 'Tonight';
+  var t=Math.abs(g.B*R2D), face=g.B<0?'south face':'north face';
+  var txt=when+' · rings '+(t<0.3?'edge-on':t.toFixed(1)+'° open · '+face);
+  if(yr.date && !yr.smooth) txt+=' · with Earth’s yearly nod';
+  if(g.elong!=null && g.elong*R2D<18) txt+=' · lost in the Sun’s glare';
+  $('zcl-ylab').textContent=txt;
+  $('zcl-ynow').hidden=!yr.date;
+  heroNote();
+  var yl=$('zcl-heroyr');
+  if(yr.date){ yl.hidden=false; yl.innerHTML='Rings<b>'+ZCLTZ.fmtDate(d,{month:'short',year:'numeric'},TZ)+' · '+t.toFixed(0)+'°</b>'; }
+  else yl.hidden=true;
+}
+function syncSlider(){
+  var d=yr.date||viewDate, v=Math.round((d.getTime()-YR0)/DAY);
+  $('zcl-yslider').value=Math.max(0,Math.min(+$('zcl-yslider').max,v));
+}
+function setYearDate(d,fast){
+  yr.date=d; syncSlider(); yrLabel(); drawHero(fast);
+}
+function yrPlay(on){
+  yr.playing=on; var b=$('zcl-yplay');
+  b.innerHTML=on?'&#10074;&#10074;':'&#9654;'; b.classList.toggle('on',on);
+  b.setAttribute('aria-label',on?'Pause':'Play');
+  cancelAnimationFrame(yr.raf);
+  if(!on){ drawHero(false); return; }
+  var t=(yr.date||viewDate).getTime();
+  if(t>=YR1-DAY*2) t=YR0;                        // at the end: start over
+  yr.date=new Date(t); yr.last=performance.now();
+  function step(now){
+    if(!yr.playing) return;
+    var dt=Math.min(80,now-yr.last); yr.last=now;
+    var t2=yr.date.getTime()+dt/1000*yr.speed*365.25*DAY;
+    if(t2>=YR1){ t2=YR1-DAY; yr.date=new Date(t2); syncSlider(); yrLabel(); yrPlay(false); return; }
+    yr.date=new Date(t2); syncSlider(); yrLabel(); paintHero(.5);
+    yr.raf=requestAnimationFrame(step);
+  }
+  yr.raf=requestAnimationFrame(step);
+}
+function drawYearSpark(){
+  var svg=$('zcl-yspark'), p='', maxB=28;
+  for(var t=YR0;t<=YR1;t+=15*DAY){
+    var B=Math.abs(SaturnEphem.ring(SaturnEphem.jdeOf(new Date(t))).B*R2D);
+    var x=(t-YR0)/(YR1-YR0)*1000, y=38-B/maxB*34;
+    p+=(p?'L':'M')+x.toFixed(1)+' '+y.toFixed(1);
+  }
+  var nx=((viewDate.getTime()-YR0)/(YR1-YR0)*1000).toFixed(1);
+  svg.innerHTML='<path d="'+p+' L1000 40 L0 40Z" fill="rgba(203,168,90,.10)"/>'
+    +'<path d="'+p+'" fill="none" stroke="rgba(203,168,90,.55)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>'
+    +'<line x1="'+nx+'" x2="'+nx+'" y1="0" y2="40" stroke="rgba(242,228,190,.5)" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>';
+  var ticks='';
+  for(var y=2024;y<=2042;y+=2){
+    var x=(Date.UTC(y,0,1)-YR0)/(YR1-YR0)*100;
+    ticks+='<span style="left:'+x.toFixed(2)+'%">'+y+'</span>';
+  }
+  $('zcl-yticks').innerHTML=ticks;
+}
+
+/* ════════════════ Stage 2 — eyepiece field ════════════════ */
+var MOONS={
+  Mimas:    {col:'#BFB8A8', mag:12.9, km:396,  per:'0.9 days', fact:'The “Death Star” moon — one crater a third of its width.'},
+  Enceladus:{col:'#E8F0F4', mag:11.7, km:504,  per:'1.4 days', fact:'Brilliant white; jets water from a hidden ocean at its south pole.'},
+  Tethys:   {col:'#D9D6CC', mag:10.2, km:1062, per:'1.9 days', fact:'Almost pure water ice, split by a canyon 2,000 km long.'},
+  Dione:    {col:'#CFCAC0', mag:10.4, km:1123, per:'2.7 days', fact:'Streaked with bright ice cliffs on its trailing side.'},
+  Rhea:     {col:'#D6CEBE', mag:9.7,  km:1527, per:'4.5 days', fact:'Saturn’s second-largest moon; icy and heavily cratered.'},
+  Titan:    {col:'#E3B45C', mag:8.3,  km:5150, per:'16 days',  fact:'Bigger than Mercury, with a thick orange atmosphere and methane lakes.'},
+  Hyperion: {col:'#A99C88', mag:14.2, km:270,  per:'21 days',  fact:'A tumbling, sponge-like moon — beyond an 8-inch scope.'},
+  Iapetus:  {col:'#C7B79A', mag:10.2, km:1469, per:'79 days',  fact:'Two-toned: one side snow-bright, the other dark as coal.'}
+};
+// V magnitude for tonight's distances; Iapetus swings by ~2 mag with its
+// bright trailing side facing us at western elongation (X > 0).
+function moonMag(m){
+  var base=MOONS[m.name].mag + 5*Math.log10((G.r*G.delta)/(9.54*8.54));
+  if(m.name==='Iapetus'){ var ang=Math.atan2(m.X, -m.Z); base = 11.05 - 0.85*Math.sin(ang) + 5*Math.log10((G.r*G.delta)/(9.54*8.54)); }
+  return base;
+}
+function moonState(m){
+  var cyl=Math.sqrt(POLAR*POLAR*Math.cos(G.B)*Math.cos(G.B)+Math.sin(G.B)*Math.sin(G.B));
+  var onDisc = (m.X*m.X+(m.Y/cyl)*(m.Y/cyl))<1;
+  if(onDisc&&m.Z>0) return 'behind';
+  if(onDisc&&m.Z<0) return 'transit';
+  // eclipse: inside Saturn's shadow. 3-D position in the ring frame —
+  // X along the ring's long axis, Y sky-up, and -Z toward Earth.
+  var sB=Math.sin(G.B), cB=Math.cos(G.B);
+  var P3=[m.X, m.Y*cB + (-m.Z)*sB, -m.Y*sB + (-m.Z)*cB];
+  var S=[Math.cos(G.Bs)*Math.sin(G.dU), Math.sin(G.Bs), Math.cos(G.Bs)*Math.cos(G.dU)];
+  var dot=P3[0]*S[0]+P3[1]*S[1]+P3[2]*S[2];
+  if(dot<0){ var qx=P3[0]-dot*S[0], qy=P3[1]-dot*S[1], qz=P3[2]-dot*S[2];
+    if(qx*qx+qz*qz+(qy/POLAR)*(qy/POLAR)<1) return 'eclipsed'; }
+  // tucked against the rings: projected inside the ring outline
+  if(Math.abs(m.X)<2.3 && Math.abs(m.Y)<2.3*Math.abs(sB)+.15) return 'glare';
+  return 'clear';
+}
+function visTier(m,mag,state){
+  if(state==='behind') return ['no','Hidden'];
+  if(state==='eclipsed') return ['no','In shadow'];
+  var sep=Math.hypot(m.X,m.Y)*G.radiusArcsec;          // arcsec from centre
+  var clear=sep-2.27*G.radiusArcsec;                     // arcsec beyond the ring tips
+  if(mag>13.6) return ['no','Beyond 8″'];
+  if(state==='transit'||state==='glare') return mag>11.4 ? ['no','Lost in the glare'] : ['hard','In the glare'];   // a faint moon against the rings is gone, not just hard
+  var need = mag + (clear<8? 2.2 : clear<20? 1.1 : clear<45? .4 : 0);   // glare penalty
+  if(need<9.2) return ['easy','Easy'];
+  if(need<11.2) return ['good','Visible'];
+  if(need<13.2) return ['hard','Challenging'];
+  return ['no','Too faint here'];
+}
+
+function viewMatrix(){
+  // sky offsets (east, north) in radii -> screen unit vector components before scaling.
+  // Sky view: north up, east LEFT. Dobsonian: rotated (not mirrored). Diagonal: mirrored east–west.
+  var rot=(st.rot[st.mode]||0)*D2R, mir=(st.mode==='diag')?-1:1;
+  // base: screen x = -east, screen y (down) = -north
+  var c=Math.cos(rot), s=Math.sin(rot);
+  // apply mirror on x first, then rotate (screen coords, y down, positive rot = clockwise)
+  return function(east,north){
+    var x=-east*mir, y=-north;
+    return [x*c-y*s, x*s+y*c];
+  };
+}
+// ring-frame (X west-positive, Y pole-positive) -> sky (east, north)
+function ringToSky(X,Y){
+  var P=G.P;
+  // X axis (west along equator) has PA P-90; pole has PA P. dir(PA)= (east=sin, north=cos)
+  var east = X*Math.sin(P-Math.PI/2) + Y*Math.sin(P);
+  var north= X*Math.cos(P-Math.PI/2) + Y*Math.cos(P);
+  return [east,north];
+}
+
+var ZOOM={inner:10.5, titan:23, wide:64};
+var lblMem={}, lastFieldT=0, fieldDT=0;   // fieldDT: seconds since the last chart frame
+var fieldPlanet={gkey:'',ppr:1,img:null,t:0};
+/* "Tonight" zoom: frame just the moons a telescope shows right now, so they
+   spread across the field instead of crowding Saturn. Far-flung Iapetus is
+   left to an edge arrow. While the moons are playing the frame eases after
+   them rather than jumping. */
+var fitMem={ext:0};
+function fitExtent(list){
+  var r=0;
+  list.forEach(function(o){
+    if(o.tier[0]==='no'||o.state==='behind') return;
+    var d=Math.hypot(o.m.X,o.m.Y);
+    if(o.m.name==='Iapetus'&&d>26) return;
+    if(d>r) r=d;
+  });
+  var target=Math.max(3.8,Math.min(26,r*1.24));
+  if(moonAnim.playing&&fitMem.ext){ var tau= target>fitMem.ext ? .9 : 4; fitMem.ext += (target-fitMem.ext)*(1-Math.exp(-fieldDT/tau)); }
+  else fitMem.ext=target;
+  return fitMem.ext;
+}
+function drawField(){
+  var top=(st.mode==='top');
+  // one i button: explains eyepiece matching, or the view from above
+  $('zcl-rotl').disabled=$('zcl-rotr').disabled=top; $('zcl-eye').classList.toggle('is-top',top);          // stay in place, just dimmed
+  $('zcl-fov').style.visibility = top?'hidden':'';
+  var infoOn=$('zcl-dinfo').classList.contains('on');
+  $('zcl-dinfotxt').classList.toggle('open', infoOn && !top);
+  $('zcl-orbnote').classList.toggle('open', infoOn && top);
+  $('zcl-dinfo').setAttribute('aria-label', top?'About the view from above':'How to match your eyepiece');
+  $('zcl-seenkey').hidden=top;
+  if(top){ drawOrbits(); return; }
+  var cv=$('zcl-field'), f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h, dpr=f.dpr;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  var V=viewMatrix();
+  // direction of the ring line on screen, to fit the field
+  var e=ringToSky(1,0), u=V(e[0],e[1]);
+  var nowT=performance.now(); fieldDT=Math.min(.1,Math.max(0,(nowT-lastFieldT)/1000)); lastFieldT=nowT;
+  var info=G.moons.map(function(mm){ var mag=moonMag(mm), state=moonState(mm); return {m:mm, mag:mag, state:state, tier:visTier(mm,mag,state)}; });
+  var ext= st.zoom==='fit' ? fitExtent(info) : ZOOM[st.zoom], m=(st.zoom==='fit'?32:26)*dpr;
+  var ppr=Math.min((W/2-m)/Math.max(.05,Math.abs(u[0])), (H/2-m)/Math.max(.05,Math.abs(u[1])))/ext;
+  ppr=Math.min(ppr,(Math.min(W,H)/2-m)/2.4);
+  var cx=W/2, cy=H/2;
+  // faint ring-plane guide
+  ctx.strokeStyle='rgba(203,168,90,.10)'; ctx.lineWidth=dpr;
+  ctx.beginPath(); ctx.moveTo(cx-u[0]*ext*1.3*ppr, cy-u[1]*ext*1.3*ppr); ctx.lineTo(cx+u[0]*ext*1.3*ppr, cy+u[1]*ext*1.3*ppr); ctx.stroke();
+
+  // planet: ring-frame render placed by the same transform
+  // The globe is ray-traced once and reused. While the frame is still moving
+  // (playing, or scrubbing in the "Tonight" zoom) the last render is scaled to
+  // fit, and a sharp one is drawn as soon as things settle.
+  var gkey=(G.B*R2D).toFixed(2)+'|'+(G.dU*R2D).toFixed(1), pr=fieldPlanet.img?ppr/fieldPlanet.ppr:0;
+  clearTimeout(fieldPlanet.t);
+  if(!fieldPlanet.img || fieldPlanet.gkey!==gkey || pr<.5 || pr>2){ fieldPlanet.img=renderPlanet(G,ppr,2.36); fieldPlanet.gkey=gkey; fieldPlanet.ppr=ppr; }
+  else if(Math.abs(pr-1)>.004){ fieldPlanet.t=setTimeout(function(){ if(moonAnim.playing||st.mode==='top') return; fieldPlanet.gkey=''; drawField(); },220); }
+  var P=fieldPlanet.img, ps=ppr/fieldPlanet.ppr;
+  // ring frame axes on screen
+  var ax=V.apply(null,ringToSky(1,0)), ay=V.apply(null,ringToSky(0,1));      // X (west) and Y (pole) unit vectors
+  ctx.save();
+  ctx.setTransform(ax[0]*ps,ax[1]*ps,-ay[0]*ps,-ay[1]*ps,cx,cy);   // image x -> X, image y(down) -> -Y
+  ctx.drawImage(P.canvas,-P.cx,-P.cy);
+  ctx.restore();
+
+  // moons
+  var ms=info.map(function(o){
+    var sk=ringToSky(o.m.X,o.m.Y), p=V(sk[0],sk[1]); o.x=cx+p[0]*ppr; o.y=cy+p[1]*ppr;
+    // dot size follows brightness, the way a star chart does: Titan is unmistakably the biggest
+    o.rad=Math.max(2.7,Math.min(7.4,2.3+(12.9-o.mag)*1.08))*dpr;
+    return o;
+  });
+  var close=ext<20;                                  // room to name every moon a telescope can show
+  var nx=-u[1], ny=u[0]; if(ny>0){nx=-nx;ny=-ny;}   // label normal, pointing "up" on screen
+  // names keep clear of the turn buttons, the field-size caption and the compass
+  var placed=[{x:0,y:H-48*dpr,w:126*dpr,h:48*dpr},{x:W-190*dpr,y:H-26*dpr,w:190*dpr,h:26*dpr}].concat(compass(ctx,V,W,H,dpr)), offList=[];
+  var ORDER=['Titan','Rhea','Tethys','Dione','Iapetus','Enceladus','Mimas','Hyperion'];
+  var BRIGHT=ms.filter(function(o){return o.state!=='behind'&&o.state!=='eclipsed'&&o.m.name!=='Iapetus'}).sort(function(a,b){return a.mag-b.mag}).slice(0,4).map(function(o){return o.m.name});
+  ms.sort(function(a,b){return ORDER.indexOf(a.m.name)-ORDER.indexOf(b.m.name)});   // fixed order = stable layout
+  // moon discs are obstacles too, so no label lands on a neighbour
+  ms.forEach(function(o){ if(o.state!=='behind'){ var pb=o.rad+3*dpr; placed.push({x:o.x-pb,y:o.y-pb,w:2*pb,h:2*pb}); } });
+  if(close){ var pa=2.34*ppr, pb=Math.max(POLAR,2.34*Math.abs(Math.sin(G.B)))*ppr, phx=Math.abs(ax[0])*pa+Math.abs(ay[0])*pb, phy=Math.abs(ax[1])*pa+Math.abs(ay[1])*pb;
+    placed.push({x:cx-phx,y:cy-phy,w:2*phx,h:2*phy}); }
+  if(ext>40){  // Saturn is only a few pixels across out here — name it
+    ctx.font='600 '+Math.round(10*dpr)+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(230,204,133,.9)'; ctx.textAlign='center';
+    var sly=cy+ny*20*dpr+4*dpr; ctx.fillText('SATURN',cx+nx*20*dpr,sly);
+    var tw0=ctx.measureText('SATURN').width; placed.push({x:cx+nx*20*dpr-tw0/2-3*dpr,y:sly-12*dpr,w:tw0+6*dpr,h:16*dpr});
+  }
+  ms.forEach(function(o){
+    if(o.state==='behind') return;
+    var inField=o.x>6*dpr&&o.x<W-6*dpr&&o.y>6*dpr&&o.y<H-6*dpr;
+    var faint=o.tier[0]==='no';
+    // name only what a telescope actually shows: the four brightest moons right now
+    // (Iapetus joins when its bright side faces us); the faint inner pair only on "Inner moons"
+    // Close in, every moon is named — the ones too faint to see in dimmer type.
+    // Zoomed far out they pile onto Saturn, so only the four brightest and Iapetus keep a name.
+    var skipLabel = close ? (faint && !inField) : (BRIGHT.indexOf(o.m.name)<0 && o.m.name!=='Iapetus');
+    if(!inField){ if(!skipLabel) offList.push(o); return; }
+    var rad=o.rad;
+    if(faint && o.state!=='eclipsed'){               // there, but beyond the telescope: a hollow ring
+      ctx.strokeStyle=MOONS[o.m.name].col; ctx.globalAlpha=.85; ctx.lineWidth=1.5*dpr;
+      ctx.beginPath(); ctx.arc(o.x,o.y,Math.max(rad,3.2*dpr),0,7); ctx.stroke(); ctx.globalAlpha=1;
+    } else {
+      var alpha= o.state==='eclipsed'?.3 : o.tier[0]==='hard'?.9 : 1;
+      var gr=ctx.createRadialGradient(o.x,o.y,0,o.x,o.y,rad*3.1);
+      gr.addColorStop(0,'rgba(255,248,230,'+(.68*alpha)+')'); gr.addColorStop(.45,'rgba(255,248,230,'+(.2*alpha)+')'); gr.addColorStop(1,'rgba(255,248,230,0)');
+      ctx.fillStyle=gr; ctx.beginPath(); ctx.arc(o.x,o.y,rad*3.1,0,7); ctx.fill();
+      ctx.globalAlpha=alpha; ctx.fillStyle=MOONS[o.m.name].col; ctx.beginPath(); ctx.arc(o.x,o.y,rad,0,7); ctx.fill(); ctx.globalAlpha=1;
+    }
+    // Label: sits right beside its own moon. It tries the side facing away from
+    // the ring line first, then the other side, then along the line, and only
+    // steps further out when those are taken — so a name is never far from its
+    // dot. Each moon keeps its slot until it genuinely collides, and while the
+    // moons are orbiting the label glides to a new slot instead of jumping.
+    var strong=close&&!faint&&o.tier[0]!=='hard', fs=Math.round((close?12:11)*dpr);
+    ctx.font=(strong?'600 ':'500 ')+fs+'px Montserrat, sans-serif';
+    var txt=o.m.name, tw=ctx.measureText(txt).width;
+    var mem=lblMem[txt]||(lblMem[txt]={dir:null,t:0,dx:null,dy:null});
+    // Directions are fixed on screen (above / below / either way along the ring
+    // line), so a remembered side means the same thing frame to frame.
+    var sg=((o.x-cx)*nx+(o.y-cy)*ny)>=0, al=((o.x-cx)*u[0]+(o.y-cy)*u[1])>=0;
+    var DIRS=[[nx,ny],[-nx,-ny],[u[0],u[1]],[-u[0],-u[1]]], PREF=(sg?[0,1]:[1,0]).concat(al?[2,3]:[3,2]);
+    function slot(dir,t){
+      var d=DIRS[dir], reach=rad+7*dpr+t*13*dpr;
+      var ox=d[0]*(reach+tw/2*Math.abs(d[0])), oy=d[1]*(reach+fs*.55*Math.abs(d[1]));
+      var box={x:o.x+ox-tw/2-3*dpr,y:o.y+oy-fs*.62-2*dpr,w:tw+6*dpr,h:fs*1.24+4*dpr};
+      var hit=placed.some(function(q){return !(box.x>q.x+q.w||box.x+box.w<q.x||box.y>q.y+q.h||box.y+box.h<q.y)});
+      if(box.x<2||box.x+box.w>W-2||box.y<2||box.y+box.h>H-2) hit=true;
+      return hit?null:{dir:dir,t:t,ox:ox,oy:oy,box:box};
+    }
+    var first=null;
+    for(var t=0;t<5&&!first;t++) for(var i=0;i<4&&!first;i++) first=slot(PREF[i],t);
+    // Sticky: a name keeps its side, stepping a little further out if a neighbour
+    // passes, and only changes side when that side is truly blocked. While the
+    // moons play it tolerates more, so names drift rather than hop.
+    var keep=null, playing=moonAnim.playing;
+    if(mem.dir!==null) for(var t2=0;t2<5&&!keep;t2++) keep=slot(mem.dir,t2);
+    var best= keep&&(playing||!first||keep.t<=first.t) ? keep : first;
+    var kP=1-Math.exp(-fieldDT/.5), kA=1-Math.exp(-fieldDT/.3);      // glide ~0.5 s, fade ~0.3 s
+    // While playing, the faint inner moons (they lap Saturn in a day or two) stay
+    // unnamed, and a name that has just changed side fades out rather than
+    // hopping straight back.
+    if(playing&&faint) best=null;
+    if(playing&&best&&mem.dir!==null&&best.dir!==mem.dir){ if(nowT-(mem.sw||0)<1500) best=null; else mem.sw=nowT; }
+    var showIt=!!best&&!skipLabel;
+    mem.a = (playing&&mem.a!==undefined) ? mem.a+((showIt?1:0)-mem.a)*kA : (showIt?1:0);
+    if(!showIt){                                     // fade out where it was, rather than vanish
+      if(!playing||mem.dx===null||mem.a<.03){ mem.dx=null; mem.a=0; return; }
+      best={ox:mem.dx,oy:mem.dy};
+      if(mem.a>.3) placed.push({x:o.x+mem.dx-tw/2-3*dpr,y:o.y+mem.dy-fs*.62-2*dpr,w:tw+6*dpr,h:fs*1.24+4*dpr});   // still holds its spot while it fades
+    } else { placed.push(best.box); mem.dir=best.dir; mem.t=best.t; }
+    var glide=playing&&mem.dx!==null;
+    mem.dx= glide ? mem.dx+(best.ox-mem.dx)*kP : best.ox;
+    mem.dy= glide ? mem.dy+(best.oy-mem.dy)*kP : best.oy;
+    var lx=o.x+mem.dx, ly=o.y+mem.dy, dist=Math.hypot(mem.dx,mem.dy)||1, vx=mem.dx/dist, vy=mem.dy/dist;
+    var edge=Math.min((tw/2+2*dpr)/Math.max(1e-6,Math.abs(vx)),(fs*.62)/Math.max(1e-6,Math.abs(vy)));
+    ctx.globalAlpha=(strong?1:.94)*mem.a;
+    if(dist-edge-rad>8*dpr){                         // a leader only once the name has had to step away
+      ctx.strokeStyle='rgba(203,168,90,.55)'; ctx.lineWidth=.9*dpr;
+      ctx.beginPath(); ctx.moveTo(o.x+vx*(rad+2.5*dpr),o.y+vy*(rad+2.5*dpr)); ctx.lineTo(o.x+vx*(dist-edge-1.5*dpr),o.y+vy*(dist-edge-1.5*dpr)); ctx.stroke();
+    }
+    ctx.fillStyle= faint ? 'rgba(196,178,134,.95)' : MOONS[o.m.name].col;
+    ctx.textAlign='center'; ctx.textBaseline='middle'; ctx.fillText(txt,lx,ly); ctx.textBaseline='alphabetic';
+    ctx.globalAlpha=1;
+  });
+
+  offList.forEach(function(o){ offField(ctx,o,cx,cy,W,H,dpr,placed); });
+  var fov=2*ext*G.radiusArcsec/60;
+  $('zcl-fov').textContent=(fov<2?(fov*60).toFixed(0)+'″':fov.toFixed(1)+'′')+' field · true scale';
+}
+function offField(ctx,o,cx,cy,W,H,dpr,placed){
+  var dx=o.x-cx, dy=o.y-cy, m=16*dpr;
+  var t=Math.min((W/2-m)/Math.max(1e-6,Math.abs(dx)),(H/2-m)/Math.max(1e-6,Math.abs(dy)));
+  var ex=cx+dx*t, ey=cy+dy*t, a=Math.atan2(dy,dx);
+  ctx.save(); ctx.translate(ex,ey); ctx.rotate(a);
+  ctx.fillStyle='rgba(203,168,90,.75)';
+  ctx.beginPath(); ctx.moveTo(6*dpr,0); ctx.lineTo(-3*dpr,-4.5*dpr); ctx.lineTo(-3*dpr,4.5*dpr); ctx.closePath(); ctx.fill();
+  ctx.restore();
+  var fs=Math.round(10*dpr); ctx.font=fs+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(203,168,90,.85)';
+  var inx=-Math.cos(a), iny=-Math.sin(a);
+  ctx.textAlign= Math.abs(inx)<.3?'center':(inx>0?'left':'right');
+  var sep=Math.hypot(o.m.X,o.m.Y)*G.radiusArcsec, txt=o.m.name+' '+arc(sep), tw=ctx.measureText(txt).width;
+  var align=ctx.textAlign, bx0=ex+inx*14*dpr, by0=ey+iny*14*dpr+fs*.35;
+  // slide the label along the edge until it's clear of everything already drawn
+  for(var k=0;k<8;k++){
+    var ly=by0+(k%2?1:-1)*Math.ceil(k/2)*(fs+4*dpr);
+    var left= align==='left'?bx0 : align==='right'?bx0-tw : bx0-tw/2;
+    var box={x:left-3*dpr,y:ly-fs,w:tw+6*dpr,h:fs+5*dpr};
+    var hit=placed.some(function(b){return !(box.x>b.x+b.w||box.x+box.w<b.x||box.y>b.y+b.h||box.y+box.h<b.y)});
+    if(!hit||k===7){ placed.push(box); ctx.fillText(txt,bx0,ly); break; }
+  }
+}
+function compass(ctx,V,W,H,dpr){
+  var ox=62*dpr, oy=H-88*dpr, L=18*dpr, boxes=[];
+  var n=V(0,1), e=V(1,0), w=V(-1,0);
+  function arrow(v,len,col,lab,bold){
+    var x2=ox+v[0]*len, y2=oy+v[1]*len;
+    ctx.strokeStyle=col; ctx.lineWidth=(bold?1.6:1)*dpr;
+    ctx.beginPath(); ctx.moveTo(ox,oy); ctx.lineTo(x2,y2); ctx.stroke();
+    var a=Math.atan2(v[1],v[0]);
+    ctx.fillStyle=col; ctx.beginPath(); ctx.moveTo(x2+Math.cos(a)*4*dpr,y2+Math.sin(a)*4*dpr);
+    ctx.lineTo(x2+Math.cos(a+2.5)*5*dpr,y2+Math.sin(a+2.5)*5*dpr); ctx.lineTo(x2+Math.cos(a-2.5)*5*dpr,y2+Math.sin(a-2.5)*5*dpr); ctx.fill();
+    ctx.font=(bold?'600 ':'')+Math.round(9.5*dpr)+'px Montserrat, sans-serif';
+    var lx=ox+v[0]*(len+7*dpr), ly=oy+v[1]*(len+7*dpr);
+    ctx.textAlign= Math.abs(v[0])<.45?'center':(v[0]<0?'right':'left');
+    ctx.textBaseline= Math.abs(v[1])<.45?'middle':(v[1]<0?'alphabetic':'top');
+    var tw=ctx.measureText(lab).width, al=ctx.textAlign, x0=al==='center'?lx-tw/2:al==='right'?lx-tw:lx;
+    if(x0<6*dpr){ lx+=6*dpr-x0; x0=6*dpr; }                      // keep the label inside the field
+    var fh=11*dpr, y0=ctx.textBaseline==='middle'?ly-fh/2:ctx.textBaseline==='top'?ly:ly-fh;
+    boxes.push({x:x0-3*dpr,y:y0-2*dpr,w:tw+6*dpr,h:fh+4*dpr});
+    boxes.push({x:Math.min(ox,x2)-5*dpr,y:Math.min(oy,y2)-5*dpr,w:Math.abs(x2-ox)+10*dpr,h:Math.abs(y2-oy)+10*dpr});
+    ctx.fillText(lab, lx, ly); ctx.textBaseline='alphabetic';
+  }
+  arrow(n,L*.8,'rgba(154,135,92,.8)','N');
+  arrow(e,L*.8,'rgba(154,135,92,.8)','E');
+  arrow(w,L*1.25,'rgba(230,204,133,.95)','DRIFT',true);
+  return boxes;      // what the compass covers, so moon names can steer round it
+}
+
+/* ════════════════ Observer geometry: altitude, rise/set ════════════════ */
+function gmst(date){ var d=date.getTime()/86400000+2440587.5-2451545; return ((280.46061837+360.98564736629*d)%360+360)%360*D2R; }
+function altOf(date,ra,dec,lat,lng){
+  var H=gmst(date)+lng*D2R-ra;
+  return Math.asin(Math.sin(lat*D2R)*Math.sin(dec)+Math.cos(lat*D2R)*Math.cos(dec)*Math.cos(H));
+}
+function nightEvents(date){
+  var L=ZCLTZ.loc(), lat=L.lat, lng=L.lng;
+  var g=SaturnEphem.ring(SaturnEphem.jdeOf(date));
+  // local noon today -> noon tomorrow
+  var dk=ZCLTZ.dayKey(date,TZ).split('-').map(Number);
+  var start=ZCLTZ.at(dk[0],dk[1]-1,dk[2],12,0,TZ).getTime();
+  if(date.getTime()<start-6*3600000) start-=86400000;      // before 6 AM: the night still in progress; after that, the night to come
+  var h0=-0.5667*D2R, prev=null, rise=null, set=null, best=null, bestAlt=-9;
+  for(var t=start;t<=start+86400000;t+=6*60000){
+    var a=altOf(new Date(t),g.ra,g.dec,lat,lng)-h0;
+    if(prev!==null){
+      if(prev<0&&a>=0&&!rise) rise=new Date(t-6*60000*a/(a-prev));
+      if(prev>=0&&a<0&&!set)  set =new Date(t-6*60000*a/(a-prev));
+    }
+    if(a>bestAlt){ bestAlt=a; best=new Date(t); }
+    prev=a;
+  }
+  if(best){ var tb=best.getTime(), f=function(x){ return altOf(new Date(x),g.ra,g.dec,lat,lng); }, y0=f(tb-360000), y1=f(tb), y2=f(tb+360000), den=y0-2*y1+y2;
+    if(den<0) best=new Date(tb+180000*(y0-y2)/den); }      // the true peak lies between the 6-minute samples
+  return {rise:rise,set:set,transit:best,transitAlt:(bestAlt+h0)*R2D,
+          altNow:altOf(date,g.ra,g.dec,lat,lng)*R2D, dec:g.dec, ra:g.ra};
+}
+function oppositionNear(date){
+  // opposition = Saturn farthest from the Sun in our sky (opposite it). Find the
+  // daily peak of elongation, then refine to the hour. (The ring-plane ΔU = 0
+  // moment, which governs the shadow, can fall a day or more away from it.)
+  var el=function(t){ return SaturnEphem.compute(new Date(t)).elong; }, D1=86400000, t0=date.getTime()-30*D1, best=null, bv=-1;
+  for(var t=t0;t<date.getTime()+370*D1;t+=D1){ var e=el(t); if(e>bv){bv=e;best=t;} }
+  if(bv<3) return null;                                  // (radians — never below ~3 near opposition)
+  for(var h=-36;h<=36;h++){ var e2=el(best+h*3600000); if(e2>bv){bv=e2;best=best+h*3600000;h=-37;} }
+  return new Date(best);
+}
+
+/* ════════════════ Text panels ════════════════ */
+function card(label,val,sub,cls){
+  return '<div class="zcl-pcard'+(cls?' '+cls:'')+'"><div class="zcl-pclabel">'+label+'</div><div class="zcl-pcval">'+val+'</div>'+(sub?'<div class="zcl-pcsub">'+sub+'</div>':'')+'</div>';
+}
+function arc(sec){ return sec<90? Math.round(sec)+'″' : (sec/60).toFixed(1)+'′'; }
+var oppCache=null;
+function renderTonight(){
+  var ev=nightEvents(viewDate), Bd=Math.abs(G.B*R2D), face=G.B<0?'south':'north';
+  var up=ev.altNow>0;
+  var html='';
+  html+=card('Right now', up? Math.round(ev.altNow)+'° up' : 'Below horizon', up? 'Altitude above the horizon' : (ev.rise? 'Rises '+fmtT(ev.rise):''), up&&ev.altNow>25?'accent':'');
+  html+=card('Best view', fmtT(ev.transit), 'Highest in the south · '+Math.round(ev.transitAlt)+'° up');
+  html+=card('Rises · sets', (ev.rise?fmtT(ev.rise):'—')+' · '+(ev.set?fmtT(ev.set):'—'), 'For your saved location');
+  html+=card('Rings open', Bd.toFixed(1)+'°', 'We’re seeing the '+face+' face');
+  html+=card('Size', arc(2*G.radiusArcsec)+' globe', arc(2*2.27*G.radiusArcsec)+' ring tip to tip');
+  html+=card('Brightness', 'mag '+(G.mag>=0?'+':'')+G.mag.toFixed(1), 'Brighter than all but a handful of stars');
+  html+=card('Distance', (G.delta*149.598).toFixed(0)+' million km', 'Light takes '+Math.round(G.delta*8.317)+' minutes');
+  if(!oppCache || Math.abs(oppCache.from-viewDate)>20*86400000){ oppCache={from:viewDate.getTime(), d:oppositionNear(viewDate)}; }
+  var od=oppCache.d, days=od?Math.round((od-viewDate)/86400000):null;
+  html+=card('Opposition', od?fmtDay(od):'—', days===null?'':(Math.abs(days)<=1?'Tonight-ish — closest & brightest':days>0?'In '+days+' days':Math.abs(days)+' days ago'));
+  $('zcl-tonight').innerHTML=html;
+  var dU=Math.abs(G.dU*R2D), sh;
+  if(dU<1.5) sh='Right at opposition the Sun sits almost exactly behind us, so Saturn’s shadow falls straight back behind the globe — you won’t see it on the rings, and the rings get a noticeable glow (the “opposition surge”).';
+  else sh='Saturn’s shadow falls on the rings on the <b>'+(G.dU>0?'east':'west')+'</b> side of the globe — look for a dark notch where the rings pass behind the planet. It grows as we move away from opposition.';
+  $('zcl-tonightnote').innerHTML=sh;
+}
+
+/* The line-up: one strip per moon, all on the same scale, so each moon's place
+   beside Saturn can be read without the names colliding. The yardstick is the
+   "ring-width" — the rings from tip to tip — because that is what the eye can
+   judge at the eyepiece. Each moon's disc is drawn to scale with the others. */
+var RINGW=4.54;        // ring span, tip to tip, in Saturn radii
+var LANE=22;           // half-length of each strip, in Saturn radii — just past Titan's orbit
+function laneHTML(m,col,tier,state){
+  var x=Math.max(-LANE,Math.min(LANE,m.X)), far=Math.abs(m.X)>LANE, h='<span class="ln"></span>';
+  for(var k=1;k<=4;k++){ var d=k*RINGW/LANE*50; h+='<span class="tk" style="left:'+(50-d).toFixed(2)+'%"></span><span class="tk" style="left:'+(50+d).toFixed(2)+'%"></span>'; }
+  var ry=Math.max(1.4,22.7*Math.abs(Math.sin(G.B))).toFixed(1);
+  h+='<span class="sat" style="width:'+(RINGW/(2*LANE)*100).toFixed(2)+'%"><svg viewBox="-23 -10 46 20" aria-hidden="true">'
+    +'<ellipse rx="21.6" ry="'+ry+'" fill="none" stroke="#CBA85A" stroke-opacity=".7" stroke-width="2.2"/>'
+    +'<ellipse rx="10" ry="9" fill="#D9BE84"/>'
+    +'<path d="M-21.6 0 A21.6 '+ry+' 0 0 '+(G.B>0?0:1)+' 21.6 0" fill="none" stroke="#CBA85A" stroke-opacity=".85" stroke-width="2.2"/></svg></span>';
+  var hid=(state==='behind'||state==='eclipsed'), hollow=(tier==='no'&&!hid);
+  if(!far) h+='<i class="dot'+(hollow?' hollow':'')+(hid?' hid':'')+'" style="left:'+(50+x/LANE*50).toFixed(2)+'%;'+(hollow?'border-color:':'background:')+col+'"></i>';
+  else h+='<span class="far" style="'+(x>0?'right:0':'left:0')+'">'+(x>0?'&#8250;':'&#8249;')+'</span>';
+  return '<div class="zcl-lane">'+h+'</div>';
+}
+function renderMoons(){
+  var rows=G.moons.map(function(m){
+    var mag=moonMag(m), state=moonState(m), tier=visTier(m,mag,state);
+    var sk=ringToSky(m.X,m.Y), sepR=Math.hypot(sk[0],sk[1]), sep=sepR*G.radiusArcsec;
+    var dir=sk[0]>0?'east':'west';
+    var where;
+    if(state==='behind') where='Behind Saturn — hidden';
+    else if(state==='transit') where='Crossing in front of Saturn';
+    else if(state==='eclipsed') where='In Saturn’s shadow — eclipsed';
+    else if(state==='glare') where='Tucked against the rings, '+dir+' side · '+arc(sep);
+    else { var n=(sepR/RINGW).toFixed(1);
+      where=(sepR/RINGW<.65 ? 'Just off the '+dir+' ring tip' : (n==='1.0'?'1 ring-width ':n+' ring-widths ')+dir)+' · '+arc(sep); }
+    return {m:m,mag:mag,tier:tier,state:state,where:where};
+  }).sort(function(a,b){return a.mag-b.mag});
+  var html='';
+  rows.forEach(function(r){
+    var info=MOONS[r.m.name], d=Math.max(2.5,info.km/5150*30).toFixed(1);
+    html+='<div class="zcl-moonrow'+(r.tier[0]==='no'?' dim':'')+'">'
+      +'<span class="disc"><i style="width:'+d+'px;height:'+d+'px;background:radial-gradient(circle at 34% 30%,rgba(255,255,255,.45),rgba(255,255,255,0) 46%),radial-gradient(circle at 62% 66%,rgba(0,0,0,0) 38%,rgba(0,0,0,.42)),'+info.col+'"></i></span>'
+      +'<div><div class="mn">'+r.m.name+'</div><div class="mw">'+r.where+' · mag '+r.mag.toFixed(1)+'</div></div>'
+      +'<span class="vis '+r.tier[0]+'">'+r.tier[1]+'</span>'
+      +laneHTML(r.m,info.col,r.tier[0],r.state)
+      +'<div class="ms">'+info.km.toLocaleString()+' km across · orbits in '+info.per+' — '+info.fact+'</div></div>';
+  });
+  $('zcl-moons').innerHTML=html;
+  // one line under the chart: which moons a telescope shows right now
+  var names=function(t){ return rows.filter(function(r){return t.indexOf(r.tier[0])>=0}).map(function(r){return r.m.name}); };
+  var see=names(['easy','good']), hard=names(['hard']);
+  $('zcl-seen').innerHTML=(see.length?'<b>In a telescope now:</b> '+see.join(', '):'<b>No moon is easy to catch right now</b>')
+    +(hard.length?' <span class="t">· Tougher: '+hard.join(', ')+'</span>':'');
+  // next Titan elongations + Iapetus brightest
+  var t0=viewDate.getTime(), prev=null, prevd=null, out=[];
+  for(var t=t0;t<t0+17*86400000&&out.length<2;t+=3600000){
+    var ti=SaturnEphem.moons(SaturnEphem.jdeOf(new Date(t))).moons[5];
+    if(prev!==null){ var dd=ti.X-prev; if(prevd!==null&&(dd>0)!==(prevd>0)) out.push({t:new Date(t-3600000),X:prev}); prevd=dd; }
+    prev=ti.X;
+  }
+  var txt='';
+  out.forEach(function(o){ txt+=(txt?' · ':'')+'<b>Titan</b> farthest '+(o.X>0?'west':'east')+' '+fmtDay(o.t); });
+  $('zcl-titannext').innerHTML=(txt?txt+'. ':'')+'Each strip shows where a moon sits along the ring line; the ticks are one ring-width apart (the rings from tip to tip, '+arc(RINGW*G.radiusArcsec)+' right now), and an arrow means it is off the end. The discs show the moons’ true sizes next to one another. Visibility ratings assume an 8-inch telescope on a dark, steady night; moons close to the rings are harder than their brightness suggests.';
+}
+
+/* ════════════════ Ring anatomy strip ════════════════ */
+function drawAnatomy(){
+  var cv=$('zcl-anat'), r=cv.getBoundingClientRect(), dpr=Math.min(2.5,window.devicePixelRatio||1);
+  var cssH= r.width<560? 250 : 230;
+  cv.style.height=cssH+'px';
+  var f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h, fs=Math.round(10.5*dpr);
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  var m=14*dpr, x0=m, x1=W-m, rA=60268, rB=141500;
+  function X(rkm){ return x0+(rkm-rA)/(rB-rA)*(x1-x0); }
+  var y0=58*dpr, bh=34*dpr;
+  // strip, face-on brightness
+  for(var px=Math.floor(x0);px<x1;px++){
+    var ra=rA+(px-x0)/(x1-x0)*(rB-rA), rb=rA+(px+1-x0)/(x1-x0)*(rB-rA);
+    var k0=Math.max(0,(ra-R0)/BIN), k1=Math.min(NB,(rb-R0)/BIN), a=0,cr=0,cg=0,cb=0,n=0;
+    for(var k=Math.floor(k0);k<Math.ceil(k1);k++){ if(k<0||k>=NB) continue; var t=tauT[k], al=1-Math.exp(-t*2.2), I=.5*(1-Math.exp(-t*4));
+      a+=al; cr+=I*colT[k*3]*2; cg+=I*colT[k*3+1]*2; cb+=I*colT[k*3+2]*2; n++; }
+    if(ra<66900){ ctx.fillStyle='rgba(222,196,140,.9)'; ctx.fillRect(px,y0,1,bh); continue; }
+    if(!n) continue;
+    a/=n; cr/=n; cg/=n; cb/=n;
+    ctx.fillStyle='rgba('+Math.round(255*Math.min(1,cr))+','+Math.round(255*Math.min(1,cg))+','+Math.round(255*Math.min(1,cb))+','+Math.max(.04,a).toFixed(3)+')';
+    ctx.fillRect(px,y0,1,bh);
+  }
+  ctx.font=fs+'px Montserrat, sans-serif'; ctx.textAlign='center';
+  function lab(rkm,t,row,col){ var x=X(rkm), y=y0-8*dpr-row*15*dpr; ctx.fillStyle=col||'#CBB37A'; ctx.fillText(t,x,y);
+    ctx.strokeStyle='rgba(203,168,90,.35)'; ctx.lineWidth=dpr*.8; ctx.beginPath(); ctx.moveTo(x,y+3*dpr); ctx.lineTo(x,y0-2*dpr); ctx.stroke(); }
+  var narrow=W/dpr<560;
+  lab(63000,'Saturn',0,'#9A875C');
+  lab(83000,'C ring',0); lab(105000,'B ring',narrow?1:0); lab(119900,'Cassini',narrow?0:1);
+  lab(129000,'A ring',narrow?2:0); lab(140180,'F',narrow?1:1);
+  // km scale
+  ctx.fillStyle='#8A7340'; ctx.font=Math.round(9.5*dpr)+'px Montserrat, sans-serif';
+  [80000,100000,120000,140000].forEach(function(k){ var x=X(k); ctx.fillRect(x,y0+bh+3*dpr,dpr,4*dpr); ctx.fillText((k/1000)+'k km',x,y0+bh+16*dpr); });
+  // zoom box on the outer A ring
+  var zA=131500, zB=137600, zy=y0+bh+42*dpr, zh=34*dpr, zx0=x0+(x1-x0)*.08, zx1=x1-(x1-x0)*.08;
+  ctx.strokeStyle='rgba(203,168,90,.4)'; ctx.lineWidth=dpr;
+  ctx.strokeRect(X(zA),y0-2*dpr,X(zB)-X(zA),bh+4*dpr);
+  ctx.beginPath(); ctx.moveTo(X(zA),y0+bh+2*dpr); ctx.lineTo(zx0,zy); ctx.moveTo(X(zB),y0+bh+2*dpr); ctx.lineTo(zx1,zy); ctx.stroke();
+  function ZX(rkm){ return zx0+(rkm-zA)/(zB-zA)*(zx1-zx0); }
+  for(var px2=Math.floor(zx0);px2<zx1;px2++){
+    var ra2=zA+(px2-zx0)/(zx1-zx0)*(zB-zA), rb2=zA+(px2+1-zx0)/(zx1-zx0)*(zB-zA);
+    var t2=0,n2=0,cc=[0,0,0];
+    for(var q=ra2;q<rb2;q+=1){ var kk=((q-R0)/BIN)|0; if(kk>=0&&kk<NB){ t2+=tauT[kk]; n2++; } }
+    var kk2=((ra2-R0)/BIN)|0; var tt=n2?t2/n2:0, I2=.5*(1-Math.exp(-tt*4))*2;
+    ctx.fillStyle='rgba('+Math.round(255*Math.min(1,I2*colT[kk2*3]))+','+Math.round(255*Math.min(1,I2*colT[kk2*3+1]))+','+Math.round(255*Math.min(1,I2*colT[kk2*3+2]))+','+Math.max(.03,1-Math.exp(-tt*2.2)).toFixed(3)+')';
+    ctx.fillRect(px2,zy,1,zh);
+  }
+  ctx.strokeStyle='rgba(203,168,90,.4)'; ctx.strokeRect(zx0,zy,zx1-zx0,zh);
+  ctx.font=fs+'px Montserrat, sans-serif'; ctx.textAlign='center';
+  function zlab(rkm,t,sub){ var x=ZX(rkm); ctx.fillStyle='#E6CC85'; ctx.fillText(t,x,zy+zh+15*dpr);
+    ctx.fillStyle='#8A7C5C'; ctx.font=Math.round(9.5*dpr)+'px Montserrat, sans-serif'; ctx.fillText(sub,x,zy+zh+28*dpr); ctx.font=fs+'px Montserrat, sans-serif';
+    ctx.strokeStyle='rgba(230,204,133,.5)'; ctx.beginPath(); ctx.moveTo(x,zy+zh+2*dpr); ctx.lineTo(x,zy+zh+5*dpr); ctx.stroke(); }
+  zlab(133580,'Encke Gap','325 km'); zlab(136508,'Keeler Gap','42 km');
+  ctx.fillStyle='#8A7340'; ctx.textAlign='left'; ctx.font=Math.round(9.5*dpr)+'px Montserrat, sans-serif';
+  var zoomX=((zx1-zx0)/(zB-zA))/((x1-x0)/(rB-rA));
+  ctx.fillText('outer A ring, enlarged ×'+Math.round(zoomX), zx0, zy-6*dpr);
+
+  var Bd=Math.abs(G.B*R2D);
+  var cas = Bd<5 ? 'With the rings this thin, the Cassini Division is lost this season.'
+          : Bd<12 ? 'With the rings only '+Bd.toFixed(0)+'° open it shows only at the ring tips — look at the ends of the rings in steady air.'
+          : 'Wide open rings — it should show all the way around in steady air.';
+  var gaps=[
+    ['Cassini Division','4,700 km wide · 8-inch: yes', 'A 4,700 km lane swept mostly clear by a tug-of-war with the moon Mimas. '+cas],
+    ['C ring (“crepe ring”)','17,500 km wide · 8-inch: sometimes','So thin it’s nearly transparent. Where it crosses in front of Saturn it shows as a dusky band on the globe — a lovely catch on a steady night.'],
+    ['Encke Gap','325 km wide · 8-inch: no','Kept open by the tiny moon Pan (28 km), which orbits inside it. Glimpsed from Earth only by big scopes in exceptional air.'],
+    ['Keeler Gap','42 km wide · 8-inch: never','Carved by the moonlet Daphnis (8 km), which raises waves on the gap’s edges. Only spacecraft have seen it — at Saturn’s distance it is 0.01″ wide.']
+  ];
+  $('zcl-gaps').innerHTML=gaps.map(function(g){return card(g[0],'',g[1]+'<br><span style="color:#C9BD97">'+g[2]+'</span>')}).join('').replace(/<div class="zcl-pcval"><\/div>/g,'');
+}
+
+/* ════════════════ Ring tilt chart ════════════════ */
+var tiltData=null;
+function drawTilt(){
+  if(!tiltData){
+    tiltData=[];
+    for(var y=2024;y<=2041.001;y+=1/12){
+      var d=new Date(Date.UTC(Math.floor(y),Math.round((y%1)*12),15));
+      tiltData.push({y:y, B:SaturnEphem.ring(SaturnEphem.jdeOf(d)).B*R2D});
+    }
+  }
+  var W=900,H=250,l=46,r=16,t=18,b=34;
+  function X(y){ return l+(y-2024)/(2041-2024)*(W-l-r); }
+    function Yv(B){ return (H-b) - Math.abs(B)/30*(H-t-b); }
   var s='';
-  var orbRx = Math.hypot(mx-ex, my-ey);
-  s+='<ellipse cx="'+ex+'" cy="'+ey+'" rx="'+orbRx+'" ry="'+(orbRx*0.35)+'"'
-    +' fill="none" stroke="#9DB6CC" stroke-opacity=".35" stroke-width="1"'
-    +' stroke-dasharray="4 5"/>';
-  var ecid='earthc', elid='earthld';
-  s+='<defs>';
-  s+='<clipPath id="'+ecid+'"><circle cx="'+ex+'" cy="'+ey+'" r="'+er+'"/></clipPath>';
-  s+='<radialGradient id="'+elid+'" cx="50%" cy="50%" r="50%">'
-    +'<stop offset="62%" stop-color="transparent"/>'
-    +'<stop offset="100%" stop-color="rgba(0,0,0,.5)"/></radialGradient>';
-  var mcid='moonc';
-  s+='<clipPath id="'+mcid+'"><circle cx="'+mx+'" cy="'+my+'" r="'+mr+'"/></clipPath>';
-  s+='<radialGradient id="mg" cx="38%" cy="36%" r="70%">'
-    +'<stop offset="0%" stop-color="#E8E2D2"/>'
-    +'<stop offset="60%" stop-color="#B5AC97"/>'
-    +'<stop offset="100%" stop-color="#5A5247"/></radialGradient>';
-  s+='</defs>';
-  // Earth photo
-  s+='<image href="img/earth.jpg" x="'+(ex-er)+'" y="'+(ey-er)+'" width="'+(er*2)+'" height="'+(er*2)+'" clip-path="url(#'+ecid+')" preserveAspectRatio="xMidYMid slice"/>';
-  s+='<circle cx="'+ex+'" cy="'+ey+'" r="'+er+'" fill="url(#'+elid+')"/>';
-  s+='<circle cx="'+ex+'" cy="'+ey+'" r="'+(er+1.5)+'" fill="none" stroke="#A8D0F4" stroke-width="2.5" stroke-opacity=".3"/>';
-  // Moon (kept as gradient — no moon photo in the set)
-  s+='<circle cx="'+mx+'" cy="'+my+'" r="'+mr+'" fill="url(#mg)"/>';
-  s+='<circle cx="'+(mx-mr*.25)+'" cy="'+(my-mr*.15)+'" r="'+(mr*.22)+'" fill="#5A5247" opacity=".5"/>';
-  s+='<circle cx="'+(mx+mr*.15)+'" cy="'+(my+mr*.25)+'" r="'+(mr*.18)+'" fill="#5A5247" opacity=".45"/>';
-  s+='<circle cx="'+mx+'" cy="'+my+'" r="'+mr+'" fill="none" stroke="#D0CAB8" stroke-width=".7" stroke-opacity=".5"/>';
-  // Labels
-  s+='<text x="'+ex+'" y="'+(ey+er+22)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="2.5" fill="#8A6E32" style="text-transform:uppercase">EARTH</text>';
-  s+='<text x="'+mx+'" y="'+(my+mr+18)+'" text-anchor="middle" font-family="Montserrat" font-size="9" letter-spacing="2.5" fill="#8A6E32">THE MOON</text>';
-  s+='<text x="'+((ex+mx)/2)+'" y="'+(ey-orbRx*0.35-8)+'" text-anchor="middle" font-family="Montserrat" font-size="8.5" letter-spacing="2" fill="#7A6E55" font-style="italic">~ 384,400 km · once every 27.3 days</text>';
-  return s;
+  for(var g=0;g<=30;g+=10){ s+='<line x1="'+l+'" x2="'+(W-r)+'" y1="'+Yv(g)+'" y2="'+Yv(g)+'" stroke="rgba(203,168,90,.12)"/><text x="'+(l-8)+'" y="'+(Yv(g)+4)+'" text-anchor="end" font-family="Montserrat" font-size="11" fill="#8A7340">'+g+'°</text>'; }
+  for(var yy=2025;yy<=2041;yy+=2){ s+='<text x="'+X(yy)+'" y="'+(H-12)+'" text-anchor="middle" font-family="Montserrat" font-size="11" fill="#8A7340">'+yy+'</text>'; }
+  var p='';
+  tiltData.forEach(function(q,i){ p+=(i?'L':'M')+X(q.y).toFixed(1)+' '+Yv(q.B).toFixed(1); });
+  s+='<path d="'+p+' L'+X(2041)+' '+Yv(0)+' L'+X(2024)+' '+Yv(0)+'Z" fill="rgba(203,168,90,.07)"/>';
+  s+='<path d="'+p+'" fill="none" stroke="#CBA85A" stroke-width="2"/>';
+  // max & crossings
+  var mx=tiltData.reduce(function(a,q){return Math.abs(q.B)>Math.abs(a.B)?q:a});
+  s+='<text x="'+X(mx.y)+'" y="'+(Yv(mx.B)-9)+'" text-anchor="middle" font-family="Montserrat" font-size="11" fill="#C9BD97">widest · '+Math.abs(mx.B).toFixed(0)+'°</text>';
+  s+='<text x="'+X(2025.2)+'" y="'+(Yv(0)-8)+'" text-anchor="start" font-family="Montserrat" font-size="11" fill="#9A875C">edge-on 2025</text>';
+  var cross=null; for(var i=1;i<tiltData.length;i++){ if(tiltData[i].y>2035&&Math.abs(tiltData[i].B)<1.2){cross=tiltData[i];break;} }
+  if(cross) s+='<text x="'+X(cross.y)+'" y="'+(Yv(0)-8)+'" text-anchor="middle" font-family="Montserrat" font-size="11" fill="#9A875C">edge-on again</text>';
+  var ny=2000+(viewDate.getTime()/86400000+2440587.5-2451545)/365.25;
+  var nowB=Math.abs(G.B*R2D);
+  if(ny>=2024&&ny<=2041){
+    s+='<line x1="'+X(ny)+'" x2="'+X(ny)+'" y1="'+t+'" y2="'+(H-b)+'" stroke="rgba(230,204,133,.35)" stroke-dasharray="3 3"/>';
+    s+='<circle cx="'+X(ny)+'" cy="'+Yv(nowB)+'" r="5" fill="#E6CC85"/>';
+    s+='<text x="'+(X(ny)+8)+'" y="'+(Yv(nowB)+18)+'" font-family="Montserrat" font-size="11.5" fill="#E6CC85">now · '+nowB.toFixed(1)+'°</text>';
+  }
+  $('zcl-tiltsvg').innerHTML=s;
+  $('zcl-tiltnote').innerHTML='Saturn’s axis is tilted 27°, so over its 29-year orbit we see the rings from above, edge-on, from below, and edge-on again. They went edge-on in March 2025 and nearly vanished; now they’re opening onto their south face, widening each year to about '+Math.abs(mx.B).toFixed(0)+'° around '+Math.round(mx.y)+'. Drag the year slider under the planet to watch it happen. The small wiggle on top of the slow curve is Earth’s own orbit: each year we swing a little above and below Saturn’s ring plane, so the rings nod open and shut by about 2–3°. Turn off <b>Earth’s yearly nod</b> to see only the smooth 29-year cycle.';
 }
 
-function discMars(cx,cy,r){
-  var cid='marsc', lid='marsld';
-  var s='<defs>';
-  s+='<clipPath id="'+cid+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'"/></clipPath>';
-  s+='<radialGradient id="'+lid+'" cx="50%" cy="50%" r="50%">'
-    +'<stop offset="62%" stop-color="transparent"/>'
-    +'<stop offset="100%" stop-color="rgba(0,0,0,.52)"/></radialGradient>';
-  s+='</defs>';
-  // photo base
-  s+='<image href="img/mars.jpg" x="'+(cx-r)+'" y="'+(cy-r)+'" width="'+(r*2)+'" height="'+(r*2)+'" clip-path="url(#'+cid+')" preserveAspectRatio="xMidYMid slice"/>';
-  // limb darkening
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="url(#'+lid+')"/>';
-  // thin atmosphere limb glow
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+1)+'" fill="none" stroke="#E8B89A" stroke-width="1.8" stroke-opacity=".25"/>';
-  // rim
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="none" stroke="rgba(60,30,18,.4)" stroke-width="1"/>';
-  // labels
-  s+='<text x="'+cx+'" y="'+(cy+r+24)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="2.5" fill="#8A6E32">MARS</text>';
-  s+='<text x="'+(cx+r+12)+'" y="'+(cy-r*.1)+'" text-anchor="start" font-family="Montserrat" font-size="9" font-style="italic" fill="#9A875C">Syrtis Major</text>';
-  s+='<line x1="'+(cx+r+10)+'" y1="'+(cy-r*.12)+'" x2="'+(cx+r*.05)+'" y2="'+(cy-r*.1)+'" stroke="#9A875C" stroke-width=".6" stroke-opacity=".5"/>';
-  s+='<text x="'+(cx+r+12)+'" y="'+(cy+r*.38)+'" text-anchor="start" font-family="Montserrat" font-size="9" font-style="italic" fill="#9A875C">Valles Marineris</text>';
-  s+='<line x1="'+(cx+r+10)+'" y1="'+(cy+r*.36)+'" x2="'+(cx+r*.2)+'" y2="'+(cy+r*.32)+'" stroke="#9A875C" stroke-width=".6" stroke-opacity=".5"/>';
-  return s;
+/* ════════════════ Moon time slider (30 days) ════════════════ */
+var MSTEP=15*60000, MSPAN=30*DAY;
+var moonAnim={start:0, playing:false, speed:6, raf:0, last:0, listT:0};
+function localMidnight(d){ var k=ZCLTZ.dayKey(d,TZ).split('-').map(Number); return ZCLTZ.at(k[0],k[1]-1,k[2],0,0,TZ).getTime(); }
+function mEnsureRange(){
+  var t=viewDate.getTime();
+  if(!moonAnim.start || t<moonAnim.start || t>moonAnim.start+MSPAN){ moonAnim.start=localMidnight(viewDate); drawMoonSpark(); }
+}
+function mSync(){
+  mEnsureRange();
+  $('zcl-mslider').value=Math.round((viewDate.getTime()-moonAnim.start)/MSTEP);
+  $('zcl-mlab').textContent=(live?'Now · ':'')+fmtFull(viewDate);
+  $('zcl-mnow').hidden=live;
+}
+function sunAltAt(date,lat,lng){
+  var d=date.getTime()/86400000+2440587.5-2451545;
+  var g=(357.529+0.98560028*d)*D2R, q=280.459+0.98564736*d;
+  var L=(q+1.915*Math.sin(g)+0.020*Math.sin(2*g))*D2R, e=(23.439-0.00000036*d)*D2R;
+  return altOf(date, Math.atan2(Math.cos(e)*Math.sin(L),Math.cos(L)), Math.asin(Math.sin(e)*Math.sin(L)), lat, lng);
+}
+function drawMoonSpark(){
+  var L=ZCLTZ.loc(), t0=moonAnim.start, svg='', nightStart=null;
+  // night bands (Sun more than 12° down) and Titan's east-west swing
+  var path='';
+  for(var t=t0;t<=t0+MSPAN;t+=30*60000){
+    var x=(t-t0)/MSPAN*1000;
+    var dark=sunAltAt(new Date(t),L.lat,L.lng)< -12*D2R;
+    if(dark&&nightStart===null) nightStart=x;
+    if((!dark||t+30*60000>t0+MSPAN)&&nightStart!==null){ svg+='<rect x="'+nightStart.toFixed(1)+'" y="0" width="'+(x-nightStart).toFixed(1)+'" height="40" fill="rgba(120,140,200,.16)"/>'; nightStart=null; }
+    if(((t-t0)/(30*60000))%3===0){
+      var ti=SaturnEphem.moons(SaturnEphem.jdeOf(new Date(t))).moons[5];
+      path+=(path?'L':'M')+x.toFixed(1)+' '+(20-ti.X/21*16).toFixed(1);
+    }
+  }
+  svg+='<path d="'+path+'" fill="none" stroke="rgba(203,168,90,.75)" stroke-width="1.5" vector-effect="non-scaling-stroke"/>';
+  var nx=((Date.now()-t0)/MSPAN*1000);
+  if(nx>=0&&nx<=1000) svg+='<line x1="'+nx.toFixed(1)+'" x2="'+nx.toFixed(1)+'" y1="0" y2="40" stroke="rgba(242,228,190,.5)" stroke-dasharray="2 2" vector-effect="non-scaling-stroke"/>';
+  $('zcl-mspark').innerHTML=svg;
+  var ticks='';
+  for(var dd=0;dd<=30;dd+=5){
+    var dt=new Date(t0+dd*DAY+12*3600000);
+    ticks+='<span style="left:'+(dd/30*100).toFixed(2)+'%">'+ZCLTZ.fmtDate(dt,{month:'short',day:'numeric'},TZ)+'</span>';
+  }
+  $('zcl-mticks').innerHTML=ticks;
+}
+function moonFrame(){                       // cheap redraw for scrubbing/playback
+  compute(); stamp(); drawField(); mSync();
+  var now=performance.now(); if(now-moonAnim.listT>450){ moonAnim.listT=now; renderMoons(); }
+}
+function mPlay(on, quiet){
+  moonAnim.playing=on; var b=$('zcl-mplay');
+  b.innerHTML=on?'&#10074;&#10074;':'&#9654;'; b.classList.toggle('on',on); b.setAttribute('aria-label',on?'Pause':'Play');
+  cancelAnimationFrame(moonAnim.raf);
+  if(!on){ if(!quiet) refresh(); return; }
+  if(live){ live=false; var nb=$('zcl-nowbtn'); nb.classList.remove('on'); nb.textContent='○ Now'; }
+  mEnsureRange();
+  if(viewDate.getTime()>=moonAnim.start+MSPAN-MSTEP) viewDate=new Date(moonAnim.start);
+  moonAnim.last=performance.now();
+  function step(now){
+    if(!moonAnim.playing) return;
+    var dt=Math.min(80,now-moonAnim.last); moonAnim.last=now;
+    var t=viewDate.getTime()+dt/1000*moonAnim.speed*3600000;
+    if(t>=moonAnim.start+MSPAN){ viewDate=new Date(moonAnim.start+MSPAN); mPlay(false); return; }
+    viewDate=new Date(t); moonFrame();
+    moonAnim.raf=requestAnimationFrame(step);
+  }
+  moonAnim.raf=requestAnimationFrame(step);
 }
 
-function discSaturn(cx,cy,r){
-  var s='';
-  // ring tilt
-  var tilt=-18;
-  // BACK half of the rings — drawn first, behind the planet
-  s+='<g transform="translate('+cx+','+cy+') rotate('+tilt+')">';
-  // outer C ring (faint)
-  s+='<path d="M '+(-r*2.25)+' 0 A '+r*2.25+' '+r*.68+' 0 0 1 '+(r*2.25)+' 0" fill="none" stroke="#A89868" stroke-width="'+r*.06+'" stroke-opacity=".45"/>';
-  // A ring (bright outer)
-  s+='<path d="M '+(-r*2.05)+' 0 A '+r*2.05+' '+r*.62+' 0 0 1 '+(r*2.05)+' 0" fill="none" stroke="#E8D6A0" stroke-width="'+r*.18+'" stroke-opacity=".75"/>';
-  // Encke gap (thin dark line near outer A)
-  s+='<path d="M '+(-r*2.0)+' 0 A '+r*2.0+' '+r*.605+' 0 0 1 '+(r*2.0)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.012+'" stroke-opacity=".9"/>';
-  // Cassini Division — the famous dark gap
-  s+='<path d="M '+(-r*1.85)+' 0 A '+r*1.85+' '+r*.56+' 0 0 1 '+(r*1.85)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.03+'" stroke-opacity=".95"/>';
-  // B ring (densest, brightest)
-  s+='<path d="M '+(-r*1.7)+' 0 A '+r*1.7+' '+r*.51+' 0 0 1 '+(r*1.7)+' 0" fill="none" stroke="#F3E2B0" stroke-width="'+r*.22+'" stroke-opacity=".85"/>';
-  // C ring (inner, dusky)
-  s+='<path d="M '+(-r*1.4)+' 0 A '+r*1.4+' '+r*.42+' 0 0 1 '+(r*1.4)+' 0" fill="none" stroke="#9A8A66" stroke-width="'+r*.12+'" stroke-opacity=".55"/>';
-  s+='</g>';
-
-  // Planet body — photo
-  var scid='satc', slid='satld';
-  s+='<defs>';
-  s+='<clipPath id="'+scid+'"><circle cx="'+cx+'" cy="'+cy+'" r="'+r+'"/></clipPath>';
-  s+='<radialGradient id="'+slid+'" cx="50%" cy="50%" r="50%">'
-    +'<stop offset="62%" stop-color="transparent"/>'
-    +'<stop offset="100%" stop-color="rgba(0,0,0,.48)"/></radialGradient>';
-  // ring-on-planet shadow stripe
-  s+='<linearGradient id="srshd" x1="0" y1="0" x2="0" y2="1">'
-    +'<stop offset="0%" stop-color="#000" stop-opacity="0"/>'
-    +'<stop offset="50%" stop-color="#000" stop-opacity=".35"/>'
-    +'<stop offset="100%" stop-color="#000" stop-opacity="0"/></linearGradient>';
-  s+='</defs>';
-  s+='<image href="img/saturn.jpg" x="'+(cx-r)+'" y="'+(cy-r)+'" width="'+(r*2)+'" height="'+(r*2)+'" clip-path="url(#'+scid+')" preserveAspectRatio="xMidYMid slice"/>';
-  // ring shadow band across the disc
-  s+='<rect x="'+(cx-r)+'" y="'+(cy-r*.06)+'" width="'+(r*2)+'" height="'+(r*.12)+'" fill="url(#srshd)" transform="rotate('+tilt+' '+cx+' '+cy+')"/>';
-  // limb darkening + glow
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="url(#'+slid+')"/>';
-  s+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+1)+'" fill="none" stroke="#F0E2A8" stroke-width="1.5" stroke-opacity=".3"/>';
-
-  // FRONT half of the rings — drawn last, in front of the planet's lower edge
-  s+='<g transform="translate('+cx+','+cy+') rotate('+tilt+')">';
-  // need only the FRONT semicircle of each ring — use a path that goes the other way
-  s+='<path d="M '+(-r*2.25)+' 0 A '+r*2.25+' '+r*.68+' 0 0 0 '+(r*2.25)+' 0" fill="none" stroke="#A89868" stroke-width="'+r*.06+'" stroke-opacity=".55"/>';
-  s+='<path d="M '+(-r*2.05)+' 0 A '+r*2.05+' '+r*.62+' 0 0 0 '+(r*2.05)+' 0" fill="none" stroke="#EEDCA8" stroke-width="'+r*.18+'" stroke-opacity=".88"/>';
-  s+='<path d="M '+(-r*2.0)+' 0 A '+r*2.0+' '+r*.605+' 0 0 0 '+(r*2.0)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.012+'" stroke-opacity=".95"/>';
-  s+='<path d="M '+(-r*1.85)+' 0 A '+r*1.85+' '+r*.56+' 0 0 0 '+(r*1.85)+' 0" fill="none" stroke="#1a1410" stroke-width="'+r*.03+'" stroke-opacity="1"/>';
-  s+='<path d="M '+(-r*1.7)+' 0 A '+r*1.7+' '+r*.51+' 0 0 0 '+(r*1.7)+' 0" fill="none" stroke="#F8E8B8" stroke-width="'+r*.22+'" stroke-opacity=".95"/>';
-  s+='<path d="M '+(-r*1.4)+' 0 A '+r*1.4+' '+r*.42+' 0 0 0 '+(r*1.4)+' 0" fill="none" stroke="#A89868" stroke-width="'+r*.12+'" stroke-opacity=".65"/>';
-  s+='</g>';
-
-  // labels
-  s+='<text x="'+cx+'" y="'+(cy+r*1.7+8)+'" text-anchor="middle" font-family="Montserrat" font-size="10" letter-spacing="2.5" fill="#8A6E32">SATURN</text>';
-  // Cassini Division callout — pull it well clear of the ring
-  s+='<text x="'+(cx-r*2.05)+'" y="'+(cy-r*.95)+'" text-anchor="start" font-family="Montserrat" font-size="9" font-style="italic" fill="#9A875C">Cassini Division</text>';
-  s+='<line x1="'+(cx-r*1.55)+'" y1="'+(cy-r*.85)+'" x2="'+(cx-r*1.85)+'" y2="'+(cy-r*.45)+'" stroke="#9A875C" stroke-width=".6" stroke-opacity=".5"/>';
-  return s;
+/* ════════════════ Stage 3 — the system from above ════════════════
+   Saturn ray-traced face-on (the same renderer as the hero), seen from
+   above the rings' SUNLIT face so they glow — this season that is the south
+   side. Moons are lit spheres at their true distances, orbits to scale. */
+var OZ={fit:23, inner:10.5, titan:23, wide:63};
+var orbMem={}, orbPlanet={key:'',img:null};
+var PERIOD={Mimas:'22.6 h',Enceladus:'1.4 d',Tethys:'1.9 d',Dione:'2.7 d',Rhea:'4.5 d',Titan:'15.9 d',Hyperion:'21.3 d',Iapetus:'79 d'};
+function drawOrbits(){
+  var cv=$('zcl-field');
+  var f=fitCanvas(cv), ctx=cv.getContext('2d'), W=f.w, H=f.h, dpr=f.dpr;
+  ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  var vs = G.Bs<0 ? -1 : 1;                     // look down on the sunlit face
+  var k=(Math.min(W,H)/2-30*dpr)/OZ[st.zoom], cx=W/2, cy=H/2;
+  var sB=Math.sin(G.B), cB=Math.cos(G.B);
+  function top(m){ var x3=m.X, z3=-m.Y*sB-m.Z*cB; return [cx+(vs>0?x3:-x3)*k, cy+z3*k]; }
+  var sunx=(vs>0?1:-1)*Math.sin(G.dU), suny=Math.cos(G.dU);
+  // Saturn's shadow, stretching away from the Sun across the moons' orbits
+  ctx.save(); ctx.translate(cx,cy); ctx.rotate(Math.atan2(-suny,-sunx));
+  var sg=ctx.createLinearGradient(0,0,Math.hypot(W,H),0);
+  sg.addColorStop(0,'rgba(0,0,0,.28)'); sg.addColorStop(.6,'rgba(0,0,0,.12)'); sg.addColorStop(1,'rgba(0,0,0,0)');
+  ctx.fillStyle=sg; ctx.fillRect(0,-POLAR*k,Math.hypot(W,H),2*POLAR*k); ctx.restore();
+  // orbits (true radius), with a brighter wake behind each moon
+  var later=SaturnEphem.moons(SaturnEphem.jdeOf(new Date(viewDate.getTime()+1800000))).moons;
+  var pos=G.moons.map(function(m,i){ var p=top(m), q=top(later[i]);
+    var ang=Math.atan2(p[1]-cy,p[0]-cx), ang2=Math.atan2(q[1]-cy,q[0]-cx);
+    var dir=((ang2-ang+3*Math.PI)%(2*Math.PI))-Math.PI>0?1:-1;
+    return {m:m,x:p[0],y:p[1],r:Math.hypot(p[0]-cx,p[1]-cy),ang:ang,dir:dir}; });
+  pos.forEach(function(o){
+    if(o.r>Math.hypot(W,H)) return;
+    ctx.strokeStyle='rgba(230,214,170,.13)'; ctx.lineWidth=dpr;
+    ctx.beginPath(); ctx.arc(cx,cy,o.r,0,7); ctx.stroke();
+    for(var sgm=0;sgm<12;sgm++){                  // wake: 60° behind the moon, fading
+      var a0=o.ang-o.dir*(sgm+1)*5*D2R, a1=o.ang-o.dir*sgm*5*D2R;
+      ctx.strokeStyle='rgba(230,204,133,'+(.55*(1-sgm/12)).toFixed(3)+')'; ctx.lineWidth=1.6*dpr;
+      ctx.beginPath(); ctx.arc(cx,cy,o.r,Math.min(a0,a1),Math.max(a0,a1)); ctx.stroke();
+    }
+  });
+  // the planet, face-on
+  var ppr=Math.max(2,k), key=[vs,Math.round(ppr*4),(G.Bs*R2D).toFixed(1),(G.dU*R2D).toFixed(1)].join('|');
+  if(orbPlanet.key!==key){
+    orbPlanet.img=renderPlanet({B:vs*89.9*D2R, Bs:G.Bs, dU:G.dU, P:0}, ppr, 2.36); orbPlanet.key=key;
+  }
+  var P=orbPlanet.img;
+  ctx.save(); ctx.translate(cx,cy); if(vs<0) ctx.rotate(Math.PI);
+  ctx.drawImage(P.canvas,-P.cx,-P.cy); ctx.restore();
+  // moons as lit spheres
+  var ORD=['Titan','Rhea','Iapetus','Tethys','Dione','Enceladus','Mimas','Hyperion'];
+  var jobs=[], zoomNow=st.zoom;
+  pos.sort(function(a,b){return ORD.indexOf(a.m.name)-ORD.indexOf(b.m.name)});
+  var placed=[{x:cx-110*dpr,y:H-44*dpr,w:220*dpr,h:44*dpr},{x:0,y:H-40*dpr,w:150*dpr,h:40*dpr},{x:W-90*dpr,y:H-26*dpr,w:90*dpr,h:26*dpr},{x:W-170*dpr,y:0,w:170*dpr,h:34*dpr}], fs=Math.round(11*dpr);
+  pos.forEach(function(o){
+    if(o.x<-20||o.x>W+20||o.y<-20||o.y>H+20) return;
+    var km=MOONS[o.m.name].km, rad=Math.max(2.2,Math.min(6.5,Math.sqrt(km)/11))*dpr;
+    var st=moonState(o.m), ecl=(st==='eclipsed');
+    ctx.save(); ctx.beginPath(); ctx.arc(o.x,o.y,rad,0,7); ctx.clip();
+    ctx.fillStyle='#16151b'; ctx.fillRect(o.x-rad,o.y-rad,2*rad,2*rad);
+    if(!ecl){
+      var lx=o.x+sunx*rad*.55, ly=o.y+suny*rad*.55, gr=ctx.createRadialGradient(lx,ly,0,lx,ly,rad*1.45);
+      gr.addColorStop(0,MOONS[o.m.name].col); gr.addColorStop(.62,MOONS[o.m.name].col); gr.addColorStop(1,'rgba(22,21,27,0)');
+      ctx.fillStyle=gr; ctx.fillRect(o.x-rad,o.y-rad,2*rad,2*rad);
+    }
+    ctx.restore();
+    if(!ecl){ var gl=ctx.createRadialGradient(o.x,o.y,rad,o.x,o.y,rad*3); gl.addColorStop(0,'rgba(255,245,220,.18)'); gl.addColorStop(1,'rgba(255,245,220,0)');
+      ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(o.x,o.y,rad*3,0,7); ctx.fill(); }
+    if(o.m.name==='Mimas' && zoomNow!=='inner') return;   // hugs Saturn when zoomed out
+    jobs.push({name:o.m.name,sub:PERIOD[o.m.name],x:o.x,y:o.y,rad:rad,col:ecl?'#9A875C':MOONS[o.m.name].col});
+  });
+  pinLabels(ctx,jobs,['Mimas','Enceladus','Tethys','Dione','Rhea','Titan','Hyperion','Iapetus'],cx,cy,W,H,dpr);
+  // directions: Earth (always toward the bottom) and the Sun
+  ctx.font='600 '+Math.round(9.5*dpr)+'px Montserrat, sans-serif'; ctx.textAlign='center';
+  ctx.fillStyle='rgba(157,182,204,.85)'; ctx.fillText('▼  TO EARTH',cx,H-10*dpr);
+  var sx2=cx+sunx*(Math.min(W,H)/2-14*dpr), sy2=cy+suny*(Math.min(W,H)/2-14*dpr);
+  if(sy2>H-40*dpr) sy2=H-40*dpr;                                   // keep clear of the TO EARTH label
+  if(Math.abs(sunx)>.08){                     // near opposition the Sun sits behind Earth — one label is enough
+    ctx.fillStyle='rgba(255,214,120,.9)'; ctx.beginPath(); ctx.arc(sx2,sy2,4*dpr,0,7); ctx.fill();
+    ctx.fillText('SUN',sx2,sy2-8*dpr);
+  } else { ctx.fillStyle='rgba(255,214,120,.8)'; ctx.fillText('SUN BEHIND EARTH',cx,H-24*dpr); }
+  ctx.textAlign='left'; ctx.fillStyle='rgba(138,115,64,.9)'; ctx.font=Math.round(9.5*dpr)+'px Montserrat, sans-serif';
+  var eastLeft = vs>0;                             // x̂ (west as seen from Earth) is screen-right from the north
+  ctx.fillText(eastLeft?'◀ east':'◀ west',12*dpr,H-10*dpr); ctx.textAlign='right'; ctx.fillText(eastLeft?'west ▶':'east ▶',W-12*dpr,H-10*dpr);
+  ctx.textAlign='left'; ctx.fillText('as seen from Earth',12*dpr,H-22*dpr);
+  // scale bar
+  var kmPerPx=KM/k, target=W*.2*kmPerPx, nice=[10000,20000,50000,100000,200000,500000,1000000], km0=nice[0];
+  for(var i=0;i<nice.length;i++) if(nice[i]<=target) km0=nice[i];
+  var Lb=km0/kmPerPx, x1=W-14*dpr, x0=x1-Lb, yb=18*dpr;
+  ctx.strokeStyle='rgba(230,204,133,.8)'; ctx.lineWidth=1.3*dpr;
+  ctx.beginPath(); ctx.moveTo(x0,yb+4*dpr); ctx.lineTo(x0,yb+8*dpr); ctx.lineTo(x1,yb+8*dpr); ctx.lineTo(x1,yb+4*dpr); ctx.stroke();
+  ctx.fillStyle='rgba(230,204,133,.9)'; ctx.textAlign='center'; ctx.fillText(km0.toLocaleString()+' km',(x0+x1)/2,yb);
+  var sideTxt = vs<0 ? 'south' : 'north';
+  $('zcl-orbnote').innerHTML='Looking down on the rings from above Saturn’s <b>'+sideTxt+'</b> pole — the side the Sun is lighting this season — with every orbit at true scale. From here the moons circle <b>'+(vs<0?'clockwise':'counter-clockwise')+'</b>, and the closer in, the faster: Mimas laps Saturn in under a day while Iapetus takes 79. They also keep time with each other: Mimas makes two orbits for each of Tethys’, Enceladus two for each of Dione’s, and Titan four for every three of Hyperion’s. The dark band is Saturn’s shadow — a moon passing through it is eclipsed.';
 }
 
-var f=$('zcl-pl-field');
-f.innerHTML=discSaturn(460,210,80);
+
+/* From-above labels: pinned to each moon at a fixed, smoothly varying offset
+   (no collision juggling, so nothing jumps or vanishes while they orbit),
+   60% opacity, and layered by orbit — inner moons underneath, outer on top. */
+function pinLabels(ctx,jobs,order,cx,cy,W,H,dpr){
+  var fs=Math.round(11*dpr), fs2=Math.round(10*dpr);
+  jobs.sort(function(a,b){return order.indexOf(a.name)-order.indexOf(b.name)});
+  jobs.forEach(function(j){
+    ctx.font='500 '+fs+'px Montserrat, sans-serif'; var nw=ctx.measureText(j.name+'  ').width;
+    ctx.font=fs2+'px Montserrat, sans-serif'; var tw=nw+ctx.measureText(j.sub).width;
+    var r=Math.hypot(j.x-cx,j.y-cy)||1, ux=(j.x-cx)/r, uy=(j.y-cy)/r;
+    // label centre rides an ellipse around the moon (wide enough to clear the text sideways,
+    // shallow enough above/below) — linear in the moon's direction, so it moves as smoothly as the moon
+    var A=j.rad+8*dpr+tw/2, B=j.rad+6*dpr+fs*.7;
+    var tx=Math.max(4*dpr,Math.min(W-tw-4*dpr,j.x+ux*A-tw/2)), ty=Math.max(fs+2*dpr,Math.min(H-4*dpr,j.y+uy*B+fs*.35));
+    ctx.save(); ctx.globalAlpha=.6; ctx.textAlign='left'; ctx.shadowColor='rgba(8,7,13,.95)'; ctx.shadowBlur=5*dpr;
+    ctx.font='500 '+fs+'px Montserrat, sans-serif'; ctx.fillStyle=j.col; ctx.fillText(j.name,tx,ty);
+    ctx.font=fs2+'px Montserrat, sans-serif'; ctx.fillStyle='#9A875C'; ctx.fillText(j.sub,tx+nw,ty);
+    ctx.restore();
+  });
+}
+/* ════════════════ Wiring ════════════════ */
+function stamp(){ $('zcl-stamp').textContent=fmtFull(viewDate); }
+function heroNote(){
+  var g=heroG(), Bd=Math.abs(g.B*R2D);
+  var when = yr.date ? 'for '+ZCLTZ.fmtDate(yr.date,{month:'long',year:'numeric'},TZ) : 'for this moment';
+  var txt='Rendered from the real geometry '+when+': rings tilted <b>'+Bd.toFixed(1)+'°</b> toward us, '+viewName()+'. The globe is 10% squashed by its fast spin, and every ring gap is drawn at its true width.';
+  if(hz.zoom>=1.3) txt+=' Drag to move around; double-tap to zoom closer. Past about ×3 you are seeing detail no telescope on Earth can show.';
+  else txt+=' Pinch, double-tap or use <b>+</b> to zoom in.';
+  $('zcl-heronote').innerHTML=txt;
+}
+function refresh(){
+  compute(); stamp();
+  if(!yr.date) syncSlider(); yrLabel(); drawHero(false); drawField(); mSync(); heroNote();
+  renderTonight(); renderMoons(); drawAnatomy(); drawTilt();
+}
+function setLive(on){
+  live=on; var b=$('zcl-nowbtn'); b.classList.toggle('on',on); b.textContent=on?'● Now':'○ Now';
+  if(on){ if(moonAnim.playing) mPlay(false,true); viewDate=new Date(); refresh();
+    if(!liveTimer) liveTimer=setInterval(function(){ if(live&&!document.hidden){ viewDate=new Date(); compute(); stamp(); drawField(); mSync(); renderMoons(); } },60000); }
+}
+function stepHours(h){ if(moonAnim.playing) mPlay(false,true); if(live) setLive(false); viewDate=new Date(viewDate.getTime()+h*3600000); refresh(); }
+$('zcl-back').addEventListener('click',function(){stepHours(-1)});
+$('zcl-fwd').addEventListener('click',function(){stepHours(1)});
+$('zcl-nowbtn').addEventListener('click',function(){setLive(true)});
+$('zcl-mplay').addEventListener('click',function(){ mPlay(!moonAnim.playing); });
+$('zcl-mslider').addEventListener('input',function(){
+  if(moonAnim.playing) mPlay(false,true);
+  if(live){ live=false; var nb=$('zcl-nowbtn'); nb.classList.remove('on'); nb.textContent='○ Now'; }
+  viewDate=new Date(moonAnim.start+(+this.value)*MSTEP); moonFrame();
+});
+$('zcl-mslider').addEventListener('change',function(){ refresh(); });
+$('zcl-mnow').addEventListener('click',function(){ setLive(true); });
+[].forEach.call(document.querySelectorAll('#zcl-mspeed [data-speed]'),function(b){
+  b.addEventListener('click',function(){ moonAnim.speed=+b.dataset.speed;
+    [].forEach.call(document.querySelectorAll('#zcl-mspeed [data-speed]'),function(x){ x.classList.toggle('on',x===b); }); });
+});
+$('zcl-yplay').addEventListener('click',function(){ yrPlay(!yr.playing); });
+$('zcl-yslider').addEventListener('input',function(){ if(yr.playing) yrPlay(false); setYearDate(new Date(YR0+(+this.value)*DAY+12*3600000),true); });
+$('zcl-yslider').addEventListener('change',function(){ drawHero(false); });
+$('zcl-ynow').addEventListener('click',function(){ if(yr.playing) yrPlay(false); yr.date=null; syncSlider(); yrLabel(); drawHero(false); });
+[].forEach.call(document.querySelectorAll('#zcl-yspeed [data-speed]'),function(b){
+  b.addEventListener('click',function(){ yr.speed=+b.dataset.speed;
+    [].forEach.call(document.querySelectorAll('#zcl-yspeed [data-speed]'),function(x){ x.classList.toggle('on',x===b); }); });
+});
+$('zcl-dinfo').addEventListener('click',function(){ var o=!this.classList.contains('on'); this.classList.toggle('on',o); this.setAttribute('aria-expanded',o);
+  $('zcl-dinfotxt').classList.toggle('open',o&&st.mode!=='top'); $('zcl-orbnote').classList.toggle('open',o&&st.mode==='top'); });
+$('zcl-yinfo').addEventListener('click',function(){ var o=$('zcl-yinfotxt').classList.toggle('open'); this.classList.toggle('on',o); this.setAttribute('aria-expanded',o); });
+$('zcl-ysmooth').addEventListener('click',function(){ yr.smooth=!yr.smooth; this.classList.toggle('on',!yr.smooth);
+  this.textContent=yr.smooth?'Earth’s yearly nod: off':'Earth’s yearly nod: on'; yrLabel(); drawHero(false); });
+$('zcl-zin').addEventListener('click',function(){ zoomAt(1.6); });
+$('zcl-zout').addEventListener('click',function(){ zoomAt(1/1.6); });
+$('zcl-zreset').addEventListener('click',function(){ hz.zoom=1; clampPan(); drawHero(false); });
+$('zcl-labels').addEventListener('click',function(){ st.labels=!st.labels; this.classList.toggle('on',st.labels); drawHero(false); });
+function syncBars(){
+  if(st.mode!=='top' && st.lastEye!==st.mode){ st.lastEye=st.mode; if(G){ drawHero(); heroNote(); } }
+  [].forEach.call(document.querySelectorAll('#zcl-viewbar [data-mode]'),function(b){ b.classList.toggle('on',b.dataset.mode===st.mode); });
+  [].forEach.call(document.querySelectorAll('#zcl-zoombar [data-zoom]'),function(b){ b.classList.toggle('on',b.dataset.zoom===st.zoom); });
+}
+[].forEach.call(document.querySelectorAll('#zcl-viewbar [data-mode]'),function(b){
+  b.addEventListener('click',function(){ if(st.mode===b.dataset.mode) return; st.mode=b.dataset.mode; saveView(); syncBars(); fadeField(); });
+});
+[].forEach.call(document.querySelectorAll('#zcl-zoombar [data-zoom]'),function(b){
+  b.addEventListener('click',function(){ if(st.zoom===b.dataset.zoom) return; st.zoom=b.dataset.zoom; saveView(); syncBars(); fadeField(); });
+});
+/* Fade out, redraw, fade back in — so switching views never snaps. */
+var fadeT=0;
+function fadeField(){
+  var cv=$('zcl-field'); clearTimeout(fadeT);
+  cv.classList.add('fading');
+  fadeT=setTimeout(function(){ lblMem={}; orbMem={}; drawField(); cv.classList.remove('fading'); },200);
+}
+function rotate(d){ st.rot[st.mode]=(((st.rot[st.mode]||0)+d)%360+360)%360; saveView(); drawField(); drawHero(); }
+$('zcl-rotl').addEventListener('click',function(){rotate(-15)});
+$('zcl-rotr').addEventListener('click',function(){rotate(15)});
+document.addEventListener('keydown',function(e){
+  var ae=document.activeElement; if(ae&&ae.tagName==='INPUT') return;
+  if(e.key==='ArrowRight'){e.preventDefault();stepHours(1)} else if(e.key==='ArrowLeft'){e.preventDefault();stepHours(-1)}
+});
+var rz=null;
+window.addEventListener('resize',function(){ clearTimeout(rz); rz=setTimeout(function(){ drawHero(false); drawField(); drawAnatomy(); },120); });
+document.addEventListener('visibilitychange',function(){ if(!document.hidden&&live){ viewDate=new Date(); refresh(); } });
+syncBars();
+compute(); drawYearSpark();
+(function(){
+  var q=/[?&]t=([^&]+)/.exec(location.search), d=q&&new Date(decodeURIComponent(q[1]));
+  if(d&&!isNaN(d)){ live=false; viewDate=d; var b=$('zcl-nowbtn'); b.classList.remove('on'); b.textContent='○ Now'; refresh(); }
+  else setLive(true);
+})();
 })();
 </script>
+
+<script>setTimeout(function(){ZCLSeason.render(document.getElementById('zcl-season'),'Saturn')},300);</script>
 <nav class="pwa-nav">
 <a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
 <script>
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)})})}
+(function(){try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(function(a){if(!a){navigator.storage.persist().catch(function(){});}}).catch(function(){navigator.storage.persist().catch(function(){});});}}catch(e){}})();
 </script>
 <script>
 (function(){
@@ -327,6 +1717,18 @@ if('serviceWorker' in navigator){window.addEventListener('load',function(){navig
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>

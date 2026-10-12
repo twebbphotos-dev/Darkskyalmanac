@@ -12,15 +12,15 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Cedar Breaks Dark Sky Map · Dark Sky Almanac</title>
-<meta name="description" content="An interactive dark-sky map of Cedar Breaks National Monument — nine amphitheater overlooks and high-country sites above 10,000 ft, each rated by Bortle class.">
+<meta name="description" content="An interactive dark-sky map of Cedar Breaks National Monument — five amphitheater overlooks and a campground above 10,000 ft, each rated by Bortle class.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cedar Breaks Dark Sky Map · Dark Sky Almanac">
-<meta property="og:description" content="An interactive dark-sky map of Cedar Breaks National Monument — nine amphitheater overlooks and high-country sites above 10,000 ft, each rated by Bortle class.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:description" content="An interactive dark-sky map of Cedar Breaks National Monument — five amphitheater overlooks and a campground above 10,000 ft, each rated by Bortle class.">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/map-cedar-breaks">
 <meta property="og:url" content="https://app.darkskyalmanac.com/map-cedar-breaks">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -65,12 +65,13 @@ body{overflow:hidden;position:fixed;inset:0}   /* lock the page; the map owns al
 /* When a pin info card is open, lift the map viewport so the basemap's
    bottom edge sits ABOVE the card rather than being hidden behind it. The
    existing resize plumbing re-clamps the world once the transition lands. */
-body.card-open #es-map{bottom:42vh}
+body.card-open #es-map{bottom:var(--card-h,230px)}
 #es-map.grab{cursor:grabbing}
 #es-world{position:absolute;top:0;left:0;width:100%;
   transform-origin:0 0;will-change:transform;
   user-select:none;-webkit-user-select:none;-webkit-user-drag:none}
 #es-world img.basemap{display:block;width:100%;height:auto;pointer-events:none;
+  image-rendering:-webkit-optimize-contrast;image-rendering:crisp-edges;
   -webkit-user-drag:none;-khtml-user-drag:none;-moz-user-drag:none;-o-user-drag:none;
   user-select:none;-webkit-user-select:none}
 
@@ -85,12 +86,12 @@ body.card-open #es-map{bottom:42vh}
   width:30px;height:30px;cursor:pointer;pointer-events:auto;
   display:flex;align-items:center;justify-content:center}
 .es-pin .dot{width:15px;height:15px;border-radius:50%;
-  background:rgba(var(--c), 0.65);
-  border:2px solid rgba(13,10,24,.9);
-  box-shadow:0 0 0 1px rgba(255,255,255,.25),0 2px 6px rgba(0,0,0,.6);
+  background:rgba(var(--c), 0.85);
+  border:2px solid rgba(13,10,24,.95);
+  box-shadow:0 0 0 1.5px rgba(255,255,255,.45),0 3px 9px rgba(0,0,0,.75),0 0 14px rgba(var(--c),.35);
   transition:transform .16s ease, box-shadow .16s ease}
 .es-pin .ring{position:absolute;width:30px;height:30px;border-radius:50%;
-  border:1.5px solid transparent;transition:border-color .16s ease, transform .16s ease}
+  border:1.5px solid rgba(var(--c),.30);transition:border-color .16s ease, transform .16s ease}
 .es-pin .lab{position:absolute;bottom:120%;left:50%;transform:translateX(-50%) translateY(4px);
   white-space:nowrap;font-size:10.5px;font-weight:600;letter-spacing:.02em;
   color:var(--ink);background:rgba(13,10,24,.92);
@@ -128,13 +129,13 @@ body.card-open #es-map{bottom:42vh}
 #es-loc:active{background:rgba(203,168,90,.16)}
 #es-loc svg{width:20px;height:20px}
 /* When the info card is open, lift the controls above it */
-body.card-open #es-zoom{transform:translateY(-280px)}
-body.card-open #es-loc{transform:translateY(-280px)}
+body.card-open #es-zoom{transform:translateY(calc(-1 * var(--card-h,230px) - 12px))}
+body.card-open #es-loc{transform:translateY(calc(-1 * var(--card-h,230px) - 12px))}
 
 /* (Bortle legend removed — header is now title + byline only.) */
 
 /* ── Info card (slides up when a pin is selected) ─────────────────── */
-#es-card{position:absolute;left:0;right:0;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);z-index:25;
+#es-card{position:absolute;left:0;right:0;bottom:0;padding-bottom:env(safe-area-inset-bottom,0px);z-index:25;max-height:230px;overflow:hidden;
   background:linear-gradient(to bottom,#1a1822,#141319);
   border-top:1px solid var(--gold);border-radius:18px 18px 0 0;
   box-shadow:0 -10px 40px rgba(0,0,0,.55);
@@ -220,6 +221,32 @@ body.night-mode > *:not(.pwa-nav):not(#zcl-set-modal):not(#es-set-modal):not(#pw
 body.night-mode .pwa-nav{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7);background:#0d0a18;backdrop-filter:none;-webkit-backdrop-filter:none}
 body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1) brightness(0.40) sepia(1) hue-rotate(-40deg) saturate(6) brightness(0.7)}
 
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+/* fit */
+:root{--nav-h:44px}
+.pwa-nav{height:calc(var(--nav-h) + env(safe-area-inset-top,0px));padding:env(safe-area-inset-top,0px) 0 0;border-top:0;border-bottom:1px solid rgba(203,168,90,.32);background:rgba(13,10,24,.96)}
+.pwa-navitem{color:#7A6E55;transition:color .15s}.pwa-navitem.active{color:#CBA85A}.pwa-navitem:active{color:#E6CC85}
+#es-top{padding-bottom:26px;background:linear-gradient(to bottom,rgba(8,6,16,.95) 0%,rgba(8,6,16,.92) 68%,rgba(8,6,16,.55) 86%,transparent 100%)}
+#es-zoom{bottom:calc(env(safe-area-inset-bottom,0px) + 58px);transition:transform .28s cubic-bezier(.22,.61,.36,1),opacity .2s}
+#es-loc{bottom:calc(env(safe-area-inset-bottom,0px) + 144px);transition:transform .28s cubic-bezier(.22,.61,.36,1),opacity .2s}
+body.card-open #es-zoom,body.card-open #es-loc{transform:translateY(calc(46px - var(--card-h,230px)))}
+body.drawer-open #es-zoom,body.drawer-open #es-loc{opacity:0;pointer-events:none}
+#es-card{max-height:min(64vh,420px);overflow-y:auto}
+#es-drawer{transform:translateY(calc(100% - 46px - env(safe-area-inset-bottom,0px)))}
+#es-drawer.open{transform:translateY(0)}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 </head>
 <body>
@@ -267,7 +294,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 <div id="es-drawer">
   <div id="es-drawer-handle">
     <span class="bar"></span>
-    <span class="txt" id="es-drawer-txt">12 Stargazing Sites</span>
+    <span class="txt" id="es-drawer-txt">Stargazing Sites</span>
   </div>
   <div id="es-list"></div>
 </div>
@@ -277,7 +304,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
   <a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
   <a class="pwa-navitem active" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-  <a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/></svg><span>Events</span></a>
+  <a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
   <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
   <a class="pwa-navitem" id="es-set-btn" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="3" stroke-width="1.5"/><path d="M19.4 13a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z" stroke-width="1.4"/></svg><span>Settings</span></a>
 </nav>
@@ -301,33 +328,21 @@ window.MAP_CONFIG = {
   ay: 322.5139, by: -2016.2408, cy: 112303.4067
 },
   spots: [
-  { id:'pointsupreme', n:'Point Supreme Overlook', b:'1', x:62, y:80,
-    why:'The highest accessible point in the monument at 10,354\u00a0ft, directly above the amphitheater rim. On a clear night the Milky Way arcs directly overhead \u2014 at this elevation there is almost no atmosphere between you and space.',
+  { id:'pointsupreme', n:'Point Supreme Overlook', b:'2', x:58.7, y:78.95,
+    why:'The main overlook at 10,354\u00a0ft, right on the amphitheater rim. On a clear night the Milky Way arcs directly overhead \u2014 at this elevation you are above nearly a third of the atmosphere, and the stars are noticeably crisper.',
     info:'10,354\u00a0ft \u00b7 Paved parking at main visitor area \u00b7 Short walk to rim' },
-  { id:'northview', n:'North View Overlook', b:'1', x:58, y:15,
+  { id:'northview', n:'North View Overlook', b:'2', x:65, y:14.8,
     why:'The northernmost overlook, facing directly into the deepest part of the amphitheater. The hoodoos here are densely packed \u2014 a chaotic, alien cityscape of orange and white spires under a spectacularly dark sky.',
-    info:'10,435\u00a0ft \u00b7 Parking then a short walk \u00b7 Darkest orientation' },
-  { id:'chessmen', n:'Chessmen Ridge Overlook', b:'1', x:70, y:53,
-    why:'Named for the chess-piece hoodoos below \u2014 bishops, rooks, and pawns of orange limestone. On the east rim, facing directly south into the full summer Milky Way.',
-    info:'10,467\u00a0ft \u00b7 Pull-off parking on main road \u00b7 Faces south' },
-  { id:'sunsetview', n:'Sunset View Overlook', b:'1', x:72, y:68,
-    why:'Faces west into late-afternoon light \u2014 the canyon glows crimson and amber at dusk. A low western horizon makes it excellent for planets and twilight photography.',
+    info:'10,435\u00a0ft \u00b7 Parking then a short walk \u00b7 North end of the scenic drive' },
+  { id:'chessmen', n:'Chessmen Ridge Overlook', b:'2', x:68.0, y:53.0,
+    why:'Named for the chess-piece hoodoos below \u2014 bishops, rooks, and pawns of orange limestone. On the east rim, looking west across the amphitheater, with open sky to the south for the summer Milky Way.',
+    info:'10,467\u00a0ft \u00b7 Pull-off parking on main road \u00b7 Faces west' },
+  { id:'sunsetview', n:'Sunset View Overlook', b:'2', x:73.8, y:67.3,
+    why:'Faces west into late-afternoon light \u2014 the canyon glows crimson and amber at dusk. A low western horizon makes it excellent for planets and twilight photography. The low western horizon is excellent for the zodiacal light and for objects setting after dusk.',
     info:'10,354\u00a0ft \u00b7 Parking near Information Center \u00b7 Faces west' },
-  { id:'ramparts', n:'Ramparts Overlook', b:'1', x:35, y:79,
-    why:'The southernmost overlook, perched on the rim above the Ashdown Gorge wilderness. Very few visitors reach this far \u2014 exceptional solitude under a pristine sky. A 1-mile rim walk from the Point Supreme lot.',
-    info:'9,952\u00a0ft \u00b7 1-mile rim walk from Point Supreme parking \u00b7 South rim' },
-  { id:'spectra', n:'Spectra Point', b:'1', x:49, y:82,
-    why:'A rim promontory ringed by ancient bristlecone pines, some over 1,700 years old \u2014 the oldest living things in the monument standing under some of the darkest skies in Utah. A short, scenic night walk along the rim.',
-    info:'10,285\u00a0ft \u00b7 2-mile round trip from Point Supreme parking \u00b7 Moderate' },
-  { id:'infocenter', n:'Information Center', b:'1', x:60, y:76,
-    why:'The main visitor hub with ranger programs and the dark sky information board. Cedar Breaks is an International Dark Sky Park \u2014 rangers hold evening star programs at the outdoor amphitheater most summer nights.',
-    info:'Open late May\u2013mid-Oct \u00b7 Ranger star programs \u00b7 Free maps \u00b7 Parking on site' },
-  { id:'alpinepond', n:'Alpine Pond', b:'1', x:76, y:45,
-    why:'A glacially carved pond reached by an easy high-alpine loop. Reflections of the Milky Way in the still water are extraordinary on calm, moonless nights in July and August.',
-    info:'10,300\u00a0ft \u00b7 Trailhead parking on the scenic road \u00b7 2-mile loop' },
-  { id:'campground', n:'Point Supreme Campground', b:'1', x:72, y:82,
-    why:'One of the highest campgrounds in Utah accessible by car. Spend the night under Class 1 skies with no neighboring towns for miles, steps from the amphitheater rim.',
-    info:'25 sites \u00b7 Tents and small RVs \u00b7 Mid-June\u2013late Sept \u00b7 Parking on site' },
+  { id:'campground', n:'Point Supreme Campground', b:'2', x:71.3, y:83.8,
+    why:'One of the highest campgrounds in Utah accessible by car. Spend the night under dark, high-altitude skies, steps from the amphitheater rim.',
+    info:'25 sites \u00b7 Tents and small RVs \u00b7 Mid-June\u2013late Sept \u00b7 Scenic road closes for snow in winter' },
 ]
 };
 </script>
@@ -341,6 +356,7 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+(function(){try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(function(a){if(!a){navigator.storage.persist().catch(function(){});}}).catch(function(){navigator.storage.persist().catch(function(){});});}}catch(e){}})();
 </script>
 
 <script>

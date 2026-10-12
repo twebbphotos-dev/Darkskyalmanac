@@ -1,0 +1,20 @@
+import fs from 'fs';
+const S='/home/claude/work/v2/solver/';
+const { parseStars, parseQuads } = await import(S+'solver/catalog.js');
+const { toGray, detectStars } = await import(S+'solver/detect.js');
+const { solve } = await import(S+'solver/solve.js');
+const C=S+'catalog/';
+const manifest=JSON.parse(fs.readFileSync(C+'manifest.json'));
+const ab=(f)=>{const b=fs.readFileSync(C+f);return b.buffer.slice(b.byteOffset,b.byteOffset+b.length)};
+const stars=parseStars(ab('stars.bin'));
+const layers=manifest.layers.map(L=>({name:L.name,dmin:L.dmin,dmax:L.dmax,density:L.density,quads:parseQuads(ab(L.file))}));
+const [W,H]=[+process.argv[2],+process.argv[3]];
+const rgba=new Uint8ClampedArray(fs.readFileSync(process.argv[4]));
+const opts=JSON.parse(process.argv[5]||'{}');
+const gray=toGray(rgba,W,H);
+let t=Date.now(); const det=detectStars(gray,W,H,opts); console.log('detected',det.length,'ms',Date.now()-t);
+fs.writeFileSync('det.json',JSON.stringify(det.map(s=>[s.x,s.y,s.flux||0,s.snr||0])));
+const LADDER=Array.from({length:22},(_,i)=>Math.round(12*1.2**i*10)/10);
+const list=process.argv[6]?JSON.parse(process.argv[6]):LADDER;
+for(const f of list){ t=Date.now(); const sol=solve({detected:det,width:W,height:H,focalMm:f,sensorWidthMm:35.9,stars,layers,options:{scaleTol:0.12}});
+  console.log(f, sol.ok?('OK ra '+(sol.ra*12/Math.PI).toFixed(2)+'h dec '+(sol.dec*180/Math.PI).toFixed(1)+' f '+sol.focalMm.toFixed(1)+' n '+sol.nMatch+' rms '+sol.rmsPx.toFixed(2)+' rmsArc '+sol.rmsArcsec.toFixed(0)+' scale '+sol.scaleArcsecPx.toFixed(1)):sol.reason, Date.now()-t,'ms'); if(sol.ok && !process.env.ALL) break; }

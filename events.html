@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Cosmic Events · Dark Sky Almanac">
 <meta property="og:description" content="The year's meteor showers and headline celestial events — oppositions, eclipses, and conjunctions — each counted down for dark-sky observers.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/events">
 <meta property="og:url" content="https://app.darkskyalmanac.com/events">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
 <style>
@@ -186,6 +186,12 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
 .zcl-ev-foot{text-align:center;font-size:11px;color:#5A5040;
   padding:18px 16px 26px;line-height:1.6}
+/* fit */
+@media(max-width:640px){#zcl-ev::after{inset:7px}.zcl-ev-tl,.zcl-ev-tr{top:7px}.zcl-ev-bl,.zcl-ev-br{bottom:7px}.zcl-ev-tl,.zcl-ev-bl{left:7px}.zcl-ev-tr,.zcl-ev-br{right:7px}}
+@media(max-width:1100px){.zcl-ev-inner{padding-bottom:30px}}
+@media(max-width:520px){.zcl-ev-inner{padding-left:14px;padding-right:14px}}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 </head>
 <body>
@@ -197,7 +203,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   <div class="zcl-ev-inner">
 
     <div class="zcl-ev-titlebar">
-      <div class="zcl-ev-title">Meteor Showers<br>&amp; Sky Events</div>
+      <div class="zcl-ev-title">Cosmic Events<br>&amp; Sky Events</div>
       <div class="zcl-ev-rule">
         <span class="zcl-ev-rline"></span>
         <svg class="zcl-ev-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
@@ -244,7 +250,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
     <div class="zcl-ev-foot">
       Peak dates are the maxima; many showers reward viewing for several nights around the peak.
-      Darkest, moonless nights show the most. Times reflect Mountain Time (UTC−7/−6 DST).
+      Darkest, moonless nights show the most. Times are shown in your location’s time zone.
     </div>
 
   </div>
@@ -256,59 +262,23 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem active" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
 
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
+<script src="zcl-events.js"></script>
 <script>
 "use strict";
 (function(){
 
 const MO_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
-// Meteor showers. m is 0-indexed month, d is peak day, zhr = zenithal hourly rate.
-// feature:true marks a marquee shower that gets the large illustrated card.
-const METEOR_SHOWERS = [
-  {name:'Quadrantids',     m:0,  d:3,  zhr:120, rad:'Boötes',     note:'A sharp, brief peak only a few hours wide — best in the small hours, 2–5 AM. Blue meteors with fine trains.'},
-  {name:'Lyrids',          m:3,  d:22, zhr:18,  rad:'Lyra',       note:'A dependable spring shower with the occasional bright fireball and rare outburst years. Radiant rises late evening.'},
-  {name:'Eta Aquariids',   m:4,  d:6,  zhr:50,  rad:'Aquarius',   note:'Swift, glancing meteors from the dust of Halley’s Comet. Best in the hour before dawn.'},
-  {name:'Delta Aquariids', m:6,  d:30, zhr:25,  rad:'Aquarius',   note:'A broad, gentle peak that overlaps the building Perseids — faint, steady meteors low in the south.'},
-  {name:'Perseids',        m:7,  d:12, zhr:100, rad:'Perseus',    note:'The summer favourite — warm nights, a high rate, and many bright meteors with persistent trains. In 2026 the peak lands on an almost-new Moon: a near-perfect dark-sky show.', feature:true},
-  {name:'Draconids',       m:9,  d:8,  zhr:10,  rad:'Draco',      note:'An evening shower (radiant highest at dusk) that occasionally erupts into a brief storm. Usually sparse.'},
-  {name:'Orionids',        m:9,  d:21, zhr:25,  rad:'Orion',      note:'The second helping of Halley’s Comet debris — fast meteors radiating near Orion’s club, best after midnight.'},
-  {name:'Leonids',         m:10, d:17, zhr:15,  rad:'Leo',        note:'Famous for rare, spectacular storms every ~33 years; in ordinary years a modest but very fast shower, best pre-dawn.'},
-  {name:'Geminids',        m:11, d:13, zhr:150, rad:'Gemini',     note:'The richest shower of the year — slow, bright, often colourful meteors active all night. In 2026 only a thin crescent interferes. The single best night to be out.', feature:true},
-  {name:'Ursids',          m:11, d:22, zhr:10,  rad:'Ursa Minor', note:'A quiet solstice shower from a circumpolar radiant near the Little Dipper — a low-key encore after the Geminids.'},
-];
-
-// One-time sky events. y = full year, m 0-indexed, d day.
-//   art: which illustration to draw on a featured card
-//        ('saturn','jupiter','mars','uranus','neptune','moon','sun','conj')
-//   feature:true → large illustrated card.
-// Dates verified mid-2026 against published 2026–27 ephemerides.
-const ASTRO_EVENTS = [
-  {y:2026,m:5, d:5,  label:'Venus at Greatest Elongation', art:'conj', note:'Venus is at its farthest apparent distance east of the Sun for this apparition — the dazzling evening star at peak brilliance, magnitude &minus;4.2 above the western horizon for an hour after sunset. The best night of the year for Venus.'},
-  {y:2026,m:5, d:9,  label:'Venus – Jupiter Conjunction', art:'conj', feature:true, note:'The two brightest planets in the sky meet just 1.5° apart low in the west-northwest at dusk — an unmistakable, dazzling pair to the naked eye and a stunning sight in binoculars. One of the closest evening conjunctions of the decade.'},
-  {y:2026,m:5, d:15, label:'Mercury at Greatest Elongation', art:'conj', note:'Mercury reaches its best evening apparition of the year, about 25° east of the Sun and shining at magnitude +0.5. Look low in the west-northwest 30–45 minutes after sunset, below Venus.'},
-  {y:2026,m:5, d:20, label:'June Solstice',            art:'sun',     note:'The longest day and shortest night of the year. From here on the nights slowly lengthen again — true darkness arrives a little earlier each evening for stargazing.'},
-  {y:2026,m:6, d:4,  label:'Mars Passes 0.1° from Uranus', art:'conj', note:'Mars slides almost directly over Uranus — the closest planetary conjunction of 2026 at one-fifth of a Full Moon’s width. Use Mars as a guidepost to spot dim blue-green Uranus in the same low-power telescope field, pre-dawn east.'},
-  {y:2026,m:6, d:7,  label:'Jupiter Disappears into Evening Twilight', art:'jupiter', note:'Jupiter sinks too close to the setting Sun to observe — the end of its 2025–26 evening apparition. The king planet stays out of view for about six weeks while it passes behind the Sun.'},
-  {y:2026,m:6, d:29, label:'Jupiter at Solar Conjunction', art:'jupiter', note:'Jupiter passes directly behind the Sun from our point of view, the midpoint of its absence from the sky. From now on it slowly emerges into the pre-dawn east, growing higher each morning.'},
-  {y:2026,m:7, d:19, label:'Jupiter Returns to Morning Sky', art:'jupiter', note:'Jupiter climbs far enough from the Sun’s glare to be spotted low in the east before dawn — the start of its 2026–27 morning apparition. It will keep rising earlier each night, returning to the evening sky after its February 2027 opposition.'},
-  {y:2026,m:8, d:22, label:'Autumn Equinox',           art:'sun',     note:'Day and night fall into balance, and the Milky Way’s bright core sinks toward the southwest after dusk. The long, dark nights of prime galaxy-and-nebula season begin.'},
-  {y:2026,m:8, d:26, label:'Neptune at Opposition',    art:'neptune', note:'Neptune is at its brightest and closest for the year (mag +7.8) in Pisces — a tiny blue point, telescope-only, but well placed all night. It shares the sky with the Harvest Moon and Saturn tonight.'},
-  {y:2026,m:8, d:26, label:'Harvest Moon',             art:'moon',    note:'The full Moon closest to the autumn equinox, rising soon after sunset for several evenings running. A bright, golden Moon low on the horizon — a classic photo opportunity over the canyon walls.'},
-  {y:2026,m:9, d:4,  label:'Saturn Returns to the Evening Sky', art:'saturn',  feature:true, note:'Saturn reaches opposition and becomes a true all-night planet for the first time since spring — rising in the east at sunset, riding high near midnight, and setting at dawn. The rings have re-opened to about 7.5° after the 2025 edge-on crossing, with the Cassini Division now visible in a small scope. Saturn’s best apparition until next year.'},
-  {y:2026,m:9, d:6,  label:'Moon Occults Jupiter',     art:'jupiter', note:'The Moon passes directly in front of Jupiter for eastern North America — a striking pairing low in the pre-dawn sky even from here.'},
-  {y:2026,m:9, d:16, label:'Mars–Jupiter Conjunction',  art:'conj',    note:'Reddish Mars passes about 1.2° from brilliant Jupiter low in the pre-dawn east — both share the same binocular and low-power telescope field.'},
-  {y:2026,m:10,d:25, label:'Uranus at Opposition',     art:'uranus',  note:'Uranus is at its brightest of the year (mag +5.6) in Taurus — a dim blue-green point, just catchable in binoculars from Zion’s dark sky and an easy target in any small scope.'},
-  {y:2026,m:10,d:24, label:'Beaver Supermoon',         art:'moon',    note:'The first of the season’s big supermoons — a full Moon near perigee, riding about 7% larger and noticeably brighter than average. Bright enough to wash out faint deep-sky targets, so a night for lunar and landscape photography.'},
-  {y:2026,m:11,d:21, label:'December Solstice',         art:'sun',     note:'The longest nights of the year arrive — darkness falls early and lasts late, giving the most observing hours of any season. Orion and the winter showpieces ride high.'},
-  {y:2026,m:11,d:23, label:'Cold Supermoon',           art:'moon',    feature:true, note:'The largest and brightest full Moon of all of 2026 — the closest perigee Moon of the year at about 222,000 miles. A spectacular Moon over the snow-dusted canyon, and a fine night for a lunar-detail session.'},
-  {y:2027,m:1, d:11, label:'Jupiter at Opposition',    art:'jupiter', note:'Jupiter at magnitude &minus;2.6 in Leo — its equatorial bands and all four Galilean moons on show. Well placed for evening viewing from February into April 2027.'},
-  {y:2027,m:1, d:19, label:'Mars at Opposition',       art:'mars',    feature:true, note:'Mars at its best until 2029 — up all night, the ochre disc revealing its polar cap and dark markings like Syrtis Major at high power. The Red Planet blazes brighter than any star.'},
-];
+// Showers and dated events come from zcl-events.js, the one list every page shares.
+const METEOR_SHOWERS = ZCL_EVENTS.showers;
+const ASTRO_EVENTS = ZCL_EVENTS.events;
 
 // ── starfield + flourishes ───────────────────────────────
 (function(){
@@ -326,7 +296,9 @@ const ASTRO_EVENTS = [
 
 // ── date helpers ─────────────────────────────────────────
 const NOW = new Date();
-function daysUntil(date){ return Math.ceil((date - NOW)/86400000) }
+function daysUntil(date){   // whole calendar days: tonight = 0, tomorrow night = 1
+  return Math.round((new Date(date.getFullYear(),date.getMonth(),date.getDate()) - new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate()))/86400000);
+}
 function nextShowerDate(s){
   const y = NOW.getFullYear();
   let d = new Date(y, s.m, s.d, 23, 0, 0);
@@ -368,7 +340,7 @@ function buildTimeline(){
   const items = [];
   METEOR_SHOWERS.forEach(s=>{
     items.push({
-      kind:'shower', name:s.name, date:nextShowerDate(s), note:s.note,
+      kind:'shower', name:s.name, date:nextShowerDate(s), note:(s.note+' '+ZCL_EVENTS.moonNote(nextShowerDate(s))).trim(),
       rad:s.rad, zhr:s.zhr, feature:!!s.feature, art:'meteor'
     });
   });
@@ -377,7 +349,7 @@ function buildTimeline(){
     // keep events from ~2 days ago onward so a just-passed event lingers briefly
     if(date >= new Date(NOW.getFullYear(), NOW.getMonth(), NOW.getDate())){
       items.push({
-        kind:'event', name:e.label, date:date, note:e.note,
+        kind:'event', name:e.label, date:date, note:e.note, type:e.type,
         feature:!!e.feature, art:e.art||'star'
       });
     }
@@ -391,7 +363,7 @@ function typeBadge(it){
   const m = { saturn:'Opposition', jupiter:'Planet', mars:'Opposition',
               uranus:'Opposition', neptune:'Opposition', moon:'Moon',
               sun:'Season', conj:'Conjunction', star:'Event' };
-  return '<span class="zcl-ev-badge">'+(m[it.art]||'Event')+'</span>';
+  return '<span class="zcl-ev-badge">'+(it.type||m[it.art]||'Event')+'</span>';
 }
 
 function renderTimeline(items){
@@ -448,20 +420,22 @@ const AURORA_URL = 'https://services.swpc.noaa.gov/products/noaa-planetary-k-ind
 // strong-to-extreme storms, so the bar is deliberately high and honest.
 function auroraVerdict(now, peak){
   const k = Math.max(now, peak);
-  if(k >= 8.5) return {cls:'storm', v:'Extreme storm — aurora may be visible from Zion tonight!',
+  if(k >= 8.5) return {cls:'storm', v:'Extreme storm — aurora may be visible as far south as the southern US tonight!',
     s:'Get to a dark site with an open northern horizon after true dark. Look low to the north; a phone camera on a long exposure will catch colour the eye can miss.'};
   if(k >= 7.5) return {cls:'storm', v:'Severe storm — a real chance low on the northern horizon.',
     s:'From a dark northern viewpoint, watch for a faint glow or pillars low in the north late at night. Worth heading out for.'};
   if(k >= 6.5) return {cls:'active', v:'Strong storm up north — possible visibility at dark-sky sites.',
-    s:'Aurora is reaching the northern-tier states. From Zion you might catch a faint glow very low on the northern horizon if everything lines up — a long-shot.'};
+    s:'Aurora is reaching the northern-tier states. From mid-latitudes you might catch a faint glow very low on the northern horizon if everything lines up — a long-shot.'};
   if(k >= 5)   return {cls:'active', v:'Geomagnetic storm active — not expected this far south.',
-    s:'The aurora is dancing across the northern US and Canada tonight, but Zion sits too far south to see it at this level.'};
+    s:'The aurora is dancing across the northern US and Canada tonight, but it stays too far north for mid-latitudes at this level.'};
   return {cls:'', v:'Quiet — no aurora expected.',
-    s:'Geomagnetic activity is low. Aurora reaches Zion’s latitude only in rare, major storms (Kp 8–9) — this watch will light up if one hits.'};
+    s:'Geomagnetic activity is low. Aurora reaches the southern US only in rare, major storms (Kp 8–9) — this watch will light up if one hits.'};
 }
 
 function fmtClock(d){
-  return new Intl.DateTimeFormat('en-US',{hour:'numeric',minute:'2-digit',hour12:true}).format(d);
+  // No timeZone here meant the DEVICE's zone, so aurora and event times
+  // followed the phone rather than the place being planned for.
+  return ZCLTZ.fmtTime(d);
 }
 
 function renderAurora(nowKp, peakKp, peakWhen, stamp){
@@ -544,6 +518,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 <!-- ════ Settings popup (shared) ════ -->
 <style>
@@ -557,6 +546,18 @@ if('serviceWorker' in navigator){
   box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>

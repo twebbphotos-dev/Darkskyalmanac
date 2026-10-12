@@ -1,0 +1,100 @@
+# Star ID (`solver/`)
+
+An offline blind plate solver that runs in a phone browser. Load a photo, and it reports where the camera pointed, which stars, constellations and deep-sky objects are in frame, and the values a desktop plate solver (Siril, ASTAP) needs. It was formerly the standalone "Pointing Check" app. It's linked from the Tools hub (`photography.html`).
+
+## Files
+
+| File | Role |
+|---|---|
+| `solver/index.html`, `app.css` | Page, setup panel (lens chips + "Unknown", camera sensor, location) |
+| `solver/app.js` | UI: load file, EXIF, downscale to `MAX_EDGE 3000`, post to worker, render result, overlay, export image with watermark |
+| `solver/worker.js` | Detect → solve passes → stars/objects/figures in frame. `rankObjects()` |
+| `solver/exif.js` | EXIF focal length, date, GPS, sensor width |
+| `solver/solver/detect.js` | Star detection (see below) |
+| `solver/solver/solve.js` | Quad-hash matching, verification, focal refinement, accuracy gate |
+| `solver/solver/catalog.js` | Parses `stars.bin` and `quads_*.bin` |
+| `solver/solver/astro.js` | `altAz`, `formatRA/Dec`, `CONSTELLATIONS` (IAU abbreviation → name) |
+| `solver/solver/constellation.js` | IAU boundaries (Delporte/Roman 1987, B1875 precession). Matches astropy `get_constellation` exactly on 4,008 test points |
+| `solver/solver/figures.js` | Constellation stick figures (H.A. Rey shapes; Lyra simplified) |
+| `solver/catalog/` | HYG v4.1 to mag 9 (83,479 stars), quad index layers A–D, `names.json` (proper names and Bayer), `dso.json` (863 objects) |
+| `src/pointing-check/tools/build_catalog.py` | Builds `catalog/` from HYG (needs the HYG CSV) |
+
+## Pipeline
+
+1. **Detection** (`detect.js`):
+   - Local maxima above tile background + 4σ.
+   - Candidates are ranked by **light summed in a 7×7 box**, not by peak pixel. Stretched images clip every bright star to the same flat top, so the peak pixel doesn't measure brightness.
+   - Star size comes from the **half-max area of mid-ranked stars** (3–40% of the peak-sorted list), never from the brightest ones.
+   - Each candidate is measured in a window of `r = 2.6σ`, with background taken from an annulus.
+   - A blob that overflows the window grows at **1, 2, 3, 4, 6 and 8×** (up to 48 px). Growing is allowed only when the core is saturated: at or above 0.92 × the 0.5%-rank peak, flat-topped, or in the top 2% by box score.
+   - A blob is a star if it fills ≤ 55% of its window **or** ≤ 30% of the window border is above background. The border test is for dense fields.
+   - Duplicate peaks inside a big star's disk are dropped.
+2. **Solve passes** (`worker.js`):
+   - **Pass 1:** the default detection.
+   - **Pass 2** (only if pass 1 fails): `{shape:true, rank:'snr', spread:4}`. It drops elongated or one-sided blobs (cloud rims, silhouettes) and takes the best star from each of 4×4 cells.
+3. **Focal length:**
+   - **Known:** the entered focal, then ×1.2, ÷1.2, ×1.44 and ÷1.44 retries.
+   - **Unknown:** a ladder of `12 × 1.2^i` with 25 steps (12–954 mm, about 1000 mm with ±12% tolerance).
+4. **Portrait images:** the sensor's long side spans the image's **long** edge, so `worker.js` passes `sensorWidthMm × width / max(width, height)`.
+5. **`solve.js`:**
+   - `pickLayers` uses quad layers that fit 40% of the short field side. If none fits, it falls back to layers whose `dmin` fits.
+   - Image quads are matched by hash code, then verified with a chance-match budget. Focal length is refined from the matched pairs, then a harvest pass runs at a tighter radius.
+   - **Accuracy gate:** rms ≤ 2.2 px with ≥ 20 matches, or rms ≤ 3.2 px with ≥ 40 matches. Real solves sit at 0.2–1.7 px. Chance alignments sat at 1.6–5.3 px with 8–27 matches.
+
+## Result UI
+
+- **Headline:**
+  - "Near <brightest named star>".
+  - With no named star in frame, the top named deep-sky object instead, e.g. "Heart Nebula".
+  - Otherwise "In <Constellation>".
+- **Subline:** the field-center constellation (IAU boundary) · the next object in frame.
+- **Readout:** RA, Dec, altitude/azimuth (when a location is set), field of view, and "North is X° clockwise from up".
+- **Plate Solver Values card** (with a Copy button). The values describe **the loaded file**: solve-pixel scale × (solve width ÷ original width).
+  - RA and Dec, both sexagesimal and decimal.
+  - Focal length.
+  - Pixel size: `scale × focal ÷ 206.265`, so the focal and pixel size pair always reproduces the file's scale in Siril.
+  - Image scale, image size, field of view, rotation, flipped, stars matched, accuracy.
+- **Overlay:**
+  - Toggles: Stars, Objects, Names, Constellations (30% opacity lines), Center (off by default), Detected.
+  - Magnitude slider (default about mag 3, slides both ways) and an object-count slider.
+  - The Dark Sky Almanac credit plate is **always** drawn, including in exports (up to 4096 px). Desktop does a plain download; phones use the share sheet.
+- **Objects:** `rankObjects` puts Messier objects first; named Messiers get −1.5. Objects closer than 0.25° are de-duplicated. Labels use the `M8` form. Bare NGC/IC objects are renamed to their common names in `dso.json` (`n` = name, `d` = catalog ID).
+- **Prefs:** `localStorage['pointing-check']` holds `{focal, unknown, sensor, sensorCustom, lat, lon}`. The sensor list:
+  - Full frame (Sony/Nikon/Canon) 35.9
+  - APS-C (Sony/Nikon/Fujifilm) 23.5
+  - APS-C Canon 22.3
+  - Micro Four Thirds 17.3
+  - 1-inch 13.2
+  - Other (custom)
+
+  A legacy saved value of `36` maps to 35.9. An EXIF sensor width snaps to a listed size within 0.4 mm.
+
+## Known limits / open items
+
+- **The catalog is sparse in narrow fields.** HYG is near-complete only to about mag 8, so a 3.5° × 5° Milky Way field holds about 60 index stars. Tight crops of deep-sky images are the weak spot.
+  - Real fix: a deeper catalog (Tycho-2 to mag 10–11) in a narrow-field quad layer. That costs download size, so make it an optional download like the 3D models.
+- **`heart-soul-edited_str`** (re-stretching an already-stretched image) fails. Clipping plus crushed faint stars leaves too few matchable stars. It's an open case.
+- **Screenshots and resized exports** under 2000 px long edge rarely solve. Stars are 1–2 px and JPEG-smeared. The app says so and asks for the original file.
+- Lens distortion isn't modeled. Ultra-wide fields still solve on the inner stars.
+
+## Regression
+
+```bash
+python3 tests/solver/make_variants.py && node tests/solver/regress.mjs
+```
+
+- **Baseline:** `tests/solver/baseline.txt`, 33 of 37 solved.
+- **Expected failures:**
+  - `noise` (no stars; must not false-solve)
+  - `dense` (must not crash)
+  - `screenshot-unsolvable`
+  - `heart-soul-edited_str` (open case)
+- **Comparing two detectors:** `DETECT=/path/to/detect.js node tests/solver/regress.mjs`.
+- **Frames:**
+  - Synthetic renders at known pointing: andromeda 135 mm, orion 300 mm, sagittarius 50 mm, plus A/B/C degraded versions.
+  - Two of Tyler's real frames: Orion/M42 at 362 mm and the edited Heart & Soul at 408 mm.
+  - A phone screenshot.
+- **Variants** of every frame: stretched, rotated and cropped, resized JPEG, and S-curve with vignette.
+- **Known answers:**
+  - Orion user frame: RA 5h37m, Dec −4.5°, 362 mm, 13.94 µm, 7.95″/px.
+  - Heart & Soul: RA 2h44m, Dec +61.2°, 408 mm, 13.94 µm, 7.04″/px, flipped.

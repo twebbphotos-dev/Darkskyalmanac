@@ -13,16 +13,16 @@
 <meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Moon · Dark Sky Almanac</title>
+<title>The Moon · Dark Sky Almanac</title>
 <meta name="description" content="A labelled lunar atlas showing the moon's seas, craters, and peaks, with the moving terminator that reveals where shadows fall sharpest tonight.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Moon · Dark Sky Almanac">
+<meta property="og:title" content="The Moon · Dark Sky Almanac">
 <meta property="og:description" content="A labelled lunar atlas showing the moon's seas, craters, and peaks, with the moving terminator that reveals where shadows fall sharpest tonight.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/moon">
 <meta property="og:url" content="https://app.darkskyalmanac.com/moon">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -71,10 +71,11 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 </style>
 </head>
 <body>
+
 <!-- ════════════════════════════════════════════════════════════
      ZION LUNAR ATLAS · PRO
      Moon-specialized companion to the Dark Sky Almanac.
-     Self-contained Squarespace embed (paste into a Code block).
+     Self-contained page in the Dark Sky Almanac PWA.
      Sections:  1 CSS   2 MARKUP   3 DATA   4 ASTRO/PROJECTION
                 5 ICONS   6 RENDER   7 DETAIL   8 INIT
      Reuses the gold-foil theme + moonSVG renderer from the
@@ -82,7 +83,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
      ════════════════════════════════════════════════════════════ -->
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
 
 <!-- ─────────────────────────  1 · CSS  ───────────────────────── -->
 <style>
@@ -175,14 +177,71 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-m-rmoon b{color:#E4D9B8;font-weight:500}
 .zcl-m-rterm{font-size:12.5px;color:#9DB6CC;margin-top:7px;line-height:1.45}
 .zcl-m-rterm b{color:#C9D8E8;font-weight:500;font-style:normal}
-.zcl-m-daynav{display:flex;gap:8px;flex-shrink:0}
-.zcl-m-daybtn{width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.35);background:none;
-  color:#CBA85A;font-size:21px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
-  transition:background .15s,border-color .15s;padding:0}
+.zcl-m-daynav{display:flex;gap:10px;flex-shrink:0;align-items:center}
+.zcl-m-navlab{font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:#8A6E32;text-align:center;line-height:1.5}
+.zcl-m-daybtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(203,168,90,.55);background:rgba(203,168,90,.07);
+  touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  color:#E6CC85;font-size:26px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;
+  transition:background .15s,border-color .15s;padding:0;box-shadow:0 0 10px rgba(203,168,90,.12)}
+.zcl-m-daynav-inline{display:flex;gap:10px;align-items:center;justify-content:center;
+  margin-top:15px;padding-top:13px;border-top:1px solid rgba(203,168,90,.14)}
 .zcl-m-daybtn:hover{background:rgba(203,168,90,.12);border-color:#CBA85A}
 .zcl-m-daybtn:active{transform:scale(.94)}
 
 /* detail panel */
+/* Rich nightly-target card — always-on headline for tonight's feature */
+.zcl-m-target{max-width:560px;margin:14px auto 0;background:linear-gradient(160deg,#141021 0%,#0d0a18 60%);
+  border:1px solid rgba(203,168,90,.30);border-radius:12px;padding:15px 17px 16px;position:relative;overflow:hidden}
+.zcl-m-target::before{content:'';position:absolute;top:0;left:0;width:3px;height:100%;background:linear-gradient(#E6CC85,#B5933F)}
+.zcl-m-tk{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8A6E32;display:flex;align-items:center;gap:7px}
+.zcl-m-tk i{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.zcl-m-tname{font-size:21px;color:#E6CC85;letter-spacing:.01em;margin:5px 0 2px;font-weight:600;line-height:1.15}
+.zcl-m-tsub{font-size:12px;color:#9A8E70;margin-bottom:10px}
+.zcl-m-tbody{font-size:13.5px;line-height:1.62;color:#CFC4A2}
+.zcl-m-trows{margin-top:12px;display:grid;gap:8px}
+.zcl-m-trow{display:flex;gap:9px;font-size:12.5px;line-height:1.5;align-items:flex-start}
+.zcl-m-trow .zcl-m-tico{flex-shrink:0;width:15px;text-align:center;color:#CBA85A;margin-top:1px}
+.zcl-m-trow b{color:#D9CDA8;font-weight:600}
+.zcl-m-trow span{color:#B3A882}
+.zcl-m-tglow{color:#E8C24A !important}
+.zcl-m-tcompanion{margin-top:12px;padding-top:11px;border-top:1px solid rgba(203,168,90,.14);font-size:12px;color:#9A8E70;line-height:1.55}
+.zcl-m-tcompanion b{color:#C9BD97;font-weight:600}
+.zcl-m-tcta{margin-top:12px}
+.zcl-m-tcta button{font-size:11px;letter-spacing:.10em;text-transform:uppercase;color:#CBA85A;background:transparent;
+  border:1px solid rgba(203,168,90,.4);border-radius:5px;padding:7px 12px;cursor:pointer;transition:background .15s}
+.zcl-m-tcta button:hover{background:rgba(203,168,90,.10)}
+.zcl-m-info{max-width:560px;margin:14px auto 0;background:#0d0a18;position:relative;
+  border:1px solid rgba(203,168,90,.18);border-radius:12px;padding:16px 18px 17px}
+.zcl-m-ik{font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:#8A6E32;margin-bottom:4px}
+.zcl-m-ih{font-size:18px;color:#E6CC85;font-weight:600;letter-spacing:.01em;margin-bottom:9px}
+.zcl-m-ibody{font-size:13px;line-height:1.62;color:#C9BD97}
+.zcl-m-ibody b{color:#E4D9B8;font-weight:600}
+.zcl-m-yrnav{display:flex;align-items:center;justify-content:center;gap:12px;margin:2px 0 4px}
+.zcl-m-yrbtn{width:30px;height:30px;border-radius:50%;border:1px solid rgba(203,168,90,.5);background:rgba(203,168,90,.07);
+  color:#E6CC85;font-size:17px;line-height:1;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif}
+.zcl-m-yrlab{font-size:13px;font-weight:600;color:#E6CC85;cursor:pointer;letter-spacing:.03em;min-width:64px;text-align:center}
+/* progress track for a cycle position */
+.zcl-m-track{margin:13px 0 5px;height:8px;border-radius:5px;position:relative;
+  background:linear-gradient(90deg,#141021,#2a2340,#141021);border:1px solid rgba(203,168,90,.16)}
+.zcl-m-track .fill{position:absolute;top:-3px;width:2px;height:14px;background:#E6CC85;
+  border-radius:2px;box-shadow:0 0 8px rgba(230,204,133,.7)}
+.zcl-m-track-lab{display:flex;justify-content:space-between;font-size:10px;color:#7A6E55;
+  letter-spacing:.04em;margin-top:6px}
+.zcl-m-idivider{height:1px;background:rgba(203,168,90,.12);margin:15px 0 13px}
+/* alignment chart */
+.zcl-m-chart{margin:12px -4px 4px;width:calc(100% + 8px)}
+.zcl-m-legend{display:flex;flex-wrap:wrap;gap:12px;margin-top:10px;font-size:11px;color:#9A8E70}
+.zcl-m-legend i{display:inline-block;width:16px;height:3px;border-radius:2px;margin-right:5px;vertical-align:middle}
+.zcl-m-align-rows{margin-top:12px;display:grid;gap:11px}
+.zcl-m-align-row{display:flex;gap:9px;font-size:12px;line-height:1.5;align-items:flex-start;color:#B3A882}
+.zcl-m-rtext{display:flex;flex-direction:column;gap:1px}
+.zcl-m-rdesc{color:#B3A882}
+.zcl-m-rtime{font-size:11px;letter-spacing:.03em;color:#CBA85A}
+.zcl-m-rinfo{font-size:10.5px;letter-spacing:.02em;color:#8A9AA8}
+.zcl-m-align-row .ico{flex-shrink:0;width:15px;text-align:center;margin-top:1px}
+.zcl-m-align-row b{color:#E4D9B8;font-weight:600}
+.zcl-m-hot{color:#E8C24A}
 .zcl-m-detail{max-width:560px;margin:12px auto 0;background:#0d0a18;border:1px solid rgba(203,168,90,.18);
   border-radius:10px;padding:0;overflow:hidden;max-height:0;opacity:0;transition:max-height .28s ease,opacity .28s ease,padding .28s ease}
 .zcl-m-detail.open{max-height:480px;opacity:1;padding:14px 16px;overflow-y:auto}
@@ -190,6 +249,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-m-dname{font-size:18px;color:#E4D9B8;letter-spacing:.02em;margin:3px 0 7px;display:flex;align-items:center;gap:9px}
 .zcl-m-dname i{width:11px;height:11px;border-radius:50%;flex-shrink:0}
 .zcl-m-dbody{font-size:13.5px;line-height:1.6;color:#C9BD97}
+.zcl-m-3d{display:inline-block;margin-top:9px;font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;text-decoration:none}
 .zcl-m-dcoord{font-size:11.5px;color:#7A6E55;margin-top:9px}
 .zcl-m-dlit{font-size:12px;margin-top:6px}
 
@@ -201,6 +261,12 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   .zcl-m-daynav{order:3;width:100%;justify-content:center}
   .zcl-m-lbl{stroke-width:6px}
 }
+/* fit */
+@media(max-width:640px){#zcl-moon::after{inset:7px}.zcl-m-tl,.zcl-m-tr{top:7px}.zcl-m-bl,.zcl-m-br{bottom:7px}.zcl-m-tl,.zcl-m-bl{left:7px}.zcl-m-tr,.zcl-m-br{right:7px}}
+@media(max-width:520px){.zcl-m-inner{padding-left:14px;padding-right:14px}}
+@media(max-width:1100px){.zcl-m-inner{padding-bottom:58px}}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 
 <!-- ────────────────────────  2 · MARKUP  ──────────────────────── -->
@@ -211,7 +277,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   <div class="zcl-m-fl zcl-m-bl"></div><div class="zcl-m-fl zcl-m-br"></div>
   <svg id="zcl-m-stars" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
   <div class="zcl-m-titlebar">
-    <div class="zcl-m-maintitle">Lunar Atlas</div>
+    <div class="zcl-m-maintitle">The Moon</div>
     <div class="zcl-m-titlerule">
       <span class="zcl-m-rline"></span>
       <svg class="zcl-m-rstar" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
@@ -224,7 +290,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
     <div class="zcl-m-chips" id="zcl-m-chips">
       <span class="zcl-m-chip" data-cat="sea"><i class="dotc" style="background:#6FA0CC"></i>Seas</span>
-      <span class="zcl-m-chip on" data-cat="crater"><i class="dotc" style="background:#D8B45A"></i>Craters &amp; peaks</span>
+      <span class="zcl-m-chip on" data-cat="crater"><i class="dotc" style="background:#D8B45A"></i>Craters</span>
       <span class="zcl-m-chip" data-cat="apollo"><i class="dotc" style="background:#7FD08A"></i>Apollo sites</span>
       <span class="zcl-m-chip on" data-cat="term"><i class="dotc" style="background:#E8C24A"></i>Terminator</span>
     </div>
@@ -235,8 +301,6 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <svg class="zcl-m-svg" id="zcl-m-svg" viewBox="0 0 1120 1064" preserveAspectRatio="xMidYMid meet"></svg>
       </div>
     </div>
-
-    <div class="zcl-m-detail" id="zcl-m-detail"></div>
 
     <div class="zcl-m-readout">
       <div class="zcl-m-rglyph" id="zcl-m-rglyph"></div>
@@ -249,9 +313,15 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
       </div>
       <div class="zcl-m-daynav">
         <button class="zcl-m-daybtn" id="zcl-m-prev" aria-label="Previous night">&#8249;</button>
+        <span class="zcl-m-navlab">Browse<br>nights</span>
         <button class="zcl-m-daybtn" id="zcl-m-next" aria-label="Next night">&#8250;</button>
       </div>
     </div>
+
+    <div class="zcl-m-detail" id="zcl-m-detail"></div>
+
+    <div class="zcl-m-info" id="zcl-m-align"></div>
+    <div class="zcl-m-info" id="zcl-m-cycle"></div>
 
     <div class="zcl-m-note">Tap any label for details. The shaded edge is the terminator — the line of lunar sunrise or sunset — where craters cast their longest shadows and detail is sharpest in a telescope.</div>
 
@@ -266,8 +336,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 // ════════════════════  3 · DATA & CONSTANTS  ════════════════════
 const SYNODIC = 29.53058867;
 const REF_NEW_MOON = new Date('2000-01-06T18:14:00Z');
-const LAT = 37.1986, LNG = -112.9869;          // Zion (for moonrise/set if needed)
-const TZ  = 'America/Denver';                   // Mountain Time, for moonrise/set display
+const __dsaLoc=(function(){try{var r=JSON.parse(localStorage.getItem('dsa-location'));if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)return r;}catch(e){}return null;})(), LAT = __dsaLoc?+__dsaLoc.lat:37.1986, LNG = __dsaLoc?+__dsaLoc.lng:-112.9869;          // Zion (for moonrise/set if needed)
+const TZ  = ZCLTZ.zone();                       // the saved location's own zone, for moonrise/set display
 const MO  = ['January','February','March','April','May','June','July','August','September','October','November','December'];
 const DOW = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
 
@@ -288,59 +358,49 @@ const CATNAME = { sea:'Lunar sea', crater:'Crater / range', apollo:'Apollo landi
 const FEATURES = [
   // ── seas ──
   {n:'Mare Crisium',lon:59,lat:17,t:'sea',d:'The Sea of Crises \u2014 an isolated dark oval near the eastern limb, about 345 miles across, filling an impact basin nearly 4 billion years old that later flooded with dark lava. Because it stands apart from the other seas, it is the first great plain to catch the rising sun each lunar morning. The robotic Luna 24 mission landed here in 1976 and returned soil to Earth.'},
-  {n:'Mare Fecunditatis',lon:52,lat:-8,t:'sea',d:'The Sea of Fertility, a broad eastern plain roughly 560 miles wide. Luna 16 touched down here in 1970 \u2014 the first robotic craft to bring a lunar sample home. Look for the twin craters Messier and Messier A, whose comet-like double ray was flung westward by an impactor that struck at a very low, grazing angle.'},
-  {n:'Mare Nectaris',lon:34,lat:-15,t:'sea',d:'The Sea of Nectar, a small circular sea whose formation around 3.9 billion years ago is used to define an entire chapter of lunar history \u2014 the Nectarian period. Its northwestern shore is guarded by the magnificent Theophilus\u2013Cyrillus\u2013Catharina crater chain.'},
+  {n:'Mare Fecunditatis',lon:54,lat:-8,t:'sea',d:'The Sea of Fertility, a broad eastern plain roughly 520 miles wide. Luna 16 touched down here in 1970 \u2014 the first robotic craft to bring a lunar sample home. Look for the twin craters Messier and Messier A, whose comet-like double ray was flung westward by an impactor that struck at a very low, grazing angle.'},
+  {n:'Mare Nectaris',lon:34,lat:-15,t:'sea',d:'The Sea of Nectar, a small circular sea filling an impact basin whose formation around 3.9 billion years ago is used to define an entire chapter of lunar history \u2014 the Nectarian period. Its northwestern shore is guarded by the magnificent crater trio of Theophilus, Cyrillus and Catharina.'},
   {n:'Mare Tranquillitatis',lon:30,lat:9,t:'sea',d:'The Sea of Tranquility \u2014 on 20 July 1969 Apollo 11 set down on its southwestern shore, and Neil Armstrong and Buzz Aldrin became the first humans to walk on another world. Spanning about 540 miles, its lava carries an unusually high titanium content that gives it a faint blue tint in colour photographs.'},
-  {n:'Mare Serenitatis',lon:17,lat:28,t:'sea',d:'The Sea of Serenity, a smooth, nearly circular plain about 430 miles across, ringed by wrinkle ridges where the cooling lava buckled and compressed. Apollo 17 explored its rugged southeastern shore in 1972.'},
-  {n:'Mare Vaporum',lon:4,lat:13,t:'sea',d:'The Sea of Vapors, a small plain at the southern foot of the Apennine Mountains, floored by some of the darkest, most ancient lava on the near side.'},
-  {n:'Mare Frigoris',lon:0,lat:56,t:'sea',d:'The Sea of Cold \u2014 a long, narrow ribbon of lava arcing more than 1,000 miles across the far north. It is the one major sea that breaks the rule of being roughly circular, tracing instead the northern edge of the Imbrium basin.'},
-  {n:'Mare Imbrium',lon:-16,lat:35,t:'sea',d:'The Sea of Showers, about 750 miles across \u2014 one of the largest impact basins in the entire solar system. The body that carved it nearly 3.9 billion years ago struck with such violence that it raised mountain ranges and flung debris clear across the near side. Lava later welled up to fill it smooth.'},
-  {n:'Mare Nubium',lon:-15,lat:-21,t:'sea',d:'The Sea of Clouds, a dark southern plain. America\u2019s first soft landing came down here in 1966, when Surveyor 1 proved a spacecraft could settle on the surface without sinking into the dust \u2014 a key reassurance before Apollo.'},
-  {n:'Mare Humorum',lon:-39,lat:-24,t:'sea',d:'The Sea of Moisture, a compact circular sea about 240 miles across, ringed by wrinkle ridges. The crater Gassendi sits on its northern rim like a diamond set on a ring.'},
-  {n:'Oceanus Procellarum',lon:-57,lat:20,t:'sea',d:'The Ocean of Storms \u2014 by far the largest of the lunar seas, sprawling more than 1,600 miles down the western face, larger than all the others combined. Apollo 12 and several robotic landers set down on its vast plains.'},
-  {n:'Sinus Iridum',lon:-32,lat:45,t:'sea',d:'The Bay of Rainbows, a half-circle of lava ringed by the curving Jura Mountains. For a night or two around first quarter, sunrise lights the mountain arc while the bay floor is still dark, and it juts into the blackness as the famous \u201CGolden Handle.\u201D'},
+  {n:'Mare Serenitatis',lon:18,lat:27,t:'sea',d:'The Sea of Serenity, a smooth, nearly circular plain about 420 miles across, ringed by wrinkle ridges where the cooling lava buckled and compressed. Apollo 17 explored its rugged southeastern shore in 1972.'},
+  {n:'Mare Vaporum',lon:4,lat:13,t:'sea',small:1,d:'The Sea of Vapors, a small dark plain about 150 miles across at the southeastern foot of the Apennine Mountains \u2014 comparatively young lava pooled among much older highlands.'},
+  {n:'Mare Frigoris',lon:0,lat:58,t:'sea',d:'The Sea of Cold \u2014 a long, narrow ribbon of lava arcing roughly 900 miles across the far north. It is the most elongated of the major seas, running along the northern edge of the Imbrium basin.'},
+  {n:'Mare Imbrium',lon:-16,lat:35,t:'sea',d:'The Sea of Showers, about 700 miles across, filling one of the largest impact basins on the Moon\u2019s near side. The body that carved it nearly 3.9 billion years ago struck with such violence that it raised mountain ranges and flung debris clear across the near side. Lava later welled up to fill it smooth.'},
+  {n:'Mare Nubium',lon:-17,lat:-21,t:'sea',d:'The Sea of Clouds, a dark southern plain. Near its eastern edge lies the Straight Wall (Rupes Recta), a 68-mile fault scarp that shows as a thin dark line about a day after first quarter, when the low morning sun throws its shadow across the lava.'},
+  {n:'Mare Humorum',lon:-39,lat:-24,t:'sea',d:'The Sea of Moisture, a compact circular sea about 260 miles across, ringed by wrinkle ridges. The crater Gassendi sits on its northern rim like a diamond set on a ring.'},
+  {n:'Oceanus Procellarum',lon:-57,lat:20,t:'sea',d:'The Ocean of Storms \u2014 by far the largest of the lunar seas, sprawling more than 1,600 miles down the western face, far larger than any other. Apollo 12 and several robotic landers set down on its vast plains \u2014 among them Surveyor 1, America\u2019s first soft landing on the Moon, in 1966.'},
+  {n:'Sinus Iridum',lon:-32,lat:45,t:'sea',small:1,bay:1,d:'The Bay of Rainbows, a half-circle of lava ringed by the curving Jura Mountains. For a night or so about ten days after new moon \u2014 two or three days past first quarter \u2014 sunrise lights the mountain arc while the bay floor is still dark, and it juts into the blackness as the famous \u201CGolden Handle.\u201D'},
   // ── craters & ranges ──
-  {n:'Tycho',lon:-11,lat:-43,t:'crater',d:'The Moon\u2019s most famous young crater \u2014 about 53 miles wide and a mere 108 million years old, so recent that dinosaurs still walked the Earth when it formed. The impact threw out a brilliant system of rays, the longest reaching roughly 1,500 km \u2014 about 930 miles \u2014 across the surface, which dominate the face of the full moon. A sample of its ejecta returned by Apollo 17 is what gave us its age. Its central peak rises about 1.2 miles above the crater floor.'},
+  {n:'Tycho',lon:-11,lat:-43,t:'crater',d:'The Moon\u2019s most famous young crater \u2014 about 53 miles wide and a mere 108 million years old, so recent that dinosaurs still walked the Earth when it formed. The impact threw out a brilliant system of rays, the longest reaching roughly 1,500 km \u2014 about 930 miles \u2014 across the surface, which dominate the face of the full moon. Samples from a landslide at the Apollo 17 site, apparently triggered by Tycho\u2019s far-flung debris, are what gave us its age. Its central peak rises about 1.2 miles above the crater floor.'},
   {n:'Copernicus',lon:-20,lat:10,t:'crater',d:'The textbook impact crater \u2014 58 miles wide and around 800 million years old, with walls that slumped into broad concentric terraces, a cluster of central peaks, and a ray system spreading some 500 miles. Early astronomers debated whether such features were volcanic; Copernicus is now understood as the classic scar of a high-speed impact.'},
-  {n:'Kepler',lon:-38,lat:8,t:'crater',d:'A small but dazzling crater just 20 miles across, wrapped in a bright halo of fresh ejecta. Its rays interlace with those of Copernicus across the dark lava of the Ocean of Storms.'},
+  {n:'Kepler',lon:-38,lat:8,t:'crater',d:'A small but dazzling crater just 18 miles across, wrapped in a bright halo of fresh ejecta. Its rays interlace with those of Copernicus across the dark lava of the Ocean of Storms.'},
   {n:'Aristarchus',lon:-47,lat:24,t:'crater',d:'The brightest large feature on the Moon \u2014 its young walls are about twice as reflective as the average lunar surface, bright enough to glimpse lit only by earthshine. Beside it winds Schr\u00F6ter\u2019s Valley, the Moon\u2019s largest sinuous rille, a channel carved by flowing lava over a billion years ago. The plateau is a long-standing hotspot for reports of \u201Ctransient lunar phenomena.\u201D'},
-  {n:'Plato',lon:-9,lat:51,t:'crater',d:'A 68-mile crater on the northern shore of Mare Imbrium whose floor was flooded by dark lava, leaving it unusually smooth and slate-grey against the bright highlands around it. Generations of observers have hunted across its floor for the faint glows and mists occasionally reported there.'},
-  {n:'Archimedes',lon:-4,lat:30,t:'crater',d:'The largest crater on Mare Imbrium, 51 miles across, its interior flooded perfectly flat by lava that buried any central peak. Apollo 15 landed just to its southeast, near the winding canyon of Hadley Rille.'},
+  {n:'Plato',lon:-9,lat:51,t:'crater',d:'A 63-mile crater on the northern shore of Mare Imbrium whose floor was flooded by dark lava, leaving it unusually smooth and slate-grey against the bright highlands around it. Generations of observers have hunted across its floor for the faint glows and mists occasionally reported there.'},
+  {n:'Archimedes',lon:-4,lat:30,t:'crater',d:'The largest crater on Mare Imbrium, 51 miles across, its interior flooded perfectly flat by lava that buried any central peak. Apollo 15 landed about 140 miles to its east-southeast, near the winding canyon of Hadley Rille.'},
   {n:'Grimaldi',lon:-68,lat:-5,t:'crater',d:'A vast, ancient walled plain near the western limb whose floor is one of the darkest patches on the whole Moon \u2014 dark enough to pick out even at full moon, when shadows vanish everywhere else.'},
   {n:'Gassendi',lon:-40,lat:-18,t:'crater',d:'A 68-mile crater perched on the northern rim of Mare Humorum. Its floor is fractured by a delicate web of rilles \u2014 cracks formed as lava pushed up beneath it \u2014 making it a rewarding high-magnification target.'},
   {n:'Clavius',lon:-14,lat:-58,t:'crater',d:'One of the largest craters on the near side at about 140 miles across \u2014 wide enough to swallow a small sea. A graceful arc of progressively smaller craters curves across its ancient, battered floor. Science-fiction readers know it as the site of the moonbase in 2001: A Space Odyssey.'},
-  {n:'Theophilus',lon:26,lat:-11,t:'crater',d:'A magnificent crater 60 miles wide with sharply terraced walls and a cluster of central peaks rising about a mile high. It is the youngest and crispest of a three-crater chain on the shore of Mare Nectaris; its neighbours Cyrillus and Catharina are visibly older and more eroded \u2014 a timeline of bombardment laid out in a single eyepiece field.'},
+  {n:'Theophilus',lon:26,lat:-11,t:'crater',d:'A magnificent crater 60 miles wide with sharply terraced walls and a cluster of central peaks rising about a mile high. It is the youngest and crispest of a trio of craters on the shore of Mare Nectaris; its neighbours Cyrillus and Catharina are visibly older and more eroded \u2014 a timeline of bombardment laid out in a single eyepiece field.'},
   {n:'Posidonius',lon:30,lat:32,t:'crater',d:'A 59-mile crater flooded by lava on the northeastern edge of Mare Serenitatis. Its thin floor is cracked by an intricate network of rilles that reward patient high-power study.'},
   {n:'Plinius',lon:24,lat:15,t:'crater',d:'A sharp 26-mile crater standing sentinel in the narrow strait between the Seas of Serenity and Tranquility, crowned by a bright pair of central peaks.'},
-  {n:'Langrenus',lon:61,lat:-9,t:'crater',d:'A grand crater 82 miles wide near the eastern limb, on the shore of the Sea of Fertility. Its bright terraced walls and twin central peaks blaze when the rising sun first catches them, just after new moon.'},
-  {n:'Petavius',lon:61,lat:-25,t:'crater',d:'A spectacular crater about 110 miles wide with a domed, fractured floor and a great rille running from its central mountains to the rim. It is best caught in the day or two after new moon, when low-angled sunlight throws its relief into dramatic shadow before it flattens out.'},
+  {n:'Langrenus',lon:61,lat:-9,t:'crater',d:'A grand crater 82 miles wide near the eastern limb, on the shore of the Sea of Fertility. Its bright terraced walls and twin central peaks blaze when the rising sun first catches them, about three days after new moon.'},
+  {n:'Petavius',lon:61,lat:-25,t:'crater',d:'A spectacular crater about 115 miles wide with a domed, fractured floor and a great rille running from its central mountains to the rim. It is best caught three or four days after new moon, when low-angled sunlight throws its relief into dramatic shadow before it flattens out.'},
   {n:'Aristoteles',lon:17,lat:50,t:'crater',d:'A prominent northern crater 54 miles across, paired with its smaller neighbour Eudoxus to form a striking duo along the southern edge of the Sea of Cold.'},
   {n:'Proclus',lon:47,lat:16,t:'crater',d:'A brilliant little crater just 17 miles wide on the western shore of Mare Crisium, throwing one of the Moon\u2019s most distinctive ray systems \u2014 a lopsided fan, because the impactor arrived at a low, grazing angle that swept its ejecta to one side.'},
-  {n:'Montes Apenninus',lon:-3,lat:20,t:'crater',d:'The Moon\u2019s grandest mountain range, curving some 600 miles along the rim of Mare Imbrium with peaks rising up to 3 miles \u2014 raised in mere minutes by the colossal impact that carved the basin. Apollo 15 landed at their foot in 1971 and drove the first lunar rover along nearby Hadley Rille.'},
+  {n:'Montes Apenninus',lon:-3,lat:20,t:'crater',range:1,d:'The Moon\u2019s grandest mountain range, curving some 370 miles along the rim of Mare Imbrium with peaks rising up to 3 miles \u2014 raised in mere minutes by the colossal impact that carved the basin. Apollo 15 landed at their foot in 1971 and drove the first lunar rover along nearby Hadley Rille.'},
   // ── apollo ──
   {n:'Apollo 11',lon:23.5,lat:0.7,t:'apollo',d:'The first crewed landing. On 20 July 1969 Neil Armstrong and Buzz Aldrin guided the lunar module Eagle down onto Mare Tranquillitatis with only seconds of fuel to spare, while Michael Collins kept watch in orbit above. They spent about two and a half hours outside \u2014 planting a flag, gathering some 48 pounds of rock and soil, and leaving a plaque reading \u201CWe came in peace for all mankind.\u201D'},
+  {n:'Apollo 12',lon:-23.4,lat:-3.0,t:'apollo',d:'November 1969 \u2014 the pinpoint landing. Pete Conrad and Alan Bean set the lunar module Intrepid down in the Ocean of Storms within walking distance of Surveyor 3, a robotic lander that had been sitting there since 1967, and brought pieces of it home for study. Richard Gordon orbited overhead.'},
+  {n:'Apollo 14',lon:-17.5,lat:-3.6,t:'apollo',ls:'r',d:'February 1971 \u2014 Alan Shepard and Edgar Mitchell explored the hilly Fra Mauro region, hauling their tools in a hand cart and sampling debris thrown out by the giant Imbrium impact. Before leaving, Shepard hit two golf balls across the lunar surface.'},
   {n:'Apollo 15',lon:3.6,lat:26.1,t:'apollo',d:'July 1971 \u2014 the first mission built for deep science, and the first to carry the lunar rover. David Scott and James Irwin spent three days at the foot of the Apennine Mountains, exploring the winding canyon of Hadley Rille and collecting the \u201CGenesis Rock,\u201D a fragment of the Moon\u2019s original ancient crust. Scott famously dropped a hammer and a feather together on camera to show they fall at the same rate in the airless vacuum.'},
-  {n:'Apollo 17',lon:30.8,lat:20.2,t:'apollo',d:'December 1972 \u2014 the last time humans walked on the Moon. Harrison Schmitt, the only trained geologist to make the trip, and Eugene Cernan spent three days in the Taurus\u2013Littrow valley, where they discovered orange soil: tiny glass beads forged in an explosive volcanic fire-fountain billions of years ago. Cernan\u2019s were the last bootprints left in the lunar dust.'},
+  {n:'Apollo 16',lon:15.5,lat:-9.0,t:'apollo',ls:'l',d:'April 1972 \u2014 the only landing in the Moon\u2019s bright central highlands. John Young and Charles Duke spent three days in the Descartes region, driving the rover across ancient cratered terrain. The rocks they collected turned out to be impact-shattered breccias rather than the volcanic rock geologists had expected.'},
+  {n:'Apollo 17',lon:30.8,lat:20.2,t:'apollo',d:'December 1972 \u2014 the last time humans walked on the Moon. Harrison Schmitt, the only professional geologist to make the trip, and Eugene Cernan spent three days in the Taurus\u2013Littrow valley, where they discovered orange soil: tiny glass beads forged in an explosive volcanic fire-fountain billions of years ago. Cernan\u2019s were the last bootprints left in the lunar dust.'},
 ];
 
 // ════════════════  4 · ASTRONOMY & PROJECTION  ════════════════
 // Moon phase: illumination 0-1, waxing flag, and a matching name.
 function moonPhase(date){
-  // Evaluate at evening observing time (~22:00 local) rather than midnight,
-  // so the phase shown matches what you actually see in the sky that night.
-  const evening = new Date(date.getTime() + 22*3600*1000);
-  const days=(evening-REF_NEW_MOON)/86400000;
-  const ph=((days%SYNODIC)+SYNODIC)%SYNODIC;
-  const frac=ph/SYNODIC;
-  const ill=0.5*(1-Math.cos(2*Math.PI*frac));
-  const waxing=frac<0.5;
-  let name;
-  if(ill<0.02)      name='New Moon';
-  else if(ill>0.98) name='Full Moon';
-  else if(ill<0.46) name=waxing?'Waxing Crescent':'Waning Crescent';
-  else if(ill<0.54) name=waxing?'First Quarter':'Last Quarter';
-  else              name=waxing?'Waxing Gibbous':'Waning Gibbous';
-  return {ill,frac,waxing,name};
+  // One answer app-wide: SunCalc at 11 PM local on this calendar day (see zcl-tz.js).
+  return ZCLTZ.moonTonight(date);
 }
 
 // Orthographic projection of selenographic (lon,lat) onto the photo,
@@ -528,7 +588,7 @@ function renderMap(){
     // label: place outward, but flip inward near the limb so it never clips
     const fs = sel?26:22;
     const approxW = f.n.length * fs * 0.56;
-    let left = p.x < CX;
+    let left = f.ls ? f.ls==='l' : p.x < CX;   // ls: fixed label side where neighbours would collide
     if(left && (p.x - r0 - 6 - approxW) < 8) left=false;
     if(!left && (p.x + r0 + 6 + approxW) > IMG_W-8) left=true;
     const lx = left ? p.x-r0-6 : p.x+r0+6;
@@ -555,14 +615,38 @@ function terminatorFeatures(date){
   }).filter(o=>o.vis>0.05 && o.d<0.12).sort((a,b)=>a.d-b.d).map(o=>o.f);
 }
 
-// Smart default: craters on, seas/apollo off — unless a given night's terminator
-// is heavy with seas (>=3) or includes an Apollo site, in which case surface those
-// too. Stops adjusting the moment the person toggles a category themselves.
+// Tonight's single headline target: the feature sitting most squarely on the
+// terminator (closest to grazing sun-angle, well clear of the limb). This is
+// what the rich card and the auto-category logic key off.
+function tonightTarget(date){
+  const mp=moonPhase(date);
+  if(mp.ill<=0.03) return null;
+  if(mp.ill>=0.97){
+    // no terminator — the rayed craters are the show
+    const tycho=FEATURES.find(f=>f.n==='Tycho');
+    return tycho||null;
+  }
+  const tf=terminatorFeatures(date);
+  return tf.length?tf[0]:null;
+}
+
+// Smart default keyed to tonight's headline target. When the target is a SEA,
+// hide craters so the dark plains read cleanly (and vice-versa) — this declutters
+// the busy nights. Apollo sites surface whenever one is on the terminator.
+// Falls back to the classic "craters on" view on deep-crescent / featureless
+// nights. Stops adjusting the moment the person toggles a category themselves.
 function autoCats(date){
   if(userSetCats) return;
   const tf=terminatorFeatures(date);
-  const seas=tf.filter(f=>f.t==='sea').length, apollo=tf.filter(f=>f.t==='apollo').length;
-  activeCats={ sea: seas>=3, crater:true, apollo: apollo>=1 };
+  const apollo=tf.filter(f=>f.t==='apollo').length>=1;
+  const tgt=tonightTarget(date);
+  if(tgt && tgt.t==='sea'){
+    activeCats={ sea:true, crater:false, apollo };      // sea night → hide craters
+  } else if(tgt && tgt.t==='crater'){
+    activeCats={ sea:false, crater:true, apollo };       // crater night → hide seas
+  } else {
+    activeCats={ sea:false, crater:true, apollo };       // classic default
+  }
   document.querySelectorAll('.zcl-m-chip').forEach(chip=>{
     const c=chip.getAttribute('data-cat');
     if(c==='sea'||c==='crater'||c==='apollo') chip.classList.toggle('on', activeCats[c]);
@@ -577,10 +661,611 @@ function fmtT(d){
 // Moonrise / moonset for a given night at Zion (via SunCalc)
 function moonRiseSet(date){
   if(typeof SunCalc==='undefined') return {rise:'\u2014',set:'\u2014'};
-  let mt; try{ mt=SunCalc.getMoonTimes(date,LAT,LNG) }catch(e){ return {rise:'\u2014',set:'\u2014'} }
+  let mt; try{ mt=ZCLTZ.moonTimes(date,LAT,LNG) }catch(e){ return {rise:'\u2014',set:'\u2014'} }
   if(mt.alwaysUp)   return {rise:'Up all night',set:'Up all night'};
   if(mt.alwaysDown) return {rise:'Below horizon',set:'Below horizon'};
   return {rise:mt.rise?fmtT(mt.rise):'\u2014', set:mt.set?fmtT(mt.set):'\u2014'};
+}
+
+// Is the moon above the horizon at any point before the 11 PM viewing cutoff?
+// (11 PM is when most casual stargazing / sessions wrap, matching the 9–11 PM
+// weather window on the forecast page.) True if it's already up at 11 PM local
+// or rises before then.
+function moonUpByCutoff(date){
+  if(typeof SunCalc==='undefined') return true;
+  const cutoff=new Date(date.getFullYear(),date.getMonth(),date.getDate(),23,0,0);
+  try{
+    const mt=ZCLTZ.moonTimes(date,LAT,LNG);
+    if(mt.alwaysUp) return true;
+    if(mt.alwaysDown) return false;
+    const pos=SunCalc.getMoonPosition(cutoff,LAT,LNG);
+    return (pos.altitude*180/Math.PI) > 0;   // above horizon at 11 PM
+  }catch(e){ return true }
+}
+
+// Rich, always-on card for tonight's headline target.
+
+// ── Sun/moon time helpers (in local minutes-past-midnight) for the cards ──
+// Minutes-past-midnight in the display timezone (Mountain Time), so the
+// alignment card's rise/set times match the forecast page exactly regardless of
+// the device's own timezone. (Raw getHours() drifts by the UTC offset.)
+function minOfDay(d){
+  if(!d||isNaN(d)) return null;
+  const p=new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'numeric',hour12:false}).formatToParts(d);
+  let h=+p.find(x=>x.type==='hour').value, m=+p.find(x=>x.type==='minute').value;
+  if(h===24) h=0;
+  return h*60+m;
+}
+function sunTimesFor(date){
+  if(typeof SunCalc==='undefined') return {rise:null,set:null};
+  try{ const s=SunCalc.getTimes(new Date(date.getFullYear(),date.getMonth(),date.getDate(),12),LAT,LNG);
+       return {rise:minOfDay(s.sunrise), set:minOfDay(s.sunset)}; }
+  catch(e){ return {rise:null,set:null}; }
+}
+function moonTimesFor(date){
+  if(typeof SunCalc==='undefined') return {rise:null,set:null};
+  try{ const m=ZCLTZ.moonTimes(new Date(date.getFullYear(),date.getMonth(),date.getDate()),LAT,LNG);
+       return {rise:m.rise?minOfDay(m.rise):null, set:m.set?minOfDay(m.set):null}; }
+  catch(e){ return {rise:null,set:null}; }
+}
+function hhmm(mins){
+  if(mins==null) return '\u2014';
+  let h=Math.floor(mins/60)%24, m=Math.round(mins%60), ap=h>=12?'PM':'AM';
+  let h12=h%12; if(h12===0) h12=12;
+  return h12+':'+String(m).padStart(2,'0')+' '+ap;
+}
+// Moon's declination and topocentric altitude at a given instant, computed from
+// Meeus low-precision terms — independent of SunCalc's altitude units (which
+// differ between builds). Returns {dec, alt} in degrees.
+function moonAltDec(date){
+  const D2R=Math.PI/180, R2D=180/Math.PI;
+  const JD=date/86400000+2440587.5, T=(JD-2451545)/36525, r=x=>x*D2R;
+  const Lp=218.3164477+481267.88123421*T;
+  const Dm=297.8501921+445267.1114034*T;
+  const M =357.5291092+35999.0502909*T;
+  const Mp=134.9633964+477198.8675055*T;
+  const F =93.2720950+483202.0175233*T;
+  const lon=Lp+6.288774*Math.sin(r(Mp))+1.274027*Math.sin(r(2*Dm-Mp))+0.658314*Math.sin(r(2*Dm))
+    +0.213618*Math.sin(r(2*Mp))-0.185116*Math.sin(r(M))-0.114332*Math.sin(r(2*F));
+  const lat=5.128122*Math.sin(r(F))+0.280602*Math.sin(r(Mp+F))+0.277693*Math.sin(r(Mp-F))
+    +0.173237*Math.sin(r(2*Dm-F))+0.055413*Math.sin(r(2*Dm+F-Mp));
+  const eps=r(23.439291-0.0130042*T), l=r(lon), b=r(lat);
+  const ra=Math.atan2(Math.sin(l)*Math.cos(eps)-Math.tan(b)*Math.sin(eps),Math.cos(l));
+  const dec=Math.asin(Math.sin(b)*Math.cos(eps)+Math.cos(b)*Math.sin(eps)*Math.sin(l));
+  let gmst=280.46061837+360.98564736629*(JD-2451545)+0.000387933*T*T; gmst=((gmst%360)+360)%360;
+  let H=(gmst+LNG)-ra*R2D; H=((H+180)%360+360)%360-180;
+  const alt=Math.asin(Math.sin(r(LAT))*Math.sin(dec)+Math.cos(r(LAT))*Math.cos(dec)*Math.cos(r(H)));
+  return {dec:dec*R2D, alt:alt*R2D};
+}
+// SunCalc builds differ in azimuth convention (radians measured from south in
+// the classic 1.9 build; degrees from north in some newer builds). Calibrate
+// once at runtime against two knowns — the sunset azimuth's magnitude reveals
+// the units (~2 rad vs ~115–300 deg), and the solar-noon azimuth reveals the
+// zero point (0 = south vs 180 = north) — then convert raw values to a true
+// compass bearing regardless of which build is loaded.
+let _azCal=null;
+function _azCalibrate(){
+  try{
+    const t=SunCalc.getTimes(new Date(),LAT,LNG);
+    const setAz=Math.abs(SunCalc.getPosition(t.sunset,LAT,LNG).azimuth);
+    const isDeg=setAz>7;
+    let noon=SunCalc.getPosition(t.solarNoon,LAT,LNG).azimuth;
+    if(!isDeg) noon*=180/Math.PI;
+    noon=((noon%360)+360)%360;
+    const fromSouth = (noon<90 || noon>270);   // ~0 → measured from south; ~180 → from north
+    _azCal={isDeg,fromSouth};
+  }catch(e){ _azCal={isDeg:false,fromSouth:true}; }   // classic SunCalc default
+}
+function azCompass(azRaw){
+  if(!_azCal) _azCalibrate();
+  let d=_azCal.isDeg ? azRaw : azRaw*180/Math.PI;
+  if(_azCal.fromSouth) d+=180;
+  d=((d%360)+360)%360;
+  // Simple cardinal: east (45–135), south (135–225), west (225–315), north otherwise
+  if(d>=45&&d<135) return 'east';
+  if(d>=135&&d<225) return 'south';
+  if(d>=225&&d<315) return 'west';
+  return 'north';
+}
+
+// ═══ CARD 1: the moon's cycles — where we are, and what it means ═══
+let standYearOff=0;   // standstill preview: years ahead/behind of the selected date
+function renderCycle(){
+  const el=$('zcl-m-cycle');
+  const mp=moonPhase(selDate);
+  // Phase (synodic) position: days since last new moon
+  const evening=new Date(selDate.getTime()+22*3600*1000);
+  // Counted from the real new moons either side of tonight. A fixed 29.53-day
+  // month drifts as much as 0.7 day from the true one, because the Moon's
+  // orbit is not a circle.
+  let ageDays, daysToFull, daysToNew, lunation=SYNODIC;
+  try{
+    const prevNew=Astronomy.SearchMoonPhase(0,evening,-35).date, nextNew=Astronomy.SearchMoonPhase(0,evening,35).date;
+    const nextFull=Astronomy.SearchMoonPhase(180,evening,35).date;
+    ageDays=(evening-prevNew)/86400000; daysToNew=(nextNew-evening)/86400000;
+    daysToFull=(nextFull-evening)/86400000; lunation=(nextNew-prevNew)/86400000;
+  }catch(e){
+    const days=((evening-REF_NEW_MOON)/86400000)%SYNODIC;
+    ageDays=(days%SYNODIC+SYNODIC)%SYNODIC;
+    daysToFull = ((SYNODIC/2 - ageDays)%SYNODIC + SYNODIC)%SYNODIC;
+    daysToNew  = ((SYNODIC - ageDays)%SYNODIC + SYNODIC)%SYNODIC;
+  }
+
+  // Major lunar standstill (18.6-yr nodal cycle). The last one peaked in early
+  // 2025; the next minor standstill falls in 2034 and the next major in 2043.
+  const NODAL_YEARS=18.613;
+  const LAST_MAJOR=2025.1;               // most recent major standstill epoch
+  const viewYear = selDate.getFullYear() + standYearOff;
+  const yr = viewYear + (selDate.getMonth()*30+selDate.getDate())/365;
+  let sinceMajor=(yr-LAST_MAJOR)%NODAL_YEARS; if(sinceMajor<0) sinceMajor+=NODAL_YEARS;
+  const nodalFrac=sinceMajor/NODAL_YEARS;            // 0 = major standstill, .5 = minor
+  const swing = Math.abs(Math.cos(Math.PI*nodalFrac)); // 1 at major, 0 at minor
+  const nextMinorYr = Math.floor(LAST_MAJOR+NODAL_YEARS/2);
+  const nextMajorYr = Math.floor(LAST_MAJOR+NODAL_YEARS);
+  const swingWord = swing>0.85?'near its maximum': swing>0.5?'still wide': swing>0.25?'moderate':'near its minimum';
+
+  const phaseFillPct=(ageDays/lunation*100).toFixed(1);
+  const nodalFillPct=(nodalFrac*100).toFixed(1);
+
+  // Small illustrative SVGs — a strip of phase discs (current age ringed in
+  // gold) and a horizon diagram of the standstill swing.
+  const phasePath=(f,cx,cy,r)=>{ // f: 0=new … 0.5=full … 1=new
+    const k=Math.cos(2*Math.PI*f);           // terminator ellipse ratio
+    const rx=Math.abs(k)*r;
+    if(f<=0.001||f>=0.999) return '';        // new: nothing lit
+    if(Math.abs(f-0.5)<0.001)                // full: whole disc
+      return 'M '+cx+' '+(cy-r)+' A '+r+' '+r+' 0 1 1 '+cx+' '+(cy+r)+' A '+r+' '+r+' 0 1 1 '+cx+' '+(cy-r)+' Z';
+    const waxing=f<0.5;
+    const outer='A '+r+' '+r+' 0 0 '+(waxing?1:0)+' ';
+    const inner='A '+rx.toFixed(2)+' '+r+' 0 0 '+((waxing? (f<0.25) : (f>0.75))?1:0)+' ';
+    return 'M '+cx+' '+(cy-r)+' '+outer+cx+' '+(cy+r)+' '+inner+cx+' '+(cy-r)+' Z';
+  };
+  let phaseStrip='';
+  const nP=7;
+  for(let j=0;j<nP;j++){
+    const f=j/(nP-1), cx=26+j*(468/(nP-1)), cy=26, r=13;
+    phaseStrip+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#241f33" stroke="rgba(203,168,90,.28)" stroke-width="1"/>'
+      +'<path d="'+phasePath(f,cx,cy,r)+'" fill="#E6CC85" opacity="0.92"/>';
+    // gold ring on the disc nearest tonight's age
+    if(Math.round(ageDays/SYNODIC*(nP-1))===j)
+      phaseStrip+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(r+4)+'" fill="none" stroke="#E8C24A" stroke-width="1.6"/>';
+  }
+  const phaseSVG='<svg viewBox="0 0 520 52" width="100%" style="display:block;margin:2px 0 10px" aria-hidden="true">'+phaseStrip+'</svg>';
+
+  // Standstill: horizon line with three moonrise arcs. Deliberately dramatic —
+  // at a major standstill the Moon's path is a towering dome spanning nearly
+  // the whole horizon; at a minor it's a low, narrow bump. The gold arc shows
+  // tonight's actual swing between those extremes.
+  const AY0=92;                                        // horizon y
+  const arcGeom=h=>{ const span=120+h*360; return {x0:260-span/2, x1:260+span/2, peak:AY0-(12+h*74)}; };
+  const arc=(h,op,dash,col,wid)=>{
+    const g=arcGeom(h);
+    return '<path d="M '+g.x0.toFixed(0)+' '+AY0+' Q 260 '+((2*g.peak-AY0)).toFixed(0)+' '+g.x1.toFixed(0)+' '+AY0
+      +'" fill="none" stroke="'+col+'" stroke-width="'+(wid||1.5)+'"'+(dash?' stroke-dasharray="4 4"':'')+' opacity="'+op+'"/>';
+  };
+  const ticks=(h,col,op)=>{ const g=arcGeom(h);
+    return '<line x1="'+g.x0.toFixed(0)+'" y1="'+(AY0-5)+'" x2="'+g.x0.toFixed(0)+'" y2="'+(AY0+5)+'" stroke="'+col+'" stroke-width="1.6" opacity="'+op+'"/>'
+         + '<line x1="'+g.x1.toFixed(0)+'" y1="'+(AY0-5)+'" x2="'+g.x1.toFixed(0)+'" y2="'+(AY0+5)+'" stroke="'+col+'" stroke-width="1.6" opacity="'+op+'"/>'; };
+  const nowH=swing;                                     // 1=major, 0=minor
+  const ng=arcGeom(nowH);
+  const majG=arcGeom(1), minG=arcGeom(0);
+  // moon dot rides the apex of tonight's arc (quadratic apex = midpoint of Q)
+  const moonX=260, moonY=(AY0+ (2*ng.peak-AY0))/2;
+  const standSVG='<svg viewBox="0 0 520 116" width="100%" style="display:block;margin:2px 0 10px" aria-hidden="true">'
+    +'<line x1="10" y1="'+AY0+'" x2="510" y2="'+AY0+'" stroke="rgba(203,168,90,.4)" stroke-width="1.2"/>'
+    +arc(1,0.30,true,'#C9BD97')+ticks(1,'#C9BD97',0.35)
+    +arc(0,0.30,true,'#C9BD97')+ticks(0,'#C9BD97',0.35)
+    +arc(nowH,0.95,false,'#E8C24A',2.2)+ticks(nowH,'#E8C24A',0.9)
+    +'<circle cx="'+moonX+'" cy="'+moonY.toFixed(0)+'" r="9" fill="#E6CC85" opacity="0.16"/>'
+    +'<circle cx="'+moonX+'" cy="'+moonY.toFixed(0)+'" r="4.5" fill="#E6CC85"/>'
+    +'<text x="16" y="'+(AY0+13)+'" fill="#8A6E32" font-size="9" font-family="Montserrat,sans-serif" letter-spacing=".08em">HORIZON</text>'
+    +'<text x="504" y="'+(AY0+13)+'" fill="#8A6E32" font-size="9" font-family="Montserrat,sans-serif" letter-spacing=".08em" text-anchor="end">NOT TO SCALE</text>'
+    +'<text x="260" y="14" fill="#9A8E70" font-size="9.5" font-family="Montserrat,sans-serif" text-anchor="middle">major \u2014 widest swing</text>'
+    +'<text x="260" y="'+(minG.peak-7)+'" fill="#9A8E70" font-size="9.5" font-family="Montserrat,sans-serif" text-anchor="middle">minor \u2014 narrowest swing</text>'
+    +'</svg>';
+
+  el.innerHTML =
+    '<div class="zcl-m-ih" style="font-size:21px;text-align:center;margin-bottom:14px">The Moon\u2019s Cycles</div>'
+    +phaseSVG
+    +'<div class="zcl-m-ibody">The face of the Moon is governed by two clocks. The quick one is the '
+      +'<b>phase cycle</b> \u2014 29.5 days from new to full and back, as the Sun\u2019s light sweeps across the disc. '
+      +'Tonight the Moon is <b>'+ageDays.toFixed(1)+' days</b> into that cycle ('+mp.name.toLowerCase()+'), '
+      +(daysToFull<daysToNew
+          ? 'with full moon in about <b>'+Math.round(daysToFull)+' day'+(Math.round(daysToFull)===1?'':'s')+'</b>.'
+          : 'with new moon in about <b>'+Math.round(daysToNew)+' day'+(Math.round(daysToNew)===1?'':'s')+'</b>.')
+    +'</div>'
+    +'<div class="zcl-m-track"><div class="fill" style="left:'+phaseFillPct+'%"></div></div>'
+    +'<div class="zcl-m-track-lab"><span>New</span><span>First Qtr</span><span>Full</span><span>Last Qtr</span><span>New</span></div>'
+    +'<div class="zcl-m-idivider"></div>'
+    +'<div class="zcl-m-yrnav">'
+      +'<button class="zcl-m-yrbtn" id="zcl-m-yrprev" aria-label="Previous year">&#8249;</button>'
+      +'<span class="zcl-m-yrlab" id="zcl-m-yrlab" title="Tap to return to now">'+viewYear+(standYearOff!==0?' \u00B7 tap for now':'')+'</span>'
+      +'<button class="zcl-m-yrbtn" id="zcl-m-yrnext" aria-label="Next year">&#8250;</button>'
+    +'</div>'
+    +standSVG
+    +'<div class="zcl-m-ibody">The slow clock is the <b>18.6-year standstill cycle</b>. The Moon\u2019s orbit is tilted, '
+      +'and the direction of that tilt slowly swings around \u2014 so the range of where the Moon rises and sets along the horizon '
+      +'gradually widens and narrows over almost two decades. At a <b>major standstill</b> the Moon swings farthest '
+      +'north and south (rising and setting at extreme points, riding very high or skimming very low); at a '
+      +'<b>minor standstill</b> the swing is at its narrowest. We passed a major standstill around <b>2025</b>, so the Moon\u2019s '
+      +'horizon swing is <b>'+swingWord+'</b> '+(standYearOff===0?'right now':'in <b>'+viewYear+'</b>')+' \u2014 dramatic moonrises against distant landmarks, and the '
+      +'winter full Moon climbing unusually high. It eases toward a minor standstill around <b>'+nextMinorYr+'</b>, '
+      +'then builds again to the next major standstill near <b>'+nextMajorYr+'</b>.'
+    +'</div>'
+    +'<div class="zcl-m-track"><div class="fill" style="left:'+nodalFillPct+'%"></div></div>'
+    +'<div class="zcl-m-track-lab"><span>Major \u201925</span><span>Minor \u2019'+String(nextMinorYr).slice(-2)+'</span><span>Major \u2019'+String(nextMajorYr).slice(-2)+'</span></div>';
+  $('zcl-m-yrprev').addEventListener('click',()=>{ if(standYearOff>-19){ standYearOff--; renderCycle(); } });
+  $('zcl-m-yrnext').addEventListener('click',()=>{ if(standYearOff< 19){ standYearOff++; renderCycle(); } });
+  $('zcl-m-yrlab').addEventListener('click',()=>{ if(standYearOff!==0){ standYearOff=0; renderCycle(); } });
+}
+
+// ═══ CARD 2: sun/moon rise-set alignment waveforms + photogenic windows ═══
+function renderAlign(){
+  const el=$('zcl-m-align');
+  const DAYS=30, W=520, H=196, padL=34, padR=6, top=10, bot=H-26;
+  const x=i=>padL+(i/(DAYS-1))*(W-padL-padR);
+  const y=mins=>top+(mins/1440)*(bot-top);   // 0=midnight top, 1440=next midnight bottom
+  const start=new Date(selDate.getFullYear(),selDate.getMonth(),selDate.getDate());
+
+  const sr=[],ss=[],mr=[],msArr=[],ills=[],waxs=[];
+  for(let i=0;i<DAYS;i++){
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const s=sunTimesFor(d), m=moonTimesFor(d);
+    sr.push(s.rise); ss.push(s.set); mr.push(m.rise); msArr.push(m.set);
+    const mpd=moonPhase(d);
+    ills.push(mpd.ill); waxs.push(!!mpd.waxing);
+  }
+  const NEAR=40, hits=[];
+  for(let i=0;i<DAYS;i++){
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+i);
+    const label=DOW[d.getDay()]+' '+MO[d.getMonth()]+' '+d.getDate();
+    const abs=Math.round(d.getTime()/86400000);
+    let mt=null; try{ mt=ZCLTZ.moonTimes(new Date(d.getFullYear(),d.getMonth(),d.getDate()),LAT,LNG) }catch(e){}
+    const dirAt=evt=>{ if(!evt) return null;
+      try{ return azCompass(SunCalc.getMoonPosition(evt,LAT,LNG).azimuth) }catch(e){ return null } };
+    const push=(type,mid)=>{
+      const evt = type.indexOf('moonrise')===0 ? (mt&&mt.rise) : (mt&&mt.set);
+      // record the two specific clock times that make up this alignment
+      const moonMin = type.indexOf('moonrise')===0 ? mr[i] : msArr[i];
+      const sunMin  = type.indexOf('sunset')>=0    ? ss[i] : sr[i];
+      const moonLbl = type.indexOf('moonrise')===0 ? 'moonrise' : 'moonset';
+      const sunLbl  = type.indexOf('sunset')>=0    ? 'sunset'   : 'sunrise';
+      // Moon altitude & declination AT the sun event — computed at the exact
+      // event Date (minute-of-day values are floored upstream, which was
+      // enough to nudge borderline altitudes across the gate).
+      let altAtSun=null, dec=null;
+      try{
+        const stt=SunCalc.getTimes(new Date(d.getFullYear(),d.getMonth(),d.getDate(),12),LAT,LNG);
+        const sevt = sunLbl==='sunset' ? stt.sunset : stt.sunrise;
+        if(sevt){ const ad=moonAltDec(sevt); altAtSun=ad.alt; dec=ad.dec; }
+      }catch(e){}
+      hits.push({i,abs,type,label,ill:ills[i],waxing:waxs[i],dir:dirAt(evt),mid,
+        moonMin,sunMin,moonLbl,sunLbl,altAtSun,dec,
+        gap:(moonMin!=null&&sunMin!=null)?Math.abs(moonMin-sunMin):9999});
+    };
+    if(ills[i]>=0.5){
+      if(mr[i]!=null && ss[i]!=null && Math.abs(mr[i]-ss[i])<=NEAR) push('moonrise-sunset',(mr[i]+ss[i])/2);
+      if(msArr[i]!=null && sr[i]!=null && Math.abs(msArr[i]-sr[i])<=NEAR) push('moonset-sunrise',(msArr[i]+sr[i])/2);
+    } else if(ills[i]>=0.01 && ills[i]<=0.18){
+      // Catch every thin crescent within a few hours of the sun event; the
+      // altitude filter downstream keeps only the genuinely low ones.
+      if(waxs[i] && msArr[i]!=null && ss[i]!=null){
+        const off=msArr[i]-ss[i];                       // young crescent sets AFTER the sun
+        if(off>=20 && off<=240) push('moonset-sunset',(msArr[i]+ss[i])/2);
+      }
+      if(!waxs[i] && mr[i]!=null && sr[i]!=null){
+        const off=sr[i]-mr[i];                          // old crescent rises BEFORE the sun
+        if(off>=20 && off<=240) push('moonrise-sunrise',(mr[i]+sr[i])/2);
+      }
+    }
+  }
+
+  // Narrative windows. Dedup is keyed to the ABSOLUTE date, so the list stays
+  // identical as you step day-to-day (the old window-relative key made a 5th
+  // row blink in and out on alternate days). Adjacent-day repeats of a type
+  // collapse to the first; a night with both bright events (rises at sunset
+  // AND sets at next dawn — the full moon) merges into a single row.
+  const brightTitle=ill=> ill>=0.9 ? 'Nearly full moon' : 'Bright gibbous moon';
+  hits.sort((a,b)=>a.i-b.i);
+  // Collapse adjacent-day repeats. For the two crescent types, a multi-day run
+  // keeps its BEST morning/evening — illumination nearest the classic thin
+  // crescent (~6%) — rather than simply the first day.
+  const lastAbs={}, lastIdx={}, picks=[];
+  const CRESC={'moonrise-sunrise':1,'moonset-sunset':1};
+  // Crescent quality gate: visible thinness AND genuinely low at the sun event.
+  // Real geometry: crescents under ~8° are usually <1% lit (invisible), so the
+  // honest "low crescent" window is 2–15° up at 1.2–12% illumination.
+  const CR_ALT_MIN=2, CR_ALT_MAX=15, CR_ILL_MIN=0.012, CR_ILL_MAX=0.12;
+  const crescPass=h=> h.altAtSun!=null && h.altAtSun>=CR_ALT_MIN && h.altAtSun<=CR_ALT_MAX
+                   && h.ill>=CR_ILL_MIN && h.ill<=CR_ILL_MAX;
+  // Fallback ranking for months with no strictly-qualifying crescent: prefer a
+  // genuinely visible one (\u22651.2% lit) near the ideal ~10\u00B0 altitude.
+  const crescScore=h=>(h.ill>=CR_ILL_MIN?0:50) + Math.abs((h.altAtSun==null?99:h.altAtSun)-10);
+  hits.forEach(h=>{
+    if(lastAbs[h.type]!=null && h.abs-lastAbs[h.type]<=1){
+      const k=lastIdx[h.type], cur=picks[k];
+      if(CRESC[h.type]){
+        // within a multi-day run keep the lowest QUALIFYING day; if neither
+        // qualifies, keep the better FALLBACK (visible beats invisible)
+        const swap = (crescPass(h)&&!crescPass(cur))
+                  || (crescPass(h)&&crescPass(cur)&&h.altAtSun<cur.altAtSun)
+                  || (!crescPass(h)&&!crescPass(cur)&&crescScore(h)<crescScore(cur));
+        if(swap) picks[k]=h;
+      } else {
+        // Bright run: consecutive nights all pair Moon and Sun at the horizon,
+        // but only one does it tightest. Keeping the first (as this did) threw
+        // away the actual best night \u2014 e.g. a 7-minute Aug 28 lost to a
+        // 34-minute Aug 27 simply for coming later in the run.
+        if(h.gap<cur.gap) picks[k]=h;
+      }
+      lastAbs[h.type]=h.abs;                          // extend the run
+      return;
+    }
+    lastAbs[h.type]=h.abs; lastIdx[h.type]=picks.length; picks.push(h);
+  });
+  // A run of near-full nights produces several qualifying pairings of the SAME
+  // kind (e.g. moonrise near sunset on the 27th AND the 29th), and the later
+  // ones are always worse — the moon rises further after the sun each night.
+  // Keep only the tightest of each kind, so the card shows one ideal "moon at
+  // sunset" and one ideal "moon at sunrise" instead of near-duplicates.
+  ['moonrise-sunset','moonset-sunrise'].forEach(tp=>{
+    const grp=picks.filter(h=>h.type===tp);
+    if(grp.length<=1) return;
+    const best=grp.slice().sort((a,b)=>a.gap-b.gap)[0];
+    for(let m=picks.length-1;m>=0;m--) if(picks[m].type===tp && picks[m]!==best) picks.splice(m,1);
+  });
+  const rowsList=[];
+  const tm=(lbl,mins)=> mins!=null ? lbl+' '+hhmm(mins) : '';
+  const pair=(a,b)=>[a,b].filter(Boolean).join(' \u00B7 ');
+  // altitude + declination line, shown cleanly
+  const altdec=h=>{
+    const bits=[];
+    if(h.altAtSun!=null){
+      const a=Math.round(h.altAtSun);
+      bits.push((a<=0?'on the horizon':a+'\u00B0 up')+' at '+h.sunLbl);
+    }
+    if(h.dec!=null) bits.push('dec '+(h.dec>=0?'+':'')+Math.round(h.dec)+'\u00B0');
+    return bits.join(' \u00B7 ');
+  };
+  for(let k=0;k<picks.length;k++){
+    const h=picks[k];
+    if(h.type==='moonrise-sunset'){
+      const j=picks.findIndex((q,qi)=>qi>k && q.type==='moonset-sunrise' && Math.abs(q.abs-h.abs)<=1);
+      if(j>=0){
+        // Both ends of ONE night: the Moon rises as the Sun sets, then sets as
+        // the Sun rises the next morning. Two events, two chart columns, two
+        // glyphs \u2014 so the row spans both dates and lists both pairings.
+        const q=picks[j]; picks.splice(j,1);
+        const e1=q.i<=h.i?q:h, e2=e1===h?q:h, qa=Math.round(q.altAtSun||0);   // in the order they happen
+        rowsList.push({ico:'\u25CF',good:h.ill>0.85,ill:h.ill,i:h.i,i2:q.i,hits:[h,q],
+          label:e1.label+(q.i!==h.i?' \u2013 '+e2.label.replace(/^\S+\s/,''):''),
+          title:brightTitle(h.ill),
+          times:pair(tm(e1.moonLbl,e1.moonMin),tm(e1.sunLbl,e1.sunMin))
+                +'<br>'+pair(tm(e2.moonLbl,e2.moonMin),tm(e2.sunLbl,e2.sunMin)),
+          info:altdec(h)+' \u00B7 '+(qa<=0?'on the horizon':qa+'\u00B0 up')+' at sunrise',
+          desc:(e1===h?'rises as the Sun sets, then sets as the Sun rises':'sets as the Sun rises, then rises as the Sun sets')+' \u2014 golden light at both ends'});
+        continue;
+      }
+      rowsList.push({ico:'\u25CF',good:h.ill>0.85,label:h.label,ill:h.ill,i:h.i,hits:[h],
+        title:brightTitle(h.ill),
+        times:pair(tm(h.moonLbl,h.moonMin),tm(h.sunLbl,h.sunMin)),
+        info:altdec(h),
+        desc:'rises in the '+(h.dir||'east')+' as the Sun sets'});
+    } else if(h.type==='moonset-sunrise'){
+      rowsList.push({ico:'\u25CF',good:h.ill>0.7,label:h.label,ill:h.ill,i:h.i,hits:[h],
+        title:brightTitle(h.ill),
+        times:pair(tm(h.moonLbl,h.moonMin),tm(h.sunLbl,h.sunMin)),
+        info:altdec(h),
+        desc:'sets in the '+(h.dir||'west')+' as the Sun rises'});
+    } else if(h.type==='moonrise-sunrise'){
+      rowsList.push({ico:'\u263E',good:true,cresc:'dawn',label:h.label,ill:h.ill,i:h.i,hits:[h],
+        altAtSun:h.altAtSun,
+        title:'Waning crescent',
+        times:pair(tm(h.moonLbl,h.moonMin),tm(h.sunLbl,h.sunMin)),
+        info:altdec(h),
+        desc:'thin crescent low in the '+(h.dir||'east')+' before sunrise'});
+    } else {
+      rowsList.push({ico:'\u263D',good:true,cresc:'dusk',label:h.label,ill:h.ill,i:h.i,hits:[h],
+        altAtSun:h.altAtSun,
+        title:'Waxing crescent',
+        times:pair(tm(h.moonLbl,h.moonMin),tm(h.sunLbl,h.sunMin)),
+        info:altdec(h),
+        desc:'thin crescent low in the '+(h.dir||'west')+' after sunset'});
+    }
+  }
+  // Option B — only genuinely low, visible crescents make the list (see
+  // crescPass above). Of qualifying days, prefer the lowest. Two max per side.
+  // DAWN EXCEPTION: every window keeps at least one waning crescent at sunrise;
+  // if none strictly qualifies, the best available is shown with an honest
+  // note about why it falls short (too high, or extremely thin).
+  const keepLowest=(cresc,n,guarantee)=>{
+    const grp=rowsList.filter(r=>r.cresc===cresc);
+    const drop=new Set();
+    grp.forEach(r=>{ if(!crescPass(r)) drop.add(r); });
+    let kept=grp.filter(r=>!drop.has(r)).sort((a,b)=>a.altAtSun-b.altAtSun);
+    if(guarantee && !kept.length && grp.length){
+      const fb=grp.slice().sort((a,b)=>crescScore(a)-crescScore(b))[0];
+      drop.delete(fb); kept=[fb];
+      if(fb.altAtSun!=null && fb.altAtSun>CR_ALT_MAX) fb.desc+=' \u2014 sits higher than ideal this month';
+      else if(fb.ill<CR_ILL_MIN) fb.desc+=' \u2014 extremely thin; binoculars help';
+    }
+    kept.slice(n).forEach(r=>drop.add(r));
+    for(let m=rowsList.length-1;m>=0;m--) if(drop.has(rowsList[m])) rowsList.splice(m,1);
+  };
+  keepLowest('dusk',2);
+  keepLowest('dawn',2,true);
+
+  // Guarantee both ideal bright pairings each window: a Full/nearly-full moon
+  // RISING AT SUNSET and one SETTING AT SUNRISE. The strict NEAR window can
+  // miss a month; when it does, fall back to the tightest pairing available and
+  // say so plainly.
+  const ensureBright=(type)=>{
+    const has=rowsList.some(r=>(r.hits||[]).some(x=>x.type===type && x.ill>=0.8));
+    if(has) return;
+    let bi=-1,bg=1e9;
+    for(let i=0;i<DAYS;i++){
+      const mm = type==='moonrise-sunset' ? mr[i] : msArr[i];
+      const ssun = type==='moonrise-sunset' ? ss[i] : sr[i];
+      if(mm==null||ssun==null||ills[i]<0.8) continue;
+      const g=Math.abs(mm-ssun);
+      if(g<bg){ bg=g; bi=i; }
+    }
+    if(bi<0) return;
+    const d=new Date(start.getFullYear(),start.getMonth(),start.getDate()+bi);
+    const label=DOW[d.getDay()]+' '+MO[d.getMonth()]+' '+d.getDate();
+    const isRise = type==='moonrise-sunset';
+    let dir=null, altAtSun=null, dec=null;
+    try{
+      const mt=ZCLTZ.moonTimes(new Date(d.getFullYear(),d.getMonth(),d.getDate()),LAT,LNG);
+      const evt = isRise ? (mt&&mt.rise) : (mt&&mt.set);
+      if(evt) dir=azCompass(SunCalc.getMoonPosition(evt,LAT,LNG).azimuth);
+      const stt=SunCalc.getTimes(new Date(d.getFullYear(),d.getMonth(),d.getDate(),12),LAT,LNG);
+      const sevt = isRise ? stt.sunset : stt.sunrise;
+      if(sevt){ const ad=moonAltDec(sevt); altAtSun=ad.alt; dec=ad.dec; }
+    }catch(e){}
+    const h={i:bi,type,label,ill:ills[bi],dir,
+      moonMin:isRise?mr[bi]:msArr[bi], sunMin:isRise?ss[bi]:sr[bi],
+      moonLbl:isRise?'moonrise':'moonset', sunLbl:isRise?'sunset':'sunrise',
+      altAtSun,dec,gap:bg,abs:Math.round(d.getTime()/86400000),
+      waxing:waxs[bi], mid:((isRise?mr[bi]:msArr[bi])+(isRise?ss[bi]:sr[bi]))/2};
+    hits.push(h);
+    rowsList.push({ico:'\u25CF',good:h.ill>0.7,label:h.label,ill:h.ill,i:h.i,hits:[h],
+      title:brightTitle(h.ill),
+      times:pair(tm(h.moonLbl,h.moonMin),tm(h.sunLbl,h.sunMin)),
+      info:altdec(h),
+      desc:(isRise?'rises in the '+(h.dir||'east')+' as the Sun sets'
+                  :'sets in the '+(h.dir||'west')+' as the Sun rises')
+           +(bg>NEAR?' \u2014 closest pairing this month':'')});
+  };
+  ensureBright('moonrise-sunset');
+  ensureBright('moonset-sunrise');
+  rowsList.sort((a,b)=>a.i-b.i);
+
+  // Final displayed set (≤5), soonest first.
+  const show=rowsList.slice(0,5);
+  // Chart highlights exactly the EVENTS we list, so illustration and list agree.
+  // A "both ends" row contributes two events on two adjacent columns.
+  const keptHits=[];
+  show.forEach(r=>{ (r.hits||[]).forEach(x=>{ if(keptHits.indexOf(x)<0) keptHits.push(x) }) });
+  const keptDays=new Set(keptHits.map(x=>x.i));
+
+  // ── Chart · "Sky Bands" ────────────────────────────────────────
+  // Each column is one night (midnight→midnight). Warm band = daylight; the
+  // silver ribbon = when the Moon is up (brighter ribbon = fuller). Where the
+  // silver meets the daylight edge, Moon and Sun share the horizon.
+  const cw=(W-padL-padR)/DAYS;
+  function moonSegs(i){
+    const rise=mr[i], set=msArr[i];
+    if(rise==null && set==null) return ills[i]>0.5 ? [[0,1440]] : [];   // up all night near full
+    const s=[];
+    if(rise!=null && set!=null){ set>rise ? s.push([rise,set]) : (s.push([0,set]),s.push([rise,1440])); }
+    else if(rise!=null) s.push([rise,1440]);
+    else if(set!=null)  s.push([0,set]);
+    return s;
+  }
+  let cols='';
+  for(let i=0;i<DAYS;i++){
+    const cx=padL+i*cw;
+    if(sr[i]!=null && ss[i]!=null)
+      cols+='<rect x="'+(cx+0.5).toFixed(1)+'" y="'+y(sr[i]).toFixed(1)+'" width="'+(cw-1).toFixed(1)
+        +'" height="'+(y(ss[i])-y(sr[i])).toFixed(1)+'" fill="rgba(242,200,130,.30)"/>';
+    const op=(0.16+0.55*ills[i]).toFixed(2);
+    moonSegs(i).forEach(seg=>{
+      cols+='<rect x="'+(cx+cw*0.28).toFixed(1)+'" y="'+y(seg[0]).toFixed(1)+'" width="'+(cw*0.44).toFixed(1)
+        +'" height="'+Math.max(1.5,y(seg[1])-y(seg[0])).toFixed(1)+'" rx="1.4" fill="rgba(214,222,240,'+op+')"/>';
+    });
+  }
+  // Alignment-night highlight — gold dashed box faded on the QUIET side: an event
+  // sits at the daylight band's top (dawn/sunrise) or bottom (dusk/sunset); the
+  // side edges stay solid at that edge and dissolve toward the opposite,
+  // non-photogenic hours. Only the nights actually listed below get a box.
+  let boxes='', glyphs='', nums='';
+  // Group kept hits by night so a merged full-moon night (rise-at-sunset AND
+  // set-at-sunrise) draws ONE box, not two — matching its single listed row.
+  const byDay={};
+  keptHits.forEach(h=>{ (byDay[h.i]||(byDay[h.i]=[])).push(h); });
+  Object.keys(byDay).forEach(key=>{
+    const i=+key, group=byDay[i];
+    const cx=padL+i*cw, x0=cx+0.5, x1=cx+cw-0.5, y0=top, y1=bot;
+    const hasTop=group.some(h=>h.type==='moonset-sunrise'||h.type==='moonrise-sunrise');
+    const hasBot=group.some(h=>h.type==='moonrise-sunset'||h.type==='moonset-sunset');
+    const gid='zclmBox'+i;
+    if(hasTop && hasBot){
+      // both ends photogenic → solid box, all four edges
+      boxes+='<rect x="'+x0.toFixed(1)+'" y="'+y0+'" width="'+(x1-x0).toFixed(1)+'" height="'+(y1-y0)
+        +'" fill="none" stroke="#E8C24A" stroke-width="1.4" opacity="0.9"/>';
+    } else {
+      const atTop=hasTop, eventY=atTop?y0:y1, farY=atTop?y1:y0;
+      boxes+='<defs><linearGradient id="'+gid+'" x1="0" y1="'+eventY+'" x2="0" y2="'+farY+'" gradientUnits="userSpaceOnUse">'
+        +'<stop offset="0" stop-color="#E8C24A" stop-opacity="0.9"/>'
+        +'<stop offset="0.55" stop-color="#E8C24A" stop-opacity="0.4"/>'
+        +'<stop offset="1" stop-color="#E8C24A" stop-opacity="0"/></linearGradient></defs>'
+        +'<line x1="'+x0.toFixed(1)+'" y1="'+y0+'" x2="'+x0.toFixed(1)+'" y2="'+y1+'" stroke="url(#'+gid+')" stroke-width="1.4"/>'
+        +'<line x1="'+x1.toFixed(1)+'" y1="'+y0+'" x2="'+x1.toFixed(1)+'" y2="'+y1+'" stroke="url(#'+gid+')" stroke-width="1.4"/>'
+        +'<line x1="'+x0.toFixed(1)+'" y1="'+eventY+'" x2="'+x1.toFixed(1)+'" y2="'+eventY+'" stroke="#E8C24A" stroke-width="1.4" opacity="0.9"/>';
+    }
+    // A glyph at EVERY meeting time in this column \u2014 a night whose Moon both
+    // rises at sunset and sets at sunrise gets a disc at each end, not one.
+    // Bright/full moons get a noticeably larger disc than the crescent glyph.
+    const seen=[];
+    group.forEach(gh=>{
+      if(gh.mid==null) return;
+      if(seen.some(m=>Math.abs(m-gh.mid)<20)) return;    // don't stack duplicates
+      seen.push(gh.mid);
+      const isCresc=gh.ill<0.4;
+      const g=isCresc?(gh.waxing?'\u263D':'\u263E'):'\u25CF', gs=isCresc?12:15;
+      glyphs+='<text x="'+(cx+cw/2).toFixed(1)+'" y="'+(y(gh.mid)+(isCresc?3.5:5)).toFixed(1)+'" fill="#E8C24A" font-size="'+gs+'" text-anchor="middle">'+g+'</text>';
+    });
+    nums+='<text x="'+(cx+cw/2).toFixed(1)+'" y="'+(bot+13).toFixed(1)+'" fill="#E8C24A" font-size="9" text-anchor="middle" opacity="0.9">'+new Date(start.getFullYear(),start.getMonth(),start.getDate()+i).getDate()+'</text>';
+  });
+  // Left-axis gridlines at the window's AVERAGE sunrise and sunset, labelled
+  // with those clock times — more useful for a stargazer than fixed 6/12/18h.
+  let grid='';
+  const avg=arr=>{ let s=0,n=0; arr.forEach(v=>{ if(v!=null){s+=v;n++;} }); return n?s/n:null; };
+  const avgSr=avg(sr), avgSs=avg(ss);
+  // keep noon as a faint unlabelled midline for orientation
+  grid+='<line x1="'+padL+'" y1="'+y(720).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(720).toFixed(1)+'" stroke="rgba(203,168,90,.06)" stroke-width="1"/>';
+  [ [avgSr,'\u2600 '+(avgSr!=null?hhmm(avgSr):''),'#E8B863'], [avgSs,'\u2600 '+(avgSs!=null?hhmm(avgSs):''),'#E8A24A'] ].forEach(([mm,lab,col])=>{
+    if(mm==null) return;
+    grid+='<line x1="'+padL+'" y1="'+y(mm).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(mm).toFixed(1)+'" stroke="rgba(203,168,90,.14)" stroke-width="1" stroke-dasharray="1 0"/>'
+      +'<text x="2" y="'+(y(mm)+3).toFixed(1)+'" fill="'+col+'" font-size="8.5" text-anchor="start">'+lab+'</text>';
+  });
+  const todayLine='<line x1="'+(padL+cw/2).toFixed(1)+'" y1="'+top+'" x2="'+(padL+cw/2).toFixed(1)+'" y2="'+bot+'" stroke="#F2E4BE" stroke-width="1" opacity="0.28"/>';
+  const svg='<svg class="zcl-m-chart" viewBox="0 0 '+W+' '+H+'" preserveAspectRatio="none" aria-hidden="true">'
+    +grid+cols+todayLine+boxes+glyphs+nums+'</svg>';
+  let rows='';
+  show.forEach(r=>{
+    const tline = r.times ? '<div class="zcl-m-rtime">'+r.times+'</div>' : '';
+    const iline = r.info  ? '<div class="zcl-m-rinfo">'+r.info+'</div>' : '';
+    rows+='<div class="zcl-m-align-row"><span class="ico'+(r.good?' zcl-m-hot':'')+'">'+r.ico+'</span>'
+      +'<span class="zcl-m-rtext"><b'+(r.good?' class="zcl-m-hot"':'')+'>'+r.label+' \u2014 '+r.title+'</b>'
+      +'<div class="zcl-m-rdesc">'+r.desc+' \u00B7 '+Math.round(r.ill*100)+'% lit</div>'
+      +tline+iline+'</span></div>';
+  });
+  if(!rows) rows='<div class="zcl-m-align-row"><span class="ico">\u2022</span><span class="zcl-m-rtext">No tight sun\u2013moon horizon alignments in the next 30 nights.</span></div>';
+
+  el.innerHTML =
+    '<div class="zcl-m-ih">Sun &amp; Moon Alignment</div>'
+    +'<div class="zcl-m-ibody">Each column is one day, midnight to midnight. The warm band is '
+      +'daylight; the silver ribbon shows when the Moon is above the horizon (brighter = fuller). '
+      +'Where the silver ribbon meets the edge of the daylight band, the Moon and Sun share the horizon '
+      +'\u2014 those nights are boxed in gold, with a <span class="zcl-m-hot">\u25CF</span> (bright moon) '
+      +'or <span class="zcl-m-hot">\u263E</span> (thin crescent) at the meeting time and the date beneath.</div>'
+    +svg
+    +'<div class="zcl-m-legend">'
+      +'<span><i style="background:rgba(242,200,130,.5)"></i>Daylight</span>'
+      +'<span><i style="background:rgba(214,222,240,.6)"></i>Moon up</span>'
+      +'<span><i style="background:#E8C24A"></i>Alignment night</span>'
+    +'</div>'
+    +'<div class="zcl-m-align-rows">'+rows+'</div>'
+    +'<div class="zcl-m-daynav zcl-m-daynav-inline">'
+      +'<button class="zcl-m-daybtn" id="zcl-m-prev2" aria-label="Previous night">&#8249;</button>'
+      +'<span class="zcl-m-navlab">Browse<br>nights</span>'
+      +'<button class="zcl-m-daybtn" id="zcl-m-next2" aria-label="Next night">&#8250;</button>'
+    +'</div>';
+  // re-bound each render (innerHTML recreates the buttons)
+  $('zcl-m-prev2').onclick=()=>stepDay(-1,'zcl-m-prev2');
+  $('zcl-m-next2').onclick=()=>stepDay(1,'zcl-m-next2');
 }
 
 // phase readout + terminator feature list
@@ -608,24 +1293,87 @@ function renderReadout(){
 
 function renderDetail(){
   const det=$('zcl-m-detail');
-  if(selFeature===null){ det.className='zcl-m-detail'; det.innerHTML=''; return }
-  const f=FEATURES[selFeature];
-  const hemiNS=f.lat>=0?'N':'S', hemiEW=f.lon>=0?'E':'W';
   const mp=moonPhase(selDate);
-  const S=sunDir(mp.ill,mp.waxing);
-  const v=[Math.cos(f.lat*D2R)*Math.sin(f.lon*D2R),Math.sin(f.lat*D2R),Math.cos(f.lat*D2R)*Math.cos(f.lon*D2R)];
-  const lit=dot(v,S);
-  let litTxt='', litCol='#8A7C5C';
-  if(mp.ill>0.03&&mp.ill<0.97){
-    if(Math.abs(lit)<0.12){litTxt='On the terminator tonight \u2014 prime viewing, long shadows.';litCol='#E8C24A'}
-    else if(lit>0){litTxt='In sunlight tonight.';litCol='#C9BD97'}
-    else{litTxt='In lunar night tonight \u2014 wait for the terminator to reach it.';litCol='#7A8AA0'}
+
+  if(selFeature!==null){
+    // ── Clicked feature detail ──
+    const f=FEATURES[selFeature];
+    const hemiNS=f.lat>=0?'N':'S', hemiEW=f.lon>=0?'E':'W';
+    const S=sunDir(mp.ill,mp.waxing);
+    const v=[Math.cos(f.lat*D2R)*Math.sin(f.lon*D2R),Math.sin(f.lat*D2R),Math.cos(f.lat*D2R)*Math.cos(f.lon*D2R)];
+    const lit=dot(v,S);
+    let litTxt='', litCol='#8A7C5C';
+    if(mp.ill>0.03&&mp.ill<0.97){
+      if(Math.abs(lit)<0.12){litTxt='Near the terminator tonight \u2014 prime viewing, long shadows.';litCol='#E8C24A'}
+      else if(lit>0){litTxt='In sunlight tonight.';litCol='#C9BD97'}
+      else{litTxt=mp.waxing?'In lunar night tonight \u2014 sunrise has not reached it yet.':'In lunar night tonight \u2014 the Sun has already set here.';litCol='#7A8AA0'}
+    }
+    det.innerHTML='<div class="zcl-m-dtype">'+CATNAME[f.t]+'</div>'
+      +'<div class="zcl-m-dname"><i style="background:'+CATCOL[f.t]+'"></i>'+f.n+'</div>'
+      +'<div class="zcl-m-dbody">'+f.d+'</div>'
+      +'<div class="zcl-m-dcoord">Selenographic '+Math.abs(f.lat)+'\u00B0 '+hemiNS+', '+Math.abs(f.lon)+'\u00B0 '+hemiEW+'</div>'
+      +(litTxt?'<div class="zcl-m-dlit" style="color:'+litCol+'">'+litTxt+'</div>':'')
+      +((f.n==='Apollo 15'||f.n==='Apollo 17')?'<a class="zcl-m-3d" href="spacecraft?m=lrv">See the Lunar Rover in 3D \u203A</a>':'');
+    det.className='zcl-m-detail open';
+    return;
   }
-  det.innerHTML='<div class="zcl-m-dtype">'+CATNAME[f.t]+'</div>'
-    +'<div class="zcl-m-dname"><i style="background:'+CATCOL[f.t]+'"></i>'+f.n+'</div>'
-    +'<div class="zcl-m-dbody">'+f.d+'</div>'
-    +'<div class="zcl-m-dcoord">Selenographic '+Math.abs(f.lat)+'\u00B0 '+hemiNS+', '+Math.abs(f.lon)+'\u00B0 '+hemiEW+'</div>'
-    +(litTxt?'<div class="zcl-m-dlit" style="color:'+litCol+'">'+litTxt+'</div>':'');
+
+  // ── Default: Tonight's target (shown until a feature is tapped) ──
+  const tgt=tonightTarget(selDate);
+  if(!tgt){
+    if(mp.ill<=0.03){
+      det.innerHTML='<div class="zcl-m-tk"><i style="background:#6E6450"></i>Tonight \u00B7 New Moon</div>'
+        +'<div class="zcl-m-tname">The near side is dark</div>'
+        +'<div class="zcl-m-tbody">No sunlit detail on the disc tonight \u2014 the best of the month for faint deep-sky objects. The waxing crescent returns in a couple of nights, bringing the eastern seas and craters into low-sun relief.</div>';
+      det.className='zcl-m-detail open';
+    } else { det.className='zcl-m-detail'; det.innerHTML=''; }
+    return;
+  }
+
+  const kindTxt = tgt.bay ? 'Tonight\u2019s Target \u00B7 Lunar Bay'
+                : tgt.range ? 'Tonight\u2019s Target \u00B7 Mountain Range'
+                : tgt.t==='sea' ? 'Tonight\u2019s Target \u00B7 Lunar Sea'
+                : tgt.t==='apollo' ? 'Tonight\u2019s Target \u00B7 Apollo Site'
+                : 'Tonight\u2019s Target \u00B7 Crater';
+  const hemiNS=tgt.lat>=0?'N':'S', hemiEW=tgt.lon>=0?'E':'W';
+
+  const S=sunDir(mp.ill,mp.waxing);
+  const v=[Math.cos(tgt.lat*D2R)*Math.sin(tgt.lon*D2R),Math.sin(tgt.lat*D2R),Math.cos(tgt.lat*D2R)*Math.cos(tgt.lon*D2R)];
+  const lit=dot(v,S);
+  let why, whyGlow=false;
+  if(mp.ill>=0.97){ why='At full moon there are no shadows \u2014 its bright ray system is what stands out now.'; }
+  else if(Math.abs(lit)<0.12){ why='Sitting close to tonight\u2019s terminator \u2014 the low sun throws its longest shadows, the sharpest relief of the whole month for this feature.'; whyGlow=true; }
+  else if(lit>0){ why='Fully sunlit tonight \u2014 visible, though the flatter light softens its relief. Best a few nights either side, on the terminator.'; }
+  else { why=mp.waxing?'Still in lunar night \u2014 the sunrise line reaches it over the coming nights.':'Already in lunar night \u2014 the sunset line has passed it. Catch it earlier in the cycle next month.'; }
+
+  const ewSide = tgt.lon>=25?'eastern' : tgt.lon<=-25?'western' : 'central';
+  const nsSide = tgt.lat>=25?'northern' : tgt.lat<=-25?'southern' : 'equatorial';
+  const where='In the '+nsSide+' '+ewSide+' quadrant of the disc ('+Math.abs(tgt.lat)+'\u00B0 '+hemiNS+', '+Math.abs(tgt.lon)+'\u00B0 '+hemiEW+').';
+
+  const scope = tgt.range
+    ? 'Any small scope shows the peaks; in low sun they throw long, spire-like shadows across Mare Imbrium.'
+    : tgt.small
+    ? 'Binoculars show its shape and shoreline; a small scope reveals wrinkle ridges in low sun.'
+    : tgt.t==='sea'
+    ? 'Naked eye as a dark patch; binoculars show its shape and shoreline; a small scope reveals wrinkle ridges in low sun.'
+    : tgt.t==='apollo'
+    ? 'The landing site itself is far too small to see, but the surrounding terrain shows well in any small scope.'
+    : 'A 60\u2013100 mm (2.4\u20134 inch) scope at medium-to-high power shows the walls, floor, and any central peak; steadier air helps.';
+
+  const comp=terminatorFeatures(selDate).filter(f=>f.n!==tgt.n).slice(0,4).map(f=>f.n);
+
+  let html='<div class="zcl-m-tk"><i style="background:'+CATCOL[tgt.t]+'"></i>'+kindTxt+'</div>'
+    +'<div class="zcl-m-tname">'+tgt.n+'</div>'
+    +'<div class="zcl-m-tbody">'+tgt.d+'</div>'
+    +'<div class="zcl-m-trows">'
+    +'<div class="zcl-m-trow'+(whyGlow?' zcl-m-tglow':'')+'"><span class="zcl-m-tico">\u25D0</span><span><b>Why tonight:</b> '+why+'</span></div>'
+    +'<div class="zcl-m-trow"><span class="zcl-m-tico">\u25CE</span><span><b>Where to look:</b> '+where+'</span></div>'
+    +'<div class="zcl-m-trow"><span class="zcl-m-tico">\u2732</span><span><b>Through the eyepiece:</b> '+scope+'</span></div>'
+    +'</div>';
+  if(comp.length){
+    html+='<div class="zcl-m-tcompanion">Also on the terminator tonight: <b>'+comp.join('</b>, <b>')+'</b>. Tap any label on the map to read more.</div>';
+  }
+  det.innerHTML=html;
   det.className='zcl-m-detail open';
 }
 
@@ -635,7 +1383,7 @@ function renderStripSel(){
   });
 }
 
-function renderAll(){ autoCats(selDate); renderStripSel(); renderMap(); renderReadout(); renderDetail() }
+function renderAll(){ autoCats(selDate); renderStripSel(); renderMap(); renderCycle(); renderAlign(); renderReadout(); renderDetail() }
 
 // ════════════════════════  7 · INIT  ════════════════════════
 $('zcl-m-chips').addEventListener('click',e=>{
@@ -646,12 +1394,44 @@ $('zcl-m-chips').addEventListener('click',e=>{
         if(selFeature!==null && !activeCats[FEATURES[selFeature].t]){selFeature=null} }
   renderMap(); renderReadout(); renderDetail();
 });
-function stepDay(delta){
+// ── Anchor-stable day stepping ──────────────────────────────────
+// Re-rendering changes card heights night-to-night (target text, alignment
+// rows), which used to shift the page under the pointer on every step. We pin
+// an anchor's viewport position across the re-render: the alignment card is
+// pinned when its own stepper (or arrow keys with it in view) drives the step,
+// so the waveform redraws in place like an animation; otherwise the control
+// itself is the anchor.
+function _anchorFor(srcId){
+  if(srcId==='zcl-m-prev2'||srcId==='zcl-m-next2') return 'zcl-m-align';
+  if(srcId) return srcId;
+  // Keyboard steps: pin whichever region is more PROMINENT in the viewport —
+  // the hero moon + calendar, or the waveform card — measured by visible area,
+  // so whatever the person is actually looking at never moves. Pinning the
+  // calendar (whose overhead content is static) also yields zero scroll
+  // corrections, keeping the hero image perfectly still during rapid stepping.
+  const vh=window.innerHeight||800;
+  const vis=el=>{ if(!el) return 0; const r=el.getBoundingClientRect();
+    return Math.max(0, Math.min(r.bottom,vh)-Math.max(r.top,0)); };
+  const hero=vis(document.querySelector('.zcl-m-mapcard'))+vis(document.querySelector('.zcl-m-readout'));
+  const wave=vis($('zcl-m-align'));
+  return wave>hero ? 'zcl-m-align' : 'zcl-m-prev';
+}
+function stepDay(delta, srcId){
+  const aid=_anchorFor(srcId);
+  const a=$(aid);
+  const beforeY = a ? a.getBoundingClientRect().top : null;
   selDate=new Date(selDate.getFullYear(),selDate.getMonth(),selDate.getDate()+delta);
   selFeature=null; renderAll();
+  if(beforeY!=null){
+    const el=$(aid);                     // prev2/next2 are recreated each render
+    if(el){
+      const dy=el.getBoundingClientRect().top-beforeY;
+      if(dy) window.scrollBy(0,dy);
+    }
+  }
 }
-$('zcl-m-prev').addEventListener('click',()=>stepDay(-1));
-$('zcl-m-next').addEventListener('click',()=>stepDay(1));
+$('zcl-m-prev').addEventListener('click',()=>stepDay(-1,'zcl-m-prev'));
+$('zcl-m-next').addEventListener('click',()=>stepDay(1,'zcl-m-next'));
 document.addEventListener('keydown',e=>{
   const ae=document.activeElement; if(ae&&ae.tagName==='INPUT') return;
   if(e.key==='ArrowRight'){stepDay(1)} else if(e.key==='ArrowLeft'){stepDay(-1)}
@@ -669,7 +1449,7 @@ renderAll();
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
@@ -679,6 +1459,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 <script>
 (function(){
@@ -700,6 +1495,18 @@ if('serviceWorker' in navigator){
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>
@@ -765,6 +1572,5 @@ if('serviceWorker' in navigator){
   });
 })();
 </script>
-
 </body>
 </html>

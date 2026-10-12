@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Imaging Session Log · Dark Sky Almanac</title>
+<meta name="description" content="A field notebook for every astrophotography shoot — target, gear, settings, conditions, and results, saved on your device.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Imaging Session Log · Dark Sky Almanac">
+<meta property="og:description" content="A field notebook for every astrophotography shoot — target, gear, settings, conditions, and results, saved on your device.">
+<meta property="og:image" content="social.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/session-log">
+<meta property="og:url" content="https://app.darkskyalmanac.com/session-log">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#141319;min-height:100dvh;font-family:'Montserrat',-apple-system,sans-serif;color:#E4D9B8}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);padding-bottom:40px;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+a{color:inherit}
+/* top nav */
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+/* page frame */
+.zcl-page{max-width:760px;margin:0 auto;padding:0 20px;position:relative}
+.zcl-stars{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.4;z-index:0}
+.zcl-page>*{position:relative;z-index:1}
+/* title banner */
+.zcl-titlebar{text-align:center;padding:26px 8px 14px}
+.zcl-kicker{font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#9A8A66;margin-bottom:9px}
+.zcl-maintitle{font-size:clamp(22px,5vw,30px);font-weight:600;letter-spacing:.05em;color:#F2E4BE;text-transform:uppercase;line-height:1.2}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:13px;margin:12px auto 10px;max-width:300px}
+.zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-rstar{width:15px;height:15px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-subtitle{font-size:13px;font-style:italic;color:#9A8E6E;max-width:500px;margin:0 auto;line-height:1.5}
+.zcl-back{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9A8A66;text-decoration:none;margin:6px 0 0}
+.zcl-back:hover{color:#CBA85A}
+.zcl-seclabel{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#CBA85A;
+  margin:22px 0 12px;padding-bottom:7px;border-bottom:1px solid rgba(203,168,90,.26)}
+
+.zcl-field{margin-bottom:13px}
+.zcl-flabel{font-size:10.5px;letter-spacing:.10em;text-transform:uppercase;color:#9A8A66;margin-bottom:5px}
+.zcl-row2{display:flex;gap:12px;flex-wrap:wrap}
+.zcl-row2 .zcl-field{flex:1 1 130px;min-width:0}
+input[type=text],input[type=number],input[type=date],textarea,select{width:100%;background:#0d0a18;border:1px solid rgba(203,168,90,.3);border-radius:7px;
+  color:#F2E4BE;font-size:14px;padding:9px 11px;outline:none;font-family:inherit;-webkit-appearance:none;appearance:none}
+textarea{resize:vertical;min-height:54px;line-height:1.5}
+input:focus,textarea:focus,select:focus{border-color:#CBA85A}
+select{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' fill='none' stroke='%23CBA85A' stroke-width='1.5'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 11px center;padding-right:30px}
+.zcl-btn{font-family:inherit;font-size:12.5px;font-weight:500;letter-spacing:.06em;cursor:pointer;border-radius:8px;padding:11px 20px;transition:all .15s}
+.zcl-btn.gold{color:#1a1922;background:#CBA85A;border:1px solid #CBA85A}
+.zcl-btn.gold:hover{background:#E6CC85}
+.zcl-btn.ghost{color:#CBA85A;background:none;border:1px solid rgba(203,168,90,.4)}
+.zcl-btn.ghost:hover{border-color:#CBA85A;background:rgba(203,168,90,.08)}
+.zcl-formactions{display:flex;gap:10px;margin-top:6px;flex-wrap:wrap}
+.zcl-entry{background:#0d0a18;border:1px solid rgba(203,168,90,.2);border-radius:10px;padding:15px 16px;margin-bottom:12px}
+.zcl-entry-top{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.zcl-entry-target{font-size:16px;font-weight:600;color:#F2E4BE}
+.zcl-entry-date{font-size:11px;color:#8A7C5C;letter-spacing:.04em;margin-top:2px}
+.zcl-entry-del{background:none;border:none;color:#6E6450;font-size:18px;cursor:pointer;padding:2px 4px;line-height:1}
+.zcl-entry-del:hover{color:#C66B3D}
+.zcl-entry-tags{display:flex;flex-wrap:wrap;gap:6px;margin-top:10px}
+.zcl-tag{font-size:10.5px;color:#C9BD97;background:rgba(203,168,90,.08);border:1px solid rgba(203,168,90,.18);border-radius:5px;padding:3px 8px}
+.zcl-entry-notes{font-size:12.5px;line-height:1.55;color:#9A8E6E;margin-top:10px;white-space:pre-wrap}
+.zcl-empty{text-align:center;color:#6E6450;font-size:13px;font-style:italic;padding:30px 10px;line-height:1.6}
+.zcl-count{font-size:11px;color:#8A7C5C;letter-spacing:.04em}
+.zcl-listbar{display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+.zcl-sort{display:flex;align-items:center;gap:6px}
+.zcl-sortlabel{font-size:10px;letter-spacing:.10em;text-transform:uppercase;color:#7E7257;margin-right:2px}
+.zcl-sortbtn{font-family:inherit;font-size:11px;letter-spacing:.05em;color:#9A8A66;background:rgba(203,168,90,.08);
+  border:1px solid rgba(203,168,90,.22);border-radius:13px;padding:5px 12px;cursor:pointer;transition:all .15s}
+.zcl-sortbtn:hover{border-color:#CBA85A;color:#E4D9B8}
+.zcl-sortbtn.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#F2E4BE}
+.zcl-group{margin-bottom:6px}
+.zcl-grouphd{display:flex;align-items:center;gap:9px;margin:16px 0 10px}
+.zcl-grouphd .t{font-size:12px;font-weight:600;letter-spacing:.10em;text-transform:uppercase;color:#CBA85A;white-space:nowrap}
+.zcl-grouphd .ln{flex:1;height:1px;background:linear-gradient(to right,rgba(203,168,90,.3),transparent)}
+.zcl-grouphd .ct{font-size:10px;color:#7E7257;letter-spacing:.04em}
+.zcl-foot{margin-top:18px;font-size:11px;line-height:1.6;color:#6E6450;text-align:center;padding-bottom:10px}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+/* Render native controls (select popups, spinners, scrollbars) in dark mode.
+   Without this iOS draws dropdown lists on white, leaving the cream option
+   text unreadable. Explicit option colours cover Android/desktop, where the
+   list IS styleable. */
+html,body{color-scheme:dark}
+select,option,optgroup{color-scheme:dark}
+select option,select optgroup{background:#0d0a18;color:#F2E4BE}
+select:focus option:checked{background:#CBA85A;color:#15121d}
+input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
+::selection{background:rgba(203,168,90,.3);color:#F2E4BE}
+/* fit */
+
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style></head>
+<body>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem active" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<svg class="zcl-stars"></svg>
+<div class="zcl-page">
+  <div class="zcl-titlebar">
+    <div class="zcl-kicker">Astrophotography</div>
+    <div class="zcl-maintitle">Session Log</div>
+    <div class="zcl-titlerule"><span class="zcl-rline"></span>
+      <svg class="zcl-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+      <span class="zcl-rline"></span></div>
+    <div class="zcl-subtitle">A field notebook for every shoot. Logged on this device — build your own record of what worked.</div>
+    <a class="zcl-back" href="photography">‹ All tools</a>
+  </div>
+
+  <div class="zcl-seclabel">New Entry</div>
+  <div class="zcl-row2">
+    <div class="zcl-field" style="flex:2 1 200px"><div class="zcl-flabel">Target</div><input type="text" id="zcl-f-target"></div>
+    <div class="zcl-field"><div class="zcl-flabel">Date</div><input type="date" id="zcl-f-date"></div>
+  </div>
+  <div class="zcl-row2">
+    <div class="zcl-field"><div class="zcl-flabel">Gear</div><input type="text" id="zcl-f-gear"></div>
+    <div class="zcl-field"><div class="zcl-flabel">Location · Bortle</div><input type="text" id="zcl-f-loc"></div>
+  </div>
+  <div class="zcl-row2">
+    <div class="zcl-field"><div class="zcl-flabel">Sub length</div><input type="text" id="zcl-f-sub"></div>
+    <div class="zcl-field"><div class="zcl-flabel"># Subs</div><input type="number" id="zcl-f-nsubs" min="0" step="1"></div>
+    <div class="zcl-field"><div class="zcl-flabel">Conditions</div>
+      <select id="zcl-f-cond"><option value="">—</option><option>Excellent</option><option>Good</option><option>Fair</option><option>Hazy / windy</option><option>Clouded out</option></select></div>
+  </div>
+  <div class="zcl-field"><div class="zcl-flabel">Notes</div><textarea id="zcl-f-notes" placeholder="Focus, framing, what to do differently next time…"></textarea></div>
+  <div class="zcl-formactions">
+    <button class="zcl-btn gold" id="zcl-save">Save entry</button>
+    <button class="zcl-btn ghost" id="zcl-clear">Clear</button>
+  </div>
+
+  <div class="zcl-seclabel">Logged Sessions</div>
+  <div class="zcl-listbar" id="zcl-listbar">
+    <div class="zcl-count" id="zcl-count"></div>
+    <div class="zcl-sort" id="zcl-sort">
+      <span class="zcl-sortlabel">Group by</span>
+      <button class="zcl-sortbtn on" data-sort="date">Date</button>
+      <button class="zcl-sortbtn" data-sort="target">Target</button>
+    </div>
+  </div>
+  <div id="zcl-entries"></div>
+
+  <div class="zcl-foot">Entries are saved only in this browser, on this device. They aren't uploaded anywhere.</div>
+</div>
+
+<script>(function(){var s='';for(var i=0;i<120;i++){s+='<circle cx="'+(Math.random()*100).toFixed(1)+'%" cy="'+(Math.random()*100).toFixed(1)+'%" r="'+(Math.random()*0.9+0.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*0.5+0.1).toFixed(2)+'"/>';}var el=document.querySelector('.zcl-stars');if(el)el.innerHTML=s;})();</script>
+<script>
+(function(){
+  "use strict";
+  var $=function(id){return document.getElementById(id);};
+  var KEY='zcl_session_log_v1';
+  function load(){try{return JSON.parse(localStorage.getItem(KEY))||[];}catch(e){return [];}}
+  function save(list){try{localStorage.setItem(KEY,JSON.stringify(list));}catch(e){}}
+  function esc(s){return String(s||'').replace(/[&<>"]/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function fmtDate(d){if(!d)return '';var p=d.split('-');if(p.length!==3)return d;var mo=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];return mo[(+p[1])-1]+' '+(+p[2])+', '+p[0];}
+
+  // default the date field to today
+  (function(){var t=new Date();var s=t.getFullYear()+'-'+String(t.getMonth()+1).padStart(2,'0')+'-'+String(t.getDate()).padStart(2,'0');$('zcl-f-date').value=s;})();
+
+  var sortMode='date';   // 'date' | 'target'
+
+  // Build a single entry card's HTML.
+  function entryCard(e){
+    var tags=[];
+    if(e.gear)tags.push(esc(e.gear));
+    if(e.loc)tags.push(esc(e.loc));
+    if(e.sub)tags.push(esc(e.sub));
+    if(e.nsubs)tags.push(esc(e.nsubs)+' subs');
+    if(e.cond)tags.push(esc(e.cond));
+    return '<div class="zcl-entry">'
+      +'<div class="zcl-entry-top"><div><div class="zcl-entry-target">'+(esc(e.target)||'Untitled session')+'</div>'
+      +'<div class="zcl-entry-date">'+esc(fmtDate(e.date))+'</div></div>'
+      +'<button class="zcl-entry-del" data-id="'+e.id+'" aria-label="Delete">\u00D7</button></div>'
+      +(tags.length?'<div class="zcl-entry-tags">'+tags.map(function(t){return '<span class="zcl-tag">'+t+'</span>';}).join('')+'</div>':'')
+      +(e.notes?'<div class="zcl-entry-notes">'+esc(e.notes)+'</div>':'')
+      +'</div>';
+  }
+  function groupHeader(title, count){
+    return '<div class="zcl-grouphd"><span class="t">'+esc(title)+'</span><span class="ln"></span>'
+      +'<span class="ct">'+count+' session'+(count>1?'s':'')+'</span></div>';
+  }
+
+  function render(){
+    var list=load();
+    var box=$('zcl-entries');
+    $('zcl-count').textContent=list.length?(list.length+' session'+(list.length>1?'s':'')+' logged'):'';
+    $('zcl-sort').style.display=list.length?'flex':'none';
+    if(!list.length){box.innerHTML='<div class="zcl-empty">No sessions logged yet.<br>Add your first shoot above \u2014 it\u2019ll be saved here on your device.</div>';return;}
+
+    // Build ordered groups.
+    var groups=[];                 // [{key, title, items:[]}]
+    var index={};
+    function bucket(key, title){
+      if(!(key in index)){ index[key]=groups.length; groups.push({key:key,title:title,items:[]}); }
+      return groups[index[key]];
+    }
+
+    if(sortMode==='target'){
+      // Alphabetical by target; sessions on the same target cluster together,
+      // newest first within each. Untitled entries fall to the end.
+      var byTarget=list.slice().sort(function(a,b){
+        var ta=(a.target||'').toLowerCase(), tb=(b.target||'').toLowerCase();
+        if(ta&&!tb)return -1; if(!ta&&tb)return 1;
+        if(ta<tb)return -1; if(ta>tb)return 1;
+        return (b.date||'').localeCompare(a.date||'');   // newer first within a target
+      });
+      for(var i=0;i<byTarget.length;i++){
+        var e=byTarget[i];
+        var title=e.target?e.target:'Untitled';
+        bucket(title.toLowerCase(), title).items.push(e);
+      }
+    } else {
+      // By date, newest day first; within a day, most-recently-added first.
+      var byDate=list.slice().sort(function(a,b){
+        var c=(b.date||'').localeCompare(a.date||'');
+        if(c!==0)return c;
+        return (b.id||0)-(a.id||0);
+      });
+      for(var j=0;j<byDate.length;j++){
+        var ee=byDate[j];
+        var key=ee.date||'nodate';
+        bucket(key, ee.date?fmtDate(ee.date):'No date').items.push(ee);
+      }
+    }
+
+    var h='';
+    for(var g=0;g<groups.length;g++){
+      h+='<div class="zcl-group">'+groupHeader(groups[g].title, groups[g].items.length);
+      for(var k=0;k<groups[g].items.length;k++){ h+=entryCard(groups[g].items[k]); }
+      h+='</div>';
+    }
+    box.innerHTML=h;
+    box.querySelectorAll('.zcl-entry-del').forEach(function(b){b.addEventListener('click',function(){
+      var id=b.getAttribute('data-id');var l=load().filter(function(x){return String(x.id)!==String(id);});save(l);render();
+    });});
+  }
+
+  // sort toggle
+  document.querySelectorAll('.zcl-sortbtn').forEach(function(b){
+    b.addEventListener('click',function(){
+      sortMode=b.getAttribute('data-sort');
+      document.querySelectorAll('.zcl-sortbtn').forEach(function(x){x.classList.toggle('on',x===b);});
+      render();
+    });
+  });
+
+  function clearForm(){['zcl-f-target','zcl-f-gear','zcl-f-loc','zcl-f-sub','zcl-f-nsubs','zcl-f-notes'].forEach(function(id){$(id).value='';});$('zcl-f-cond').value='';}
+
+  $('zcl-save').addEventListener('click',function(){
+    var target=$('zcl-f-target').value.trim();
+    var notes=$('zcl-f-notes').value.trim();
+    if(!target && !notes){ $('zcl-f-target').focus(); return; }
+    var entry={id:Date.now(),target:target,date:$('zcl-f-date').value,gear:$('zcl-f-gear').value.trim(),
+      loc:$('zcl-f-loc').value.trim(),sub:$('zcl-f-sub').value.trim(),nsubs:$('zcl-f-nsubs').value.trim(),
+      cond:$('zcl-f-cond').value,notes:notes};
+    var list=load();list.unshift(entry);save(list);clearForm();render();
+    window.scrollTo({top:0,behavior:'smooth'});
+  });
+  $('zcl-clear').addEventListener('click',clearForm);
+
+  render();
+})();
+</script>
+</body>
+</html>

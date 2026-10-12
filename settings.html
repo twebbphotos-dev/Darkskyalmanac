@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="Settings · Dark Sky Almanac">
 <meta property="og:description" content="Settings and calibration for the Dark Sky Almanac sky finder and display preferences.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/settings">
 <meta property="og:url" content="https://app.darkskyalmanac.com/settings">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -114,6 +114,22 @@ body.night-mode .pwa-nav{backdrop-filter:none;-webkit-backdrop-filter:none;backg
 .zcl-set-reset:active{background:rgba(203,168,90,.25)}
 
 .zcl-set-note{font-size:12px;color:#7A6E55;line-height:1.55;margin-top:10px}
+.zcl-loc-cur{font-size:14px;color:#CBA85A;font-weight:600;letter-spacing:.02em;margin-top:12px}
+.zcl-loc-curco{font-size:12.5px;color:#8A7C5C;margin-top:2px;font-variant-numeric:tabular-nums}
+.zcl-loc-grid{display:flex;gap:10px;margin-top:14px}
+.zcl-loc-field{flex:1;min-width:0}
+.zcl-loc-field label{font-size:10px;letter-spacing:.11em;text-transform:uppercase;color:#9A8A66;display:block;margin-bottom:5px}
+.zcl-loc-input{width:100%;background:#0a0712;border:1px solid rgba(203,168,90,.3);border-radius:7px;color:#F2E4BE;font-size:15px;font-weight:500;padding:10px 12px;font-family:inherit;outline:none;-webkit-appearance:none;appearance:none}
+.zcl-loc-input:focus{border-color:#CBA85A}
+.zcl-loc-select{-webkit-appearance:none;appearance:none;padding-right:30px;cursor:pointer;
+  background-image:url("data:image/svg+xml;charset=utf-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 10 6'%3E%3Cpath d='M1 1l4 4 4-4' fill='none' stroke='%23CBA85A' stroke-width='1.6' stroke-linecap='round'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 11px center;background-size:11px 7px}
+.zcl-loc-input::-webkit-outer-spin-button,.zcl-loc-input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.zcl-loc-gps{font-family:inherit;font-size:13px;font-weight:600;letter-spacing:.03em;color:#F2E4BE;background:rgba(203,168,90,.12);border:1px solid rgba(203,168,90,.4);border-radius:8px;padding:11px 14px;width:100%;margin-top:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px}
+.zcl-loc-gps:active{background:rgba(203,168,90,.22)}
+.zcl-loc-gps svg{width:15px;height:15px;flex-shrink:0}
+.zcl-loc-btns{display:flex;gap:10px;margin-top:14px;align-items:stretch}
+.zcl-loc-msg{font-size:12px;line-height:1.5;margin-top:11px;min-height:1.1em;color:#7A6E55}
 
 /* install & offline */
 .zcl-set-installbtn{font-family:inherit;font-size:14px;font-weight:600;letter-spacing:.03em;
@@ -165,6 +181,34 @@ body.embed .zcl-set-titlebar{padding-top:20px}
 body.embed .zcl-set-sub{display:none}
 body.embed.night-mode{filter:none;background:transparent !important}
 body.embed.night-mode #zcl-set-wrap{filter:none}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+
+/* Render native controls (select popups, spinners, scrollbars) in dark mode.
+   Without this iOS draws dropdown lists on white, leaving the cream option
+   text unreadable. Explicit option colours cover Android/desktop, where the
+   list IS styleable. */
+html,body{color-scheme:dark}
+select,option,optgroup{color-scheme:dark}
+select option,select optgroup{background:#0d0a18;color:#F2E4BE}
+select:focus option:checked{background:#CBA85A;color:#15121d}
+input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
+::selection{background:rgba(203,168,90,.3);color:#F2E4BE}
+/* fit */
+@media(max-width:640px){#zcl-set-wrap::after{inset:7px}.zcl-none-tl,.zcl-none-tr{top:7px}.zcl-none-bl,.zcl-none-br{bottom:7px}.zcl-none-tl,.zcl-none-bl{left:7px}.zcl-none-tr,.zcl-none-br{right:7px}}
+.zcl-loc-curco{margin-bottom:12px}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 </head>
 <body>
@@ -188,8 +232,51 @@ body.embed.night-mode #zcl-set-wrap{filter:none}
           <span class="zcl-set-offline-dot" id="zcl-set-offline-dot"></span>
           <span id="zcl-set-offline-txt">Checking offline status…</span>
         </div>
+        <div class="zcl-set-note" id="zcl-set-persist" style="margin-top:8px"></div>
         <button class="zcl-set-reset" id="zcl-set-recache" style="margin-top:12px">Download everything for offline</button>
-        <div class="zcl-set-note">"Download everything for offline" forces every page, map, and image into storage now, so you're covered even if you didn't visit them all first.</div>
+        <div class="zcl-set-note">"Download everything for offline" saves every page, map and image now, so you're covered even if you didn't visit them all first. It also saves the Star ID catalog (about 6.5 MB) and the 3D spacecraft models (about 20 MB), which are otherwise only saved once you open them.</div>
+      </div>
+    </div>
+
+    <!-- LOCATION -->
+    <div class="zcl-set-sec">
+      <div class="zcl-set-seclabel">Location</div>
+      <div class="zcl-set-card">
+        <div class="zcl-set-rowtitle">Your observing location</div>
+        <div class="zcl-set-rowdesc">Sets the latitude &amp; longitude used for rise/set, twilight, the moon, planets and deep-sky positions across Forecast, Objects, Finder, Meridian, and Sun &amp; Moon. The dark-sky maps are unaffected.</div>
+        <div class="zcl-loc-cur" id="zcl-loc-curname">Default location</div>
+        <div class="zcl-loc-curco" id="zcl-loc-curco">37.1986° N, 112.9869° W</div>
+        <div class="zcl-loc-field" style="margin-bottom:4px">
+          <label>Map locations</label>
+          <select class="zcl-loc-input zcl-loc-select" id="zcl-loc-preset">
+            <option value="">Choose a map location&hellip;</option>
+            <option value="37.1986,-112.9869,Zion National Park">Zion National Park</option>
+            <option value="37.6283,-112.1677,Bryce Canyon">Bryce Canyon</option>
+            <option value="37.6120,-112.8306,Cedar Breaks">Cedar Breaks</option>
+            <option value="38.2870,-111.2470,Capitol Reef">Capitol Reef</option>
+            <option value="37.7749,-111.6100,Escalante">Escalante</option>
+            <option value="37.0965,-113.5684,St. George">St. George</option>
+            <option value="37.6775,-113.0619,Cedar City">Cedar City</option>
+            <option value="37.0475,-112.5263,Kanab">Kanab</option>
+            <option value="37.5664,-112.0526,Cannonville">Cannonville</option>
+            <option value="38.3005,-111.4180,Torrey">Torrey</option>
+            <option value="38.3722,-110.7140,Hanksville">Hanksville</option>
+            <option value="38.5733,-109.5498,Moab">Moab</option>
+            <option value="38.7331,-109.5925,Arches">Arches</option>
+            <option value="38.3269,-109.8783,Canyonlands">Canyonlands</option>
+          </select>
+        </div>
+        <button class="zcl-loc-gps" id="zcl-loc-gps" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="3.2"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3" stroke-linecap="round"/><circle cx="12" cy="12" r="8.2"/></svg>Use my current location</button>
+        <div class="zcl-loc-grid">
+          <div class="zcl-loc-field"><label>Latitude</label><input class="zcl-loc-input" id="zcl-loc-lat" type="number" step="0.0001" inputmode="decimal" placeholder="37.1986"></div>
+          <div class="zcl-loc-field"><label>Longitude</label><input class="zcl-loc-input" id="zcl-loc-lng" type="number" step="0.0001" inputmode="decimal" placeholder="-112.9869"></div>
+        </div>
+        <div class="zcl-loc-field" style="margin-top:11px"><label>Name (optional)</label><input class="zcl-loc-input" id="zcl-loc-name" type="text" maxlength="40" placeholder="e.g. Backyard, Open Sky"></div>
+        <div class="zcl-loc-msg" id="zcl-loc-msg"></div>
+        <div class="zcl-loc-btns">
+          <button class="zcl-set-installbtn" id="zcl-loc-save" type="button" style="flex:1;margin-top:0">Save location</button>
+          <button class="zcl-set-reset" id="zcl-loc-reset" type="button">Reset to default</button>
+        </div>
       </div>
     </div>
 
@@ -229,22 +316,22 @@ body.embed.night-mode #zcl-set-wrap{filter:none}
       <div class="zcl-set-seclabel">Sky Finder Alignment</div>
       <div class="zcl-set-card">
         <div class="zcl-set-rowtitle">Quick Align (recommended)</div>
-        <div class="zcl-set-rowdesc">If the star and planet markers sit in the wrong place, the fix takes one tap. Open the Sky Finder, tap <b>Align</b> in the tools row, and the app picks the brightest unmistakable thing in the sky right now — the Moon, a bright planet, or a bright star — and tells you exactly what to aim at. Center it in the crosshair and tap <b>Align</b>. That\u2019s it. Phone compasses are often off by 10\u201330\u00B0; this corrects it in a second.</div>
-        <div class="zcl-set-note">No need to know any stars by name — the app names the target for you and points you to it. Daytime works too: if nothing else is up it aligns to the Sun (aim using the screen only; don\u2019t look at the Sun directly).</div>
+        <div class="zcl-set-rowdesc">If the star and planet markers sit in the wrong place, the fix takes one tap. Open the Sky Finder, tap <b>Align</b> in the tools row, and the app picks the brightest unmistakable thing in the sky right now — the Moon, a bright planet, or a bright star — and tells you exactly what to aim at. Center it in the crosshair and tap <b>Align</b>. That’s it. Phone compasses are often off by 10–30°; this corrects it in a second.</div>
+        <div class="zcl-set-note">No need to know any stars by name — the app names the target for you and points you to it. Daytime works too: if nothing else is up it aligns to the Sun (aim using the screen only; don’t look at the Sun directly).</div>
       </div>
 
       <div class="zcl-set-card">
         <div class="zcl-set-rowtitle">Manual nudge</div>
-        <div class="zcl-set-rowdesc">If you\u2019d rather fine-tune by hand, or your compass is only slightly off, nudge the whole sky left/right (compass) and up/down (altitude) until the markers sit on the real objects. These add to whatever Quick Align set.</div>
+        <div class="zcl-set-rowdesc">If you’d rather fine-tune by hand, or your compass is only slightly off, nudge the whole sky left/right (compass) and up/down (altitude) until the markers sit on the real objects. These add to whatever Quick Align set.</div>
         <div class="zcl-set-nudge">
           <div class="zcl-set-nudgerow">
             <span class="zcl-set-nudgelbl">Left / Right (compass)</span>
-            <span class="zcl-set-nudgeval" id="zcl-set-aznudgeval">0\u00B0</span>
+            <span class="zcl-set-nudgeval" id="zcl-set-aznudgeval">0°</span>
           </div>
           <input type="range" class="zcl-set-slider" id="zcl-set-aznudge" min="-30" max="30" step="0.5" value="0">
           <div class="zcl-set-nudgerow">
             <span class="zcl-set-nudgelbl">Up / Down (altitude)</span>
-            <span class="zcl-set-nudgeval" id="zcl-set-altnudgeval">0\u00B0</span>
+            <span class="zcl-set-nudgeval" id="zcl-set-altnudgeval">0°</span>
           </div>
           <input type="range" class="zcl-set-slider" id="zcl-set-altnudge" min="-20" max="20" step="0.5" value="0">
         </div>
@@ -258,7 +345,9 @@ body.embed.night-mode #zcl-set-wrap{filter:none}
 
   </div>
 </div>
+<div style="text-align:center;padding:18px 0 0"><a class="zcl-set-link" href="sources" target="_top">Sources &amp; methods</a></div>
 <div style="text-align:center;padding:14px 0 4px;font-family:'Montserrat',sans-serif;font-size:10px;letter-spacing:.12em;color:#4A4438" id="zcl-ver-line"></div>
+<script src="zcl-tz.js"></script>
 <script>
 (function(){
   if('caches' in window){
@@ -492,15 +581,97 @@ body.embed.night-mode #zcl-set-wrap{filter:none}
           navigator.serviceWorker.removeEventListener('message', onMsg);
           if(d.ready){
             setOffline('ready', 'Ready for offline \u2014 all ' + d.total + ' core pages and maps are saved on your device.');
+            count3d(function(have, total){ if(total) setOffline('ready', 'Ready for offline \u2014 all ' + d.total + ' core pages and maps are saved on your device. 3D models: ' + (have >= total ? 'saved.' : have ? have + ' of ' + total + ' saved.' : 'not downloaded.')) });
           } else {
             setOffline('partial', 'Partly cached (' + d.have + ' of ' + d.total + '). Tap \u201CDownload everything\u201D to finish.');
           }
+          reportPersistence();
         }
       }
       navigator.serviceWorker.addEventListener('message', onMsg);
       navigator.serviceWorker.controller.postMessage({ type:'zcl-cache-status' });
       // Fallback if the SW doesn't answer (older cached SW): assume partial.
       setTimeout(function(){ if(!done) setOffline('partial', 'Tap \u201CDownload everything for offline\u201D to be sure.') }, 1500);
+    }
+
+    // Long-term protection: report (and try to obtain) persistent storage, which
+    // stops the browser from evicting the offline cache when the app sits unused
+    // for weeks or months. Shown as a small note under the offline status.
+    function reportPersistence(){
+      var note = $('zcl-set-persist');
+      if(!note) return;
+      if(!(navigator.storage && navigator.storage.persisted)){
+        note.textContent = '';
+        return;
+      }
+      navigator.storage.persisted().then(function(granted){
+        if(granted){
+          note.innerHTML = '<b style="color:#7BC77B">\u2713 Protected for the long haul.</b> Your offline copy won\u2019t be cleared even if you don\u2019t open the app for months.';
+        } else {
+          // Try once more to obtain it (works best from an installed app or after
+          // some engagement); reflect whatever we end up with.
+          navigator.storage.persist().then(function(ok){
+            note.innerHTML = ok
+              ? '<b style="color:#7BC77B">\u2713 Protected for the long haul.</b> Your offline copy won\u2019t be cleared even after months unused.'
+              : 'Tip: <b>install the app</b> (above) to best protect your offline copy from being cleared after long periods unused.';
+          }).catch(function(){
+            note.innerHTML = 'Tip: <b>install the app</b> (above) to best protect your offline copy from being cleared after long periods unused.';
+          });
+        }
+      }).catch(function(){ note.textContent=''; });
+    }
+
+    // The optional 3D download. The service worker owns the file list; the page
+    // does the downloading itself (a long download in the worker can be cut
+    // short by the browser) into a cache the worker then serves from.
+    function ask3d(cb){
+      if(!('serviceWorker' in navigator) || !navigator.serviceWorker.controller || !window.caches){ cb(null); return }
+      var done = false;
+      function onMsg(ev){ var d = ev.data || {}; if(d.type === 'zcl-3d-list-reply'){ done = true; navigator.serviceWorker.removeEventListener('message', onMsg); cb(d) } }
+      navigator.serviceWorker.addEventListener('message', onMsg);
+      navigator.serviceWorker.controller.postMessage({ type:'zcl-3d-list' });
+      setTimeout(function(){ if(!done){ navigator.serviceWorker.removeEventListener('message', onMsg); cb(null) } }, 2000);
+    }
+    function askSolver(cb){
+      if(!('serviceWorker' in navigator) || !navigator.serviceWorker.controller || !window.caches){ cb(null); return }
+      var done = false;
+      function onMsg(ev){ var d = ev.data || {}; if(d.type === 'zcl-solver-list-reply'){ done = true; navigator.serviceWorker.removeEventListener('message', onMsg); cb(d) } }
+      navigator.serviceWorker.addEventListener('message', onMsg);
+      navigator.serviceWorker.controller.postMessage({ type:'zcl-solver-list' });
+      setTimeout(function(){ if(!done){ navigator.serviceWorker.removeEventListener('message', onMsg); cb(null) } }, 2000);
+    }
+    function count3d(cb){
+      ask3d(function(d){
+        if(!d){ cb(0, 0); return }
+        caches.has(d.cache).then(function(has){
+          if(!has){ cb(0, d.list.length); return }
+          return caches.open(d.cache).then(function(c){ return Promise.all(d.list.map(function(u){ return c.match(u) })) })
+            .then(function(r){ cb(r.filter(Boolean).length, d.list.length) });
+        }).catch(function(){ cb(0, d.list.length) });
+      });
+    }
+    function sameFile(a, b){
+      var ea = (a.headers.get('etag') || '').replace(/^W\//, ''), eb = (b.headers.get('etag') || '').replace(/^W\//, '');
+      if(ea && eb) return ea === eb;
+      return a.headers.get('content-length') === b.headers.get('content-length') && a.headers.get('last-modified') === b.headers.get('last-modified');
+    }
+    // Fetch what is missing or has changed, one file at a time. Resolves with the number that failed.
+    function download3d(d, onProgress){
+      return caches.open(d.cache).then(function(c){
+        var i = 0, failed = 0;
+        function next(){
+          if(i >= d.list.length) return failed;
+          var u = d.list[i++];
+          return c.match(u).then(function(have){
+            if(!have) return true;
+            return fetch(u, { method:'HEAD', cache:'no-store' }).then(function(h){ return h.ok && !sameFile(have, h) }, function(){ return false });
+          }).then(function(need){
+            if(!need) return;
+            return fetch(u, { cache:'reload' }).then(function(r){ if(r && r.ok) return c.put(u, r); failed++ });
+          }).catch(function(){ failed++ }).then(function(){ onProgress(i, d.list.length); return next() });
+        }
+        return next();
+      });
     }
 
     // 4. Re-cache button: tell the SW to (re)download everything now.
@@ -517,9 +688,28 @@ body.embed.night-mode #zcl-set-wrap{filter:none}
           if((ev.data||{}).type === 'zcl-recache-done'){
             done = true;
             navigator.serviceWorker.removeEventListener('message', onMsg);
-            recacheBtn.textContent = 'Done \u2713';
-            setTimeout(function(){ recacheBtn.textContent = 'Download everything for offline'; recacheBtn.disabled = false }, 1800);
-            queryCacheStatus();
+            var finish = function(msg){
+              recacheBtn.textContent = msg;
+              setTimeout(function(){ recacheBtn.textContent = 'Download everything for offline'; recacheBtn.disabled = false }, msg.length > 8 ? 4500 : 1800);
+              queryCacheStatus();
+            };
+            // pages and maps are in; then the Star ID catalog, then the 3D models
+            var solverFailed = 0;
+            function models(){
+              ask3d(function(d){
+                if(!d){ finish(solverFailed ? 'Star ID didn\u2019t fully download \u2014 try again' : 'Done \u2713'); return }
+                recacheBtn.textContent = 'Downloading 3D models\u2026';
+                download3d(d, function(n, total){ recacheBtn.textContent = 'Downloading 3D models\u2026 ' + n + ' of ' + total })
+                  .then(function(failed){ finish(failed ? 'Some 3D models didn\u2019t download \u2014 try again' : solverFailed ? 'Star ID didn\u2019t fully download \u2014 try again' : 'Done \u2713') },
+                        function(){ finish('3D models couldn\u2019t be saved on this device') });
+              });
+            }
+            askSolver(function(s){
+              if(!s){ models(); return }
+              recacheBtn.textContent = 'Downloading star catalog\u2026';
+              download3d(s, function(n, total){ recacheBtn.textContent = 'Downloading star catalog\u2026 ' + n + ' of ' + total })
+                .then(function(failed){ solverFailed = failed; models() }, function(){ solverFailed = 1; models() });
+            });
           }
         }
         navigator.serviceWorker.addEventListener('message', onMsg);
@@ -541,15 +731,182 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+(function(){try{if(navigator.storage&&navigator.storage.persist){navigator.storage.persisted().then(function(a){if(!a){navigator.storage.persist().catch(function(){});}}).catch(function(){navigator.storage.persist().catch(function(){});});}}catch(e){}})();
 </script>
 <nav class="pwa-nav">
 <a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem active" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
+<script>
+"use strict";
+(function(){
+  var $=function(id){return document.getElementById(id)};
+  if(!$('zcl-loc-save')) return;
+  var KEY='dsa-location';
+  var DEF={lat:37.1986,lng:-112.9869,label:'Default location'};
+  var EMBED=/[?&]embed=1/.test(location.search);
+
+  // ── Keeping the NAME and the COORDINATES in lockstep ────────────────────
+  // The old bug: the name box was pre-filled from the saved label and then
+  // never invalidated. Type Zion's coordinates over a saved "Mammoth Lakes CA"
+  // and Save would happily store Zion's latitude under the Mammoth Lakes name.
+  // Fix: every name is BOUND to the coordinates it was written for. Change the
+  // coordinates and a name that wasn't typed for them is dropped, so a label
+  // can never outlive the position it describes.
+  var nameBoundTo = null;              // coordinate signature the name belongs to
+
+  function fmtCo(lat,lng){
+    return Math.abs(lat).toFixed(4)+'\u00B0 '+(lat>=0?'N':'S')+', '+Math.abs(lng).toFixed(4)+'\u00B0 '+(lng>=0?'E':'W');
+  }
+  function coordSig(){
+    var la=parseFloat($('zcl-loc-lat').value), ln=parseFloat($('zcl-loc-lng').value);
+    if(!isFinite(la)||!isFinite(ln)) return null;
+    return la.toFixed(4)+','+ln.toFixed(4);
+  }
+  function bindName(){ nameBoundTo = coordSig(); }
+  // Called whenever the coordinates change: a name that belongs to a different
+  // position is stale, so clear it rather than let it be saved by mistake.
+  function invalidateNameIfMoved(){
+    var sig = coordSig();
+    if(nameBoundTo !== null && sig !== nameBoundTo){
+      var box=$('zcl-loc-name');
+      if((box.value||'').trim()){
+        box.value='';
+        msg('Location changed \u2014 name cleared so it can\'t describe the wrong spot.', true);
+      }
+      nameBoundTo = sig;
+    }
+  }
+  function read(){
+    try{var r=JSON.parse(localStorage.getItem(KEY));
+      if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)
+        return {lat:+r.lat,lng:+r.lng,label:(r.label||'').toString()};
+    }catch(e){}
+    return null;
+  }
+  function paint(loc){
+    var isDef=!loc;
+    var lat=isDef?DEF.lat:loc.lat, lng=isDef?DEF.lng:loc.lng;
+    var label=isDef?DEF.label:(loc.label||'Custom location');
+    $('zcl-loc-curname').textContent=label;
+    // Show the resolved zone alongside the coordinates. Every sun and moon
+    // time in the app is rendered in it, so if it is ever wrong it is now
+    // visible here instead of showing up as times that are quietly an hour off.
+    var tzName=(loc&&loc.tz)?loc.tz:ZCLTZ.forCoords(lat,lng);
+    var tzAbbr=ZCLTZ.abbr(new Date(),tzName);
+    $('zcl-loc-curco').textContent=fmtCo(lat,lng)
+      +'  ·  '+tzName.split('/').pop().replace(/_/g,' ')
+      +(tzAbbr?' ('+tzAbbr+')':'');
+    $('zcl-loc-lat').value=lat;
+    $('zcl-loc-lng').value=lng;
+    $('zcl-loc-name').value=(isDef||label==='Custom location')?'':label;
+    var sel=$('zcl-loc-preset'); if(sel) sel.value='';
+    bindName();                       // the shown name matches the shown coords
+  }
+  function msg(t,ok){var m=$('zcl-loc-msg'); if(!m)return; m.textContent=t; m.style.color=ok?'#9FBF8F':'#D88080';}
+  function reloadParentSoon(){ if(EMBED){ setTimeout(function(){ try{ if(window.parent&&window.parent!==window) window.parent.location.reload(); }catch(e){} },750); } }
+
+  // Single writer for the store, so every path saves the same shape and the
+  // label always corresponds to the coordinates saved alongside it.
+  function commit(lat,lng,label){
+    // ZCLTZ.save is the single writer: it rounds, validates, and \u2014 the part
+    // that matters \u2014 stores the resolved IANA zone alongside the coordinates,
+    // so every page reads back one answer instead of each deriving its own.
+    var loc=ZCLTZ.save(lat,lng,label||'Custom location');
+    if(!loc){ msg('Could not save \u2014 storage is blocked on this device.',false); return false; }
+    paint(loc);
+    return true;
+  }
+
+  function onSave(){
+    var lat=parseFloat($('zcl-loc-lat').value), lng=parseFloat($('zcl-loc-lng').value);
+    if(!isFinite(lat)||Math.abs(lat)>90){ msg('Latitude must be between \u221290 and 90.',false); return; }
+    if(!isFinite(lng)||Math.abs(lng)>180){ msg('Longitude must be between \u2212180 and 180.',false); return; }
+    // Final guard: never store a name written for a different position.
+    var sig=lat.toFixed(4)+','+lng.toFixed(4);
+    var nm=($('zcl-loc-name').value||'').trim();
+    if(nm && nameBoundTo !== null && nameBoundTo !== sig) nm='';
+    if(!commit(lat,lng,nm)) return;
+    msg(EMBED?'Saved. Reloading to apply\u2026':'Saved. Open any tool and it\'ll use this location.',true);
+    reloadParentSoon();
+  }
+  function onReset(){
+    try{ localStorage.removeItem(KEY); }catch(e){}
+    paint(null);
+    msg(EMBED?'Reset to the default location. Reloading\u2026':'Reset to the default location.',true);
+    reloadParentSoon();
+  }
+  // Preset: coordinates and name arrive together, so they can never disagree.
+  function onPreset(){
+    var v=$('zcl-loc-preset').value; if(!v) return;
+    var p=v.split(','), lat=parseFloat(p[0]), lng=parseFloat(p[1]), nm=p.slice(2).join(',');
+    if(!isFinite(lat)||!isFinite(lng)) return;
+    $('zcl-loc-lat').value=lat; $('zcl-loc-lng').value=lng;
+    $('zcl-loc-name').value=nm;
+    bindName();
+    if(!commit(lat,lng,nm)) return;
+    msg(EMBED?'Moved to '+nm+'. Reloading\u2026':'Moved to '+nm+'.',true);
+    reloadParentSoon();
+  }
+  function onGPS(){
+    if(!navigator.geolocation){ msg('This device has no location services.',false); return; }
+    msg('Locating\u2026',true);
+    navigator.geolocation.getCurrentPosition(function(p){
+      var la=+p.coords.latitude.toFixed(4), ln=+p.coords.longitude.toFixed(4);
+      $('zcl-loc-lat').value=la;
+      $('zcl-loc-lng').value=ln;
+      // A previous name NEVER carries over to a new fix — that is how a stale
+      // label used to survive a move. Start from the coordinates, then upgrade
+      // to a real place name if the lookup succeeds.
+      $('zcl-loc-name').value='';
+      bindName();
+      var sel=$('zcl-loc-preset'); if(sel) sel.value='';
+      msg('Got your position \u2014 looking up the place name\u2026',true);
+      var done=false;
+      var finish=function(nm){
+        if(done) return; done=true;
+        $('zcl-loc-name').value=nm||'';
+        bindName();
+        if(commit(la,ln,nm||'')){
+          msg(nm ? ('Now using '+nm+'.'+(EMBED?' Reloading\u2026':''))
+                 : ('Now using your position.'+(EMBED?' Reloading\u2026':'')), true);
+          reloadParentSoon();
+        }
+      };
+      var ac=(typeof AbortController!=='undefined')?new AbortController():null;
+      var timer=setTimeout(function(){ if(ac) ac.abort(); finish(''); }, 6000);
+      fetch('https://api.bigdatacloud.net/data/reverse-geocode-client?latitude='+la+'&longitude='+ln+'&localityLanguage=en',
+            ac?{signal:ac.signal}:undefined)
+        .then(function(r){ return r.json() })
+        .then(function(j){
+          clearTimeout(timer);
+          var city=(j&&(j.city||j.locality))||'';
+          var region=(j&&(j.principalSubdivisionCode||j.principalSubdivision))||'';
+          if(region.indexOf('-')>-1) region=region.split('-').pop();
+          finish(city ? (region ? city+', '+region : city) : '');
+        })
+        .catch(function(){ clearTimeout(timer); finish(''); });
+    },function(err){
+      msg(err&&err.code===1?'Permission denied \u2014 enter coordinates manually below.':'Couldn\'t get a fix \u2014 enter coordinates manually below.',false);
+    },{enableHighAccuracy:false,timeout:10000,maximumAge:60000});
+  }
+
+  paint(read());
+  $('zcl-loc-save').addEventListener('click',onSave);
+  $('zcl-loc-reset').addEventListener('click',onReset);
+  $('zcl-loc-gps').addEventListener('click',onGPS);
+  if($('zcl-loc-preset')) $('zcl-loc-preset').addEventListener('change',onPreset);
+  // Editing either coordinate drops a name that was written for somewhere else.
+  $('zcl-loc-lat').addEventListener('input',invalidateNameIfMoved);
+  $('zcl-loc-lng').addEventListener('input',invalidateNameIfMoved);
+  // A name the user types belongs to whatever is in the boxes right now.
+  $('zcl-loc-name').addEventListener('input',bindName);
+})();
+</script>
 </body>
 </html>

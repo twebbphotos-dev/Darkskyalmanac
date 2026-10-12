@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Sources &amp; Methods · Dark Sky Almanac</title>
+<meta name="description" content="Where the facts and figures in the Dark Sky Almanac come from, and how its live sky calculations are made and checked.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Sources &amp; Methods · Dark Sky Almanac">
+<meta property="og:description" content="Where the facts and figures in the Dark Sky Almanac come from, and how its live sky calculations are made and checked.">
+<meta property="og:image" content="social.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/sources">
+<meta property="og:url" content="https://app.darkskyalmanac.com/sources">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#141319;min-height:100dvh;font-family:'Montserrat',-apple-system,sans-serif;color:#E4D9B8}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);padding-bottom:40px;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+a{color:inherit}
+/* top nav */
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+/* page frame */
+.zcl-page{max-width:760px;margin:0 auto;padding:0 20px;position:relative}
+.zcl-stars{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.4;z-index:0}
+.zcl-page>*{position:relative;z-index:1}
+/* title banner */
+.zcl-titlebar{text-align:center;padding:26px 8px 14px}
+.zcl-kicker{font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#9A8A66;margin-bottom:9px}
+.zcl-maintitle{font-size:clamp(22px,5vw,30px);font-weight:600;letter-spacing:.05em;color:#F2E4BE;text-transform:uppercase;line-height:1.2}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:13px;margin:12px auto 10px;max-width:300px}
+.zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-rstar{width:15px;height:15px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-subtitle{font-size:13px;font-style:italic;color:#9A8E6E;max-width:500px;margin:0 auto;line-height:1.5}
+.zcl-back{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9A8A66;text-decoration:none;margin:6px 0 0}
+.zcl-back:hover{color:#CBA85A}
+.zcl-seclabel{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#CBA85A;
+  margin:22px 0 12px;padding-bottom:7px;border-bottom:1px solid rgba(203,168,90,.26)}
+
+/* sources */
+.zcl-lede{background:radial-gradient(ellipse 90% 80% at 50% 0%,rgba(40,38,52,.5),transparent 70%),#0d0a18;
+  border:1px solid rgba(203,168,90,.22);border-radius:11px;padding:16px 18px;margin:8px 0 4px;
+  font-size:13.5px;line-height:1.6;color:#C9BD97}
+.zcl-lede b{color:#F2E4BE;font-weight:600}
+.zcl-lede p+p{margin-top:9px}
+.zcl-secnote{font-size:12.5px;line-height:1.55;color:#9A8E6E;margin:-4px 0 12px}
+.zcl-srclist{list-style:none;display:grid;gap:9px}
+.zcl-src{background:#0d0a18;border:1px solid rgba(203,168,90,.16);border-radius:9px;padding:12px 14px}
+.zcl-srcname{font-size:14px;font-weight:600;color:#F2E4BE;line-height:1.3}
+.zcl-srcuse{font-size:12.5px;line-height:1.5;color:#A89D7E;margin-top:4px}
+.zcl-srclinks{margin-top:7px;display:flex;flex-wrap:wrap;gap:4px 14px}
+.zcl-srclinks a{font-size:11.5px;color:#CBA85A;text-decoration:none;border-bottom:1px solid rgba(203,168,90,.35);
+  padding-bottom:1px;overflow-wrap:anywhere;word-break:break-word}
+.zcl-srclinks a:hover{color:#E6CC85}
+.zcl-foot{font-size:11.5px;line-height:1.55;color:#7A6E55;text-align:center;margin:26px auto 6px;max-width:520px}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+/* fit */
+
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style></head>
+<body>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem active" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<svg class="zcl-stars"></svg>
+<div class="zcl-page">
+  <div class="zcl-titlebar">
+    <div class="zcl-kicker">Dark Sky Almanac</div>
+    <div class="zcl-maintitle">Sources &amp; Methods</div>
+    <div class="zcl-titlerule"><span class="zcl-rline"></span>
+      <svg class="zcl-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+      <span class="zcl-rline"></span></div>
+    <div class="zcl-subtitle">Where the facts and figures in this app come from, and how its live numbers are worked out.</div>
+  </div>
+  <div class="zcl-lede">
+    <p><b>Calculated, then checked.</b> Positions, rise and set times, phases and event dates are computed on your device and compared against a second, independent ephemeris.</p>
+    <p><b>Facts with references.</b> Descriptions were checked against the sources below in October 2026. Astronomy keeps moving, so distances, ages and moon counts are rounded and will be revised as measurements improve.</p>
+  </div>
+  <div class="zcl-seclabel">Live Sky Calculations</div>
+  <div class="zcl-secnote">Sun, Moon and planet positions, rise and set times, twilight, phases and moon positions are calculated on your device, so they work offline and for any saved location.</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">Astronomy Engine</div><div class="zcl-srcuse">Open-source astronomy library by Don Cross (MIT licence). Used for the Sun, Moon and planets: positions, rise and set, twilight, phases, oppositions, conjunctions and constellation boundaries.</div><div class="zcl-srclinks"><a href="https://github.com/cosinekitty/astronomy" target="_blank" rel="noopener">github.com/cosinekitty/astronomy</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">PyEphem</div><div class="zcl-srcuse">A second, independent ephemeris. Every event date and a sample of rise, set and twilight times were recomputed with it and compared.</div><div class="zcl-srclinks"><a href="https://rhodesmill.org/pyephem/" target="_blank" rel="noopener">rhodesmill.org/pyephem</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Jean Meeus, <i>Astronomical Algorithms</i>, 2nd ed. (1998)</div><div class="zcl-srcuse">Theory behind Jupiter’s four large moons (after Lieske), Saturn’s rings and moons (after Dourneau), sidereal time and precession. Code ported from the open-source astronomia library with VSOP87 planetary series.</div><div class="zcl-srclinks"><a href="https://github.com/commenthol/astronomia" target="_blank" rel="noopener">github.com/commenthol/astronomia</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">JPL Solar System Dynamics</div><div class="zcl-srcuse">Approximate orbital elements of the planets, used for the solar-system views and the Sky Finder.</div><div class="zcl-srclinks"><a href="https://ssd.jpl.nasa.gov/planets/approx_pos.html" target="_blank" rel="noopener">ssd.jpl.nasa.gov/planets/approx_pos.html</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Jupiter’s Great Red Spot</div><div class="zcl-srcuse">Current longitude and drift rate from Sky &amp; Telescope; the System II rotation formula from Project Pluto.</div><div class="zcl-srclinks"><a href="https://skyandtelescope.org/observing/interactive-sky-watching-tools/transit-times-of-jupiters-great-red-spot/" target="_blank" rel="noopener">skyandtelescope.org</a><a href="https://projectpluto.com/grs_form.htm" target="_blank" rel="noopener">projectpluto.com/grs_form.htm</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Twilight definitions</div><div class="zcl-srcuse">Civil, nautical and astronomical twilight as defined by the US National Weather Service; solar times spot-checked against the NOAA Solar Calculator.</div><div class="zcl-srclinks"><a href="https://www.weather.gov/fsd/twilight" target="_blank" rel="noopener">weather.gov/fsd/twilight</a><a href="https://gml.noaa.gov/grad/solcalc/" target="_blank" rel="noopener">gml.noaa.gov/grad/solcalc</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">Weather, Clouds &amp; Aurora</div>
+  <div class="zcl-secnote">These are the only parts of the app that need a connection.</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">Open-Meteo</div><div class="zcl-srcuse">Hourly cloud cover, temperature, wind and humidity. The cloud forecast blends three global models: ECMWF IFS, DWD ICON and NOAA GFS.</div><div class="zcl-srclinks"><a href="https://open-meteo.com/" target="_blank" rel="noopener">open-meteo.com</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">US National Weather Service</div><div class="zcl-srcuse">Point forecasts for locations in the United States.</div><div class="zcl-srclinks"><a href="https://www.weather.gov/documentation/services-web-api" target="_blank" rel="noopener">weather.gov</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">NOAA Space Weather Prediction Center</div><div class="zcl-srcuse">Planetary K-index forecast, used for the aurora outlook.</div><div class="zcl-srclinks"><a href="https://www.swpc.noaa.gov/products/planetary-k-index" target="_blank" rel="noopener">swpc.noaa.gov</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">BigDataCloud</div><div class="zcl-srcuse">Turns saved coordinates into a place name.</div><div class="zcl-srclinks"><a href="https://www.bigdatacloud.com/" target="_blank" rel="noopener">bigdatacloud.com</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">Events &amp; Meteor Showers</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">Event dates</div><div class="zcl-srcuse">Oppositions, conjunctions, elongations, eclipses, equinoxes and solstices were computed with Astronomy Engine and PyEphem, and are listed by the local evening or morning to look, with clock times in your time zone.</div></li>
+    <li class="zcl-src"><div class="zcl-srcname">International Meteor Organization</div><div class="zcl-srcuse">Meteor shower peak dates and zenithal hourly rates, from the IMO Meteor Shower Calendar.</div><div class="zcl-srclinks"><a href="https://www.imo.net/resources/calendar/" target="_blank" rel="noopener">imo.net/resources/calendar</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">Planets &amp; Their Moons</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">NASA Planetary Fact Sheets</div><div class="zcl-srcuse">Sizes, masses, day lengths, temperatures and orbital figures (NASA Space Science Data Coordinated Archive).</div><div class="zcl-srclinks"><a href="https://nssdc.gsfc.nasa.gov/planetary/factsheet/" target="_blank" rel="noopener">nssdc.gsfc.nasa.gov/planetary/factsheet</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">NASA Science: planet pages</div><div class="zcl-srcuse">Descriptive facts for each world and its moons.</div><div class="zcl-srclinks"><a href="https://science.nasa.gov/earth/facts/" target="_blank" rel="noopener">science.nasa.gov/earth/facts</a><a href="https://science.nasa.gov/venus/venus-facts/" target="_blank" rel="noopener">science.nasa.gov/venus/venus-facts</a><a href="https://science.nasa.gov/mars/facts/" target="_blank" rel="noopener">science.nasa.gov/mars/facts</a><a href="https://science.nasa.gov/mars/moons/" target="_blank" rel="noopener">science.nasa.gov/mars/moons</a><a href="https://science.nasa.gov/uranus/facts/" target="_blank" rel="noopener">science.nasa.gov/uranus/facts</a><a href="https://science.nasa.gov/solar-system/kuiper-belt/facts/" target="_blank" rel="noopener">science.nasa.gov/…/kuiper-belt</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Royal Astronomical Society</div><div class="zcl-srcuse">The true colours of Uranus and Neptune (Irwin and colleagues, 2024).</div><div class="zcl-srclinks"><a href="https://ras.ac.uk/news-and-press/news/new-images-reveal-what-neptune-and-uranus-really-look" target="_blank" rel="noopener">ras.ac.uk</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Gazetteer of Planetary Nomenclature</div><div class="zcl-srcuse">Official names, positions and sizes of surface features, from the International Astronomical Union and the US Geological Survey.</div><div class="zcl-srclinks"><a href="https://planetarynames.wr.usgs.gov/" target="_blank" rel="noopener">planetarynames.wr.usgs.gov</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Mars opposition tables</div><div class="zcl-srcuse">Used to cross-check opposition dates, distances and apparent sizes.</div><div class="zcl-srclinks"><a href="https://nakedeyeplanets.com/mars-oppositions.htm" target="_blank" rel="noopener">nakedeyeplanets.com/mars-oppositions.htm</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">The Moon</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">Gazetteer of Planetary Nomenclature</div><div class="zcl-srcuse">Coordinates and diameters of the seas, craters and mountain ranges on the Moon map.</div><div class="zcl-srclinks"><a href="https://planetarynames.wr.usgs.gov/" target="_blank" rel="noopener">planetarynames.wr.usgs.gov</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">NASA Lunar Reconnaissance Orbiter Camera</div><div class="zcl-srcuse">Feature descriptions and ages, including the dating of Tycho.</div><div class="zcl-srclinks"><a href="https://lroc.im-ldi.com/images/209" target="_blank" rel="noopener">lroc.im-ldi.com</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Apollo Lunar Surface Journal</div><div class="zcl-srcuse">Landing sites, dates, crews and surface activities of the Apollo missions.</div><div class="zcl-srclinks"><a href="https://www.nasa.gov/history/alsj/" target="_blank" rel="noopener">nasa.gov/history/alsj</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Moon phases and standstills</div><div class="zcl-srcuse">Phase ages, new and full moon times and the 18.6-year standstill cycle are computed with Astronomy Engine and checked with PyEphem.</div></li>
+  </ul>
+  <div class="zcl-seclabel">Deep Sky &amp; Constellations</div>
+  <div class="zcl-secnote">Distances and ages of deep-sky objects are measurements that are refined over time, so the app gives rounded figures.</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">OpenNGC</div><div class="zcl-srcuse">Positions, types and magnitudes of NGC and IC objects.</div><div class="zcl-srclinks"><a href="https://github.com/mattiaverga/OpenNGC" target="_blank" rel="noopener">github.com/mattiaverga/OpenNGC</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">HYG Star Database</div><div class="zcl-srcuse">Star positions, magnitudes and colours for the constellation and asterism charts.</div><div class="zcl-srclinks"><a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener">github.com/astronexus/HYG-Database</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">H.A. Rey constellation figures</div><div class="zcl-srcuse">The constellation line figures in Star ID and the Sky Finder, drawn so each looks like what it is named for, from <i>The Stars: A New Way to See Them</i> (1952). Line data from Stellarium’s modern_rey sky culture; star positions from Hipparcos.</div><div class="zcl-srclinks"><a href="https://github.com/Stellarium/stellarium/tree/master/skycultures/modern_rey" target="_blank" rel="noopener">stellarium</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">International Astronomical Union</div><div class="zcl-srcuse">The 88 official constellations and their boundaries, and the IAU Catalog of Star Names kept by its Working Group on Star Names.</div><div class="zcl-srclinks"><a href="https://en.wikipedia.org/wiki/IAU_designated_constellations" target="_blank" rel="noopener">en.wikipedia.org</a><a href="https://ase.exopla.net/index.php/IAU-Catalog_of_Star_Names" target="_blank" rel="noopener">IAU Catalog of Star Names</a><a href="https://en.wikipedia.org/wiki/IAU_Working_Group_on_Star_Names" target="_blank" rel="noopener">en.wikipedia.org</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">NASA Hubble Messier Catalog</div><div class="zcl-srcuse">Descriptions, distances and histories of the Messier objects.</div><div class="zcl-srclinks"><a href="https://science.nasa.gov/mission/hubble/science/explore-the-night-sky/hubble-messier-catalog/" target="_blank" rel="noopener">science.nasa.gov/…/hubble-messier-catalog</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Ian Ridpath, <i>Star Tales</i></div><div class="zcl-srcuse">Constellation history and mythology.</div><div class="zcl-srclinks"><a href="https://www.ianridpath.com/startales/" target="_blank" rel="noopener">ianridpath.com/startales</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Milky Way and Andromeda</div><div class="zcl-srcuse">The 2025 study finding that a future merger is far from certain (Sawala and colleagues, <i>Nature Astronomy</i>).</div><div class="zcl-srclinks"><a href="https://www.uwa.edu.au/news/article/2025/june/astronomers-thought-the-milky-way-was-doomed-to-crash-into-andromeda" target="_blank" rel="noopener">uwa.edu.au</a><a href="https://earthsky.org/space/galactic-collision-milky-way-andromeda-50-percent-chance/" target="_blank" rel="noopener">earthsky.org</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Wikipedia</div><div class="zcl-srcuse">Individual object and star articles, used as a guide to the published measurements they cite.</div><div class="zcl-srclinks"><a href="https://en.wikipedia.org/wiki/Messier_object" target="_blank" rel="noopener">en.wikipedia.org/wiki/Messier_object</a><a href="https://en.wikipedia.org/wiki/Caldwell_catalogue" target="_blank" rel="noopener">en.wikipedia.org/wiki/Caldwell_catalogue</a><a href="https://en.wikipedia.org/wiki/New_General_Catalogue" target="_blank" rel="noopener">en.wikipedia.org/wiki/New_General_Catalogue</a><a href="https://en.wikipedia.org/wiki/List_of_proper_names_of_stars" target="_blank" rel="noopener">en.wikipedia.org</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">BBC Sky at Night Magazine</div><div class="zcl-srcuse">Star-hop directions for Kemble’s Cascade.</div><div class="zcl-srclinks"><a href="https://www.skyatnightmagazine.com/news/kembles-cascade-2/" target="_blank" rel="noopener">skyatnightmagazine.com</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">Spacecraft</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">NASA Voyager mission</div><div class="zcl-srcuse">Voyager 1’s distance, speed, power and instrument status.</div><div class="zcl-srclinks"><a href="https://science.nasa.gov/mission/voyager/where-are-voyager-1-and-voyager-2-now/" target="_blank" rel="noopener">science.nasa.gov/mission/voyager</a><a href="https://science.nasa.gov/mission/voyager/fact-sheet/" target="_blank" rel="noopener">Voyager fact sheet</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">EarthSky</div><div class="zcl-srcuse">The moment Voyager 1 reaches one light-day from Earth, in November 2026.</div><div class="zcl-srclinks"><a href="https://earthsky.org/space/voyager-1-1-light-day-from-earth-november-17-18-2026/" target="_blank" rel="noopener">earthsky.org</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">NASA mission pages</div><div class="zcl-srcuse">Perseverance, Ingenuity, Curiosity, Hubble, Webb, the Space Station, the Space Shuttle and Apollo.</div><div class="zcl-srclinks"><a href="https://science.nasa.gov/mission/mars-2020-perseverance/" target="_blank" rel="noopener">science.nasa.gov</a><a href="https://science.nasa.gov/mission/msl-curiosity/" target="_blank" rel="noopener">science.nasa.gov/mission/msl-curiosity</a><a href="https://science.nasa.gov/mission/hubble/" target="_blank" rel="noopener">science.nasa.gov/mission/hubble</a><a href="https://science.nasa.gov/mission/webb/" target="_blank" rel="noopener">science.nasa.gov/mission/webb</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Hubble Space Telescope media guide</div><div class="zcl-srcuse">Dimensions and workings of the telescope, including its aperture door.</div><div class="zcl-srclinks"><a href="https://lhea.gsfc.nasa.gov/archive/sm3b/art/pdf/media-guide/sec5.pdf" target="_blank" rel="noopener">lhea.gsfc.nasa.gov</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">3D models</div><div class="zcl-srcuse">NASA 3D Resources (NASA/JPL-Caltech and NASA Johnson Space Center). The Apollo Lunar Rover is a scan by Deutsches Museum Digital. Each model is credited on its own page.</div><div class="zcl-srclinks"><a href="https://github.com/nasa/NASA-3D-Resources" target="_blank" rel="noopener">github.com/nasa/NASA-3D-Resources</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">Dark-Sky Places</div>
+  <div class="zcl-secnote">Bortle ratings on the maps are estimates drawn from light-pollution mapping and the parks’ own dark-sky reports, not on-site measurements, so each is shown as a range. Road, trail and season details change; check with the park before you go.</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">DarkSky International</div><div class="zcl-srcuse">Certification status and year for each International Dark Sky Park.</div><div class="zcl-srclinks"><a href="https://darksky.org/places/zion-national-park-dark-sky-park/" target="_blank" rel="noopener">Zion</a><a href="https://darksky.org/places/bryce-canyon-national-park-dark-sky-park/" target="_blank" rel="noopener">Bryce Canyon</a><a href="https://darksky.org/places/capitol-reef-national-park-dark-sky-park/" target="_blank" rel="noopener">Capitol Reef</a><a href="https://darksky.org/places/canyonlands-national-park-dark-sky-park/" target="_blank" rel="noopener">Canyonlands</a><a href="https://darksky.org/places/arches-national-park-dark-sky-park/" target="_blank" rel="noopener">Arches</a><a href="https://darksky.org/places/cedar-breaks-national-monument-dark-sky-park/" target="_blank" rel="noopener">Cedar Breaks</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">National Park Service</div><div class="zcl-srcuse">Recommended stargazing sites in Zion, certification announcements, and trail, road and overlook details.</div><div class="zcl-srclinks"><a href="https://www.nps.gov/thingstodo/stargazing-in-zion.htm" target="_blank" rel="noopener">Stargazing in Zion</a><a href="https://www.nps.gov/zion/learn/news/zion-national-park-certified-as-an-international-dark-sky-park.htm" target="_blank" rel="noopener">Zion certification</a><a href="https://www.nps.gov/care/learn/news/capitol-reef-national-park-receives-international-dark-sky-designation.htm" target="_blank" rel="noopener">Capitol Reef designation</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Dark Sky Park applications</div><div class="zcl-srcuse">Sky-quality surveys submitted for Cedar Breaks and Canyonlands.</div><div class="zcl-srclinks"><a href="https://darksky.org/app/uploads/2017/03/CedarBreaks_IDSP_Application.pdf" target="_blank" rel="noopener">Cedar Breaks (PDF)</a><a href="https://darksky.org/app/uploads/2015/08/Canyonlands_IDSP_application.pdf" target="_blank" rel="noopener">Canyonlands (PDF)</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">The New World Atlas of Artificial Night Sky Brightness</div><div class="zcl-srcuse">Falchi and colleagues, <i>Science Advances</i> (2016): the global map of sky brightness.</div><div class="zcl-srclinks"><a href="https://www.science.org/doi/10.1126/sciadv.1600377" target="_blank" rel="noopener">science.org</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">The Bortle Dark-Sky Scale</div><div class="zcl-srcuse">John E. Bortle, <i>Sky &amp; Telescope</i> (2001).</div><div class="zcl-srclinks"><a href="https://skyandtelescope.org/astronomy-resources/light-pollution-and-astronomy-the-bortle-dark-sky-scale/" target="_blank" rel="noopener">skyandtelescope.org</a></div></li>
+  </ul>
+  <div class="zcl-seclabel">Photography Tools</div>
+  <ul class="zcl-srclist">
+    <li class="zcl-src"><div class="zcl-srcname">The NPF rule</div><div class="zcl-srcuse">Frédéric Michaud’s formula for the longest exposure before stars trail (Société Astronomique du Havre).</div><div class="zcl-srclinks"><a href="https://sahavre.fr/wp/regle-npf-rule/" target="_blank" rel="noopener">sahavre.fr/wp/regle-npf-rule</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">NOAA magnetic field calculator</div><div class="zcl-srcuse">Magnetic declination, so the Sky Finder’s compass points to true north.</div><div class="zcl-srclinks"><a href="https://www.ngdc.noaa.gov/geomag/calculators/magcalc.shtml" target="_blank" rel="noopener">ngdc.noaa.gov</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Stacking and signal-to-noise</div><div class="zcl-srcuse">The square-root rule for combining exposures, as set out in the Astropy CCD data reduction guide.</div><div class="zcl-srclinks"><a href="https://www.astropy.org/ccd-reduction-and-photometry-guide/" target="_blank" rel="noopener">astropy.org</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Star ID catalog</div><div class="zcl-srcuse">About 83,000 stars to magnitude 9 and the named deep-sky objects, from the HYG database v4.1 (Hipparcos, Yale Bright Star and Gliese catalogues), with proper motion carried forward to 2026.</div><div class="zcl-srclinks"><a href="https://github.com/astronexus/HYG-Database" target="_blank" rel="noopener">github.com/astronexus/HYG-Database</a></div></li>
+    <li class="zcl-src"><div class="zcl-srcname">Star ID plate solving</div><div class="zcl-srcuse">The four-star geometric hashing method of Astrometry.net (Lang and colleagues, <i>The Astronomical Journal</i>, 2010), rebuilt to run on the phone with no connection.</div><div class="zcl-srclinks"><a href="https://doi.org/10.1088/0004-6256/139/5/1782" target="_blank" rel="noopener">doi.org</a><a href="https://astrometry.net/" target="_blank" rel="noopener">astrometry.net</a></div></li>
+  </ul>
+  <div class="zcl-foot">Links open in your browser and need a connection. Everything else on this page is saved for offline use.</div>
+</div>
+<script>(function(){var s='';for(var i=0;i<120;i++){s+='<circle cx="'+(Math.random()*100).toFixed(1)+'%" cy="'+(Math.random()*100).toFixed(1)+'%" r="'+(Math.random()*0.9+0.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*0.5+0.1).toFixed(2)+'"/>';}var el=document.querySelector('.zcl-stars');if(el)el.innerHTML=s;})();</script>
+</body>
+</html>

@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#141319">
+<meta name="description" content="Multi-model hourly cloud coverage for stargazing — ECMWF, ICON, GFS and NOAA blended, cross-checked against the NWS.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="Cloud Coverage · Dark Sky Almanac">
+<meta property="og:description" content="Multi-model hourly cloud coverage for stargazing — ECMWF, ICON, GFS and NOAA blended, cross-checked against the NWS.">
+<meta property="og:image" content="social.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<title>Cloud Coverage · Dark Sky Almanac</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#141319;min-height:100%}
+body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);-webkit-transform:translateZ(0);will-change:transform;contain:layout paint;
+  display:flex;background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.25);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:9px 2px 8px;text-decoration:none;color:#8A7E60;font-size:8.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#E6CC85}
+.zcl-wrap{position:relative;max-width:760px;margin:0 auto;padding:78px 14px 90px;padding-top:calc(78px + env(safe-area-inset-top))}
+.zcl-stars{position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.55}
+.zcl-main{position:relative;z-index:1}
+.zcl-h{ text-align:center;margin-bottom:6px }
+.zcl-htitle{font-size:24px;font-weight:600;letter-spacing:.22em;text-transform:uppercase;color:#F2E4BE}
+.zcl-hsub{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:#9A875C;margin-top:5px}
+.zcl-hloc{font-size:12px;color:#B3A882;margin-top:7px}
+.zcl-daynav{display:flex;align-items:center;justify-content:center;gap:14px;margin:16px 0 14px}
+.zcl-daybtn{width:42px;height:42px;border-radius:50%;border:1px solid rgba(203,168,90,.55);background:rgba(203,168,90,.07);
+  color:#E6CC85;font-size:22px;line-height:1;cursor:pointer;touch-action:manipulation;user-select:none;-webkit-user-select:none;
+  display:flex;align-items:center;justify-content:center;font-family:'Montserrat',sans-serif}
+.zcl-daybtn:disabled{opacity:.3}
+.zcl-daylab{font-size:15px;font-weight:600;color:#E6CC85;min-width:150px;text-align:center}
+.zcl-card{background:#0d0a18;border:1px solid rgba(203,168,90,.30);border-radius:10px;padding:16px 16px 15px;margin-bottom:16px}
+.zcl-cardtit{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#9A875C;margin-bottom:10px;text-align:center}
+.zcl-window{font-size:12.5px;color:#C9BD97;margin-bottom:9px;text-align:center}
+.zcl-window b{color:#E6CC85;font-weight:600}
+.zcl-leg{display:flex;flex-wrap:wrap;gap:5px 14px;justify-content:center;margin-top:7px;font-size:10.5px;color:#9A8E70}
+.zcl-leg span{display:inline-flex;align-items:center;gap:5px}
+.zcl-leg i{width:9px;height:9px;border-radius:2px;display:inline-block}
+.zcl-conf{font-size:11.5px;line-height:1.5;color:#C9BD97;margin-top:9px;text-align:center}
+.zcl-types{font-size:12px;line-height:1.55;color:#B3A882;margin-top:9px;text-align:center}
+.zcl-cape{font-size:11.5px;line-height:1.5;color:#D9A85F;margin-top:8px;text-align:center}
+.zcl-note{font-size:10.5px;color:#7A6E55;margin-top:7px;text-align:center;line-height:1.5}
+.zcl-models{display:flex;flex-direction:column;gap:14px}
+.zcl-mhead{display:flex;flex-wrap:wrap;align-items:baseline;justify-content:space-between;gap:2px 12px;margin-bottom:8px}
+.zcl-mname{font-size:13px;font-weight:600;color:#E4D9B8}
+.zcl-mdesc{font-size:10.5px;color:#8A7E60;line-height:1.45;flex-basis:100%}
+.zcl-mavg{font-size:11px;color:#C9BD97}
+.zcl-err{font-size:13px;color:#B3A882;text-align:center;padding:26px 10px;line-height:1.6}
+.zcl-foot{text-align:center;font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:#6E6450;margin-top:26px}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+/* fit */
+.pwa-nav{justify-content:space-around;align-items:stretch;border-bottom-color:rgba(203,168,90,.32)}
+.pwa-navitem{gap:2px;padding:7px 0 6px;color:#7A6E55;font-size:8px;font-weight:400;letter-spacing:.04em;transition:color .15s}
+.pwa-navitem.active{color:#CBA85A}.pwa-navitem:active{color:#E6CC85}
+.zcl-wrap{padding-top:calc(73px + env(safe-area-inset-top))}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style>
+</head>
+<body>
+
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem active" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+
+<svg class="zcl-stars" id="zcl-stars" width="100%" height="100%" viewBox="0 0 800 700" preserveAspectRatio="xMidYMid slice"></svg>
+
+<div class="zcl-wrap">
+<div class="zcl-main">
+
+  <div class="zcl-h">
+    <div class="zcl-htitle">Cloud Coverage</div>
+    <div class="zcl-hsub">Multi-Model Hourly Outlook</div>
+    <div class="zcl-hloc" id="zcl-loc"></div>
+  </div>
+
+  <div class="zcl-daynav">
+    <button class="zcl-daybtn" id="zcl-prev" aria-label="Previous night">&#8249;</button>
+    <div class="zcl-daylab" id="zcl-daylab"></div>
+    <button class="zcl-daybtn" id="zcl-next" aria-label="Next night">&#8250;</button>
+  </div>
+
+  <div class="zcl-card">
+    <div class="zcl-cardtit">Blended Forecast &middot; 5 PM &rarr; 7 AM</div>
+    <div id="zcl-blend"><div class="zcl-err">Loading forecast&hellip;</div></div>
+  </div>
+
+  <div class="zcl-cardtit" style="margin:2px 0 6px">By Model &middot; Unblended</div>
+  <div class="zcl-leg" style="margin:0 0 10px"><span><i style="background:#6E7686"></i>Low</span><span><i style="background:#98876E"></i>Mid</span><span><i style="background:#C9BD97;opacity:.8"></i>High cirrus</span><span><i style="background:#5F7A5F;opacity:.55"></i>Clear</span></div>
+  <div class="zcl-models" id="zcl-models"></div>
+
+  <div class="zcl-note" style="margin-top:16px">Each model tile shows the same night, unblended &mdash; compare them against
+    what the sky actually did and you'll learn which model reads this terrain best. The main chart averages all of them,
+    which beats any single model over a season.</div>
+
+  <div class="zcl-foot">Dark Sky Almanac</div>
+</div>
+</div>
+
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
+<script>
+"use strict";
+(function(){
+// ── location (shared with Forecast via localStorage) ──
+let LAT=37.1986, LNG=-112.9869, PLACE='Default location';
+try{
+  const s=JSON.parse(localStorage.getItem('dsa-location')||'null');
+  // Same validation as every other page: coerce and range-check, so a value
+  // stored as a string still works and a corrupt one is ignored.
+  if(s && isFinite(+s.lat) && isFinite(+s.lng) && Math.abs(+s.lat)<=90 && Math.abs(+s.lng)<=180){
+    LAT=+s.lat; LNG=+s.lng;
+    // Never fall back to the DEFAULT NAME while using custom coordinates —
+    // that would label someone's own spot "Default location". Without a
+    // saved name, show the coordinates instead.
+    PLACE = s.label || (Math.abs(LAT).toFixed(3)+'\u00B0'+(LAT>=0?'N':'S')+' '
+                      + Math.abs(LNG).toFixed(3)+'\u00B0'+(LNG>=0?'E':'W'));
+  }
+}catch(e){}
+const TZ=ZCLTZ.zone();   // resolved from the saved location, not assumed
+const $=id=>document.getElementById(id);
+$('zcl-loc').textContent=PLACE+' \u00B7 '+Math.abs(LAT).toFixed(2)+'\u00B0 '+(LAT>=0?'N':'S');
+
+// starfield
+(function(){ let s=''; for(let i=0;i<150;i++){ s+='<circle cx="'+(Math.random()*800).toFixed(1)+'" cy="'+(Math.random()*700).toFixed(1)+'" r="'+(Math.random()*.9+.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*.6+.1).toFixed(2)+'"/>'; } $('zcl-stars').innerHTML=s; })();
+
+// ── data ──
+const nights={};   // isoKey → [{h, per:{bm,ec,ic,gf}, lo,mid,hi (blend), sky, spread, nm, nws, precip}]
+const capeDay={};  // isoKey → afternoon max CAPE
+let loaded=false, loadErr=false, fetchedAt=null;
+function isoKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0') }
+function fmtHr(h){ const hh=h%24; if(hh===0) return 'Mid'; const ap=hh>=12?'PM':'AM'; let x=hh%12; if(x===0)x=12; return x+' '+ap; }
+
+// Network calls get a hard timeout. Without this a stalled request (common on
+// weak trailhead signal) leaves the panel showing "Loading…" forever, with no
+// way to tell a slow network from a broken one.
+function fetchT(url, ms){
+  ms = ms || 12000;
+  if(typeof AbortController === 'undefined') return fetch(url);   // very old Safari
+  const ac = new AbortController();
+  const timer = setTimeout(function(){ ac.abort() }, ms);
+  return fetch(url, {signal: ac.signal}).finally(function(){ clearTimeout(timer) });
+}
+
+async function fetchModelCloud(){
+  try{
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LNG
+      +'&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high'
+      +'&models=ecmwf_ifs025,icon_seamless,gfs_seamless&timezone=auto&forecast_days=16';
+    const d=await (await fetchT(url)).json();
+    const Hm=d&&d.hourly; if(!Hm||!Hm.time) return null;
+    const map={};
+    Hm.time.forEach((t,i)=>{
+      const per={};
+      [['ec','ecmwf_ifs025'],['ic','icon_seamless'],['gf','gfs_seamless']].forEach(([k,m])=>{
+        const L=Hm['cloud_cover_low_'+m], M=Hm['cloud_cover_mid_'+m], Hh=Hm['cloud_cover_high_'+m];
+        const lo=L?L[i]:null, mid=M?M[i]:null, hi=Hh?Hh[i]:null;
+        per[k]=(lo!=null&&mid!=null&&hi!=null)?{lo,mid,hi}:null;
+      });
+      map[t]=per;
+    });
+    return map;
+  }catch(e){ return null; }
+}
+async function fetchNWS(){
+  try{
+    const p=await (await fetchT('https://api.weather.gov/points/'+LAT.toFixed(4)+','+LNG.toFixed(4))).json();
+    const gu=p&&p.properties&&p.properties.forecastGridData; if(!gu) return null;
+    const g=await (await fetchT(gu)).json();
+    const vals=g&&g.properties&&g.properties.skyCover&&g.properties.skyCover.values; if(!vals||!vals.length) return null;
+    const map={};
+    vals.forEach(v=>{
+      const parts=String(v.validTime).split('/');
+      const start=Date.parse(parts[0]); if(isNaN(start)||v.value==null) return;
+      const dm=/P(?:(\d+)D)?(?:T(?:(\d+)H)?)?/.exec(parts[1]||'PT1H');
+      const hours=Math.max(1,(+((dm&&dm[1])||0))*24 + (+((dm&&dm[2])||0)));
+      for(let i=0;i<hours&&i<48;i++) map[start+i*3600000]=v.value;
+    });
+    return map;
+  }catch(e){ return null; }
+}
+async function load(){
+  try{
+    const url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LNG
+      +'&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,cape&timezone=auto&forecast_days=16';
+    const [data, modelMap, nwsMap]=await Promise.all([(await fetchT(url)).json(), fetchModelCloud(), fetchNWS()]);
+    const H=data.hourly, utcOff=(data.utc_offset_seconds||0)*1000;
+    const meanOf=a=>a.reduce((x,y)=>x+y,0)/a.length;
+    H.time.forEach((t,i)=>{
+      const hr=+t.slice(11,13);
+      if(H.cape && hr>=11 && hr<=18){
+        const dk=t.slice(0,10), c=H.cape[i]||0;
+        if(capeDay[dk]==null||c>capeDay[dk]) capeDay[dk]=c;
+      }
+      if(!(hr>=17||hr<=7)) return;
+      let nk=t.slice(0,10);
+      if(hr<=7){ const dd=new Date(+t.slice(0,4),+t.slice(5,7)-1,+t.slice(8,10)); dd.setDate(dd.getDate()-1); nk=isoKey(dd); }
+      const bm={lo:H.cloud_cover_low[i]||0, mid:H.cloud_cover_mid[i]||0, hi:H.cloud_cover_high[i]||0};
+      const mm=modelMap?modelMap[t]:null;
+      const per={bm, ec:mm?mm.ec:null, ic:mm?mm.ic:null, gf:mm?mm.gf:null};
+      const sets=[bm]; ['ec','ic','gf'].forEach(k=>{ if(per[k]) sets.push(per[k]); });
+      const skys=sets.map(s=>Math.min(100, s.lo+0.85*s.mid+0.35*s.hi));
+      const epoch=Date.parse(t+':00Z')-utcOff;
+      (nights[nk]||(nights[nk]=[])).push({
+        h:hr, per,
+        lo:meanOf(sets.map(s=>s.lo)), mid:meanOf(sets.map(s=>s.mid)), hi:meanOf(sets.map(s=>s.hi)),
+        sky:Math.round(meanOf(skys)),
+        spread:Math.round(Math.max.apply(null,skys)-Math.min.apply(null,skys)),
+        nm:skys.length,
+        nws:nwsMap?(nwsMap[epoch]!=null?nwsMap[epoch]:null):null
+      });
+    });
+  }catch(e){ loadErr=true; }
+  // Stamp arrival time — offline the SW replays a cached response that is
+  // indistinguishable from live data without it.
+  fetchedAt = loadErr ? null : new Date();
+  loaded=true;
+  render();
+}
+
+// How stale is this data? Surfaced so a cached (offline) reading is never
+// mistaken for a live one.
+function freshnessTxt(){
+  if(!fetchedAt) return '';
+  const mins = Math.round((Date.now() - fetchedAt.getTime())/60000);
+  if(mins < 2)  return 'updated just now';
+  if(mins < 60) return 'updated '+mins+' min ago';
+  const hrs = Math.round(mins/60);
+  if(hrs < 24)  return 'updated '+hrs+' hr ago';
+  return '<b style="color:#D9A85F">cached data \u2014 '+Math.round(hrs/24)+' day(s) old</b>';
+}
+
+// ── shared chart builder ──
+function stackChart(hrs, pick, opts){
+  opts=opts||{};
+  const W=560, H=opts.h||158, padL=30, padR=8, top=12, bot=opts.strip?40:30;
+  const bw=(W-padL-padR)/hrs.length;
+  const y=v=>top+(100-v)/100*(H-top-bot);
+  let bars='', labels='', strip='', nwsLine='';
+  hrs.forEach((e,i)=>{
+    const d=pick(e); if(!d) return;
+    const x=(padL+i*bw+1).toFixed(1), w=(bw-2).toFixed(1);
+    if(opts.simple){
+      // one calm tone: bar height = share of sky blocked, nothing else
+      const v=Math.min(100, d.lo + 0.85*d.mid + 0.35*d.hi);
+      if(v>=0.5) bars+='<rect x="'+x+'" width="'+w+'" y="'+y(v).toFixed(1)+'" height="'+(y(0)-y(v)).toFixed(1)+'" fill="#B39A6B" opacity="0.85"/>';
+    } else {
+      const segs=[[d.lo,'#6E7686',1],[0.85*d.mid,'#98876E',1],[0.35*d.hi,'#C9BD97',0.8]];
+      let acc=0;
+      segs.forEach(([v,col,op])=>{
+        if(v<0.5) return;
+        const y1=y(Math.min(100,acc+v)), y0=y(acc);
+        bars+='<rect x="'+x+'" width="'+w+'" y="'+y1.toFixed(1)+'" height="'+(y0-y1).toFixed(1)+'" fill="'+col+'" opacity="'+op+'"/>';
+        acc+=v;
+      });
+      if(acc<0.5) bars+='<rect x="'+x+'" width="'+w+'" y="'+(y(1.2)).toFixed(1)+'" height="'+(y(0)-y(1.2)).toFixed(1)+'" fill="#5F7A5F" opacity="0.55"/>';
+    }
+    if(opts.strip){
+      const sc = e.nm>=2 ? (e.spread<=15?'#7FA97F':e.spread<=35?'#C9A85A':'#B0654B') : '#5A5344';
+      strip+='<rect x="'+x+'" width="'+w+'" y="'+(H-bot+7)+'" height="4" rx="1" fill="'+sc+'" opacity="0.9"/>';
+    }
+    if(i%3===0) labels+='<text x="'+(padL+i*bw+bw/2).toFixed(1)+'" y="'+(H-12)+'" fill="#9A8E70" font-size="9" text-anchor="middle">'+fmtHr(e.h)+'</text>';
+  });
+  if(opts.nws){
+    let pts=[];
+    hrs.forEach((e,i)=>{ if(e.nws!=null) pts.push((padL+i*bw+bw/2).toFixed(1)+','+y(e.nws).toFixed(1)); });
+    if(pts.length>=2) nwsLine='<polyline points="'+pts.join(' ')+'" fill="none" stroke="#E8DDB5" stroke-width="1.6" stroke-dasharray="4 3" opacity="0.85"/>';
+  }
+  let grid='';
+  [50,100].forEach(v=>{
+    grid+='<line x1="'+padL+'" y1="'+y(v).toFixed(1)+'" x2="'+(W-padR)+'" y2="'+y(v).toFixed(1)+'" stroke="rgba(203,168,90,.12)" stroke-width="1"/>'
+      +'<text x="2" y="'+(y(v)+3).toFixed(1)+'" fill="#7A6E55" font-size="8.5">'+v+'%</text>';
+  });
+  return '<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet">'+grid+bars+nwsLine+strip+labels+'</svg>';
+}
+
+// ── night selection + render ──
+let dayIdx=0;
+const MAXD=14;
+function selDate(){ const d=new Date(); d.setHours(0,0,0,0); d.setDate(d.getDate()+dayIdx); return d; }
+function render(){
+  const d=selDate();
+  $('zcl-daylab').textContent=new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short',month:'long',day:'numeric'}).format(d);
+  $('zcl-prev').disabled=(dayIdx<=0);
+  $('zcl-next').disabled=(dayIdx>=MAXD);
+  const hrs=nights[isoKey(d)];
+  const blendEl=$('zcl-blend'), modEl=$('zcl-models');
+  if(!loaded){ blendEl.innerHTML='<div class="zcl-err">Loading forecast\u2026</div>'; modEl.innerHTML=''; return; }
+  if(loadErr || !hrs || hrs.length<4){
+    blendEl.innerHTML='<div class="zcl-err">'+(loadErr?'Couldn\u2019t reach the forecast service \u2014 check your connection.':'No hourly data for this night yet.')+'</div>';
+    modEl.innerHTML=''; return;
+  }
+  // best window (agreement-weighted) over 8 PM–6 AM
+  const nightHrs=hrs.filter(e=> e.h>=20 || e.h<=6);
+  let best=null;
+  for(let i=0;i+2<nightHrs.length;i++){
+    const w=nightHrs.slice(i,i+3);
+    const a=(w[0].sky+w[1].sky+w[2].sky)/3, sp=(w[0].spread+w[1].spread+w[2].spread)/3;
+    const score=a+0.25*sp;
+    if(!best || score<best.score) best={score, avg:a, from:w[0].h, to:w[2].h};
+  }
+  let windowLine='';
+  if(best){
+    const span=fmtHr(best.from)+' \u2013 '+fmtHr((best.to+1)%24);
+    if(best.avg<=12)      windowLine='Best window: <b>'+span+'</b> \u00B7 essentially clear (~'+Math.round(best.avg)+'% blocked)';
+    else if(best.avg<=35) windowLine='Best window: <b>'+span+'</b> \u00B7 ~'+Math.round(best.avg)+'% of sky blocked';
+    else                  windowLine='No clear break \u2014 clearest around <b>'+span+'</b> (~'+Math.round(best.avg)+'% blocked)';
+  }
+  // confidence
+  const multi=nightHrs.filter(e=>e.nm>=2);
+  let confLine='';
+  if(multi.length){
+    const msp=multi.reduce((s,e)=>s+e.spread,0)/multi.length;
+    if(msp<=12)      confLine='Models agree closely (\u00B1'+Math.round(msp)+'%) \u2014 high confidence.';
+    else if(msp<=25) confLine='Some spread between models (\u00B1'+Math.round(msp)+'%) \u2014 moderate confidence.';
+    else             confLine='Models diverge (\u00B1'+Math.round(msp)+'%) \u2014 low confidence; check again closer to the night.';
+    const withNws=nightHrs.filter(e=>e.nws!=null);
+    if(withNws.length>=3){
+      const nwsAvg=withNws.reduce((s,e)=>s+e.nws,0)/withNws.length;
+      const rawAvg=withNws.reduce((s,e)=>s+Math.min(100,e.lo+e.mid+e.hi),0)/withNws.length;
+      confLine+=Math.abs(nwsAvg-rawAvg)<=15 ? ' NWS concurs.' : ' NWS differs (~'+Math.round(nwsAvg)+'% vs ~'+Math.round(rawAvg)+'% total cloud).';
+    }
+  }
+  // cloud-type expectations with rough timing (the depth the forecast page omits)
+  const half=(arr,pick)=>arr.length?arr.reduce((s,e)=>s+pick(e),0)/arr.length:0;
+  const eve=hrs.filter(e=>e.h>=17), morn=hrs.filter(e=>e.h<=7);
+  const timing=(pe,pm)=>{ if(pe>=2*pm+5) return ' in the evening'; if(pm>=2*pe+5) return ' after midnight'; return ' through the night'; };
+  const types=[];
+  const loE=half(eve,e=>e.lo), loM=half(morn,e=>e.lo);
+  const miE=half(eve,e=>e.mid), miM=half(morn,e=>e.mid);
+  const hiE=half(eve,e=>e.hi), hiM=half(morn,e=>e.hi);
+  if((loE+loM)/2>=12) types.push('low cloud (stratus / cumulus)'+timing(loE,loM)+' \u2014 blocks stars completely where it sits');
+  if((miE+miM)/2>=12) types.push('mid-level altocumulus'+timing(miE,miM)+' \u2014 mostly opaque');
+  if((hiE+hiM)/2>=12) types.push('thin high cirrus'+timing(hiE,hiM)+' \u2014 dims faint stars, halos around the moon');
+  const typeLine = types.length ? 'Expect '+types.join('; ')+'.' : 'No significant cloud in any layer \u2014 a clean night.';
+  // cape
+  let capeLine='';
+  const mo=d.getMonth(), cape=capeDay[isoKey(d)];
+  if(mo>=6 && mo<=8 && cape!=null && cape>=800){
+    capeLine='\u26A1 Monsoon fuel this afternoon (CAPE ~'+Math.round(cape/100)*100+' J/kg) \u2014 buildups likely; evenings often clear once storms collapse after sunset.';
+  }
+  const hasNws=nightHrs.some(e=>e.nws!=null);
+  const legend='<div class="zcl-leg">'
+    +'<span><i style="background:#B39A6B;opacity:.85"></i>Sky blocked</span>'
+    +(hasNws?'<span><i style="background:none;border-top:2px dashed #E8DDB5;height:0;border-radius:0;width:14px"></i>NWS</span>':'')
+    +'<span><i style="background:#7FA97F"></i>Models agree</span>'
+    +'<span><i style="background:#B0654B"></i>Diverge</span></div>';
+  blendEl.innerHTML=(windowLine?'<div class="zcl-window">'+windowLine+'</div>':'')
+    +stackChart(hrs, e=>({lo:e.lo,mid:e.mid,hi:e.hi}), {strip:true, nws:true, h:170, simple:true})
+    +legend
+    +(confLine?'<div class="zcl-conf">'+confLine+'</div>':'')
+    +'<div class="zcl-types">'+typeLine+'</div>'
+    +(capeLine?'<div class="zcl-cape">'+capeLine+'</div>':'')
+    +(freshnessTxt()?'<div class="zcl-note" style="margin-top:8px">'+freshnessTxt()+'</div>':'');
+  // model tiles
+  const models=[
+    ['ec','ECMWF IFS','European Centre \u2014 the global gold standard'],
+    ['ic','ICON','German weather service \u2014 strong mid-latitude terrain'],
+    ['gf','GFS','NOAA global \u2014 the classic American model']
+  ];
+  let tiles='';
+  models.forEach(([k,name,desc])=>{
+    const have=hrs.some(e=>e.per[k]);
+    if(!have){
+      tiles+='<div class="zcl-card"><div class="zcl-mhead"><span class="zcl-mname">'+name+'</span><span class="zcl-mdesc">'+desc+'</span></div>'
+        +'<div class="zcl-err" style="padding:14px 6px">No data for this night (model horizon reached).</div></div>';
+      return;
+    }
+    const skyOf=e=>e.per[k]?Math.min(100, e.per[k].lo+0.85*e.per[k].mid+0.35*e.per[k].hi):null;
+    const vals=hrs.map(skyOf).filter(v=>v!=null);
+    const av=Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+    tiles+='<div class="zcl-card">'
+      +'<div class="zcl-mhead"><span class="zcl-mname">'+name+'</span><span class="zcl-mavg">~'+av+'% blocked tonight</span>'
+      +'<span class="zcl-mdesc">'+desc+'</span></div>'
+      +stackChart(hrs, e=>e.per[k], {h:130})
+      +'</div>';
+  });
+  modEl.innerHTML=tiles;
+}
+$('zcl-prev').addEventListener('click',()=>{ if(dayIdx>0){ dayIdx--; render(); } });
+$('zcl-next').addEventListener('click',()=>{ if(dayIdx<MAXD){ dayIdx++; render(); } });
+document.addEventListener('keydown',ev=>{
+  if(ev.key==='ArrowLeft'&&dayIdx>0){ dayIdx--; render(); }
+  if(ev.key==='ArrowRight'&&dayIdx<MAXD){ dayIdx++; render(); }
+});
+render();
+load();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+    if(navigator.storage && navigator.storage.persist){ navigator.storage.persist().catch(function(){}); }
+  });
+}
+</script>
+</body>
+</html>

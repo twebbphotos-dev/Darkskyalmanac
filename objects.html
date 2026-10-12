@@ -13,19 +13,21 @@
 <meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
-<title>Stars, Planets & Messier Objects · Dark Sky Almanac</title>
+<title>Night Sky Objects · Dark Sky Almanac</title>
 <meta name="description" content="Explore the constellations, the planets, and the brightest deep-sky objects visible tonight — a single hub for everything you can point a telescope, binoculars, or your eye at.">
 <meta property="og:type" content="website">
-<meta property="og:title" content="Stars, Planets & Messier Objects · Dark Sky Almanac">
+<meta property="og:title" content="Night Sky Objects · Dark Sky Almanac">
 <meta property="og:description" content="Explore the constellations, the planets, and the brightest deep-sky objects visible tonight — a single hub for everything you can point a telescope, binoculars, or your eye at.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/objects">
 <meta property="og:url" content="https://app.darkskyalmanac.com/objects">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdnjs.cloudflare.com/ajax/libs/suncalc/1.9.0/suncalc.min.js"></script>
+<script src="suncalc.min.js"></script>
+<script src="zcl-tz.js"></script>
+<script src="zcl-events.js"></script>
 <style>
 html,body{margin:0;padding:0;background:#141319}
 html,body{min-height:100dvh}
@@ -107,6 +109,11 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
 .zcl-obj-foot{text-align:center;font-size:11px;color:#5A5040;
   padding:18px 16px 26px;line-height:1.6}
+/* fit */
+@media(max-width:640px){#zcl-obj::after{inset:7px}.zcl-obj-tl,.zcl-obj-tr{top:7px}.zcl-obj-bl,.zcl-obj-br{bottom:7px}.zcl-obj-tl,.zcl-obj-bl{left:7px}.zcl-obj-tr,.zcl-obj-br{right:7px}}
+@media(max-width:520px){.zcl-obj-inner{padding-left:14px;padding-right:14px}}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 </head>
 <body>
@@ -118,7 +125,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   <div class="zcl-obj-inner">
 
     <div class="zcl-obj-titlebar">
-      <div class="zcl-obj-title">Sky Objects</div>
+      <div class="zcl-obj-title">Night Sky Objects</div>
       <div class="zcl-obj-rule">
         <span class="zcl-obj-rline"></span>
         <svg class="zcl-obj-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
@@ -132,7 +139,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-obj-card-tit">Our Nearest Neighbour</div>
         <div class="zcl-obj-card-name">The Moon</div>
         <div class="zcl-obj-card-rule"></div>
-        <div class="zcl-obj-card-desc">A labelled atlas of the seas, craters, and mountain ranges of the moon — with the moving terminator showing where shadows fall sharpest tonight.</div>
+        <div class="zcl-obj-card-desc">A labelled atlas of the Moon’s seas, craters, and ranges — with the terminator showing where shadows fall sharpest tonight.</div>
         <div class="zcl-obj-card-tool">
           <div class="zcl-obj-card-icon">
             <svg class="zcl-obj-moonsvg" viewBox="0 0 42 42" id="zcl-obj-moonsvg-sm"></svg>
@@ -148,9 +155,9 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
       <a class="zcl-obj-card" href="constellations">
         <div class="zcl-obj-card-tit">The Sky Above</div>
-        <div class="zcl-obj-card-name">Constellation Guide</div>
+        <div class="zcl-obj-card-name">Constellations</div>
         <div class="zcl-obj-card-rule"></div>
-        <div class="zcl-obj-card-desc">The constellations and asterisms visible from Zion, with star-hop directions and the real shapes of the figures.</div>
+        <div class="zcl-obj-card-desc">Constellations and asterisms with star-hop directions and the real shapes of the figures.</div>
         <div class="zcl-obj-card-tool">
           <div class="zcl-obj-card-icon">
             <svg viewBox="0 0 42 42" fill="none" stroke="#CBA85A" stroke-width="1">
@@ -163,7 +170,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
             </svg>
           </div>
           <div class="zcl-obj-card-txt">
-            <div class="zcl-obj-card-lbl">High Overhead Tonight</div>
+            <div class="zcl-obj-card-lbl">In Season Now</div>
             <div class="zcl-obj-card-val" id="zcl-obj-constval">—</div>
             <div class="zcl-obj-card-vsub" id="zcl-obj-constsub">the season’s signature</div>
           </div>
@@ -175,7 +182,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-obj-card-tit">Wanderers</div>
         <div class="zcl-obj-card-name">The Planets</div>
         <div class="zcl-obj-card-rule"></div>
-        <div class="zcl-obj-card-desc">The planets tonight, visible tonight and orbiting the Sun — with a date slider to watch alignments evolve.</div>
+        <div class="zcl-obj-card-desc">Where the planets sit tonight and how they orbit the Sun — with a date slider to watch alignments evolve.</div>
         <div class="zcl-obj-card-tool">
           <div class="zcl-obj-card-icon">
             <svg viewBox="0 0 42 42" fill="none">
@@ -203,7 +210,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-obj-card-tit">Deep Sky</div>
         <div class="zcl-obj-card-name">Deep Sky Catalog</div>
         <div class="zcl-obj-card-rule"></div>
-        <div class="zcl-obj-card-desc">Messier, Caldwell, NGC, and IC objects — nebulae, galaxies, and star clusters — ranked by altitude tonight.</div>
+        <div class="zcl-obj-card-desc">Messier, Caldwell, NGC, and IC deep-sky objects — nebulae, galaxies, and clusters — ranked by how high they climb tonight.</div>
         <div class="zcl-obj-card-tool">
           <div class="zcl-obj-card-icon">
             <svg viewBox="0 0 42 42" fill="none" stroke="#CBA85A" stroke-width="1.3">
@@ -213,7 +220,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
             </svg>
           </div>
           <div class="zcl-obj-card-txt">
-            <div class="zcl-obj-card-lbl">Highest Tonight</div>
+            <div class="zcl-obj-card-lbl">This Month’s Pick</div>
             <div class="zcl-obj-card-val" id="zcl-obj-messierval">—</div>
             <div class="zcl-obj-card-vsub" id="zcl-obj-messiersub">tonight’s featured object</div>
           </div>
@@ -221,9 +228,55 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-obj-card-cta">Open the catalogue</div>
       </a>
 
+      <a class="zcl-obj-card" href="events">
+        <div class="zcl-obj-card-tit">Mark Your Calendar</div>
+        <div class="zcl-obj-card-name">Cosmic Events</div>
+        <div class="zcl-obj-card-rule"></div>
+        <div class="zcl-obj-card-desc">The year&rsquo;s meteor showers and headline events &mdash; oppositions, eclipses, and conjunctions &mdash; each counted down to the night, with peak dates and moon interference.</div>
+        <div class="zcl-obj-card-tool">
+          <div class="zcl-obj-card-icon">
+            <svg viewBox="0 0 42 42" fill="none" stroke="#CBA85A" stroke-width="1.3" stroke-linecap="round">
+              <path d="M8 34 L24 18" stroke-width="1.6"/>
+              <path d="M16 11 L18 13"/><path d="M27 9 L29 11"/><path d="M11 19 L13 21"/>
+              <path d="M30 20 L31.4 22.4 L34 23 L31.4 23.6 L30 26 L28.6 23.6 L26 23 L28.6 22.4 Z" fill="#CBA85A" stroke="none"/>
+            </svg>
+          </div>
+          <div class="zcl-obj-card-txt">
+            <div class="zcl-obj-card-lbl">Next Up</div>
+            <div class="zcl-obj-card-val" id="zcl-obj-eventval">&mdash;</div>
+            <div class="zcl-obj-card-vsub" id="zcl-obj-eventsub">the next event on the calendar</div>
+          </div>
+        </div>
+        <div class="zcl-obj-card-cta">See what&rsquo;s coming</div>
+      </a>
+
+
+      <a class="zcl-obj-card" href="spacecraft">
+        <div class="zcl-obj-card-tit">Explorers</div>
+        <div class="zcl-obj-card-name">NASA Spacecraft in 3D</div>
+        <div class="zcl-obj-card-rule"></div>
+        <div class="zcl-obj-card-desc">Turn real spacecraft in your hand — Perseverance and its helicopter on Mars, the Apollo Lunar Rover on the Moon, the Hubble and James Webb telescopes, and Voyager 1 on its way out of the solar system.</div>
+        <div class="zcl-obj-card-tool">
+          <div class="zcl-obj-card-icon">
+            <svg viewBox="0 0 42 42" fill="none" stroke="#CBA85A" stroke-width="1.1" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M9 17 A12 6 0 0 1 33 17 Z" fill="rgba(203,168,90,.14)"/>
+              <path d="M21 17 L21 10 M17 17 L21 10 L25 17"/>
+              <rect x="16" y="20" width="10" height="6" rx="1"/>
+              <path d="M21 17 L21 20 M26 23 L37 16 M16 24 L8 32"/>
+              <circle cx="21" cy="10" r="1.2" fill="#E6CC85" stroke="none"/>
+            </svg>
+          </div>
+          <div class="zcl-obj-card-txt">
+            <div class="zcl-obj-card-lbl">In the Collection</div>
+            <div class="zcl-obj-card-val">Mars · the Moon · Earth orbit · Deep space</div>
+            <div class="zcl-obj-card-vsub">NASA and museum 3D models</div>
+          </div>
+        </div>
+        <div class="zcl-obj-card-cta">Explore the spacecraft</div>
+      </a>
     </div>
 
-    <div class="zcl-obj-foot">Each section opens its own deep dive — or jump directly via the bottom nav.</div>
+    <div class="zcl-obj-foot">Each section opens its own deep dive — or jump directly from the menu above.</div>
 
   </div>
 </div>
@@ -234,7 +287,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
@@ -244,7 +297,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 (function(){
 // Mini "what's tonight" populators — small, self-contained, gentle astronomy.
 // Designed to fail silently rather than break the page if anything goes sideways.
-const LAT = 37.1986, LNG = -112.9869;
+const __dsaLoc=(function(){try{var r=JSON.parse(localStorage.getItem('dsa-location'));if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)return r;}catch(e){}return null;})(), LAT = __dsaLoc?+__dsaLoc.lat:37.1986, LNG = __dsaLoc?+__dsaLoc.lng:-112.9869;
 const NOW = new Date();
 const $ = id => document.getElementById(id);
 
@@ -272,12 +325,12 @@ const $ = id => document.getElementById(id);
     2: ['Leo','the spring Lion, climbing high in the south'],
     3: ['Ursa Major','the Great Bear, with the Big Dipper riding high'],
     4: ['Boötes & Virgo','the spring kite leading galaxy season'],
-    5: ['the Summer Triangle','Vega, Deneb &amp; Altair high overhead'],
-    6: ['the Summer Triangle','blazing through the zenith with the Milky Way'],
+    5: ['Boötes & Hercules','Arcturus high in the south, the Keystone close behind'],
+    6: ['Scorpius','the Scorpion and red Antares due south at nightfall'],
     7: ['Cygnus & Lyra','flying along the summer Milky Way'],
     8: ['the Great Square of Pegasus','autumn’s signpost climbing east'],
-    9: ['Andromeda & Pegasus','autumn’s showpiece galaxies overhead'],
-    10:['Perseus & Cassiopeia','autumn’s W riding into the zenith'],
+    9: ['Andromeda & Pegasus','the Great Square and the Andromeda Galaxy riding high'],
+    10:['Perseus & Cassiopeia','the W of Cassiopeia at its highest, Perseus close behind'],
   };
   const p = seasonal[m]; if(!p) return;
   $('zcl-obj-constval').innerHTML = p[0];
@@ -322,19 +375,9 @@ function _altAz(ra,dec,utc){const latR=LAT*Math.PI/180,decR=dec*Math.PI/180;let 
 
 // ── Moon — phase and illumination for tonight ──
 (function(){
-  const SYNODIC = 29.53058867;
-  const REF = new Date('2000-01-06T18:14:00Z');
-  const days = (NOW - REF) / 86400000;
-  const ph = ((days % SYNODIC) + SYNODIC) % SYNODIC;
-  const frac = ph / SYNODIC;
-  const ill = 0.5 * (1 - Math.cos(2 * Math.PI * frac));
-  const waxing = frac < 0.5;
-  let name;
-  if(ill < 0.02)      name = 'New Moon';
-  else if(ill > 0.98) name = 'Full Moon';
-  else if(ill < 0.46) name = waxing ? 'Waxing Crescent' : 'Waning Crescent';
-  else if(ill < 0.54) name = waxing ? 'First Quarter'   : 'Last Quarter';
-  else                name = waxing ? 'Waxing Gibbous'  : 'Waning Gibbous';
+  // One answer app-wide: SunCalc at 11 PM local tonight (see zcl-tz.js).
+  const mp = ZCLTZ.moonTonight(NOW);
+  const ill = mp.ill, frac = mp.frac, waxing = mp.waxing, name = mp.name;
 
   const el = $('zcl-obj-moonval');
   const sub = $('zcl-obj-moonsub');
@@ -366,10 +409,10 @@ function _altAz(ra,dec,utc){const latR=LAT*Math.PI/180,decR=dec*Math.PI/180;let 
 
 (function(){
   const m=NOW.getMonth();
-  // Each entry: M-number, common name. Picked to be both bright and high in that month.
+  // Each entry: M-number, common name. Picked to be bright and well placed in the evening that month.
   const seasonal = {
     11:['M42','Orion Nebula'], 0:['M42','Orion Nebula'], 1:['M42','Orion Nebula'],
-    2: ['M44','Beehive Cluster'], 3:['M3','Hercules globular'], 4:['M13','Hercules globular'],
+    2: ['M44','Beehive Cluster'], 3:['M3','Canes Venatici globular'], 4:['M13','Hercules globular'],
     5: ['M13','Hercules globular'], 6:['M22','Sagittarius globular'],
     7: ['M27','Dumbbell Nebula'], 8:['M31','Andromeda Galaxy'],
     9: ['M31','Andromeda Galaxy'], 10:['M45','the Pleiades'],
@@ -381,6 +424,35 @@ function _altAz(ra,dec,utc){const latR=LAT*Math.PI/180,decR=dec*Math.PI/180;let 
 
 // Night mode on load
 try{ if(sessionStorage.getItem('nightMode')==='1'){ document.body.classList.add('night-mode') } }catch(e){}
+// ── Next cosmic event (mirrors events.html: soonest shower or dated event) ──
+(function(){
+  try{
+    // Showers and dated events come from zcl-events.js, the one list every page shares.
+    const SHOWERS=ZCL_EVENTS.showers.map(function(s){return [s.name,s.m,s.d]});
+    const EVENTS=ZCL_EVENTS.events.map(function(e){return [e.y,e.m,e.d,e.label]});
+    const items=[];
+    const y=NOW.getFullYear();
+    SHOWERS.forEach(function(a){
+      let d=new Date(y,a[1],a[2],23,0,0);
+      if(d<NOW) d=new Date(y+1,a[1],a[2],23,0,0);
+      items.push({name:a[0]+' peak', date:d});
+    });
+    EVENTS.forEach(function(e){
+      const d=new Date(e[0],e[1],e[2],22,0,0);
+      if(d>=new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate())) items.push({name:e[3], date:d});
+    });
+    if(!items.length) return;
+    items.sort(function(a,b){ return a.date-b.date });
+    const it=items[0];
+    const days=Math.round((new Date(it.date.getFullYear(),it.date.getMonth(),it.date.getDate())
+                          -new Date(NOW.getFullYear(),NOW.getMonth(),NOW.getDate()))/86400000);
+    const when = days<=0 ? 'tonight' : days===1 ? 'tomorrow night' : 'in '+days+' nights';
+    const ev=$('zcl-obj-eventval'), sub=$('zcl-obj-eventsub');
+    if(ev) ev.textContent=it.name;
+    if(sub) sub.textContent=when;
+  }catch(e){}
+})();
+
 })();
 </script>
 <script>
@@ -389,6 +461,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 
 <!-- ════ Settings popup (shared) ════ -->
@@ -403,6 +490,18 @@ if('serviceWorker' in navigator){
   box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>

@@ -1,0 +1,20 @@
+# Files here are NOT uploaded as public assets. .gitignore syntax.
+# This file must sit in the assets directory root (the repo root), not in a
+# subfolder — Cloudflare only reads it from the root.
+
+# Repository internals. Without this line a deploy publishes your entire git
+# history at <site>/.git/ — every commit, every file ever committed.
+.git
+.gitignore
+.wrangler
+
+# Wrangler config should not be world-readable
+wrangler.jsonc
+wrangler.toml
+
+node_modules
+.DS_Store
+
+# Solver dev files: build scripts and test suites, not needed to serve the app
+/solver/tools
+/solver/package.json

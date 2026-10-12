@@ -14,15 +14,15 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-180.png">
 <title>Dark Sky Maps · Dark Sky Almanac</title>
-<meta name="description" content="Interactive maps of the best stargazing locations across Zion, Bryce Canyon, and Cedar Breaks — overlooks, trailheads, and remote dark-sky sites, each rated by Bortle class.">
+<meta name="description" content="Interactive maps of the best stargazing locations across southern Utah's national parks and Cedar Breaks — overlooks, viewpoints and campgrounds, each rated by Bortle class.">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Dark Sky Maps · Dark Sky Almanac">
-<meta property="og:description" content="Interactive maps of the best stargazing locations across Zion, Bryce Canyon, and Cedar Breaks — overlooks, trailheads, and remote dark-sky sites, each rated by Bortle class.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:description" content="Interactive maps of the best stargazing locations across southern Utah's national parks and Cedar Breaks — overlooks, viewpoints and campgrounds, each rated by Bortle class.">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/maps">
 <meta property="og:url" content="https://app.darkskyalmanac.com/maps">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319;min-height:100dvh}
@@ -96,6 +96,11 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-maps-card.soon{opacity:.78}
 .zcl-maps-card.soon:hover{opacity:.95}
 .zcl-maps-card.soon .zcl-maps-card-badge{color:#8A7C5C;border-color:rgba(154,138,102,.35);letter-spacing:.10em}
+/* fit */
+@media(max-width:640px){#zcl-maps-page::after{inset:7px}.zcl-maps-tl,.zcl-maps-tr{top:7px}.zcl-maps-bl,.zcl-maps-br{bottom:7px}.zcl-maps-tl,.zcl-maps-bl{left:7px}.zcl-maps-tr,.zcl-maps-br{right:7px}}
+
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 
 <div id="zcl-maps-wrap">
@@ -111,120 +116,56 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <svg class="zcl-maps-rstar" viewBox="0 0 24 24"><path d="M12 2L13.6 9.2L21 12L13.6 14.8L12 22L10.4 14.8L3 12L10.4 9.2Z" fill="#CBA85A"/></svg>
         <span class="zcl-maps-rline"></span>
       </div>
-      <div class="zcl-maps-sub">Fourteen dark sky destinations across southern Utah — Gold-tier International Dark Sky Parks, gateway towns, and remote BLM country. Tap any card below to explore stargazing sites, trailheads, and overlooks.</div>
+      <div class="zcl-maps-sub">Six dark-sky destinations across southern Utah, every one a certified International Dark Sky Park. Tap any card to explore stargazing sites, trailheads, and overlooks. Bortle ratings are estimates.</div>
     </div>
     <div class="zcl-maps-grid">
   <a class="zcl-maps-card" href="map-zion">
     <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Gold IDA Park</div>
+    <div class="zcl-maps-card-badge">Dark Sky Park</div>
     <div class="zcl-maps-card-name">Zion</div>
     <div class="zcl-maps-card-loc">Springdale, UT · 37.2°N</div>
-    <div class="zcl-maps-card-special">Towering Navajo sandstone cliffs frame narrow strips of the Milky Way — and the Kolob Plateau above the canyon delivers Bortle 1 darkness 30 minutes from town.</div>
-    <div class="zcl-maps-card-stats">12 stargazing sites · 4,000–8,100 ft<br>Canyon · Kolob high country · Mt Carmel</div>
+    <div class="zcl-maps-card-special">Towering Navajo sandstone cliffs frame narrow strips of the Milky Way — and the Kolob Terrace high country above the canyon is darker still, under an hour from town.</div>
+    <div class="zcl-maps-card-stats">11 stargazing sites · 4,000–8,100 ft<br>Canyon · Kolob high country · Mt Carmel</div>
   </a>
   <a class="zcl-maps-card" href="map-bryce">
     <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Gold IDA Park</div>
+    <div class="zcl-maps-card-badge">Gold-Tier Dark Sky Park</div>
     <div class="zcl-maps-card-name">Bryce Canyon</div>
     <div class="zcl-maps-card-loc">Bryce, UT · 37.6°N</div>
     <div class="zcl-maps-card-special">8,000+ ft of elevation, thin dry air, no nearby cities — among the darkest accessible skies in the lower 48. The amphitheater hoodoos light up under starlight alone.</div>
-    <div class="zcl-maps-card-stats">9 stargazing sites · 8,000–9,100 ft<br>Sunset Pt · Bryce Pt · Yovimpa</div>
+    <div class="zcl-maps-card-stats">6 stargazing sites · 7,800–9,100 ft<br>Sunset Pt · Bryce Pt · Yovimpa</div>
   </a>
   <a class="zcl-maps-card" href="map-capitol-reef">
     <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">IDA Park</div>
+    <div class="zcl-maps-card-badge">Gold-Tier Dark Sky Park</div>
     <div class="zcl-maps-card-name">Capitol Reef</div>
     <div class="zcl-maps-card-loc">Torrey, UT · 38.3°N</div>
-    <div class="zcl-maps-card-special">A 100-mile slab of the Waterpocket Fold under pristine skies — Cathedral Valley's Temples of Sun and Moon make the most photographed night-sky foregrounds in Utah.</div>
-    <div class="zcl-maps-card-stats">12 stargazing sites · 5,500–9,400 ft<br>Cathedral Valley · Fruita · Boulder Mtn · Burr Trail</div>
+    <div class="zcl-maps-card-special">A 100-mile slab of the Waterpocket Fold under pristine skies — the Fruita orchards and Capitol Gorge sit under some of the darkest skies in the country.</div>
+    <div class="zcl-maps-card-stats">5 stargazing sites · 5,400–9,400 ft<br>Fruita · Capitol Gorge · Boulder Mtn</div>
   </a>
   <a class="zcl-maps-card" href="map-canyonlands">
     <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">IDA Park</div>
+    <div class="zcl-maps-card-badge">Gold-Tier Dark Sky Park</div>
     <div class="zcl-maps-card-name">Canyonlands</div>
     <div class="zcl-maps-card-loc">Moab, UT · 38.3°N</div>
-    <div class="zcl-maps-card-special">Three remote districts spanning 525 square miles. Island in the Sky overlooks drop 1,200 ft to White Rim Road; the Maze district holds the most isolated dark sky in any U.S. national park.</div>
-    <div class="zcl-maps-card-stats">12 stargazing sites · 3,800–6,400 ft<br>Island in the Sky · Needles · Maze · Horseshoe</div>
+    <div class="zcl-maps-card-special">Island in the Sky, a mesa top 1,000 ft above the White Rim, with paved roads to every overlook and Dead Horse Point next door.</div>
+    <div class="zcl-maps-card-stats">5 stargazing sites · 5,700–6,100 ft<br>Island in the Sky · Mesa Arch · Dead Horse Point</div>
   </a>
   <a class="zcl-maps-card" href="map-arches">
     <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">IDA Park</div>
+    <div class="zcl-maps-card-badge">Dark Sky Park</div>
     <div class="zcl-maps-card-name">Arches</div>
     <div class="zcl-maps-card-loc">Moab, UT · 38.7°N</div>
-    <div class="zcl-maps-card-special">Over 2,000 cataloged sandstone arches in 73,000 acres. Delicate Arch frames the Milky Way; the remote Klondike Bluffs section to the NW escapes Moab's glow entirely.</div>
-    <div class="zcl-maps-card-stats">12 stargazing sites · 4,000–5,600 ft<br>Devils Garden · The Windows · Klondike Bluffs</div>
+    <div class="zcl-maps-card-special">Over 2,000 cataloged sandstone arches in about 76,000 acres. Delicate Arch and the Windows frame the Milky Way, all a short walk from paved roads.</div>
+    <div class="zcl-maps-card-stats">6 stargazing sites · 4,000–5,600 ft<br>Devils Garden · The Windows · Delicate Arch</div>
   </a>
   <a class="zcl-maps-card" href="map-cedar-breaks">
     <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">IDA Park</div>
+    <div class="zcl-maps-card-badge">Dark Sky Park</div>
     <div class="zcl-maps-card-name">Cedar Breaks</div>
     <div class="zcl-maps-card-loc">Brian Head, UT · 37.6°N</div>
-    <div class="zcl-maps-card-special">The highest-elevation IDA Park on the Colorado Plateau at 10,300+ ft. Thin alpine air, almost no humidity, and a deep amphitheater of red hoodoos to anchor the horizon.</div>
-    <div class="zcl-maps-card-stats">9 stargazing sites · 10,000–10,467 ft<br>Point Supreme · Sunset View · Ramparts</div>
-  </a>
-  <a class="zcl-maps-card" href="map-st-george">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Dark Sky Region</div>
-    <div class="zcl-maps-card-name">St. George</div>
-    <div class="zcl-maps-card-loc">St. George, UT · 37.1°N</div>
-    <div class="zcl-maps-card-special">A regional map for southwestern Utah — Snow Canyon's vermilion cliffs, Pine Valley's high country, and the reservoirs of Sand Hollow and Quail Creek for Milky Way reflections.</div>
-    <div class="zcl-maps-card-stats">8 stargazing sites · 2,800–10,300 ft<br>Snow Canyon · Pine Valley · Sand Hollow · Gunlock</div>
-  </a>
-  <a class="zcl-maps-card" href="map-cedar-city">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Cedar City</div>
-    <div class="zcl-maps-card-loc">Cedar City, UT · 37.7°N</div>
-    <div class="zcl-maps-card-special">Gateway to the Markagunt Plateau — Brian Head Peak, Navajo Lake, and the high forests above 9,000 ft. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">7 sites (preview) · 5,800–11,300 ft<br>Brian Head · Navajo Lake · SUU Ashcroft Observatory</div>
-  </a>
-  <a class="zcl-maps-card" href="map-kanab">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Kanab</div>
-    <div class="zcl-maps-card-loc">Kanab, UT · 37.0°N</div>
-    <div class="zcl-maps-card-special">The heart of the Grand Circle — Coral Pink Sand Dunes, the Kaibab Plateau, and remote slickrock toward the Arizona line. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">6 sites (preview) · 4,900–7,900 ft<br>Coral Pink Dunes · Jacob Lake · Toadstools</div>
-  </a>
-  <a class="zcl-maps-card" href="map-cannonville">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Cannonville</div>
-    <div class="zcl-maps-card-loc">Cannonville, UT · 37.6°N</div>
-    <div class="zcl-maps-card-special">The quiet southern gateway to Bryce — Kodachrome Basin, Grosvenor Arch, and the Cottonwood Canyon Road backcountry. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">6 sites (preview) · 5,800–8,200 ft<br>Kodachrome Basin · Grosvenor Arch · Cottonwood Canyon</div>
-  </a>
-  <a class="zcl-maps-card" href="map-escalante">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Escalante</div>
-    <div class="zcl-maps-card-loc">Escalante, UT · 37.8°N</div>
-    <div class="zcl-maps-card-special">The Hole-in-the-Rock Road corridor and Hwy 12 scenic byway between Escalante and Boulder. Bortle 1 slickrock country. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">9 sites (preview) · 5,800–8,700 ft<br>Devils Garden · Calf Creek · Head of the Rocks</div>
-  </a>
-  <a class="zcl-maps-card" href="map-torrey">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Torrey</div>
-    <div class="zcl-maps-card-loc">Torrey, UT · 38.3°N</div>
-    <div class="zcl-maps-card-special">The immediate gateway to Capitol Reef, with the Boulder Mountain and Thousand Lake Mountain plateaus rising on either side. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">7 sites (preview) · 6,800–11,000 ft<br>Aquarius Plateau · Sunglow CG · Velvet Ridge</div>
-  </a>
-  <a class="zcl-maps-card" href="map-hanksville">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Hanksville</div>
-    <div class="zcl-maps-card-loc">Hanksville, UT · 38.4°N</div>
-    <div class="zcl-maps-card-special">Gateway to Goblin Valley State Park (an IDA Dark Sky Park) and the remote Henry Mountains — among the darkest skies in the lower 48. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">8 sites (preview) · 4,300–11,500 ft<br>Goblin Valley · Henry Mtns · Little Wild Horse</div>
-  </a>
-  <a class="zcl-maps-card" href="map-moab">
-    <svg class="zcl-maps-card-ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
-    <div class="zcl-maps-card-badge">Preview</div>
-    <div class="zcl-maps-card-name">Moab</div>
-    <div class="zcl-maps-card-loc">Moab, UT · 38.6°N</div>
-    <div class="zcl-maps-card-special">Basecamp for Arches and Canyonlands — Dead Horse Point (an IDA park), the Colorado River corridor, Castle Valley, and the La Sal Mountains. Basemap art coming soon.</div>
-    <div class="zcl-maps-card-stats">9 sites (preview) · 4,000–10,000 ft<br>Dead Horse Point · La Sals · Castle Valley</div>
+    <div class="zcl-maps-card-special">One of the highest International Dark Sky Parks anywhere, at more than 10,000 ft. Thin alpine air, low humidity, and a deep amphitheater of red hoodoos to anchor the horizon.</div>
+    <div class="zcl-maps-card-stats">5 stargazing sites · 10,000–10,467 ft<br>Point Supreme · North View · Chessmen Ridge</div>
   </a>
 </div>
   </div>
@@ -236,7 +177,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem active" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
@@ -263,6 +204,18 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   background:#141319;border:1px solid rgba(203,168,90,.4);border-radius:14px;
   box-shadow:0 16px 50px rgba(0,0,0,.6);overflow:hidden;animation:zcl-set-pop .2s ease}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>
@@ -331,6 +284,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 </body>
 </html>

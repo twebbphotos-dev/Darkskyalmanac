@@ -1,0 +1,17 @@
+# Rules are site-wide URL patterns, so they live at the repo root even though
+# the app sits in /solver/.
+
+# Catalog files never change in place: cache them hard.
+/solver/catalog/*
+  Cache-Control: public, max-age=31536000, immutable
+
+/solver/icon-*.png
+  Cache-Control: public, max-age=31536000, immutable
+
+# The service worker must always revalidate, or an update never reaches a
+# phone that already installed the app.
+/solver/sw.js
+  Cache-Control: public, max-age=0, must-revalidate
+
+/solver/index.html
+  Cache-Control: public, max-age=0, must-revalidate

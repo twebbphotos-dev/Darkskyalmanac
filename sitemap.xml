@@ -7,6 +7,8 @@
   <url><loc>https://app.darkskyalmanac.com/objects</loc><priority>0.8</priority></url>
   <url><loc>https://app.darkskyalmanac.com/finder</loc><priority>0.8</priority></url>
   <url><loc>https://app.darkskyalmanac.com/events</loc><priority>0.8</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/sources</loc><priority>0.5</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/solver/</loc><priority>0.6</priority></url>
   <!-- Deep-sky catalog (renamed v113 from /messier) -->
   <url><loc>https://app.darkskyalmanac.com/catalog</loc><priority>0.8</priority></url>
   <url><loc>https://app.darkskyalmanac.com/constellations</loc><priority>0.7</priority></url>
@@ -17,19 +19,24 @@
   <url><loc>https://app.darkskyalmanac.com/map-canyonlands</loc><priority>0.8</priority></url>
   <url><loc>https://app.darkskyalmanac.com/map-arches</loc><priority>0.8</priority></url>
   <url><loc>https://app.darkskyalmanac.com/map-cedar-breaks</loc><priority>0.8</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-st-george</loc><priority>0.7</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-cedar-city</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-kanab</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-cannonville</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-escalante</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-torrey</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-hanksville</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/map-moab</loc><priority>0.6</priority></url>
   <!-- Tonight in the solar system -->
   <url><loc>https://app.darkskyalmanac.com/moon</loc><priority>0.7</priority></url>
   <url><loc>https://app.darkskyalmanac.com/solar</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/mercury</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/venus</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/earth</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/mars</loc><priority>0.6</priority></url>
   <url><loc>https://app.darkskyalmanac.com/jupiter</loc><priority>0.6</priority></url>
   <url><loc>https://app.darkskyalmanac.com/saturn</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/mars</loc><priority>0.6</priority></url>
-  <url><loc>https://app.darkskyalmanac.com/earth</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/uranus</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/neptune</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/pluto</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/voyager</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/spacecraft</loc><priority>0.6</priority></url>
+  <!-- Astrophotography tools -->
+  <url><loc>https://app.darkskyalmanac.com/photography</loc><priority>0.7</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/npf</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/session-log</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/integration</loc><priority>0.6</priority></url>
+  <url><loc>https://app.darkskyalmanac.com/meridian</loc><priority>0.6</priority></url>
 </urlset>

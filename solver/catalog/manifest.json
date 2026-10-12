@@ -1,0 +1,62 @@
+{
+ "source": "HYG v4.1",
+ "epoch": 2026.0,
+ "maglimit": 9.0,
+ "nstars": 83479,
+ "codeRange": [
+  -0.25,
+  1.25
+ ],
+ "layers": [
+  {
+   "name": "A",
+   "file": "quads_A.bin",
+   "count": 142468,
+   "dmin": 0.3,
+   "dmax": 1.6,
+   "maglim": 9.0,
+   "density": 2.1,
+   "indexStars": 73106,
+   "bytes": 3704184
+  },
+  {
+   "name": "B",
+   "file": "quads_B.bin",
+   "count": 46969,
+   "dmin": 0.7,
+   "dmax": 3.8,
+   "maglim": 8.5,
+   "density": 0.42,
+   "indexStars": 17560,
+   "bytes": 1221210
+  },
+  {
+   "name": "C",
+   "file": "quads_C.bin",
+   "count": 18114,
+   "dmin": 1.8,
+   "dmax": 9.0,
+   "maglim": 7.0,
+   "density": 0.06,
+   "indexStars": 3288,
+   "bytes": 470980
+  },
+  {
+   "name": "D",
+   "file": "quads_D.bin",
+   "count": 4085,
+   "dmin": 4.0,
+   "dmax": 20.0,
+   "maglim": 5.5,
+   "density": 0.015,
+   "indexStars": 732,
+   "bytes": 106226
+  }
+ ],
+ "fitRatio": 0.4,
+ "files": {
+  "stars": "stars.bin",
+  "names": "names.json",
+  "dso": "dso.json"
+ }
+}

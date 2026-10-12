@@ -1,0 +1,137 @@
+# Dark Sky Almanac
+
+Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
+
+**Current release: v3.52, service-worker cache `zion-sky-v318`.**
+Next release: v3.53, cache `zion-sky-v319`.
+
+Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
+
+---
+
+## Standards (non-negotiable)
+
+- **Astronomical accuracy comes first.** The next stage is review by critical science teachers and journalists, so one wrong fact is a real embarrassment.
+  - Verify against authoritative sources: Stellarium, Meeus *Astronomical Algorithms*, IAU data, JPL, theskylive.com.
+  - Never invent data, especially constellation topology, boundaries, coordinates, names or mythology. If unsure, say so.
+- **Write for a broad public audience.**
+  - No tour or guest language, no dev-period talk, no internal-tool tone.
+  - US spelling.
+- **Location-specific text lives only on the Maps pages** (`maps.html`, `map-*.html`). Constellations, events, planets and tools stay location-neutral. Zion, Springdale and Utah place names must not leak into them.
+- **Bump the service-worker cache on every release.** Without the bump, phones keep the old files.
+
+## How Tyler likes to work
+
+- **Concise, direct replies.** Short punchy sentences. Actionable results over technical elaboration.
+- **Surgical edits over redesigns.** Change what was asked. Don't restyle neighbors.
+- **Explain *why* a bug existed**, not just what was changed.
+- **He gives fast, blunt feedback** ("too busy", "remove that", "this looks crazy"). Adapt immediately; don't argue taste.
+- **UI:** simple and clean. Always-visible beats collapsible. No redundant elements. Label approximate data honestly.
+- **Releases are numbered single-digit style**: v3.52, v3.53. Each release gets a one-line summary of what changed and why.
+
+## Repo layout
+
+The repo root is the site root. There is no build step: each page is a standalone HTML file with inline IIFE scripts.
+
+```
+index.html            Home (canonical 7-item nav: Home · Forecast · Objects · Map · Tools · Finder · Settings)
+tonight.html forecast.html clouds.html daylight.html     tonight, multi-model cloud forecast, daylight planner
+objects.html catalog.html constellations.html events.html  objects hub, deep-sky catalog, constellations (Rey figures + mythology), cosmic events
+solar.html mercury..pluto.html jupiter.html moon.html earth.html  planets and moons
+finder.html meridian.html                                 Sky Finder (overlay + star catalog), Meridian & Transit (66+ targets)
+photography.html npf.html integration.html session-log.html  astrophotography tools hub + tools
+solver/                Star ID: offline phone plate solver (see docs/STAR-ID.md)
+maps.html map-*.html map-*.jpg map-engine.js              dark-sky maps: Zion, Bryce, Cedar Breaks, Capitol Reef, Arches, Canyonlands
+spacecraft.html voyager.html *.bundle.js models/ img/cmp/  3D spacecraft (offline only via Settings → Download everything)
+settings.html sources.html
+zcl-tz.js zcl-calendar.js zcl-events.js zcl-season.js     shared helpers (timezone, ZCLCalendar date picker, events, seasons)
+suncalc.min.js jupiter-ephem.js saturn-ephem.js
+sw.js                  the only service worker (root scope)
+_headers .assetsignore Cloudflare headers / files never published
+verify-assets.py       ship gate (see Release)
+src/                   one-off generator and patch scripts kept for provenance (not deployed)
+tools/                 build, cache bump, local server, page sweep
+tests/solver/          Star ID regression frames, harness and baseline
+docs/                  handoff notes
+```
+
+## Design system
+
+- **Colors:**
+  - background `#141319`
+  - card `#0d0a18`
+  - gold `#CBA85A` / `#E6CC85`
+  - cream `#F2E4BE` / `#C9BD97`
+  - muted `#9A8A66`
+- **Look:** Montserrat throughout, with an antique gold-on-velvet feel. Corner filigree SVGs, 8-point star banners, a faint starfield. CSS classes use the `zcl-` prefix.
+- **Default location:** LAT 37.1986, LNG −112.9869. The user's location is stored in `localStorage['dsa-location']` (`{lat,lng,label}`).
+- **Time:** always civil Mountain Time via `mtOffset()` / `tzOffset()`, never local mean solar time (−LNG/15).
+
+## Service worker (`sw.js`)
+
+- `CACHE = 'zion-sky-vNNN'`: bumped every release (`tools/bump-cache.py`).
+- `CRITICAL`: precached on install. A single 404 rejects the whole `addAll` and kills offline mode. `verify-assets.py` checks every entry exists.
+- `ALIASES`: extensionless URLs mapped to their `.html` files.
+- `C3D = 'zion-sky-3d'` + `OFFLINE3D`: 3D models, downloaded only when the user asks (Settings → Download everything). Every `*.bundle.js`, `models/*` and `img/cmp/*` must be listed; the gate checks this.
+- `CSOL = 'zion-sky-solver'` + `SOLVER`: Star ID code and catalog. It persists across releases (the catalog is about 6 MB).
+  - `refreshSolverCode()` re-fetches the non-`.bin` solver files on every install.
+  - `sameFile()` is strict: null headers do **not** count as equal. An older lenient version left stale solver code on phones.
+- New files go in the right list: `CRITICAL` for pages and assets, `SOLVER` for `solver/*`, `OFFLINE3D` for 3D.
+- `solver/sw.js` is a tombstone that unregisters the old standalone Star ID worker. Leave it.
+
+## Release
+
+```bash
+python3 tools/bump-cache.py        # zion-sky-v318 -> v319
+tools/build.sh 3.53                # -> dist/ + out/dark-sky-almanac-v3.53.zip, runs verify-assets.py
+```
+
+- `build.sh` copies the root files by type, then `img/ models/ solver/ _headers .assetsignore`.
+  - `*.html *.js` alone silently drops the images; that's why the gate exists.
+  - `src/ tools/ tests/ docs/` are never shipped.
+- **Deploy:**
+  - **Current:** upload the zip in the Cloudflare dashboard (Workers & Pages → darkskyalmanac → new deployment).
+  - **Alternative:** connect this GitHub repo in Cloudflare so it builds and deploys `dist/` on push. See `docs/HANDOFF.md`.
+- After shipping, add a short entry to `docs/CHANGELOG.md` (newest first): version, cache, what changed, and why.
+
+## Testing
+
+**Setup:**
+
+```bash
+pip install playwright numpy pillow && python3 -m playwright install chromium   # once
+tools/serve.sh &                                  # http://localhost:8765 (pages need .html locally)
+```
+
+**Run these before shipping:**
+
+```bash
+python3 tools/sweep.py                            # every page at 390x844 with no network: expect "37 pages, 0 with errors"
+python3 tests/solver/e2e.py                       # Star ID in a real browser, online then offline
+```
+
+**When you touch `solver/`:**
+
+```bash
+python3 tests/solver/make_variants.py             # once: builds tests/solver/.cache (git-ignored, ~500 MB)
+node tests/solver/regress.mjs                     # compare with tests/solver/baseline.txt (33 of 37)
+```
+
+**Other checks:**
+- After editing inline scripts, extract each `<script>` block and run `node --check` on it.
+- Check that `<div>` and `</div>` counts balance outside scripts.
+
+## Gotchas learned the hard way
+
+- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* in Star ID and on the Constellations page use H.A. Rey shapes, plus a simplified Lyra.
+- **Check sky drawings with the app's own projection**: `buildMap` stereographic, `_project` with `{x:-p.xi, y:-p.eta}`. Flat test renders mislead.
+- **Map pins:**
+  - Anchor to fixed features (interchanges, reservoir shapes), never town-label boxes.
+  - NPS basemaps are non-linear, so eyeballing a % grid beats a GPS linear fit.
+  - Pins are stored as % of the image.
+- **Never re-encode NPS line-art map JPEGs.** Copy the bytes; double compression softens them.
+- **SunCalc differs by source:** cdnjs 1.9.0 (runtime) returns radians; npm SunCalc returns degrees. Harness altitudes can look absurd while their ordering is still right.
+- **JSDOM harness settings** (older tests): `TZ='America/Denver'`, `runScripts:'dangerously'`, `pretendToBeVisual:true`.
+- **Never spread a big array into a call**: `push(...arr)`, `Math.max(...arr)`. Over ~100k items it throws "Maximum call stack size exceeded" (the v3.51 Star ID crash).
+- **Don't `pkill -f` a pattern that matches your own shell's command line.**
+- **St. George map is parked** in `src/st-george-map/`. The source is only 924 × 1316 px and pixelates; bring it back only with a higher-resolution basemap.

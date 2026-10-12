@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#141319">
+<meta name="description" content="Tonight at a glance — sunset, sunrise, moonrise, moonset, moon phase and hourly cloud cover.">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" type="image/svg+xml" href="icon.svg">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta property="og:title" content="Tonight at a Glance · Dark Sky Almanac">
+<meta property="og:description" content="Sunset, sunrise, moonrise, moonset, moon phase and hourly cloud cover — at a glance.">
+<meta property="og:image" content="social.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<title>Tonight · Dark Sky Almanac</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+html,body{margin:0;padding:0;background:#141319;min-height:100%;color-scheme:dark}
+body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased;color:#F2E4BE}
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);
+  display:flex;background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.25);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:3px;padding:9px 2px 8px;text-decoration:none;color:#8A7E60;font-size:8.5px;font-weight:600;
+  letter-spacing:.14em;text-transform:uppercase}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#E6CC85}
+
+.wrap{max-width:560px;margin:0 auto;padding:74px 14px 60px;padding-top:calc(74px + env(safe-area-inset-top))}
+
+/* ── date bar ── */
+.datebar{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:8px}
+.dbtn{width:46px;height:46px;flex:none;border-radius:50%;border:1px solid rgba(203,168,90,.5);
+  background:rgba(203,168,90,.08);color:#E6CC85;font-size:24px;line-height:1;cursor:pointer;
+  touch-action:manipulation;-webkit-user-select:none;user-select:none;
+  display:flex;align-items:center;justify-content:center;font-family:inherit}
+.dbtn:disabled{opacity:.25}
+.dlabel{flex:1;text-align:center}
+/* The date label must never wrap - a second line shoves the whole layout down.
+   Worst case is "Wednesday, September 16", so the type scales with the viewport
+   and the script falls back to abbreviated names on narrow screens. */
+.dday{font-size:clamp(14px, 4.7vw, 21px);font-weight:600;letter-spacing:.01em;line-height:1.2;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dsub{font-size:12.5px;letter-spacing:.16em;text-transform:uppercase;color:#9A875C;margin-top:3px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pickrow{display:flex;align-items:center;justify-content:center;gap:9px;margin:10px 0 16px}
+/* Trigger for the app's own calendar (ZCLCalendar). The native <input
+   type="date"> was replaced because its popup is drawn by the OS and cannot be
+   themed — it rendered white-on-blue on iOS regardless of CSS. */
+.datepick{font-family:inherit;font-size:13px;color:#C9BD97;background:#1b1926;
+  border:1px solid rgba(203,168,90,.3);border-radius:8px;padding:9px 14px;
+  -webkit-appearance:none;appearance:none;min-height:38px;cursor:pointer;
+  touch-action:manipulation;letter-spacing:.02em}
+.datepick:hover{border-color:rgba(203,168,90,.5);color:#E6CC85}
+.datepick:focus-visible{outline:2px solid #E6CC85;outline-offset:2px}
+.todaybtn{font-family:inherit;font-size:11px;letter-spacing:.12em;text-transform:uppercase;
+  color:#CBA85A;background:#1b1926;border:1px solid rgba(203,168,90,.3);
+  border-radius:8px;padding:9px 13px;cursor:pointer;touch-action:manipulation;min-height:38px}
+
+/* ── cards ── */
+.card{background:#0d0a18;border:1px solid rgba(203,168,90,.28);border-radius:12px;
+  padding:15px 16px;margin-bottom:12px}
+.ctitle{font-size:11.5px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;
+  color:#9A875C;margin-bottom:12px}
+
+/* two big times side by side */
+.pair{display:flex;gap:10px}
+.half{flex:1;text-align:center}
+.hlbl{font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;color:#9A8E70;margin-bottom:4px}
+.htime{font-size:clamp(28px, 8.4vw, 34px);font-weight:600;letter-spacing:.01em;line-height:1.1}
+.hsub{font-size:12px;color:#8A7E60;margin-top:3px}
+.temprow{display:flex;align-items:baseline;justify-content:center;gap:9px;margin-top:14px;
+  padding-top:13px;border-top:1px solid rgba(203,168,90,.16)}
+.templbl{font-size:11.5px;letter-spacing:.1em;text-transform:uppercase;color:#9A8E70}
+.tempval{font-size:21px;font-weight:600;color:#F2E4BE}
+.tempsub{font-size:11px;color:#8A7E60}
+.pair.sun .htime{color:#F6D25A}
+.pair.moon .htime{color:#DCE6F2}
+
+/* moon phase row */
+.moondisc{flex:none}
+.phaserow{display:flex;align-items:center;gap:13px;margin-top:15px;padding-top:14px;
+  border-top:1px solid rgba(203,168,90,.16)}
+.phasetxt{flex:1}
+.mphase{font-size:18px;font-weight:600;color:#F2E4BE;line-height:1.2}
+.mpct{font-size:13.5px;color:#B3A882;margin-top:3px}
+
+/* cloud bars */
+.cloudwrap{display:flex;align-items:flex-end;gap:3px;height:118px;margin-top:4px}
+.ch{flex:1;display:flex;flex-direction:column;justify-content:flex-end;height:100%}
+.cbar{width:100%;border-radius:3px 3px 0 0;background:#B39A6B;min-height:2px}
+.cbar.clear{background:#5F7A5F;opacity:.75}
+.chlbl{font-size:11px;color:#9A8E70;text-align:center;margin-top:6px;letter-spacing:0}
+.cpct{font-size:11px;color:#C9BD97;text-align:center;margin-bottom:4px;font-weight:500}
+.cnote{font-size:14px;color:#B3A882;text-align:center;margin-top:11px;line-height:1.5}
+.cbest{font-size:15.5px;color:#E6CC85;text-align:center;margin-top:9px;font-weight:500}
+.cmsg{font-size:14px;color:#8A7E60;text-align:center;padding:22px 8px;line-height:1.6}
+.fresh{font-size:11.5px;color:#6E6450;text-align:center;margin-top:8px}
+@media (prefers-reduced-motion: reduce){
+  *,*::before,*::after{animation-duration:.01ms !important;transition-duration:.01ms !important}
+}
+/* fit */
+.pwa-nav{justify-content:space-around;align-items:stretch;border-bottom-color:rgba(203,168,90,.32)}
+.pwa-navitem{gap:2px;padding:7px 0 6px;color:#7A6E55;font-size:8px;font-weight:400;letter-spacing:.04em;transition:color .15s}
+.pwa-navitem.active{color:#CBA85A}.pwa-navitem:active{color:#E6CC85}
+.wrap{padding-top:calc(69px + env(safe-area-inset-top))}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style>
+</head>
+<body>
+
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem active" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+
+<div class="wrap">
+
+  <div class="datebar">
+    <button class="dbtn" id="prev" aria-label="Previous night">&#8249;</button>
+    <div class="dlabel">
+      <div class="dday" id="dday">—</div>
+      <div class="dsub" id="dsub">Tonight</div>
+    </div>
+    <button class="dbtn" id="next" aria-label="Next night">&#8250;</button>
+  </div>
+  <div class="pickrow">
+    <button type="button" class="datepick" id="datepick" aria-haspopup="dialog" aria-label="Choose a date">—</button>
+    <button class="todaybtn" id="today" hidden>Today</button>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Sun &amp; Moon</div>
+    <div class="pair sun">
+      <div class="half"><div class="hlbl">Sunrise</div><div class="htime" id="sunrise">—</div><div class="hsub" id="dawnSub">&nbsp;</div></div>
+      <div class="half"><div class="hlbl">Sunset</div><div class="htime" id="sunset">—</div><div class="hsub" id="duskSub">&nbsp;</div></div>
+    </div>
+    <div class="pair moon" style="margin-top:15px">
+      <div class="half"><div class="hlbl">Moonrise</div><div class="htime" id="moonrise">—</div></div>
+      <div class="half"><div class="hlbl">Moonset</div><div class="htime" id="moonset">—</div></div>
+    </div>
+    <div class="phaserow">
+      <svg class="moondisc" id="mdisc" width="46" height="46" viewBox="0 0 70 70" aria-hidden="true"></svg>
+      <div class="phasetxt">
+        <div class="mphase" id="mphase">—</div>
+        <div class="mpct" id="mpct">&nbsp;</div>
+      </div>
+    </div>
+    <div class="temprow" id="temprow" hidden>
+      <span class="templbl">1 hr after sunset</span>
+      <span class="tempval" id="tempval">—</span>
+      <span class="tempsub" id="tempsub"></span>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="ctitle">Cloud Cover % &middot; 6 PM &rarr; 6 AM</div>
+    <div id="cloudBox"><div class="cmsg">Loading forecast&hellip;</div></div>
+  </div>
+
+</div>
+
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
+<script src="zcl-calendar.js"></script>
+<script>
+"use strict";
+(function(){
+var global = window;
+// ── location (shared with the rest of the app) ──
+// Coordinates come from Settings (shared 'dsa-location'); the place name
+// isn't shown here — this page stays deliberately bare.
+var LAT=37.1986, LNG=-112.9869;
+try{
+  var sv=JSON.parse(localStorage.getItem('dsa-location')||'null');
+  if(sv && isFinite(+sv.lat) && isFinite(+sv.lng)){
+    LAT=+sv.lat; LNG=+sv.lng;
+  }
+}catch(e){}
+var $=function(id){ return document.getElementById(id) };
+
+var TZ=ZCLTZ.zone();       // resolved from the saved location, not assumed
+function fmtTime(d){
+  if(!d || isNaN(d)) return '—';
+  return new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'numeric',minute:'2-digit'}).format(d);
+}
+function isoKey(d){
+  var p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+  var g=function(t){ return p.find(function(x){return x.type===t}).value };
+  return g('year')+'-'+g('month')+'-'+g('day');
+}
+
+// ── state ──
+var dayOff=0;
+function selDate(){ var d=new Date(); d.setHours(12,0,0,0); d.setDate(d.getDate()+dayOff); return d }
+
+// ── moon phase: 0=new, .25=first qtr, .5=full, .75=last qtr ──
+function phaseName(p, lit){
+  if(lit<0.02) return 'New Moon';
+  if(lit>0.98) return 'Full Moon';
+  var wax = p < 0.5;
+  if(Math.abs(p-0.25)<0.03) return 'First Quarter';
+  if(Math.abs(p-0.75)<0.03) return 'Last Quarter';
+  if(lit<0.5) return wax ? 'Waxing Crescent' : 'Waning Crescent';
+  return wax ? 'Waxing Gibbous' : 'Waning Gibbous';
+}
+// Terminator geometry: the lit limb is a half-disc, the terminator an ellipse
+// whose width tracks the phase. Same construction as the moon page.
+function drawMoon(p, lit){
+  var cx=35, cy=35, r=30;
+  var svg='<circle cx="'+cx+'" cy="'+cy+'" r="'+r+'" fill="#241f33" stroke="rgba(203,168,90,.3)" stroke-width="1"/>';
+  if(lit>0.005){
+    var k=Math.cos(2*Math.PI*p);
+    var rx=Math.abs(k)*r;
+    var d;
+    if(lit>0.995){
+      d='M '+cx+' '+(cy-r)+' A '+r+' '+r+' 0 1 1 '+cx+' '+(cy+r)+' A '+r+' '+r+' 0 1 1 '+cx+' '+(cy-r)+' Z';
+    } else {
+      var waxing = p<0.5;
+      // Lit limb: right side when waxing, left when waning.
+      var outer='A '+r+' '+r+' 0 0 '+(waxing?1:0)+' ';
+      // Terminator ellipse. For a crescent it curves INTO the lit limb; for a
+      // gibbous it curves away into the dark side. Sweep flags verified by
+      // rendering the full cycle rather than reasoning about arc direction.
+      var innerSweep = (lit<0.5) ? (waxing?0:1) : (waxing?1:0);
+      var inner='A '+rx.toFixed(2)+' '+r+' 0 0 '+innerSweep+' ';
+      d='M '+cx+' '+(cy-r)+' '+outer+cx+' '+(cy+r)+' '+inner+cx+' '+(cy-r)+' Z';
+    }
+    svg+='<path d="'+d+'" fill="#E8EDF5" opacity="0.95"/>';
+  }
+  return svg;
+}
+
+// ── hourly cloud (6 PM → 6 AM) ──
+var cloudByHour={};      // 'YYYY-MM-DDTHH' -> sky%
+var tempByHour={};       // 'YYYY-MM-DDTHH' -> °F
+var cloudState='idle';
+var fetchedAt=null;
+function fetchClouds(){
+  if(cloudState==='loading') return;
+  cloudState='loading';
+  var url='https://api.open-meteo.com/v1/forecast?latitude='+LAT+'&longitude='+LNG
+    +'&hourly=cloud_cover_low,cloud_cover_mid,cloud_cover_high,temperature_2m'
+    +'&temperature_unit=fahrenheit&timezone=auto&forecast_days=16';
+  var ac=(typeof AbortController!=='undefined')?new AbortController():null;
+  var timer=ac?setTimeout(function(){ac.abort()},12000):null;
+  fetch(url, ac?{signal:ac.signal}:undefined)
+    .then(function(r){ return r.json() })
+    .then(function(d){
+      if(timer) clearTimeout(timer);
+      var H=d&&d.hourly;
+      if(!H||!H.time){ cloudState='error'; render(); return }
+      H.time.forEach(function(t,i){
+        var lo=H.cloud_cover_low[i]||0, mid=H.cloud_cover_mid[i]||0, hi=H.cloud_cover_high[i]||0;
+        // stargazing-weighted: low & mid block, thin cirrus only dims
+        cloudByHour[t.slice(0,13)] = Math.min(100, Math.round(lo + 0.85*mid + 0.35*hi));
+        if(H.temperature_2m && H.temperature_2m[i]!=null) tempByHour[t.slice(0,13)] = H.temperature_2m[i];
+      });
+      cloudState='ready'; fetchedAt=new Date(); render();
+    })
+    .catch(function(){ if(timer) clearTimeout(timer); cloudState='error'; render(); });
+}
+function nightHours(d){
+  // 6 PM on the selected day through 6 AM the next morning, in the LOCATION's
+  // zone. Built from the device clock this drifted an hour whenever the phone
+  // and the place being planned for were in different zones.
+  var out=[], base=ZCLTZ.at(d.getFullYear(), d.getMonth(), d.getDate(), 18, 0, TZ);
+  for(var i=0;i<13;i++){
+    var t=new Date(base.getTime()+i*3600000);
+    var h=ZCLTZ.hourOf(t, TZ);
+    out.push({hour:h, key:isoKey(t)+'T'+String(h).padStart(2,'0'), t:t});
+  }
+  return out;
+}
+function hrLabel(h){ var x=h%12; if(x===0)x=12; return x+(h<12||h>=24?'a':'p') }
+function freshTxt(){
+  if(!fetchedAt) return '';
+  var m=Math.round((Date.now()-fetchedAt.getTime())/60000);
+  if(m<2) return 'updated just now';
+  if(m<60) return 'updated '+m+' min ago';
+  var h=Math.round(m/60);
+  if(h<24) return 'updated '+h+' hr ago';
+  return 'cached · '+Math.round(h/24)+' day(s) old';
+}
+
+function renderClouds(d){
+  var box=$('cloudBox');
+  if(cloudState==='loading'){ box.innerHTML='<div class="cmsg">Loading forecast&hellip;</div>'; return }
+  if(cloudState==='error'){ box.innerHTML='<div class="cmsg">Forecast unavailable — check your connection.</div>'; return }
+  var hrs=nightHours(d).map(function(h){ h.sky=cloudByHour[h.key]; return h });
+  var have=hrs.filter(function(h){ return h.sky!=null });
+  if(have.length<4){
+    // Weather models only run ~16 days out; sun and moon above are exact for
+    // any date, so say which is which rather than implying the page is broken.
+    box.innerHTML = '<div class="cmsg">Cloud forecasts only reach about two weeks ahead.<br>'
+      + 'Sun and moon times above are exact for this date.</div>';
+    return;
+  }
+  var bars='';
+  hrs.forEach(function(h){
+    var v = h.sky==null ? null : h.sky;
+    var pct = v==null ? 0 : v;
+    var hgt = Math.max(2, pct*0.78);   // out of ~78px of bar room
+    var cls = (v!=null && v<=15) ? 'cbar clear' : 'cbar';
+    bars+='<div class="ch">'
+      + '<div class="cpct">'+(v==null?'':v)+'</div>'
+      + '<div class="'+cls+'" style="height:'+hgt.toFixed(0)+'px"></div>'
+      + '<div class="chlbl">'+hrLabel(h.hour)+'</div>'
+      + '</div>';
+  });
+  // clearest 3-hour run
+  var best=null;
+  for(var i=0;i+2<have.length;i++){
+    var a=(have[i].sky+have[i+1].sky+have[i+2].sky)/3;
+    if(!best||a<best.avg) best={avg:a, from:have[i].hour, to:(have[i+2].hour+1)%24};
+  }
+  var avg=Math.round(have.reduce(function(s,h){return s+h.sky},0)/have.length);
+  var word = avg<=15?'mostly clear' : avg<=40?'partly cloudy' : avg<=70?'mostly cloudy' : 'overcast';
+  var bestTxt = best ? 'Clearest '+hrLabel(best.from)+'–'+hrLabel(best.to)+' · ~'+Math.round(best.avg)+'% covered' : '';
+  box.innerHTML = '<div class="cloudwrap">'+bars+'</div>'
+    + (bestTxt?'<div class="cbest">'+bestTxt+'</div>':'')
+    + '<div class="cnote">Night average '+avg+'% — '+word+'</div>'
+    + (freshTxt()?'<div class="fresh">'+freshTxt()+'</div>':'');
+}
+
+
+// ── Temperature one hour after sunset ─────────────────────────────────────
+// That is the baseline moment you are setting up and it is still cooling fast,
+// so it beats a daily low for deciding what to wear. Inside the forecast
+// horizon we use the real hourly forecast (it rides along on the cloud request,
+// no extra call). Beyond it we fall back to a HISTORICAL AVERAGE for the same
+// calendar date across recent years, labelled plainly so the two never blur.
+var histCache={};        // 'MM-DD' -> {avg, years} | 'pending' | 'fail'
+
+function hourKeyFor(d){
+  var p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,year:'numeric',month:'2-digit',
+    day:'2-digit',hour:'2-digit',hour12:false}).formatToParts(d);
+  var g=function(t){ return p.find(function(x){return x.type===t}).value };
+  return g('year')+'-'+g('month')+'-'+g('day')+'T'+String(g('hour')).padStart(2,'0');
+}
+// Reading one hour after sunset, from a given lookup table.
+function postSunsetFrom(table, sunset){
+  if(!sunset || isNaN(sunset)) return null;
+  var v = table[hourKeyFor(new Date(sunset.getTime()+3600000))];
+  return (v==null) ? null : v;
+}
+function mmdd(d){
+  var p=new Intl.DateTimeFormat('en-CA',{timeZone:TZ,month:'2-digit',day:'2-digit'}).formatToParts(d);
+  var g=function(t){ return p.find(function(x){return x.type===t}).value };
+  return g('month')+'-'+g('day');
+}
+// Historical fallback: same calendar date across the last 3 complete years,
+// averaging the post-sunset hours. The archive API lags a few days, so we only
+// ask for years that are safely closed out.
+function fetchHistorical(d){
+  var key=mmdd(d);
+  if(histCache[key]) return;
+  histCache[key]='pending';
+  var thisYear=new Date().getFullYear();
+  var years=[thisYear-1, thisYear-2, thisYear-3];
+  var jobs=years.map(function(y){
+    var iso=y+'-'+key;
+    var url='https://archive-api.open-meteo.com/v1/archive?latitude='+LAT+'&longitude='+LNG
+      +'&start_date='+iso+'&end_date='+iso
+      +'&hourly=temperature_2m&temperature_unit=fahrenheit&timezone=auto';
+    var ac=(typeof AbortController!=='undefined')?new AbortController():null;
+    var timer=ac?setTimeout(function(){ac.abort()},12000):null;
+    return fetch(url, ac?{signal:ac.signal}:undefined)
+      .then(function(r){ return r.json() })
+      .then(function(j){
+        if(timer) clearTimeout(timer);
+        var H=j&&j.hourly; if(!H||!H.time) return null;
+        var tbl={};
+        H.time.forEach(function(t,i){ tbl[t.slice(0,13)]=H.temperature_2m[i]; });
+        // that year's sunset for the same date and place
+        var ss;
+        try{ ss=SunCalc.getTimes(new Date(y, d.getMonth(), d.getDate(), 12), LAT, LNG).sunset }catch(e){ return null }
+        return postSunsetFrom(tbl, ss);
+      })
+      .catch(function(){ if(timer) clearTimeout(timer); return null });
+  });
+  Promise.all(jobs).then(function(res){
+    var got=res.filter(function(v){ return v!=null && isFinite(v) });
+    histCache[key] = got.length
+      ? {avg: got.reduce(function(a,b){return a+b},0)/got.length, years: got.length}
+      : 'fail';
+    render();
+  });
+}
+// Returns {txt, sub} or null.
+function tempInfo(d, sunset){
+  var fc = postSunsetFrom(tempByHour, sunset);
+  if(fc != null) return {txt: Math.round(fc)+'\u00B0F', sub: 'forecast'};
+  var key=mmdd(d), h=histCache[key];
+  if(h && h!=='pending' && h!=='fail')
+    return {txt: '\u2248'+Math.round(h.avg)+'\u00B0F', sub: h.years+'-year average'};
+  if(h==='pending') return {txt:'\u2026', sub:'checking records'};
+  if(h==='fail')    return null;
+  fetchHistorical(d);
+  return {txt:'\u2026', sub:'checking records'};
+}
+
+function render(){
+  var d=selDate();
+  // Date label. Narrow screens get abbreviated weekday/month so the line can
+  // never wrap - "Wednesday, September 16" is 23 chars and will not fit a
+  // 375px phone at full length beside the two stepper buttons.
+  var narrow = (window.innerWidth || 400) < 430;
+  var showYear = d.getFullYear() !== new Date().getFullYear();
+  $('dday').textContent = new Intl.DateTimeFormat('en-US', {
+    timeZone: TZ,
+    weekday: narrow ? 'short' : 'long',
+    month:   narrow ? 'short' : 'long',
+    day:     'numeric',
+    year:    showYear ? 'numeric' : undefined
+  }).format(d);
+  $('dsub').textContent =
+      dayOff===0 ? 'Tonight'
+    : dayOff===1 ? 'Tomorrow night'
+    : dayOff>1 && dayOff<=60 ? 'In '+dayOff+' nights'
+    : dayOff>60 ? new Intl.DateTimeFormat('en-US',{timeZone:TZ,month:'long',year:'numeric'}).format(d)
+    : dayOff===-1 ? 'Last night'
+    : Math.abs(dayOff)+' nights ago';
+  // Sun and moon are computed, not fetched, so they work for any date. Only the
+  // cloud forecast has a horizon, and that card says so on its own.
+  $('prev').disabled = false;
+  $('next').disabled = false;
+  $('today').hidden = (dayOff===0);
+  if($('datepick')._zclSet) $('datepick')._zclSet(d);
+
+  // sun
+  var st={}, mt={};
+  try{ st=SunCalc.getTimes(d,LAT,LNG) }catch(e){}
+  // Sunrise then sunset, both for the SELECTED calendar day — the same basis as
+  // the moonrise/moonset row beneath, so all four times refer to one date.
+  $('sunrise').textContent = fmtTime(st.sunrise);
+  $('sunset').textContent  = fmtTime(st.sunset);
+  $('dawnSub').textContent = st.nightEnd && !isNaN(st.nightEnd) ? 'first light '+fmtTime(st.nightEnd) : '\u00A0';
+  $('duskSub').textContent = st.night && !isNaN(st.night) ? 'fully dark '+fmtTime(st.night) : '\u00A0';
+
+  // moon times for the night (rise/set on the selected calendar day)
+  try{ mt=ZCLTZ.moonTimes(new Date(d.getFullYear(),d.getMonth(),d.getDate()),LAT,LNG) }catch(e){}
+  $('moonrise').textContent = mt.alwaysUp ? 'up all night' : fmtTime(mt.rise);
+  $('moonset').textContent  = mt.alwaysDown ? 'never up' : fmtTime(mt.set);
+
+  // phase at local midnight of that night
+  // Shared with every other page: SunCalc at 11 PM local. If SunCalc failed
+  // to load this falls back to the lunar-cycle average rather than showing
+  // a confident "New Moon 0%".
+  var mp=ZCLTZ.moonTonight(d);
+  $('mdisc').innerHTML = drawMoon(mp.frac, mp.ill);
+  $('mphase').textContent = mp.name;
+  var dir = mp.waxing ? 'waxing' : 'waning';
+  $('mpct').textContent = Math.round(mp.ill*100)+'% lit · '+dir+(mp.exact?'':' (approx.)');
+
+  // temperature for the two hours after sunset
+  var ti = tempInfo(d, st.sunset);
+  if(ti){
+    $('temprow').hidden=false;
+    $('tempval').textContent=ti.txt;
+    $('tempsub').textContent=ti.sub;
+  } else {
+    $('temprow').hidden=true;
+  }
+
+  renderClouds(d);
+}
+
+// ── controls ──
+$('prev').addEventListener('click', function(){ dayOff--; render() });
+$('next').addEventListener('click', function(){ dayOff++; render() });
+$('today').addEventListener('click', function(){ dayOff=0; render() });
+// Calendar jump - the only practical way to reach October from August.
+// Uses the app's shared picker so every date control looks the same.
+if(global.ZCLCalendar){
+  ZCLCalendar.attach($('datepick'), {
+    value: selDate(),
+    format: function(d){
+      return new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',year:'numeric'}).format(d);
+    },
+    onSelect: function(d){
+      var today=new Date(); today.setHours(12,0,0,0);
+      var target=new Date(d.getFullYear(), d.getMonth(), d.getDate(), 12, 0, 0);
+      dayOff = Math.round((target-today)/86400000);
+      render();
+    }
+  });
+}
+document.addEventListener('keydown', function(e){
+  if(e.target && /INPUT|SELECT|TEXTAREA/.test(e.target.tagName)) return;
+  if(e.key==='ArrowLeft'){ dayOff--; render() }
+  if(e.key==='ArrowRight'){ dayOff++; render() }
+});
+// Re-render on resize so the label swaps between full and abbreviated forms.
+var rzT=null;
+window.addEventListener('resize', function(){
+  clearTimeout(rzT); rzT=setTimeout(render, 150);
+});
+
+render();
+fetchClouds();
+})();
+</script>
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
+  });
+}
+</script>
+</body>
+</html>

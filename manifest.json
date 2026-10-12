@@ -1,7 +1,7 @@
 {
   "name": "Dark Sky Almanac",
   "short_name": "Dark Sky",
-  "description": "A nightly almanac of the moon, the Milky Way, and the deep sky — with interactive maps of fourteen dark-sky destinations across southern Utah: Zion, Bryce Canyon, Capitol Reef, Canyonlands, Arches, Cedar Breaks, and the gateway towns.",
+  "description": "A nightly almanac of the moon, the Milky Way, and the deep sky — with interactive maps of six dark-sky parks across southern Utah: Zion, Bryce Canyon, Capitol Reef, Canyonlands, Arches and Cedar Breaks.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

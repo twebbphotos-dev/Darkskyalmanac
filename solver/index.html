@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="../manifest.json">
+<link rel="apple-touch-icon" href="../icon-180.png">
+<title>Star ID · Dark Sky Almanac</title>
+<meta name="description" content="Upload any night-sky photo or test frame to see which stars, constellations and deep-sky objects are in the shot. You also get exactly where it was pointing (RA and Dec, altitude and azimuth) and the field of view.">
+<link rel="canonical" href="https://app.darkskyalmanac.com/solver/">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="app.css">
+</head>
+<body>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="../"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="../forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="../objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="../maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem active" href="../photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="../finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="../settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<svg class="zcl-stars"></svg>
+<div class="zcl-page">
+  <div class="zcl-titlebar">
+    <div class="zcl-kicker">Astrophotography</div>
+    <div class="zcl-maintitle">Star ID</div>
+    <div class="zcl-titlerule"><span class="zcl-rline"></span>
+      <svg class="zcl-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+      <span class="zcl-rline"></span></div>
+    <div class="zcl-subtitle">Upload any night-sky photo or test frame to see which stars, constellations and deep-sky objects are in the shot. You also get exactly where it was pointing (RA and Dec, altitude and azimuth) and the field of view.</div>
+    <a class="zcl-back" href="../photography">&lsaquo; All tools</a>
+  </div>
+
+  <!-- lens: stays on screen, so it can be changed after a solve -->
+  <section id="lens">
+    <div class="zcl-seclabel">Lens</div>
+    <div class="zcl-field">
+      <div class="zcl-flabel"><label for="focal">Focal length</label> <span class="zcl-hint">mm &middot; required</span></div>
+      <input id="focal" type="number" inputmode="decimal" step="1" min="4" max="2000" value="16" placeholder="Tap a lens below or type one" required>
+      <div class="zcl-chips" id="focal-chips"></div>
+      <div class="zcl-sub" id="focal-sub">Close is fine &mdash; the solve measures the true value.</div>
+    </div>
+  </section>
+
+  <!-- idle -->
+  <section id="start">
+
+    <div class="zcl-seclabel">Frame</div>
+    <label class="drop" for="file" id="drop">
+      <svg class="reticle" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="19"/><path d="M32 3v15M32 46v15M3 32h15M46 32h15"/><circle cx="32" cy="32" r="2.2" class="dot"/></svg>
+      <strong>Load a frame</strong>
+      <span class="sub">A single sub, JPEG. Half resolution is plenty.</span>
+    </label>
+    <input id="file" type="file" accept="image/jpeg,image/*" hidden>
+    <p id="cat-status" class="zcl-note center">Preparing star catalog&hellip;</p>
+  </section>
+
+  <!-- working -->
+  <section id="busy" class="zcl-card center" hidden>
+    <p id="busy-label">Solving&hellip;</p>
+    <div class="track"><div id="busy-bar"></div></div>
+  </section>
+
+  <!-- result -->
+  <section id="out" hidden>
+    <figure class="frame">
+      <canvas id="view"></canvas>
+      <button id="full" class="frame-btn" type="button" aria-label="Full screen"><svg viewBox="0 0 24 24"><path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/></svg></button>
+    </figure>
+    <div class="layers" role="group" aria-label="Show on image">
+      <div class="layers-grid">
+        <button id="t-stars" class="on" type="button" aria-pressed="true"><i></i>Stars</button>
+        <button id="t-objects" class="on" type="button" aria-pressed="true"><i></i>Objects</button>
+        <button id="t-labels" class="on" type="button" aria-pressed="true"><i></i>Names</button>
+        <button id="t-lines" type="button" aria-pressed="false"><i></i>Constellations</button>
+        <button id="t-grid" type="button" aria-pressed="false"><i></i>Center</button>
+        <button id="t-found" type="button" aria-pressed="false"><i></i>Detected</button>
+      </div>
+      <label class="mag">
+        <span class="mag-head"><span>Brightness</span><b id="mag-out">All stars</b></span>
+        <input id="mag" type="range" min="0" max="100" value="100" step="1">
+        <span class="mag-ends"><span>Brightest only</span><span>All</span></span>
+      </label>
+      <label class="mag">
+        <span class="mag-head"><span>Objects</span><b id="obj-out">Top 8</b></span>
+        <input id="obj" type="range" min="0" max="40" value="8" step="1">
+        <span class="mag-ends"><span>Fewer</span><span>More</span></span>
+      </label>
+    </div>
+
+    <div class="zcl-result">
+      <div class="zcl-rlabel">Pointing at</div>
+      <h2 id="headline">&mdash;</h2>
+      <p id="subline"></p>
+      <dl class="readout" id="readout"></dl>
+    </div>
+
+    <section id="starlist-wrap" hidden>
+      <div class="zcl-seclabel">Brightest in Frame</div>
+      <ul class="list" id="starlist"></ul>
+    </section>
+    <section id="dsolist-wrap" hidden>
+      <div class="zcl-seclabel">Objects in Frame</div>
+      <ul class="list" id="dsolist"></ul>
+    </section>
+
+    <section class="panel solver-vals">
+      <div class="zcl-seclabel">Plate Solver Values</div>
+      <p class="sv-note">For Siril, ASTAP or similar. These describe the file you loaded here.</p>
+      <dl class="readout tight" id="detail"></dl>
+      <button id="copy-vals" class="zcl-btn ghost" type="button">Copy values</button>
+    </section>
+
+    <button id="again" class="zcl-btn" type="button">Check another frame</button>
+  </section>
+
+  <!-- failure -->
+  <section id="fail" hidden>
+    <div class="zcl-result fail">
+      <div class="zcl-rlabel">No solve</div>
+      <h2 id="fail-head">No solve</h2>
+      <p id="fail-why"></p>
+    </div>
+    <figure class="frame"><canvas id="failview"></canvas></figure>
+    <button id="retry" class="zcl-btn" type="button">Try another frame</button>
+  </section>
+
+  <details class="panel" id="setup">
+    <summary>Camera &amp; Location</summary>
+    <div class="zcl-field">
+      <div class="zcl-flabel"><label for="sensor">Sensor width</label></div>
+      <select id="sensor">
+        <option value="35.9" selected>Full frame &mdash; Sony, Nikon, Canon</option>
+        <option value="23.5">APS-C &mdash; Sony, Nikon, Fujifilm</option>
+        <option value="22.3">APS-C &mdash; Canon</option>
+        <option value="17.3">Micro Four Thirds</option>
+        <option value="13.2">1-inch</option>
+        <option value="custom">Other &mdash; enter width in mm</option>
+      </select>
+      <input id="sensor-custom" type="number" step="0.1" min="1" max="100" placeholder="mm" hidden>
+      <div class="zcl-sub">Set this once. Unlike focal length, a wrong sensor width can&rsquo;t be corrected by the solve.</div>
+    </div>
+    <div class="zcl-row">
+      <div class="zcl-field"><div class="zcl-flabel"><label for="lat">Latitude</label></div><input id="lat" type="number" step="0.0001" min="-90" max="90" placeholder="for altitude"></div>
+      <div class="zcl-field"><div class="zcl-flabel"><label for="lon">Longitude</label> <span class="zcl-hint">east +</span></div><input id="lon" type="number" step="0.0001" min="-180" max="180" placeholder="and azimuth"></div>
+    </div>
+    <button id="locate" class="zcl-btn ghost" type="button">Use my location</button>
+    <div class="zcl-field">
+      <div class="zcl-flabel"><label for="when">Time of the shot</label></div>
+      <input id="when" type="datetime-local">
+      <div class="zcl-sub">Filled from the file when it is there.</div>
+    </div>
+    <p id="offline" class="zcl-note"></p>
+  </details>
+
+  <div class="zcl-foot">Star positions from the <b>HYG database</b>. Plate solving uses the geometric hashing method developed by <b>Astrometry.net</b>. <a href="../sources">Sources</a></div>
+</div>
+<script>(function(){var s='';for(var i=0;i<120;i++){s+='<circle cx="'+(Math.random()*100).toFixed(1)+'%" cy="'+(Math.random()*100).toFixed(1)+'%" r="'+(Math.random()*0.9+0.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*0.5+0.1).toFixed(2)+'"/>';}var el=document.querySelector('.zcl-stars');if(el)el.innerHTML=s;})();</script>
+<div id="viewer" class="viewer" hidden>
+  <div class="viewer-img"><img id="viewer-img" alt="Annotated frame"></div>
+  <div class="viewer-bar">
+    <button id="viewer-close" class="viewer-b" type="button">Close</button>
+    <span id="viewer-tip" class="viewer-tip">Tap to zoom</span>
+    <button id="viewer-save" class="viewer-b gold" type="button">Save image</button>
+  </div>
+</div>
+<script type="module" src="app.js"></script>
+</body>
+</html>

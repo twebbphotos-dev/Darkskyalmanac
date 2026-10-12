@@ -18,11 +18,11 @@
 <meta property="og:type" content="website">
 <meta property="og:title" content="The Planets · Dark Sky Almanac">
 <meta property="og:description" content="The planets tonight and their orbits around the Sun, with a date slider to watch conjunctions and alignments evolve over time.">
-<meta property="og:image" content="icon-512.png">
+<meta property="og:image" content="social.png">
 <link rel="canonical" href="https://app.darkskyalmanac.com/solar">
 <meta property="og:url" content="https://app.darkskyalmanac.com/solar">
 <meta property="og:site_name" content="Dark Sky Almanac">
-<meta name="twitter:image" content="https://app.darkskyalmanac.com/icon-512.png">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
 <meta name="twitter:card" content="summary">
 <style>
 html,body{margin:0;padding:0;background:#141319}
@@ -70,12 +70,13 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
 </style>
 </head>
-<body><!-- ════════════════════════════════════════════════════════════
+<body>
+<!-- ════════════════════════════════════════════════════════════
      ZION DARK SKY ALMANAC · SOLAR SYSTEM
      Two views: tonight's sky arc, and an overhead top-down view
      of the planets' positions around the Sun. Real Keplerian
      elements; beautiful gold-and-color rendering.
-     Self-contained Squarespace embed (paste into a Code Block).
+     Self-contained page in the Dark Sky Almanac PWA.
      ════════════════════════════════════════════════════════════ -->
 
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
@@ -108,12 +109,28 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-ss-subtitle{font-size:13px;color:#9A8E6E;max-width:540px;margin:0 auto}
 
 /* view toggle */
-.zcl-ss-toggle{display:flex;justify-content:center;gap:0;margin:8px auto 18px;border:1px solid rgba(203,168,90,.32);border-radius:6px;padding:3px;width:fit-content;background:rgba(0,0,0,.25)}
+.zcl-ss-toggle{display:flex;justify-content:center;gap:0;margin:8px auto 18px;border:1px solid rgba(203,168,90,.32);border-radius:6px;padding:3px;width:fit-content;background:rgba(0,0,0,.25);max-width:100%}
 .zcl-ss-tab{font-size:11px;letter-spacing:.14em;text-transform:uppercase;font-weight:500;
   color:#9A8A66;background:none;border:none;border-radius:4px;padding:9px 18px;cursor:pointer;
-  font-family:inherit;transition:all .15s}
+  font-family:inherit;transition:all .15s;white-space:nowrap}
 .zcl-ss-tab:hover{color:#CBA85A}
 .zcl-ss-tab.on{background:rgba(203,168,90,.18);color:#F2E4BE}
+@media(max-width:560px){
+  .zcl-ss-tab{padding:9px 11px;font-size:10px;letter-spacing:.10em}
+}
+
+/* true-scale toggle button (scale view only) */
+.zcl-ss-scalectl{display:flex;flex-direction:column;align-items:center;margin:-4px auto 18px}
+.zcl-ss-scalebtn{display:inline-flex;align-items:center;gap:8px;cursor:pointer;
+  font-family:inherit;font-size:12px;font-weight:500;letter-spacing:.08em;
+  color:#F2E4BE;background:rgba(203,168,90,.14);
+  border:1px solid rgba(203,168,90,.5);border-radius:22px;padding:9px 18px;
+  transition:background .2s,border-color .2s,opacity .2s,transform .15s}
+.zcl-ss-scalebtn svg{width:15px;height:15px;flex-shrink:0;color:#CBA85A}
+.zcl-ss-scalebtn:hover{background:rgba(203,168,90,.24);border-color:#CBA85A}
+.zcl-ss-scalebtn:active{transform:scale(.97)}
+.zcl-ss-scalebtn.busy{opacity:.55;cursor:default}
+.zcl-ss-scalebtn.busy:hover{background:rgba(203,168,90,.14);border-color:rgba(203,168,90,.5)}
 
 /* view stage */
 .zcl-ss-viewcard{background:radial-gradient(ellipse 90% 80% at 50% 100%,rgba(40,38,52,.6),transparent 70%),#0b0814;
@@ -121,6 +138,23 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   padding:14px;margin-bottom:18px}
 .zcl-ss-viewlbl{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8A6E32;margin-bottom:9px;text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .zcl-ss-svg{display:block;width:100%;height:auto}
+.zcl-ss-topcv{display:block;width:100%;aspect-ratio:1.55/1;border-radius:8px;
+  background:radial-gradient(ellipse 70% 70% at 50% 50%,#15131d 0%,#0a0810 70%,#07060b 100%)}
+.zcl-ss-topcv[hidden]{display:none}
+@media(max-width:560px){.zcl-ss-topcv{aspect-ratio:1/1}}
+.zcl-ss-zbtn{background:none;border:1px solid rgba(203,168,90,.26);border-radius:20px;color:#9A875C;
+  font-family:inherit;font-size:11px;letter-spacing:.05em;padding:6px 13px;cursor:pointer;transition:all .15s}
+.zcl-ss-zbtn:hover{border-color:rgba(203,168,90,.55);color:#CBA85A}
+.zcl-ss-zbtn.on{background:rgba(203,168,90,.16);border-color:#CBA85A;color:#E4D9B8}
+.zcl-ss-ibtn{width:28px;height:28px;border-radius:50%;background:rgba(0,0,0,.4);color:#9A8A66;border:1px solid rgba(203,168,90,.32);
+  font-family:'Times New Roman',Georgia,serif;font-size:14px;line-height:1;padding:0;cursor:pointer;transition:all .15s}
+.zcl-ss-ibtn:hover{color:#CBA85A;border-color:#CBA85A}
+.zcl-ss-ibtn.on{background:rgba(203,168,90,.18);color:#E4D9B8;border-color:#CBA85A}
+.zcl-ss-zinfo{flex-basis:100%;max-height:0;overflow:hidden;opacity:0;transition:max-height .3s ease,opacity .25s ease;
+  font-size:12.5px;line-height:1.6;color:#C9BD97;text-align:left;max-width:680px;margin:0 auto}
+.zcl-ss-zinfo.open{max-height:520px;opacity:1;margin:6px auto 4px}
+.zcl-ss-zinfo b{color:#E6CC85;font-weight:500}
+.zcl-ss-topnote{flex-basis:100%;text-align:center;font-size:11.5px;line-height:1.5;color:#8A7C5C;margin-top:4px}
 
 /* planet chips under the sky-view diagram */
 .zcl-ss-chips{display:flex;flex-wrap:wrap;gap:8px 14px;justify-content:center;
@@ -150,7 +184,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 /* planet info table */
 .zcl-ss-sectit{font-size:14px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;
   color:#CBA85A;margin:18px 0 12px;padding-bottom:8px;border-bottom:1px solid rgba(203,168,90,.22);text-align:center}
-.zcl-ss-table{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px}
+.zcl-ss-table{display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:10px;align-items:stretch}
 
 /* Single info key at the bottom of the page (replaces per-card "?" popups) */
 .zcl-ss-infokey{margin-top:18px;background:#0d0a18;border:1px solid rgba(203,168,90,.22);
@@ -164,20 +198,23 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
   width:4px;height:4px;border-radius:50%;background:#CBA85A;opacity:.7}
 .zcl-ss-infokey-list b{color:#E4D9B8;font-weight:600}
 .zcl-ss-infokey-list i{color:#C9BD97}
-.zcl-ss-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:12px 14px}
+.zcl-ss-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:13px 14px;
+  display:flex;flex-direction:column;height:100%}
 .zcl-ss-outernote{font-size:12.5px;line-height:1.6;color:#9A875C;margin-bottom:12px}
 .zcl-ss-outernote b{color:#C9BD97;font-weight:600}
 .zcl-ss-pcaveat{font-size:11px;line-height:1.5;color:#8A7C5C;
-  margin-top:8px;padding-top:8px;border-top:1px solid rgba(203,168,90,.14)}
-a.zcl-ss-pcard{display:block;text-decoration:none;transition:border-color .15s,transform .15s}
+  margin-top:10px;padding-top:9px;border-top:1px solid rgba(203,168,90,.14)}
+a.zcl-ss-pcard{text-decoration:none;transition:border-color .15s,transform .15s}
 a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
-.zcl-ss-pmore{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;margin-top:9px;display:flex;align-items:center;gap:5px}
+/* Push the "Explore" link to the bottom of every card so a row of cards lines up. */
+.zcl-ss-pmore{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;
+  margin-top:auto;padding-top:11px;display:flex;align-items:center;gap:5px}
 .zcl-ss-pmore span{font-size:15px;line-height:1}
-.zcl-ss-pname{display:flex;align-items:center;gap:8px;font-size:14px;color:#E4D9B8;font-weight:500;margin-bottom:8px}
+.zcl-ss-pname{display:flex;align-items:center;gap:8px;font-size:14px;color:#E4D9B8;font-weight:500;margin-bottom:9px}
 .zcl-ss-pdot{width:12px;height:12px;border-radius:50%;flex-shrink:0;box-shadow:0 0 6px currentColor}
-.zcl-ss-prow{display:flex;justify-content:space-between;font-size:11.5px;color:#8A7C5C;line-height:1.6}
-.zcl-ss-prow b{color:#C9BD97;font-weight:500}
-.zcl-ss-pstatus{font-size:11px;color:#9A8A66;margin-top:6px}
+.zcl-ss-prow{display:flex;justify-content:space-between;gap:10px;font-size:11.5px;color:#8A7C5C;line-height:1.7}
+.zcl-ss-prow b{color:#C9BD97;font-weight:500;text-align:right}
+.zcl-ss-pstatus{font-size:11px;color:#9A8A66;margin-top:7px}
 .zcl-ss-pstatus.up{color:#bcd8b8}
 .zcl-ss-pstatus.dn{color:#8A6E32}
 
@@ -187,6 +224,13 @@ a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
   /* On narrow screens, shrink the slider and button columns so the row fits */
   .zcl-ss-controls{grid-template-columns:38px 1fr 86px 50px;column-gap:10px;max-width:340px;margin-left:auto;margin-right:auto}
 }
+/* fit */
+@media(max-width:640px){#zcl-ss-page::after{inset:7px}.zcl-ss-tl,.zcl-ss-tr{top:7px}.zcl-ss-bl,.zcl-ss-br{bottom:7px}.zcl-ss-tl,.zcl-ss-bl{left:7px}.zcl-ss-tr,.zcl-ss-br{right:7px}}
+@media(max-width:1100px){.zcl-ss-inner{padding-bottom:58px}}
+@media(max-width:560px){.zcl-ss-toggle{width:100%}.zcl-ss-tab{flex:1 1 auto;padding:9px 4px;font-size:9.5px;letter-spacing:.05em}}
+@media(max-width:350px){.zcl-ss-tab{white-space:normal;line-height:1.25;padding:7px 4px}}
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
 </style>
 
 <div id="zcl-ss-wrap">
@@ -209,12 +253,23 @@ a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
     <div class="zcl-ss-toggle">
       <button class="zcl-ss-tab on" data-view="sky">Tonight's Sky</button>
       <button class="zcl-ss-tab" data-view="top">Top-Down View</button>
+      <button class="zcl-ss-tab" data-view="scale">Solar System Scale</button>
     </div>
 
     <div class="zcl-ss-viewcard">
-      <div class="zcl-ss-viewlbl" id="zcl-ss-viewlbl">Tonight's Sky &middot; Looking South from Zion</div>
+      <div class="zcl-ss-viewlbl" id="zcl-ss-viewlbl">Tonight's Sky &middot; Looking South</div>
       <svg class="zcl-ss-svg" id="zcl-ss-svg" viewBox="0 0 720 380" preserveAspectRatio="xMidYMid meet"></svg>
+      <canvas class="zcl-ss-topcv" id="zcl-ss-topcv" hidden aria-label="The planets seen from above the Sun"></canvas>
       <div class="zcl-ss-chips" id="zcl-ss-chips"></div>
+    </div>
+
+    <!-- True-scale toggle: only shown on the Solar System Scale view. Animates
+         the diagram between logarithmic and true-linear distance. -->
+    <div class="zcl-ss-scalectl" id="zcl-ss-scalectl" style="display:none">
+      <button type="button" id="zcl-ss-scalebtn" class="zcl-ss-scalebtn">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="5.5" fill="none" stroke="currentColor" stroke-width="1.6"/><line x1="13" y1="13" x2="20" y2="20" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg>
+        <span>Show in true scale</span>
+      </button>
     </div>
 
     <!-- Date slider: scrub days forward/back to watch planetary alignments evolve.
@@ -236,7 +291,7 @@ a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
     <div class="zcl-ss-table" id="zcl-ss-table-inner"></div>
 
     <div class="zcl-ss-sectit" style="margin-top:24px">Outer System &amp; Kuiper Belt</div>
-    <div class="zcl-ss-outernote">Beyond Mars the distances grow enormous — Jupiter is 5 times farther from the Sun than Earth, Neptune 30 times. These giants are too far to show on the same diagram, but most are still findable in the night sky. Past Neptune lies the <b>Kuiper Belt</b>, a vast ring of icy worlds where Pluto orbits.</div>
+    <div class="zcl-ss-outernote">Beyond Jupiter the distances grow enormous — Saturn is nearly twice as far from the Sun as Jupiter, Neptune nearly six times as far. Past Neptune lie the icy worlds of the Kuiper Belt, and far beyond them, Voyager 1. Switch to <b>Solar System Scale</b> above to see the true reach of it all.</div>
     <div class="zcl-ss-table" id="zcl-ss-table-outer"></div>
 
     <!-- Single info key for the whole page (replaces per-card "?" popups) -->
@@ -246,7 +301,7 @@ a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
         <li><b>AU (Astronomical Unit)</b> — the average Earth–Sun distance, about 93 million miles (150 million km). Mercury orbits at 0.4 AU, Saturn at 9.5, Neptune at 30, and Pluto averages 39.</li>
         <li><b>Orbit lines</b> — each inner planet's real elliptical path, drawn brighter along the arc just travelled (behind it) and dimmer along the path ahead.</li>
         <li><b>Kuiper Belt</b> — a doughnut-shaped zone of icy bodies beyond Neptune, from about 30 to 50 AU. Pluto is its most famous resident; it was reclassified as a dwarf planet in 2006.</li>
-        <li><b>Distance from Earth</b> changes nightly — a planet is closest and brightest near <i>opposition</i>, when Earth passes between it and the Sun.</li>
+        <li><b>Distance from Earth</b> changes nightly — an outer planet (Mars and beyond) is closest and brightest near <i>opposition</i>, when Earth passes between it and the Sun.</li>
       </ul>
     </div>
 
@@ -254,6 +309,8 @@ a.zcl-ss-pcard:hover{border-color:#CBA85A;transform:translateY(-2px)}
 </div>
 </div>
 
+<script src="zcl-tz.js"></script>
+<script src="suncalc.min.js"></script>
 <script>
 "use strict";
 (function(){
@@ -276,10 +333,10 @@ const $ = id => document.getElementById(id);
 })();
 
 // ── constants ──────────────────────────────────────────────
-const LAT = 37.1986, LNG = -112.9869;
+const __dsaLoc=(function(){try{var r=JSON.parse(localStorage.getItem('dsa-location'));if(r&&isFinite(+r.lat)&&isFinite(+r.lng)&&Math.abs(+r.lat)<=90&&Math.abs(+r.lng)<=180)return r;}catch(e){}return null;})(), LAT = __dsaLoc?+__dsaLoc.lat:37.1986, LNG = __dsaLoc?+__dsaLoc.lng:-112.9869;
 const TODAY = new Date();              // real "today" — fixed reference
 let   NOW   = new Date(TODAY.getTime());  // the date the page is showing — moves with the slider
-const TZ  = 'America/Denver';
+const TZ  = ZCLTZ.zone();  // resolved from the saved location, not assumed
 const MO_ABBR = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
 
 // Planet data — Keplerian J2000 elements (proven accurate in the forecast page).
@@ -292,15 +349,18 @@ const PLANETS = {
   Jupiter:{a:[5.20288700,-0.00011607],e:[0.04838624,-0.00013253],I:[1.30439695,-0.00183714],L:[34.39644051,3034.74612775],wbar:[14.72847983,0.21252668],O:[100.47390909,0.20469106],col:'#D4B891',size:11,desc:'the giant of giants'},
   Saturn: {a:[9.53667594,-0.0012506 ],e:[0.05386179,-0.00050991],I:[2.48599187,0.00193609],L:[49.95424423,1222.49362201],wbar:[92.59887831,-0.41897216],O:[113.66242448,-0.28867794],col:'#E6CC85',size:9.5,desc:'the ringed wanderer'},
   Uranus: {a:[19.18916464,-0.00196176],e:[0.04725744,-0.00004397],I:[0.77263783,-0.00242939],L:[313.23810451,428.48202785],wbar:[170.95427630,0.40805281],O:[74.01692503,0.04240589],col:'#A8D8DC',size:7,desc:'the tilted ice giant'},
-  Neptune:{a:[30.06992276,0.00026291],e:[0.00859048,0.00005105],I:[1.77004347,0.00035372],L:[-55.12002969,218.45945325],wbar:[44.96476227,-0.32241464],O:[131.78422574,-0.00508664],col:'#7A9CE0',size:7,desc:'the deep blue giant'},
+  Neptune:{a:[30.06992276,0.00026291],e:[0.00859048,0.00005105],I:[1.77004347,0.00035372],L:[-55.12002969,218.45945325],wbar:[44.96476227,-0.32241464],O:[131.78422574,-0.00508664],col:'#7A9CE0',size:7,desc:'the far blue giant'},
   Pluto:  {a:[39.48211675,-0.00031596],e:[0.24882730,0.00005170],I:[17.14001206,0.00004818],L:[238.92903833,145.20780515],wbar:[224.06891629,-0.04062942],O:[110.30393684,-0.01183482],col:'#B89A7A',size:3.5,desc:'the distant dwarf'},
 };
-// The top-down diagram shows only the inner system (legible scale).
-// The outer system is presented as a simple informational list.
+// The outer system has its own scale-of-the-solar-system illustration.
 const INNER_PLANETS = ['Mercury','Venus','Earth','Mars'];
 const OUTER_PLANETS = ['Jupiter','Saturn','Uranus','Neptune','Pluto'];
-// Orbit diagram shows the inner system only (keeps the scale legible).
-const PNAMES = ['Mercury','Venus','Earth','Mars'];
+// Top-down orbit diagram: now includes Jupiter (5.2 AU). A sqrt scale on the
+// radial axis keeps the inner planets legible while fitting Jupiter on the
+// same chart.
+const PNAMES = ['Mercury','Venus','Earth','Mars','Jupiter'];
+// All nine planets — used by the "Solar System Scale" illustration only.
+const ALL_PLANETS = ['Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
 // Sky view can show every planet that's bright enough to find.
 const SKY_PLANETS = ['Mercury','Venus','Mars','Jupiter','Saturn','Uranus','Neptune'];
 
@@ -337,6 +397,9 @@ function planetRaDec(name,utc){
   return {ra:((ra*180/Math.PI)/15+24)%24, dec:dec*180/Math.PI, dist:dist};
 }
 function altAz(ra_h,dec_d,utc){
+  // positions are for the J2000 equinox; carry them to today's (precession, ~0.4° by the late 2020s)
+  { const yrs=(julianDay(utc)-2451545.0)/365.25, r0=ra_h*15*Math.PI/180, d0=dec_d*Math.PI/180, n=20.0431/3600*yrs;
+    ra_h += 3.07496/3600*yrs + (n/15)*Math.sin(r0)*Math.tan(d0); dec_d += n*Math.cos(r0); }
   const latR=LAT*Math.PI/180, decR=dec_d*Math.PI/180;
   let GMST=280.46061837+360.98564736629*(julianDay(utc)-2451545.0);
   GMST=((GMST%360)+360)%360;
@@ -351,6 +414,11 @@ function compass(deg){ return ['N','NE','E','SE','S','SW','W','NW'][Math.round(d
 
 // Approximate constellation for an RA value (degrees). Simple lookup
 // using ecliptic-band zodiac constellations — close enough for a hint.
+// The constellation a planet is actually in, from the official IAU boundaries (so Cetus and Ophiuchus count).
+function constellationOf(ra_h, dec_d){
+  try{ if(window.Astronomy) return Astronomy.Constellation(ra_h, dec_d).name; }catch(e){}
+  return zodiacOfRA(ra_h);
+}
 function zodiacOfRA(ra_h){
   const ra=ra_h*15;
   const z=[[0,'Pisces'],[31,'Aries'],[58,'Taurus'],[91,'Gemini'],
@@ -513,10 +581,12 @@ function renderTopView(){
        +'stroke="#FFE08C" stroke-width="1.5" stroke-linecap="round" opacity=".8"/>';
   }
 
-  // Orbital scale: inner system only, outermost shown is Mars at ~1.52 AU.
-  // Linear scale reads naturally at this range (no need to log-compress).
-  const auMax = 1.7;
-  const orbitR = (au)=> 30 + (au/auMax) * 150;
+  // Orbital scale: Mercury (0.39 AU) through Jupiter (5.20 AU). A linear scale
+  // would crush the inner planets into a tiny knot near the Sun; a sqrt-scale
+  // pulls the inner planets outward while still keeping Jupiter on the chart.
+  // Tuned so Jupiter sits comfortably inside the canvas with room for labels.
+  const auMax = 5.5;
+  const orbitR = (au)=> 30 + Math.sqrt(au/auMax) * 140;
 
   // Draw real Keplerian ellipses for each planet, split at the planet's current
   // position: gold/bright for the past half, dim for the future half.
@@ -674,17 +744,557 @@ function renderTopView(){
 }
 
 // ════════════════════════════════════════
+// VIEW B′ — Top-down, rendered (replaces the flat SVG diagram)
+// ════════════════════════════════════════
+// Same visual language as the Saturn page: a glowing Sun, planets as lit
+// spheres seen from above the Sun's north pole (so each shows its sunlit half
+// and a night side), true-scale Keplerian orbits with a bright wake behind
+// each planet, and three zoom levels so both Mercury and Neptune get their
+// due. Planet and Sun SIZES are enlarged — at true size they'd be invisible.
+const TOPZOOM = {inner:{au:1.75,label:'Inner planets'}, jupiter:{au:5.7,label:'Out to Jupiter'}, outer:{au:36,label:'Out to Neptune'}};
+let topZoom = 'inner';
+try{ const z=localStorage.getItem('dsa-planets-topzoom'); if(TOPZOOM[z]) topZoom=z; }catch(e){}
+const TOP_BODIES = ['Mercury','Venus','Earth','Mars','Jupiter','Saturn','Uranus','Neptune','Pluto'];
+const TOP_SIZE = {Mercury:3.6,Venus:5.6,Earth:6,Mars:4.6,Jupiter:10.5,Saturn:9,Uranus:6.6,Neptune:6.4,Pluto:2.4};
+// ecliptic-longitude centres of the zodiac constellations (IAU boundaries)
+const ZODIAC = [['Pisces',10],['Aries',40],['Taurus',72],['Gemini',104],['Cancer',128],['Leo',156],['Virgo',196],
+  ['Libra',230],['Scorpius',244],['Ophiuchus',257],['Sagittarius',283],['Capricornus',314],['Aquarius',340]];
+const sphereCache = {};
+function _mix(a,b,t){ return [a[0]+(b[0]-a[0])*t, a[1]+(b[1]-a[1])*t, a[2]+(b[2]-a[2])*t]; }
+function _hex(h){ return [parseInt(h.slice(1,3),16)/255, parseInt(h.slice(3,5),16)/255, parseInt(h.slice(5,7),16)/255]; }
+function _hash(x,y){ const s=Math.sin(x*127.1+y*311.7)*43758.5453; return s-Math.floor(s); }
+function _noise(x,y){ const i=Math.floor(x), j=Math.floor(y), fx=x-i, fy=y-j;
+  const a=_hash(i,j), b=_hash(i+1,j), c=_hash(i,j+1), d=_hash(i+1,j+1);
+  const ux=fx*fx*(3-2*fx), uy=fy*fy*(3-2*fy); return a+(b-a)*ux+(c-a)*uy+(a-b-c+d)*ux*uy; }
+// Surface colour, seen from above the orbital plane: the pole faces us, so
+// latitude runs from the disc centre (pole) to the rim (equator).
+function surface(name, lat, lon){
+  const n=_noise(lon*3.2, lat*.12);
+  switch(name){
+    case 'Mercury': return _mix([.52,.49,.46],[.66,.62,.58], n);
+    case 'Venus':   return _mix([.92,.85,.64],[.98,.93,.76], .5+.5*Math.sin(lon*2+lat*.08)*n);
+    case 'Earth': {
+      if(lat>72) return [.94,.96,.98];                                     // Arctic
+      const land = _noise(lon*2.4+3, lat*.07+1)>.58;
+      const cloud = _noise(lon*5+9, lat*.2)>.62;
+      let c = land ? [.36,.44,.28] : [.12,.30,.56];
+      if(cloud) c=_mix(c,[.95,.96,.98],.75);
+      return c; }
+    case 'Mars':
+      if(lat>80) return [.93,.92,.9];
+      return _mix([.66,.33,.20],[.48,.24,.16], _noise(lon*2.6, lat*.09));
+    case 'Jupiter': {
+      const b=Math.sin(lat*.35)*.5+.5, z=_noise(lon*6, lat*.5)*.15;
+      return _mix([.84,.72,.56],[.62,.45,.33], b*.8+z); }
+    case 'Saturn': {
+      const b=Math.sin(lat*.28)*.5+.5;
+      return lat>75 ? [.58,.60,.60] : _mix([.93,.84,.62],[.80,.68,.47], b*.7); }
+    case 'Uranus':  return _mix([.60,.84,.86],[.68,.89,.90], lat/90);
+    case 'Neptune': return _mix([.24,.40,.80],[.33,.50,.88], .5+.5*Math.sin(lat*.3));
+    case 'Pluto':   return _mix([.72,.62,.50],[.86,.78,.66], _noise(lon*2, lat*.1));
+  }
+  return [.7,.7,.7];
+}
+// A lit sphere of radius r px, Sun in the orbital plane at screen angle `sa`.
+function sphere(name, r, sa){
+  const key=name+'|'+Math.round(r*2)+'|'+Math.round(sa*180/Math.PI/3);
+  if(sphereCache[key]) return sphereCache[key];
+  const R=Math.ceil(r)+2, S=2*R, cv=document.createElement('canvas'); cv.width=S; cv.height=S;
+  const ctx=cv.getContext('2d'), img=ctx.createImageData(S,S), d=img.data;
+  const sx=Math.cos(sa), sy=Math.sin(sa);
+  for(let j=0;j<S;j++) for(let i=0;i<S;i++){
+    const x=(i+.5-R)/r, y=(j+.5-R)/r, q=x*x+y*y, o=(j*S+i)*4;
+    const edge=Math.max(0,Math.min(1,(1-Math.sqrt(q))*r+.5));
+    if(edge<=0){ d[o+3]=0; continue; }
+    const z=Math.sqrt(Math.max(0,1-q)), lat=Math.asin(Math.min(1,z))*180/Math.PI, lon=Math.atan2(y,x);
+    const col=surface(name,lat,lon);
+    const lam=x*sx+y*sy;                                   // Sun lies in the plane: half-lit disc
+    const tw=Math.max(0,Math.min(1,(lam+.06)/.16)), lit=Math.pow(Math.max(lam,0),.85)*.95+.05;
+    const I=(lit*tw)+0.035*(1-tw);                          // faint night side
+    const limb=.75+.25*z;
+    d[o]=255*Math.min(1,col[0]*I*limb*1.15); d[o+1]=255*Math.min(1,col[1]*I*limb*1.15); d[o+2]=255*Math.min(1,col[2]*I*limb*1.15);
+    d[o+3]=255*edge;
+  }
+  ctx.putImageData(img,0,0);
+  return (sphereCache[key]={cv:cv,R:R});
+}
+function drawSun(ctx,cx,cy,r){
+  let g=ctx.createRadialGradient(cx,cy,0,cx,cy,r*7);
+  g.addColorStop(0,'rgba(255,200,110,.30)'); g.addColorStop(.35,'rgba(255,170,80,.08)'); g.addColorStop(1,'rgba(255,160,70,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r*7,0,7); ctx.fill();
+  g=ctx.createRadialGradient(cx,cy,r*.9,cx,cy,r*2.2);
+  g.addColorStop(0,'rgba(255,236,180,.55)'); g.addColorStop(1,'rgba(255,220,150,0)');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r*2.2,0,7); ctx.fill();
+  g=ctx.createRadialGradient(cx-r*.15,cy-r*.15,0,cx,cy,r);                // limb-darkened disc
+  g.addColorStop(0,'#FFFDF2'); g.addColorStop(.55,'#FFF0B8'); g.addColorStop(.85,'#FFD27A'); g.addColorStop(1,'#E8963A');
+  ctx.fillStyle=g; ctx.beginPath(); ctx.arc(cx,cy,r,0,7); ctx.fill();
+}
+function renderTopCanvas(){
+  const cv=$('zcl-ss-topcv'), rect=cv.getBoundingClientRect(), dpr=Math.min(2.5,window.devicePixelRatio||1);
+  const W=Math.max(10,Math.round(rect.width*dpr)), H=Math.max(10,Math.round(rect.height*dpr));
+  if(cv.width!==W||cv.height!==H){ cv.width=W; cv.height=H; }
+  const ctx=cv.getContext('2d'); ctx.setTransform(1,0,0,1,0,0); ctx.clearRect(0,0,W,H);
+  const cx=W/2, cy=H/2, rim=Math.min(W,H)/2-22*dpr, k=rim/TOPZOOM[topZoom].au;   // px per AU
+  const T=(julianDay(selectedUTC())-2451545.0)/36525.0;
+  const Tl=T-10/36525;                                                          // 10 days earlier: motion direction
+  // faint stars
+  let seed=7; const rnd=()=>{ seed=(seed*16807)%2147483647; return seed/2147483647; };
+  for(let i=0;i<140;i++){ ctx.fillStyle='rgba(255,250,235,'+(.05+rnd()*.3).toFixed(2)+')'; ctx.fillRect(rnd()*W,rnd()*H,dpr*(.5+rnd()*.8),dpr*(.5+rnd()*.8)); }
+  // belts
+  seed=11;
+  const belt=(a0,a1,n,alpha)=>{ for(let i=0;i<n;i++){ const r=(a0+(a1-a0)*Math.sqrt(rnd()))*k, a=rnd()*Math.PI*2;
+    ctx.fillStyle='rgba(210,195,160,'+(alpha*(.4+rnd()*.6)).toFixed(3)+')'; ctx.fillRect(cx+Math.cos(a)*r,cy-Math.sin(a)*r,dpr,dpr); } };
+  if(topZoom!=='inner') belt(2.2,3.3,topZoom==='jupiter'?900:500,.35);
+  if(topZoom==='outer') belt(30,48,1400,.28);
+  // orbits: true Keplerian ellipses, bright wake behind each planet
+  const bodies=[];
+  TOP_BODIES.forEach(name=>{
+    const el=PLANETS[name], p=_helio(el,T), q=_helio(el,Tl);
+    const pts=[]; const a=el.a[0]+el.a[1]*T, e=el.e[0]+el.e[1]*T;
+    const tmp={a:[a,0],e:[e,0],I:el.I,L:[0,0],wbar:el.wbar,O:el.O};
+    for(let i=0;i<=180;i++){                          // the full ellipse, by mean anomaly
+      tmp.L=[el.wbar[0]+i*2,0];
+      const pp=_helio(tmp,0); pts.push([cx+pp.x*k, cy-pp.y*k]);
+    }
+    const x=cx+p.x*k, y=cy-p.y*k;
+    if(a*(1-e)*k > Math.hypot(W,H)) return;           // entire orbit off-canvas
+    ctx.strokeStyle='rgba(230,214,170,.14)'; ctx.lineWidth=dpr;
+    ctx.beginPath(); pts.forEach((pt,i)=>i?ctx.lineTo(pt[0],pt[1]):ctx.moveTo(pt[0],pt[1])); ctx.stroke();
+    // wake: the stretch of orbit just behind the planet, fading
+    // wake: the planet's own positions over the last sixth of its year
+    const col=_hex(el.col), rr=Math.hypot(x-cx,y-cy), per=Math.pow(a,1.5)/100;   // period in centuries
+    let prev=[x,y];
+    for(let s=1;s<=16;s++){
+      const w=_helio(el,T-per/6*s/16), pt=[cx+w.x*k, cy-w.y*k];
+      ctx.strokeStyle='rgba('+Math.round(col[0]*255)+','+Math.round(col[1]*255)+','+Math.round(col[2]*255)+','+(.62*(1-(s-1)/16)).toFixed(3)+')';
+      ctx.lineWidth=1.6*dpr; ctx.beginPath(); ctx.moveTo(prev[0],prev[1]); ctx.lineTo(pt[0],pt[1]); ctx.stroke(); prev=pt;
+    }
+    bodies.push({name,x,y,r:rr,au:Math.hypot(p.x,p.y),el});
+  });
+  // the Sun
+  drawSun(ctx,cx,cy,(topZoom==='inner'?13:10)*dpr);
+  // planets
+  const placed=[{x:cx-24*dpr,y:cy-24*dpr,w:48*dpr,h:48*dpr},{x:W-110*dpr,y:H-34*dpr,w:110*dpr,h:34*dpr}], off=[];
+  const fs=Math.round(11*dpr);
+  bodies.forEach(b=>{
+    const inView=b.x>8*dpr&&b.x<W-8*dpr&&b.y>8*dpr&&b.y<H-8*dpr;
+    if(!inView){ off.push(b); return; }
+    const small=(W/dpr<560?.8:1)*(topZoom==='outer'?.72:1);
+    const r=TOP_SIZE[b.name]*dpr*small*(topZoom==='outer'&&['Mercury','Venus','Earth','Mars'].includes(b.name)?.6:1);
+    const sa=Math.atan2(cy-b.y, cx-b.x);                 // toward the Sun, screen angle
+    if(b.name==='Saturn'){                                 // rings, nearly face-on from above the ecliptic
+      ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(-169.5*Math.PI/180);
+      const sc=Math.cos(28*Math.PI/180);
+      [[2.27,1.99,'rgba(206,196,170,.55)'],[1.95,1.53,'rgba(236,224,190,.85)'],[1.53,1.24,'rgba(160,150,130,.35)']].forEach(rg=>{
+        ctx.beginPath(); ctx.ellipse(0,0,rg[0]*r,rg[0]*r*sc,0,0,Math.PI*2); ctx.ellipse(0,0,rg[1]*r,rg[1]*r*sc,0,0,Math.PI*2,true);
+        ctx.fillStyle=rg[2]; ctx.fill('evenodd'); });
+      ctx.restore();
+      // the globe's shadow on the rings, cast away from the Sun
+      ctx.save(); ctx.translate(b.x,b.y); ctx.rotate(sa+Math.PI);
+      ctx.fillStyle='rgba(5,4,8,.75)'; ctx.fillRect(0,-r*.98,2.3*r,1.96*r); ctx.restore();
+    }
+    const sp=sphere(b.name,r,sa);
+    ctx.drawImage(sp.cv,b.x-sp.R,b.y-sp.R);
+    const gl=ctx.createRadialGradient(b.x,b.y,r,b.x,b.y,r*2.6);
+    gl.addColorStop(0,'rgba(255,245,220,.10)'); gl.addColorStop(1,'rgba(255,245,220,0)');
+    ctx.fillStyle=gl; ctx.beginPath(); ctx.arc(b.x,b.y,r*2.6,0,7); ctx.fill();
+    placed.push({x:b.x-r-2*dpr,y:b.y-r-2*dpr,w:2*r+4*dpr,h:2*r+4*dpr});
+    b.rad=r;
+  });
+  // labels: radially outward, sticky
+  const PRI=['Earth','Jupiter','Saturn','Mars','Venus','Mercury','Uranus','Neptune','Pluto'];
+  const INNER4=['Mercury','Venus','Earth','Mars'];
+  bodies.filter(b=>b.rad && !(topZoom==='outer'&&INNER4.includes(b.name))).sort((p,q)=>PRI.indexOf(p.name)-PRI.indexOf(q.name)).forEach(b=>{
+    ctx.font='500 '+fs+'px Montserrat, sans-serif';
+    const name=b.name, sub=b.au.toFixed(b.au<10?2:1)+' AU', tw=ctx.measureText(name+'  '+sub).width+4*dpr;
+    const ux=(b.x-cx)/(b.r||1), uy=(b.y-cy)/(b.r||1);
+    let best=null;
+    // try outward from the Sun first, then inward, then above and below
+    const dirs=[[ux,uy],[-ux,-uy],[0,-1],[0,1]];
+    for(let di=0;di<dirs.length&&!best;di++) for(let st=0;st<6&&!best;st++){
+      const vx=dirs[di][0], vy=dirs[di][1];
+      const d=b.rad*(b.name==='Saturn'?2.3:1)+9*dpr+st*12*dpr;
+      let bx=b.x+vx*d, by=b.y+vy*d+fs*.35;
+      if(Math.abs(vx)<.4) bx-=tw/2; else if(vx<0) bx-=tw;
+      bx=Math.max(4*dpr,Math.min(W-tw-6*dpr,bx));          // slide back inside the frame
+      const box={x:bx-2*dpr,y:by-fs,w:tw+4*dpr,h:fs+6*dpr};
+      let hit=placed.some(q=>!(box.x>q.x+q.w||box.x+box.w<q.x||box.y>q.y+q.h||box.y+box.h<q.y));
+      if(box.x<2||box.x+box.w>W-2||box.y<2||box.y+box.h>H-2) hit=true;
+      if(!hit) best={bx,by,box};
+    }
+    if(!best) return;
+    placed.push(best.box);
+    ctx.textAlign='left'; ctx.fillStyle=b.el.col; ctx.fillText(name,best.bx,best.by);
+    const nw=ctx.measureText(name+'  ').width;
+    ctx.font=Math.round(10*dpr)+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(154,135,92,.85)';
+    ctx.fillText(sub,best.bx+nw,best.by);
+  });
+  // zodiac around the rim — the direction each planet lies, seen from the Sun.
+  // Drawn after the planets, and skipped wherever it would sit on a label.
+  ctx.font=Math.round(9*dpr)+'px Montserrat, sans-serif'; ctx.textAlign='center'; ctx.textBaseline='middle';
+  ctx.fillStyle='rgba(154,135,92,.42)';
+  ZODIAC.forEach(z=>{ const a=z[1]*Math.PI/180, rr=rim+10*dpr;
+    const x=cx+Math.cos(a)*Math.min(rr,W/2-30*dpr), y=cy-Math.sin(a)*Math.min(rr,H/2-10*dpr);
+    const tw=ctx.measureText(z[0].toUpperCase()).width, box={x:x-tw/2,y:y-7*dpr,w:tw,h:14*dpr};
+    if(placed.some(q=>!(box.x>q.x+q.w||box.x+box.w<q.x||box.y>q.y+q.h||box.y+box.h<q.y))) return;
+    placed.push(box); ctx.fillText(z[0].toUpperCase(),x,y); });
+  ctx.textBaseline='alphabetic';
+  // planets beyond the frame: arrows at the edge
+  off.forEach(b=>{
+    const dx=b.x-cx, dy=b.y-cy, m=16*dpr;
+    const t=Math.min((W/2-m)/Math.max(1e-6,Math.abs(dx)),(H/2-m)/Math.max(1e-6,Math.abs(dy)));
+    const ex=cx+dx*t, ey=cy+dy*t, a=Math.atan2(dy,dx);
+    ctx.save(); ctx.translate(ex,ey); ctx.rotate(a); ctx.fillStyle=b.el.col; ctx.globalAlpha=.8;
+    ctx.beginPath(); ctx.moveTo(6*dpr,0); ctx.lineTo(-3*dpr,-4.5*dpr); ctx.lineTo(-3*dpr,4.5*dpr); ctx.closePath(); ctx.fill(); ctx.restore();
+    ctx.font=Math.round(10*dpr)+'px Montserrat, sans-serif'; ctx.fillStyle=b.el.col; ctx.globalAlpha=.85;
+    const inx=-Math.cos(a), iny=-Math.sin(a); ctx.textAlign=Math.abs(inx)<.3?'center':(inx>0?'left':'right');
+    let ly=ey+iny*14*dpr+4*dpr;
+    for(let k2=0;k2<6;k2++){ const bx0=ex+inx*14*dpr; const tw=ctx.measureText(b.name).width;
+      const lft=ctx.textAlign==='left'?bx0:ctx.textAlign==='right'?bx0-tw:bx0-tw/2;
+      const box={x:lft,y:ly-11*dpr,w:tw,h:14*dpr};
+      if(!placed.some(q=>!(box.x>q.x+q.w||box.x+box.w<q.x||box.y>q.y+q.h||box.y+box.h<q.y))){ placed.push(box); break; }
+      ly+=(k2%2?-1:1)*(k2+1)*13*dpr; }
+    ctx.fillText(b.name, ex+inx*14*dpr, ly); ctx.globalAlpha=1;
+  });
+  // scale bar + caption
+  const nice=[.1,.2,.5,1,2,5,10], target=W*.16/k; let au0=nice[0]; nice.forEach(v=>{ if(v<=target) au0=v; });
+  const L=au0*k, x1=W-14*dpr, x0=x1-L, yb=H-14*dpr;
+  ctx.strokeStyle='rgba(230,204,133,.75)'; ctx.lineWidth=1.3*dpr;
+  ctx.beginPath(); ctx.moveTo(x0,yb-4*dpr); ctx.lineTo(x0,yb); ctx.lineTo(x1,yb); ctx.lineTo(x1,yb-4*dpr); ctx.stroke();
+  ctx.font=Math.round(9.5*dpr)+'px Montserrat, sans-serif'; ctx.fillStyle='rgba(230,204,133,.85)'; ctx.textAlign='center';
+  ctx.fillText(au0+' AU',(x0+x1)/2,yb-7*dpr);
+  // zoom chips (once) + note
+  const chips=$('zcl-ss-chips');
+  const infoOpen=!!(chips.querySelector('.zcl-ss-zinfo.open'));
+  chips.innerHTML=Object.keys(TOPZOOM).map(z=>'<button type="button" class="zcl-ss-zbtn'+(z===topZoom?' on':'')+'" data-tz="'+z+'">'+TOPZOOM[z].label+'</button>').join('')
+    +'<button type="button" class="zcl-ss-ibtn'+(infoOpen?' on':'')+'" data-zinfo aria-label="About the constellations around the edge">i</button>'
+    +'<div class="zcl-ss-zinfo'+(infoOpen?' open':'')+'"><b>The names around the edge</b> are the zodiac constellations — the star patterns far beyond the planets, in the direction each one lies <b>as seen from the Sun</b>.<br><br>'
+    +'<b>Astrological signs are different in two ways.</b> First, a planet’s sign is where it appears <b>from Earth</b>: draw a line from Earth through the planet out to the edge. For Mars and the inner planets that can point somewhere quite different. Second, signs are not the constellations themselves. They are twelve equal 30° slices counted from where the Sun sits at the March equinox, and that point slowly drifts — about 1° every 72 years. The signs were matched to the constellations some 2,000 years ago and have since slipped almost a whole sign, so a planet is usually among the stars of the constellation <b>before</b> its sign. The real constellations are also unequal in size, and the Sun passes through a thirteenth, Ophiuchus.</div>'
+    +'<div class="zcl-ss-topnote">Seen from above the Sun’s north pole — everything circles counter-clockwise. Orbits are true to scale; the Sun and planets are drawn much larger than life so you can see them, each lit on its sunward side.</div>';
+}
+document.addEventListener('click',e=>{
+  const ib=e.target.closest&&e.target.closest('[data-zinfo]');
+  if(ib){ const box=document.querySelector('.zcl-ss-zinfo'); const o=box.classList.toggle('open'); ib.classList.toggle('on',o); return; }
+  const b=e.target.closest&&e.target.closest('[data-tz]'); if(!b) return;
+  topZoom=b.getAttribute('data-tz'); try{ localStorage.setItem('dsa-planets-topzoom',topZoom); }catch(_){}
+  renderTopCanvas();
+});
+let _topRz=0;
+window.addEventListener('resize',()=>{ clearTimeout(_topRz); _topRz=setTimeout(()=>{ if(view==='top') renderTopCanvas(); },120); });
+
+// ════════════════════════════════════════
+// VIEW C — Solar System Scale (log distance)
+// ════════════════════════════════════════
+// A single horizontal ribbon laying out, on a log scale of distance from the
+// Sun, every body in the catalogue plus the Kuiper Belt, the heliopause, and
+// the current position of Voyager 1 — humanity's most distant probe.
+// Log scale is the only way to show Mercury (0.39 AU) and Voyager 1 (~172 AU)
+// on the same diagram without one disappearing or the other being absurd.
+// The diagram is date- and time-independent — distances change only slowly
+// (Voyager 1 moves about 3.5 AU/year, which is < 1px on this chart per year).
+
+// Mean orbital distance from Sun in AU. Pluto's value is the long-term average
+// of its eccentric orbit (39.5 AU; perihelion 29.7, aphelion 49.3).
+const AU_FROM_SUN = {
+  Mercury: 0.387, Venus: 0.723, Earth: 1.000, Mars: 1.524,
+  Jupiter: 5.203, Saturn: 9.537, Uranus: 19.19, Neptune: 30.07, Pluto: 39.48
+};
+
+// Reference distances (AU) for waypoints beyond the planets.
+// Verified mid-2026: Voyager 1 sits at ~172 AU and recedes at ~3.5 AU/year.
+// (Wikipedia & NASA JPL Horizons, March/May 2026.)
+const SCALE_WAYPOINTS = {
+  kuiperInner:  30,     // ~Neptune's orbit; the Kuiper Belt begins here
+  kuiperOuter:  50,     // Main belt outer "cliff"
+  terminationShock: 94, // Where the solar wind turns subsonic (Voyager crossed 2004)
+  heliopause:   120,    // Edge of the heliosphere (Voyager 1 crossed Aug 2012)
+  voyager1:     172     // Voyager 1's heliocentric distance, mid-2026
+};
+
+// ── Scale state + helpers ───────────────────────────────────────────────
+// The illustration morphs between a LOGARITHMIC layout (compact, everything
+// labelled) and a TRUE LINEAR layout (the inner planets crush against the Sun
+// while Voyager 1 sits far out — the honest, humbling picture). A click on the
+// "Show in true scale" button animates between the two with a clockwork feel.
+const SC_W = 720, SC_H = 380;
+const SC_PADL = 36, SC_PADR = 36;
+const SC_RY = 175;            // ribbon vertical centre
+const SC_RH = 18;             // ribbon thickness
+const SC_USABLE = SC_W - SC_PADL - SC_PADR;
+const SC_LOGMIN = Math.log10(0.30);
+const SC_LOGMAX = Math.log10(200);
+const SC_LINMAX = 185;        // AU at the right edge in true-scale mode (past Voyager)
+
+function scLogX(au){ return SC_PADL + (Math.log10(au) - SC_LOGMIN) / (SC_LOGMAX - SC_LOGMIN) * SC_USABLE; }
+function scLinX(au){ return SC_PADL + Math.min(au, SC_LINMAX) / SC_LINMAX * SC_USABLE; }
+// Blend factor t: 0 = log, 1 = true/linear.
+function scBlendX(au, t){ return scLogX(au) * (1 - t) + scLinX(au) * t; }
+function scEase(p){ return p < 0.5 ? 4*p*p*p : 1 - Math.pow(-2*p + 2, 3) / 2; } // ease-in-out cubic
+
+
+const SC_AU = {
+  Mercury:0.387, Venus:0.723, Earth:1.000, Mars:1.524,
+  Jupiter:5.203, Saturn:9.537, Uranus:19.19, Neptune:30.07, Pluto:39.48
+};
+const SC_DOTR = {
+  Mercury:3.4, Venus:4.2, Earth:4.4, Mars:3.6,
+  Jupiter:7.6, Saturn:6.8, Uranus:5.4, Neptune:5.4, Pluto:3.0
+};
+const SC_KB_IN = 30, SC_KB_OUT = 50, SC_HELIO = 120, SC_VOY = 172;
+
+let scaleT = 0;            // current blend (0 log … 1 linear)
+let scaleAnimating = false;
+
+// Build the scale-view SVG once. Each movable element carries data-au so the
+// layout pass can reposition it for any blend factor without rebuilding the DOM.
+function buildScaleView(){
+  let s = '';
+
+  s += '<defs>'
+    + '<linearGradient id="zcl-ss-scale-grad" x1="0" y1="0" x2="1" y2="0">'
+    +   '<stop offset="0%" stop-color="#E6CC85" stop-opacity="0.42"/>'
+    +   '<stop offset="35%" stop-color="#CBA85A" stop-opacity="0.26"/>'
+    +   '<stop offset="80%" stop-color="#6E5B36" stop-opacity="0.16"/>'
+    +   '<stop offset="100%" stop-color="#3A2E1E" stop-opacity="0.08"/>'
+    + '</linearGradient>'
+    + '<radialGradient id="zcl-ss-sun" cx="50%" cy="50%" r="50%">'
+    +   '<stop offset="0%" stop-color="#FFE8A6"/><stop offset="60%" stop-color="#E6CC85"/>'
+    +   '<stop offset="100%" stop-color="#9A7B3A"/>'
+    + '</radialGradient></defs>';
+
+  // Ribbon
+  s += '<rect x="'+SC_PADL+'" y="'+(SC_RY-SC_RH/2)+'" width="'+SC_USABLE+'" height="'+SC_RH+'" '
+    + 'fill="url(#zcl-ss-scale-grad)" rx="1.5"/>';
+
+  // Two tick sets that cross-fade: log (1/10/100) and linear (50/100/150).
+  [1,10,100].forEach(au=>{
+    s += '<g class="sc-tick" data-au="'+au+'" data-mode="log">'
+      + '<line x1="0" y1="'+(SC_RY-46)+'" x2="0" y2="'+(SC_RY+46)+'" stroke="#CBA85A" stroke-width="0.6" stroke-dasharray="2 3" opacity="0.5"/>'
+      + '<text x="0" y="'+(SC_RY+62)+'" text-anchor="middle" font-family="Montserrat" font-size="9.5" fill="#7B6F55">'+au+' AU</text>'
+      + '</g>';
+  });
+  [50,100,150].forEach(au=>{
+    s += '<g class="sc-tick" data-au="'+au+'" data-mode="lin" opacity="0">'
+      + '<line x1="0" y1="'+(SC_RY-46)+'" x2="0" y2="'+(SC_RY+46)+'" stroke="#9AB0C8" stroke-width="0.6" stroke-dasharray="2 3" opacity="0.5"/>'
+      + '<text x="0" y="'+(SC_RY+62)+'" text-anchor="middle" font-family="Montserrat" font-size="9.5" fill="#6E7E92">'+au+' AU</text>'
+      + '</g>';
+  });
+
+  // Kuiper Belt band + its icy specks (each speck carries its own AU so it tracks)
+  s += '<rect class="sc-kuiper" x="0" y="'+(SC_RY-SC_RH/2-3)+'" width="0" height="'+(SC_RH+6)+'" fill="#9AB0C8" opacity="0.30" rx="1.5"/>';
+  for(let i=0;i<14;i++){
+    const frac = (Math.sin(7*(i+1)*2.31)+1)/2;       // deterministic 0..1
+    const v = (Math.sin(7*(i+1)*1.77+1.3)+1)/2;
+    const au = SC_KB_IN + frac*(SC_KB_OUT-SC_KB_IN);
+    const dy = SC_RY + (v-0.5)*(SC_RH+4);
+    s += '<circle class="sc-speck" data-au="'+au.toFixed(2)+'" cx="0" cy="'+dy.toFixed(1)+'" r="'+(0.6+v*0.8).toFixed(1)+'" fill="#BFD0E2" opacity="0.6"/>';
+  }
+  s += '<g class="sc-kuiperlbl">'
+    + '<text x="0" y="'+(SC_RY+34)+'" text-anchor="middle" font-family="Montserrat" font-size="10.5" font-weight="500" fill="#BFD0E2">Kuiper Belt</text>'
+    + '<text x="0" y="'+(SC_RY+46)+'" text-anchor="middle" font-family="Montserrat" font-size="8.5" fill="#7E8FA3" letter-spacing="0.04em">30 \u2013 50 AU</text>'
+    + '</g>';
+
+  // Voyager trail (heliopause → probe)
+  s += '<line class="sc-trail" x1="0" y1="'+SC_RY+'" x2="0" y2="'+SC_RY+'" stroke="#E6CC85" stroke-width="0.9" stroke-dasharray="2 4" opacity="0.55"/>';
+
+  // Heliopause marker (node, data-au=120) — label sits high to clear Voyager
+  s += '<g class="sc-node" data-au="'+SC_HELIO+'">'
+    + '<line x1="0" y1="-30" x2="0" y2="30" stroke="#9AB0C8" stroke-width="1.1" stroke-dasharray="3 3" opacity="0.85"/>'
+    + '<text x="0" y="-86" text-anchor="middle" font-family="Montserrat" font-size="10" font-weight="500" fill="#BFD0E2">Heliopause</text>'
+    + '<text x="0" y="-74" text-anchor="middle" font-family="Montserrat" font-size="8.5" fill="#7E8FA3" letter-spacing="0.04em">~120 AU</text>'
+    + '</g>';
+
+  // The Sun — small, round, golden, with simple classic rays radiating out.
+  // (No clockwork gears; a clean engraved-sun motif suits the antique look.)
+  const sunX = SC_PADL - 2;
+  let sunRays = '';
+  const NRAYS = 12, rInner = 11, rOuter = 17;
+  for(let i = 0; i < NRAYS; i++){
+    const a = (i / NRAYS) * Math.PI * 2;
+    sunRays += '<line x1="'+(Math.cos(a)*rInner).toFixed(1)+'" y1="'+(Math.sin(a)*rInner).toFixed(1)+'" '
+      + 'x2="'+(Math.cos(a)*rOuter).toFixed(1)+'" y2="'+(Math.sin(a)*rOuter).toFixed(1)+'" '
+      + 'stroke="#E6CC85" stroke-width="1.4" stroke-linecap="round"/>';
+  }
+  s += '<g transform="translate('+sunX+','+SC_RY+')">'
+    + sunRays
+    + '<circle r="8" fill="#E6CC85" stroke="#CBA85A" stroke-width="1"/>'
+    + '<text x="0" y="36" text-anchor="middle" font-family="Montserrat" font-size="11" font-weight="500" fill="#E6CC85">Sun</text>'
+    + '</g>';
+
+  // The nine planets (nodes). Label row alternates to reduce overlap.
+  ALL_PLANETS.forEach((name,i)=>{
+    const r = SC_DOTR[name], col = PLANETS[name].col;
+    const ly = (i % 2 === 0) ? -50 : -36;
+    s += '<g class="sc-node sc-planet" data-au="'+SC_AU[name]+'" data-name="'+name+'">'
+      + '<circle cx="0" cy="0" r="'+(r+2.5).toFixed(1)+'" fill="'+col+'" opacity="0.18"/>'
+      + '<line class="sc-plead" x1="0" y1="'+(-r-1).toFixed(1)+'" x2="0" y2="'+(ly+3)+'" stroke="'+col+'" stroke-width="0.5" opacity="0.55"/>'
+      + '<circle cx="0" cy="0" r="'+r.toFixed(1)+'" fill="'+col+'" stroke="#15110d" stroke-width="0.8"/>'
+      + '<text class="sc-plbl" x="0" y="'+ly+'" text-anchor="middle" font-family="Montserrat" font-size="10" font-weight="500" fill="'+col+'">'+name+'</text>'
+      + '</g>';
+  });
+
+  // Voyager 1 (node, data-au=172)
+  s += '<g class="sc-node" data-au="'+SC_VOY+'">'
+    + '<circle cx="0" cy="0" r="6" fill="#E6CC85" opacity="0.22"/>'
+    + '<polygon points="0,-6 4,4 -4,4" fill="#F2E4BE" stroke="#15110d" stroke-width="0.6"/>'
+    + '<line x1="-3" y1="-2" x2="3" y2="-2" stroke="#15110d" stroke-width="0.6"/>'
+    + '<text x="0" y="-50" text-anchor="middle" font-family="Montserrat" font-size="10.5" font-weight="500" fill="#F2E4BE">Voyager 1</text>'
+    + '<text x="0" y="-62" text-anchor="middle" font-family="Montserrat" font-size="8.5" fill="#9A8E6E" letter-spacing="0.04em">~172 AU</text>'
+    + '</g>';
+
+  // Scale-mode badge (top-left) — makes the log-vs-true distinction explicit.
+  s += '<g class="sc-badge" transform="translate('+(SC_PADL)+',30)">'
+    + '<rect class="sc-badge-bg" x="0" y="-13" width="156" height="20" rx="10" fill="rgba(203,168,90,0.14)" stroke="#CBA85A" stroke-opacity="0.5" stroke-width="0.8"/>'
+    + '<text class="sc-badge-txt" x="10" y="1.5" font-family="Montserrat" font-size="10" font-weight="600" letter-spacing="0.12em" fill="#E6CC85">LOGARITHMIC SCALE</text>'
+    + '</g>';
+
+  // Caption (two lines) — text swapped by mode in scUpdateText()
+  s += '<text class="sc-cap1" x="'+(SC_W/2)+'" y="'+(SC_H-26)+'" text-anchor="middle" font-family="Montserrat" font-size="10" fill="#9A8E6E"></text>';
+  s += '<text class="sc-cap2" x="'+(SC_W/2)+'" y="'+(SC_H-12)+'" text-anchor="middle" font-family="Montserrat" font-size="9.5" fill="#7B6F55"></text>';
+
+  $('zcl-ss-svg').innerHTML = s;
+
+  // Legend chips below the diagram
+  $('zcl-ss-chips').innerHTML =
+      '<span class="zcl-ss-chip"><i style="background:#E6CC85;color:#E6CC85"></i>Sun \u00B7 0 AU</span>'
+    + '<span class="zcl-ss-chip"><i style="background:#9AB0C8;color:#9AB0C8"></i>Kuiper Belt \u00B7 30\u201350 AU</span>'
+    + '<span class="zcl-ss-chip"><i style="background:#BFD0E2;color:#BFD0E2"></i>Heliopause \u00B7 ~120 AU</span>'
+    + '<span class="zcl-ss-chip"><i style="background:#F2E4BE;color:#F2E4BE"></i>Voyager 1 \u00B7 ~172 AU</span>';
+
+  scLayout(scaleT);
+}
+
+// Reposition every movable element for a given blend factor t (0 log … 1 linear).
+function scLayout(t){
+  const svgEl = $('zcl-ss-svg');
+  if(!svgEl) return;
+
+  // Nodes (planets, heliopause, Voyager) translate by AU.
+  svgEl.querySelectorAll('.sc-node').forEach(g=>{
+    const au = parseFloat(g.getAttribute('data-au'));
+    g.setAttribute('transform', 'translate('+scBlendX(au,t).toFixed(2)+','+SC_RY+')');
+  });
+
+  // Kuiper band
+  const kb = svgEl.querySelector('.sc-kuiper');
+  if(kb){
+    const x1 = scBlendX(SC_KB_IN,t), x2 = scBlendX(SC_KB_OUT,t);
+    kb.setAttribute('x', x1.toFixed(2));
+    kb.setAttribute('width', Math.max(1,(x2-x1)).toFixed(2));
+  }
+  svgEl.querySelectorAll('.sc-speck').forEach(sp=>{
+    sp.setAttribute('cx', scBlendX(parseFloat(sp.getAttribute('data-au')),t).toFixed(2));
+  });
+  const kl = svgEl.querySelector('.sc-kuiperlbl');
+  if(kl){
+    const mid = (scBlendX(SC_KB_IN,t)+scBlendX(SC_KB_OUT,t))/2;
+    kl.setAttribute('transform','translate('+mid.toFixed(2)+',0)');
+  }
+
+  // Voyager trail
+  const tr = svgEl.querySelector('.sc-trail');
+  if(tr){ tr.setAttribute('x1', scBlendX(SC_HELIO,t).toFixed(2)); tr.setAttribute('x2', scBlendX(SC_VOY,t).toFixed(2)); }
+
+  // Tick cross-fade + reposition
+  svgEl.querySelectorAll('.sc-tick').forEach(g=>{
+    const au = parseFloat(g.getAttribute('data-au'));
+    const mode = g.getAttribute('data-mode');
+    g.setAttribute('transform','translate('+scBlendX(au,t).toFixed(2)+',0)');
+    g.setAttribute('opacity', (mode==='log' ? (1-t) : t).toFixed(3));
+  });
+
+  // Planet label collision fade — keep the dots, fade crowded labels (mostly
+  // the inner planets as they pile onto the Sun in true-scale mode).
+  const planets = [...svgEl.querySelectorAll('.sc-planet')]
+    .map(g=>({g, x: scBlendX(parseFloat(g.getAttribute('data-au')),t)}))
+    .sort((a,b)=>a.x-b.x);
+  let lastX = -1e9;
+  const MINGAP = 30;
+  planets.forEach(o=>{
+    const gap = o.x - lastX;
+    const op = Math.max(0, Math.min(1, (gap - 10) / MINGAP));
+    const lbl = o.g.querySelector('.sc-plbl');
+    const lead = o.g.querySelector('.sc-plead');
+    if(lbl) lbl.setAttribute('opacity', op.toFixed(2));
+    if(lead) lead.setAttribute('opacity', (0.55*op).toFixed(2));
+    if(op > 0.4) lastX = o.x;     // only "claim" space if its label is actually shown
+  });
+
+  scUpdateText(t);
+}
+
+// Swap the badge + caption wording according to which mode dominates.
+function scUpdateText(t){
+  const svgEl = $('zcl-ss-svg'); if(!svgEl) return;
+  const linear = t >= 0.5;
+  const badge = svgEl.querySelector('.sc-badge-txt');
+  const badgeBg = svgEl.querySelector('.sc-badge-bg');
+  const cap1 = svgEl.querySelector('.sc-cap1');
+  const cap2 = svgEl.querySelector('.sc-cap2');
+  if(badge) badge.textContent = linear ? 'TRUE SCALE' : 'LOGARITHMIC SCALE';
+  if(badge) badge.setAttribute('fill', linear ? '#BFD0E2' : '#E6CC85');
+  if(badgeBg) badgeBg.setAttribute('stroke', linear ? '#9AB0C8' : '#CBA85A');
+  if(cap1) cap1.textContent = linear
+    ? 'True scale — every pixel is the same distance. The inner planets vanish against the Sun.'
+    : 'Logarithmic scale — each step right is ten times farther. Tick spacing for \u00D710, not +10.';
+  if(cap2) cap2.textContent = linear
+    ? 'Voyager 1 is ~172 AU out — yet that is less than 0.1% of the distance to the nearest star.'
+    : 'Voyager 1 launched 1977 \u00B7 crossed the heliopause 2012 \u00B7 still travelling outward at 3.6 AU/year.';
+}
+
+// Animate the blend factor toward a target (0 or 1) with a clockwork spin.
+function scAnimateTo(target){
+  if(scaleAnimating) return;
+  const from = scaleT, to = target, dur = 2200, t0 = (typeof performance!=='undefined'?performance.now():Date.now());
+  const dir = (to >= from) ? 1 : -1;
+  scaleAnimating = true;
+  scSetButton(to >= 0.5, true);   // disable button during transition
+  function frame(now){
+    let p = Math.min(1, ((typeof performance!=='undefined'?performance.now():Date.now()) - t0) / dur);
+    const e = scEase(p);
+    scaleT = from + (to - from) * e;
+    scLayout(scaleT);
+    if(p < 1){ requestAnimationFrame(frame); }
+    else { scaleT = to; scLayout(scaleT); scaleAnimating = false; scSetButton(to >= 0.5, false); }
+  }
+  if(typeof requestAnimationFrame === 'function'){ requestAnimationFrame(frame); }
+  else { scaleT = to; scLayout(scaleT); scaleAnimating = false; scSetButton(to>=0.5,false); }
+}
+
+function scSetButton(isLinear, busy){
+  const btn = $('zcl-ss-scalebtn');
+  if(!btn) return;
+  btn.textContent = isLinear ? 'Show logarithmic scale' : 'Show in true scale';
+  btn.disabled = !!busy;
+  btn.classList.toggle('busy', !!busy);
+}
+
+// Entry point used by update(): (re)build the diagram in log mode.
+function renderScaleView(){
+  scaleT = 0;
+  scaleAnimating = false;
+  buildScaleView();
+  scSetButton(false, false);
+}
+
+// Expose a tiny hook so the validation harness can drive the layout
+// deterministically without waiting on requestAnimationFrame timing.
+window.SS_DEBUG = { layout:(t)=>scLayout(t), blendX:scBlendX, logX:scLogX, linX:scLinX, getT:()=>scaleT };
+
+
+// ════════════════════════════════════════
 // PLANET INFO TABLE
 // ════════════════════════════════════════
 // Planets that have their own detail page → card becomes a link.
-const DETAIL_PAGES = {Earth:'earth', Mars:'mars', Jupiter:'jupiter', Saturn:'saturn'};
+const DETAIL_PAGES = {Mercury:'mercury', Venus:'venus', Earth:'earth', Mars:'mars', Jupiter:'jupiter', Saturn:'saturn', Uranus:'uranus', Neptune:'neptune', Pluto:'pluto'};
 
 // Build one planet card's HTML.
 function planetCard(name){
   const el = PLANETS[name];
   const page = DETAIL_PAGES[name];
   const utc = selectedUTC();
-  const moonSuffix = (name==='Earth') ? ' and its moon' : ' and its moons';
+  // Mercury and Venus have no moons; Earth has one.
+  const moonSuffix = (name==='Mercury'||name==='Venus') ? '' : (name==='Earth') ? ' and its Moon' : ' and its moons';
   const more = page ? '<div class="zcl-ss-pmore">Explore '+name+moonSuffix+' <span>&#8250;</span></div>' : '';
 
   // Earth — we're on it, no sky position.
@@ -700,14 +1310,14 @@ function planetCard(name){
   const rd = planetRaDec(name, utc);
   const aa = altAz(rd.ra, rd.dec, utc);
   const up = aa.alt > 0;
-  const constellation = zodiacOfRA(rd.ra);
+  const constellation = constellationOf(rd.ra, rd.dec);
   const open = page ? '<a class="zcl-ss-pcard" href="'+page+'">' : '<div class="zcl-ss-pcard">';
   const close = page ? '</a>' : '</div>';
   // Faint outer worlds get a legibility caveat.
   const CAVEATS = {
     Uranus: 'Magnitude ~5.7 \u2014 just at the naked-eye limit under a truly dark sky, an easy target in binoculars as a tiny blue-green dot.',
     Neptune:'Magnitude ~7.8 \u2014 below naked-eye visibility; needs binoculars or a telescope, where it shows as a faint blue point.',
-    Pluto:  'Magnitude ~15 \u2014 far too faint for the eye or a small telescope. Shown for its place in the system; a large scope and very dark sky are needed to glimpse it.',
+    Pluto:  'Magnitude ~14.5 \u2014 far too faint for the eye or a small telescope. Shown for its place in the system; a large scope and very dark sky are needed to glimpse it.',
   };
   const caveat = CAVEATS[name]
     ? '<div class="zcl-ss-pcaveat">'+CAVEATS[name]+'</div>'
@@ -724,9 +1334,46 @@ function planetCard(name){
     + more + close;
 }
 
+// Non-planet features that share the outer system: the Kuiper Belt and the
+// Voyager 1 probe. Rendered as cards in the same style as the planet cards,
+// with a colour dot, a few key rows, and a descriptive caveat line.
+const FEATURE_CARDS = [
+  {
+    name: 'Kuiper Belt',
+    col: '#9AB0C8',
+    rows: [
+      ['Distance from Sun', '30 \u2013 50 AU'],
+      ['Largest member', 'Pluto'],
+      ['First found after Pluto', '1992']
+    ],
+    note: 'A vast ring of icy worlds beyond Neptune \u2014 frozen leftovers from the solar system\u2019s birth that never formed a planet. Home to the dwarf planets Pluto, Haumea, and Makemake, and a source of many short-period comets. Think of it as a colder, far broader cousin of the asteroid belt.'
+  },
+  {
+    name: 'Voyager 1',
+    col: '#F2E4BE',
+    page: 'voyager',
+    rows: [
+      ['Distance from Sun', (172.3842 + 3.584*(Date.now()-Date.parse('2026-11-18T06:16:07Z'))/31557600000).toFixed(1)+' AU'],
+      ['Speed', '~3.6 AU/yr'],
+      ['Launched', 'Sept 1977']
+    ],
+    note: 'Humanity\u2019s most distant object. Launched in 1977 to tour Jupiter and Saturn, it crossed the heliopause into interstellar space in 2012. Its radio signal now takes about a full day to reach us \u2014 yet for all that distance, it has covered less than a tenth of one percent of the distance to the nearest star.'
+  }
+];
+
+// Build a Kuiper-Belt / Voyager card matching the planet-card style.
+function featureCard(f){
+  return (f.page ? '<a class="zcl-ss-pcard" href="'+f.page+'">' : '<div class="zcl-ss-pcard">')
+    + '<div class="zcl-ss-pname"><span class="zcl-ss-pdot" style="background:'+f.col+';color:'+f.col+'"></span>'+f.name+'</div>'
+    + f.rows.map(r=>'<div class="zcl-ss-prow"><span>'+r[0]+'</span><b>'+r[1]+'</b></div>').join('')
+    + '<div class="zcl-ss-pcaveat">'+f.note+'</div>'
+    + (f.page ? '<div class="zcl-ss-pmore">Explore '+f.name+' in 3D <span>&#8250;</span></div></a>' : '</div>');
+}
+
 function renderTable(){
   $('zcl-ss-table-inner').innerHTML = INNER_PLANETS.map(planetCard).join('');
-  $('zcl-ss-table-outer').innerHTML = OUTER_PLANETS.map(planetCard).join('');
+  $('zcl-ss-table-outer').innerHTML = OUTER_PLANETS.map(planetCard).join('')
+    + FEATURE_CARDS.map(featureCard).join('');
 }
 
 // ════════════════════════════════════════
@@ -743,17 +1390,23 @@ function fmtHour(h){
 }
 
 function update(){
+  $('zcl-ss-svg').style.display = (view==='top') ? 'none' : '';
+  $('zcl-ss-topcv').hidden = (view!=='top');
   $('zcl-ss-tval').textContent = fmtHour(timeHour);
   const sameDay = NOW.toDateString() === TODAY.toDateString();
   const niceDate = MO_ABBR[NOW.getMonth()]+' '+NOW.getDate();
   if(view === 'sky'){
     $('zcl-ss-viewlbl').textContent = (sameDay ? "Tonight's Sky" : "Sky on "+niceDate)
-      + " \u00B7 Looking South from Zion";
+      + " \u00B7 Looking South" + ((typeof __dsaLoc!=="undefined" && __dsaLoc && __dsaLoc.label) ? (" from "+__dsaLoc.label) : "");
     renderSkyView();
+  } else if(view === 'top'){
+    $('zcl-ss-viewlbl').textContent = "The Solar System from Above \u00B7 "
+      + (sameDay ? "Now" : niceDate+', '+NOW.getFullYear());
+    renderTopCanvas();
   } else {
-    $('zcl-ss-viewlbl').textContent = "Inner Solar System \u00B7 Orbital Positions "
-      + (sameDay ? "Now" : "on "+niceDate);
-    renderTopView();
+    // 'scale' — date- and time-independent overview of distances
+    $('zcl-ss-viewlbl').textContent = "Solar System Scale \u00B7 Sun to Voyager 1";
+    renderScaleView();
   }
   renderTable();
 }
@@ -793,10 +1446,22 @@ document.querySelectorAll('.zcl-ss-tab').forEach(t=>{
     document.querySelectorAll('.zcl-ss-tab').forEach(x=>x.classList.remove('on'));
     t.classList.add('on');
     view = t.getAttribute('data-view');
-    // Time slider only affects sky view (top-down uses "now")
+    // Time slider only affects sky view (top-down uses "now"; scale is date-independent).
     $('zcl-ss-skyctl').style.display = (view === 'sky') ? '' : 'none';
+    // Date slider only affects sky + top-down views (scale is date-independent — Voyager 1
+    // moves about 3.5 AU/year, well under 1px on this chart per year).
+    const dateRow = $('zcl-ss-dateslider').parentElement;
+    if(dateRow) dateRow.style.display = (view === 'scale') ? 'none' : '';
+    // The true-scale toggle button only belongs to the scale view.
+    $('zcl-ss-scalectl').style.display = (view === 'scale') ? 'flex' : 'none';
     update();
   });
+});
+
+// True-scale toggle — animate between logarithmic and linear distance.
+$('zcl-ss-scalebtn').addEventListener('click', ()=>{
+  if(scaleAnimating) return;
+  scAnimateTo(scaleT < 0.5 ? 1 : 0);
 });
 
 // Initial render is handled by applyDateOffset(0) above.
@@ -808,7 +1473,7 @@ document.querySelectorAll('.zcl-ss-tab').forEach(t=>{
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
 <a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/><circle cx="5" cy="6" r="0.8" fill="currentColor" stroke="none"/><circle cx="19" cy="5" r="0.7" fill="currentColor" stroke="none"/><circle cx="5" cy="19" r="0.7" fill="currentColor" stroke="none"/><circle cx="20" cy="18" r="0.8" fill="currentColor" stroke="none"/></svg><span>Objects</span></a>
 <a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
-<a class="pwa-navitem" href="events"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="18" cy="6" r="2" fill="currentColor" stroke="none"/><line x1="16.5" y1="7.5" x2="6" y2="18" stroke-width="1.5" stroke-linecap="round"/><line x1="13" y1="11" x2="9" y2="15" stroke-width="0.7" stroke-linecap="round" opacity="0.55"/></svg><span>Events</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
 <a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
 <a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
 </nav>
@@ -818,6 +1483,21 @@ if('serviceWorker' in navigator){
     navigator.serviceWorker.register('sw.js').catch(function(e){console.log('SW failed',e)});
   });
 }
+// Ask the browser to keep this app's offline cache even if it sits unused for
+// months. Without "persistent" storage, browsers (Safari especially, after ~7
+// days of no visits) can evict the whole cache — breaking offline use later.
+// persist() is a no-op cost when already granted, so we re-assert it each load.
+(function(){
+  try{
+    if(navigator.storage && navigator.storage.persist){
+      navigator.storage.persisted().then(function(already){
+        if(!already){ navigator.storage.persist().catch(function(){}); }
+      }).catch(function(){
+        navigator.storage.persist().catch(function(){});
+      });
+    }
+  }catch(e){}
+})();
 </script>
 <script>
 (function(){
@@ -839,6 +1519,18 @@ if('serviceWorker' in navigator){
   animation:zcl-set-pop .2s ease}
 @keyframes zcl-set-pop{from{opacity:0;transform:translateY(12px) scale(.98)}to{opacity:1;transform:none}}
 #zcl-set-frame{width:100%;height:78vh;max-height:620px;border:0;display:block;background:#141319}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
 </style>
 <div id="zcl-set-modal">
   <div id="zcl-set-backdrop"></div>

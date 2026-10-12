@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Astrophotography Tools · Dark Sky Almanac</title>
+<meta name="description" content="A growing kit of calculators and planners for shooting the night sky — exposure, session logging, and stacking.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Astrophotography Tools · Dark Sky Almanac">
+<meta property="og:description" content="A growing kit of calculators and planners for shooting the night sky — exposure, session logging, and stacking.">
+<meta property="og:image" content="social.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/photography">
+<meta property="og:url" content="https://app.darkskyalmanac.com/photography">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#141319;min-height:100dvh;font-family:'Montserrat',-apple-system,sans-serif;color:#E4D9B8}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);padding-bottom:40px;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+a{color:inherit}
+/* top nav */
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+/* page frame */
+.zcl-page{max-width:760px;margin:0 auto;padding:0 20px;position:relative}
+.zcl-stars{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.4;z-index:0}
+.zcl-page>*{position:relative;z-index:1}
+/* title banner */
+.zcl-titlebar{text-align:center;padding:26px 8px 14px}
+.zcl-kicker{font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#9A8A66;margin-bottom:9px}
+.zcl-maintitle{font-size:clamp(22px,5vw,30px);font-weight:600;letter-spacing:.05em;color:#F2E4BE;text-transform:uppercase;line-height:1.2}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:13px;margin:12px auto 10px;max-width:300px}
+.zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-rstar{width:15px;height:15px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-subtitle{font-size:13px;font-style:italic;color:#9A8E6E;max-width:500px;margin:0 auto;line-height:1.5}
+.zcl-back{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9A8A66;text-decoration:none;margin:6px 0 0}
+.zcl-back:hover{color:#CBA85A}
+.zcl-seclabel{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#CBA85A;
+  margin:22px 0 12px;padding-bottom:7px;border-bottom:1px solid rgba(203,168,90,.26)}
+
+/* tool grid */
+.zcl-camhero{width:48px;height:48px;margin:0 auto 12px;display:block;filter:drop-shadow(0 0 9px rgba(203,168,90,.35))}
+.zcl-grid{display:grid;grid-template-columns:1fr;gap:14px;padding:6px 0 20px}
+@media(min-width:620px){.zcl-grid{grid-template-columns:1fr 1fr}}
+.zcl-card{position:relative;display:flex;flex-direction:column;height:100%;
+  background:radial-gradient(ellipse 90% 80% at 50% 0%,rgba(40,38,52,.5),transparent 70%),#0d0a18;
+  border:1px solid rgba(203,168,90,.22);border-radius:11px;padding:18px 18px 16px;
+  text-decoration:none;color:inherit;transition:border-color .16s,transform .16s,box-shadow .16s}
+a.zcl-card:hover{border-color:#CBA85A;transform:translateY(-3px);box-shadow:0 8px 22px rgba(0,0,0,.35)}
+.zcl-card.soon{opacity:.66}
+.zcl-cardtop{display:flex;align-items:center;gap:11px;margin-bottom:10px}
+.zcl-cardicon{width:30px;height:30px;flex-shrink:0;color:#CBA85A}
+.zcl-cardicon svg{width:100%;height:100%}
+.zcl-cardname{font-size:15.5px;font-weight:600;color:#F2E4BE;line-height:1.25}
+.zcl-carddesc{font-size:12.5px;line-height:1.55;color:#9A8E6E;flex:1}
+.zcl-cardfoot{display:flex;align-items:center;justify-content:flex-end;margin-top:14px}
+.zcl-open{font-size:10px;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;display:flex;align-items:center;gap:5px}
+.zcl-open span{font-size:15px;line-height:1}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+/* fit */
+
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style></head>
+<body>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem active" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<svg class="zcl-stars"></svg>
+<div class="zcl-page">
+  <div class="zcl-titlebar">
+    <svg class="zcl-camhero" viewBox="0 0 24 24" fill="none" stroke="#CBA85A" stroke-width="1.3" stroke-linejoin="round">
+  <rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/>
+  <circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="#E6CC85" stroke="none"/></svg>
+    <div class="zcl-kicker">Dark Sky Almanac</div>
+    <div class="zcl-maintitle">Astrophotography Tools</div>
+    <div class="zcl-titlerule"><span class="zcl-rline"></span>
+      <svg class="zcl-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+      <span class="zcl-rline"></span></div>
+    <div class="zcl-subtitle">Calculators and planners for shooting the night sky.</div>
+  </div>
+  <div class="zcl-grid">
+    <a class="zcl-card" href="daylight">
+  <div class="zcl-cardtop"><span class="zcl-cardicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5 V5 M12 19 V21.5 M2.5 12 H5 M19 12 H21.5 M5.2 5.2 L7 7 M17 17 L18.8 18.8 M18.8 5.2 L17 7 M7 17 L5.2 18.8"/></svg></span><span class="zcl-cardname">Daylight Planner</span></div>
+  <div class="zcl-carddesc">Scout a composition by day: scrub the sun and moon from dawn to dusk over the live camera, see where shadows fall, and check the cloud forecast hour by hour.</div>
+  <div class="zcl-cardfoot"><span class="zcl-open">Launch <span>›</span></span></div>
+</a>
+    <a class="zcl-card" href="npf">
+  <div class="zcl-cardtop"><span class="zcl-cardicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><circle cx="12" cy="12" r="9"/><path d="M12 3 L12 12 L19 16 M3.6 9 L12 12 L9 20 M20.4 9 L12 12 L15 20"/></svg></span><span class="zcl-cardname">NPF Exposure Calculator</span></div>
+  <div class="zcl-carddesc">The longest exposure before stars trail, tuned to your camera, lens, and the part of the sky you’re shooting.</div>
+  <div class="zcl-cardfoot"><span class="zcl-open">Launch <span>›</span></span></div>
+</a>
+<a class="zcl-card" href="session-log">
+  <div class="zcl-cardtop"><span class="zcl-cardicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4"><rect x="4" y="3" width="16" height="18" rx="2"/><path d="M8 8 H16 M8 12 H16 M8 16 H13"/></svg></span><span class="zcl-cardname">Imaging Session Log</span></div>
+  <div class="zcl-carddesc">A field notebook for every shoot — target, gear, settings, conditions, and results. Saved on your device.</div>
+  <div class="zcl-cardfoot"><span class="zcl-open">Launch <span>›</span></span></div>
+</a>
+<a class="zcl-card" href="integration">
+  <div class="zcl-cardtop"><span class="zcl-cardicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"><path d="M12 3 L21 8 L12 13 L3 8 Z"/><path d="M3 12 L12 17 L21 12"/><path d="M3 16 L12 21 L21 16"/></svg></span><span class="zcl-cardname">Integration & Stacking</span></div>
+  <div class="zcl-carddesc">How many subs to shoot tonight, total integration time, and how stacking sharpens faint detail.</div>
+  <div class="zcl-cardfoot"><span class="zcl-open">Launch <span>›</span></span></div>
+</a>
+<a class="zcl-card" href="solver/">
+  <div class="zcl-cardtop"><span class="zcl-cardicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="7"/><path d="M12 1.5 V6.5 M12 17.5 V22.5 M1.5 12 H6.5 M17.5 12 H22.5"/><circle cx="12" cy="12" r="1.1" fill="currentColor" stroke="none"/></svg></span><span class="zcl-cardname">Star ID</span></div>
+  <div class="zcl-carddesc">Upload any night-sky photo to see which stars, constellations and deep-sky objects are in the shot, and exactly where the camera was pointing.</div>
+  <div class="zcl-cardfoot"><span class="zcl-open">Launch <span>›</span></span></div>
+</a>
+<a class="zcl-card" href="meridian">
+  <div class="zcl-cardtop"><span class="zcl-cardicon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 3 V21" stroke-dasharray="2 2"/><path d="M7 8 a7 5 0 0 1 10 0"/></svg></span><span class="zcl-cardname">Meridian & Transit</span></div>
+  <div class="zcl-carddesc">When your target peaks highest — the best time to shoot — and when a German mount needs its flip.</div>
+  <div class="zcl-cardfoot"><span class="zcl-open">Launch <span>›</span></span></div>
+</a>
+
+  </div>
+</div>
+<script>(function(){var s='';for(var i=0;i<120;i++){s+='<circle cx="'+(Math.random()*100).toFixed(1)+'%" cy="'+(Math.random()*100).toFixed(1)+'%" r="'+(Math.random()*0.9+0.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*0.5+0.1).toFixed(2)+'"/>';}var el=document.querySelector('.zcl-stars');if(el)el.innerHTML=s;})();</script>
+</body>
+</html>
