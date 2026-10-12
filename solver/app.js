@@ -118,6 +118,9 @@ worker.postMessage({ type: 'load' });
 /* Focal length is required before a frame is chosen, rather than reported
    as a failure afterwards: many manual lenses write none into the file. */
 const LENSES = [14, 16, 20, 24, 35, 50, 85, 135, 200, 300];
+// Smart scopes: one tap sets the focal length and the sensor. Both Pro models use
+// the same 3840 x 2160 sensor with 2.9 um pixels, 11.1 mm wide.
+const SCOPES = [{ n: 'Seestar S30 Pro', f: 160, sw: '11.1' }, { n: 'Seestar S50 Pro', f: 260, sw: '11.1' }];
 const chipBox = $('focal-chips'), focalSub = $('focal-sub'), drop = $('drop');
 const FOCAL_HINT = focalSub ? focalSub.textContent : '';
 function focalValue() { const f = Number(el.focal.value); return f >= 4 && f <= 2000 ? f : 0; }
@@ -136,21 +139,26 @@ function syncFocal(warn) {
     focalSub.textContent = (!ok && warn) ? 'Enter the focal length first, then load the frame.' : FOCAL_HINT;
   }
   if (chipBox) for (const c of chipBox.children) {
-    c.classList.toggle('on', c.dataset.f === '?' ? !!state.unknown : !state.unknown && Number(c.dataset.f) === focalValue());
+    const sw = c.dataset.sw;
+    c.classList.toggle('on', c.dataset.f === '?' ? !!state.unknown
+      : !state.unknown && Number(c.dataset.f) === focalValue() && (!sw || el.sensor.value === sw));
   }
 }
 if (chipBox) {
   chipBox.innerHTML = LENSES.map((f) => `<button type="button" class="zcl-chip" data-f="${f}">${f}</button>`).join('')
-    + '<button type="button" class="zcl-chip" data-f="?">Unknown</button>';
+    + '<button type="button" class="zcl-chip" data-f="?">Unknown</button>'
+    + SCOPES.map((s) => `<button type="button" class="zcl-chip" data-f="${s.f}" data-sw="${s.sw}">${s.n}</button>`).join('');
   chipBox.addEventListener('click', (e) => {
     const b = e.target.closest('[data-f]'); if (!b) return;
     state.unknown = b.dataset.f === '?';
     el.focal.value = state.unknown ? '' : b.dataset.f;
+    if (b.dataset.sw) { el.sensor.value = b.dataset.sw; el.sensorCustom.hidden = true; }
     savePrefs(); syncFocal(false);
     resolveWithLens();
   });
 }
 el.focal.addEventListener('input', () => { state.unknown = false; savePrefs(); syncFocal(false); });
+el.sensor.addEventListener('change', () => syncFocal(false));
 el.focal.addEventListener('change', resolveWithLens);
 // A frame is on screen (solved or not) and the lens changed: solve it again
 // with exactly the value entered, ignoring what the file records.

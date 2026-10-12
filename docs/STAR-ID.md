@@ -65,6 +65,7 @@ An offline blind plate solver that runs in a phone browser. Load a photo, and it
   - APS-C Canon 22.3
   - Micro Four Thirds 17.3
   - 1-inch 13.2
+  - Seestar S30 Pro / S50 Pro 11.1 (3840 x 2160, 2.9 um; the lens row has one-tap chips that set 160 mm or 260 mm plus this sensor)
   - Other (custom)
 
   A legacy saved value of `36` maps to 35.9. An EXIF sensor width snaps to a listed size within 0.4 mm.

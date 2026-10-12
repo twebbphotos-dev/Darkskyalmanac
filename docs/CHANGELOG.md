@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.65 / zion-sky-v331 — 2026-10-12
+- Star ID: Seestar S30 Pro and S50 Pro presets. One tap in the lens row sets
+  the focal length (160 or 260 mm) and the 11.1 mm sensor; the sensor list
+  gains the same entry. Why: Seestar frames needed "Other" plus a typed
+  width and focal every time, and a wrong sensor width can't be corrected
+  by the solve.
+
 ## v3.64 / zion-sky-v330 — 2026-10-12
 - Star ID overlay figures regenerated for all 88 constellations from the
   IAU / Sky & Telescope line set, matching the Constellations page. The
