@@ -456,19 +456,19 @@ scorpius:function(sky){
     let SOLID,HAIR;
     const path=(segs,style)=>(style===SOLID?'<path d="'+segs+'" fill="'+INK+'" fill-opacity=".6" stroke="none"/>':'')+'<path d="'+segs+'" '+style+' stroke-linejoin="round"/>';
     SOLID='fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.4)+'"';HAIR='fill="none" stroke="'+G+'" stroke-opacity=".5" stroke-width="'+sw(.75)+'"';
-    // fixed finger, bowed toward the movable one
-    o+=path('M'+P(.42,-.15)+' C'+P(.62,-.19)+' '+P(.88,-.13)+' '+P(1.03,.07)+' C'+P(.88,.03)+' '+P(.64,.02)+' '+P(.42,.02)+' Z',SOLID);
-    for(let k=0;k<5;k++){const x=.52+k*.095,y=.02+k*.004;o+=path('M'+P(x,y)+' L'+P(x+.02,y+.035)+' L'+P(x+.04,y)+' Z','fill="'+GL+'" fill-opacity=".7" stroke="none"')}
-    o+=path('M'+P(.46,-.12)+' C'+P(.64,-.15)+' '+P(.86,-.1)+' '+P(.99,.04),'fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"');
-    // movable finger, hinged at the front of the manus and swung open
-    const H=add(add(A,mul(d,.43*q)),mul(n,.14*q)),fd=rot(d,.6*turnSign(d,n)),fnn=mul(perp(fd),turnSign(d,n));
+    // fixed finger: long, slender, bowing in toward the movable one at the tip
+    o+=path('M'+P(.42,-.16)+' C'+P(.68,-.22)+' '+P(.98,-.14)+' '+P(1.14,.1)+' C'+P(.98,.06)+' '+P(.68,.03)+' '+P(.42,.02)+' Z',SOLID);
+    for(let k=0;k<7;k++){const x=.5+k*.085,y=.025+k*.006;o+=path('M'+P(x,y)+' L'+P(x+.014,y+.028)+' L'+P(x+.028,y)+' Z','fill="'+GL+'" fill-opacity=".75" stroke="none"')}
+    o+=path('M'+P(.47,-.13)+' C'+P(.7,-.18)+' '+P(.96,-.11)+' '+P(1.1,.07),'fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"');
+    // movable finger: a sickle hinged at the front of the manus, opened wide and curling back in
+    const H=add(add(A,mul(d,.43*q)),mul(n,.15*q)),fd=rot(d,.78*turnSign(d,n)),fnn=mul(perp(fd),turnSign(d,n));
     const F=(x,y)=>pt(add(add(H,mul(fd,x*q)),mul(fnn,y*q)));
-    o+=path('M'+F(0,-.085)+' C'+F(.22,-.135)+' '+F(.46,-.125)+' '+F(.6,-.05)+' C'+F(.47,.0)+' '+F(.24,.075)+' '+F(0,.085)+' Z',SOLID);
-    for(let k=0;k<5;k++){const x=.1+k*.09,y=-.085+k*.012;o+=path('M'+F(x,y)+' L'+F(x+.02,y-.035)+' L'+F(x+.04,y)+' Z','fill="'+GL+'" fill-opacity=".7" stroke="none"')}
-    o+=path('M'+F(.03,.06)+' C'+F(.24,.045)+' '+F(.44,-.02)+' '+F(.56,-.05),'fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"');
+    o+=path('M'+F(0,.095)+' C'+F(.3,.1)+' '+F(.58,-.02)+' '+F(.72,-.2)+' C'+F(.55,-.1)+' '+F(.28,-.1)+' '+F(0,-.09)+' Z',SOLID);
+    for(let k=0;k<7;k++){const x=.08+k*.075,y=-.09+k*.004;o+=path('M'+F(x,y)+' L'+F(x+.014,y-.028)+' L'+F(x+.028,y)+' Z','fill="'+GL+'" fill-opacity=".75" stroke="none"')}
+    o+=path('M'+F(.03,.07)+' C'+F(.3,.07)+' '+F(.55,-.04)+' '+F(.68,-.17),'fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"');
     // manus, drawn last so it sits over both finger roots
-    o+=path('M'+P(-.16,-.05)+' C'+P(-.17,-.24)+' '+P(.04,-.33)+' '+P(.22,-.31)+' C'+P(.37,-.29)+' '+P(.47,-.18)+' '+P(.47,-.07)
-      +' L'+P(.47,.1)+' C'+P(.44,.23)+' '+P(.3,.32)+' '+P(.15,.31)+' C'+P(0,.3)+' '+P(-.15,.2)+' '+P(-.16,.05)+' Z',SOLID);
+    o+=path('M'+P(-.2,-.04)+' C'+P(-.22,-.24)+' '+P(.02,-.34)+' '+P(.22,-.32)+' C'+P(.38,-.3)+' '+P(.48,-.19)+' '+P(.48,-.08)
+      +' L'+P(.48,.11)+' C'+P(.45,.24)+' '+P(.3,.33)+' '+P(.14,.32)+' C'+P(-.02,.31)+' '+P(-.19,.19)+' '+P(-.2,.04)+' Z',SOLID);
     o+=knob(H,.055*q/u);
     // engraving: hatch on the shadow side, one highlight along the crown, a seam at the wrist
     for(let k=1;k<=4;k++){const y=-.27+k*.045;o+=path('M'+P(-.02,y+.02)+' C'+P(.14,y-.03)+' '+P(.3,y-.02)+' '+P(.43,y+.07),HAIR)}
