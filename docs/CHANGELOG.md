@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.57 / zion-sky-v323 — 2026-10-12
+- Ursa Major: bear-like profile (shoulder hump, rounded rump, thicker
+  haunches), ear raised clear of the head outline, far legs and leg
+  centerlines removed. Why: the dimmed far legs and centerlines doubled
+  the outlines on the Tania leg.
+- Orion: helmeted head with brim, cheek and nose guards, crest, eyes,
+  beard and mustache.
+
 ## v3.56 / zion-sky-v322 — 2026-10-12
 - Illustrations for Orion (hunter with club, lion pelt and sword) and Ursa
   Major (bear with the long Dipper tail), drawn through the map projection

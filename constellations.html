@@ -418,13 +418,26 @@ orion:function(sky){
 
   // ── neck and head: Meissa marks the brow; helmet with a crest, beard below
   o+=tube([mei,add(sh,mul(up,2*u))],9.5*u);
-  const hc=add(mei,mul(up,1.5*u));
-  o+='<circle cx="'+f(hc.x)+'" cy="'+f(hc.y)+'" r="'+sw(11)+'" fill="'+INK+'" fill-opacity=".7" stroke="'+G+'" stroke-width="'+sw(1.3)+'"/>';
-  const ha=Math.atan2(up.y,up.x);
-  o+='<path d="M'+pt(add(hc,rot({x:11*u,y:0},ha-1.35)))+' A'+sw(11)+' '+sw(11)+' 0 0 1 '+pt(add(hc,rot({x:11*u,y:0},ha+1.35)))+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.2)+'"/>';
-  o+='<path d="M'+pt(add(hc,mul(up,10.5*u)))+' Q'+pt(add(add(hc,mul(up,19*u)),mul(east,3*u)))+' '+pt(add(add(hc,mul(up,9*u)),mul(east,14*u)))+'" fill="none" stroke="'+GL+'" stroke-opacity=".7" stroke-width="'+sw(2.2)+'" stroke-linecap="round"/>';
-  o+='<path d="M'+pt(add(add(hc,mul(down,7*u)),mul(east,7*u)))+' Q'+pt(add(hc,mul(down,16*u)))+' '+pt(add(add(hc,mul(down,7*u)),mul(west,7*u)))+'" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1)+'"/>';
-  [east,west].forEach(d=>{const e=add(add(hc,mul(d,4*u)),mul(up,1.5*u));o+='<circle cx="'+f(e.x)+'" cy="'+f(e.y)+'" r="'+sw(1.1)+'" fill="'+GL+'"/>'});
+  const hc=add(mei,mul(up,1.5*u)),Hp=(x,y)=>pt(add(add(hc,mul(east,x*u)),mul(down,y*u)));
+  const HC=(a1,b1,c1,d1,e1,g1)=>' C'+Hp(a1,b1)+' '+Hp(c1,d1)+' '+Hp(e1,g1),HQ=(a1,b1,c1,d1)=>' Q'+Hp(a1,b1)+' '+Hp(c1,d1);
+  // face
+  o+='<path d="M'+Hp(-9.5,-3)+HC(-10.5,8,-5,13,0,13.5)+HC(5,13,10.5,8,9.5,-3)+HC(8,-10,-8,-10,-9.5,-3)+' Z" fill="'+INK+'" fill-opacity=".75" stroke="'+G+'" stroke-width="'+sw(1.2)+'"/>';
+  // beard and mustache
+  o+='<path d="M'+Hp(-8.5,3)+HQ(-10.5,13,-3,17.5)+HQ(0,19,3,17.5)+HQ(10.5,13,8.5,3)+HQ(5.5,8.5,0,9.5)+HQ(-5.5,8.5,-8.5,3)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
+  for(let k=-2;k<=2;k++)o+=hair('M'+Hp(k*2.6,10.5+Math.abs(k)*.4)+HQ(k*3,14,k*2.2,16.5-Math.abs(k)*1.2),.45);
+  o+=hair('M'+Hp(-4.5,6.5)+HQ(-2,8.5,0,7.2)+HQ(2,8.5,4.5,6.5),.7);
+  // eyes and brows under the brim, nose
+  [-1,1].forEach(sd=>{o+='<ellipse cx="'+Hp(sd*4,2).replace(' ','" cy="')+'" rx="'+sw(1.5)+'" ry="'+sw(1)+'" transform="rotate('+f(Math.atan2(east.y,east.x)*180/Math.PI)+' '+Hp(sd*4,2)+')" fill="'+GL+'" fill-opacity=".9"/>';
+    o+=hair('M'+Hp(sd*6.5,.2)+HQ(sd*4,-1,sd*1.8,.4),.7)});
+  o+=hair('M'+Hp(0,1.5)+' L'+Hp(.8,5.5)+' L'+Hp(-.8,5.8),.6);
+  // helmet: dome, brim, cheek guards, nose guard, crest
+  o+=plate('M'+Hp(-11,-1)+HC(-12.5,-16,12.5,-16,11,-1)+HC(6,-2.5,-6,-2.5,-11,-1)+' Z',1.3);
+  o+=hilite('M'+Hp(-8,-5)+HQ(-2,-13,6,-11),.4);
+  o+=hair('M'+Hp(-10,-1.5)+HQ(0,-3.8,10,-1.5),.6);
+  [-1,1].forEach(sd=>o+=plate('M'+Hp(sd*10.5,-1)+HQ(sd*11,6,sd*7,8.5)+HQ(sd*6,4,sd*6.5,-1.2)+' Z',1));
+  o+='<path d="M'+Hp(-1.3,-1.5)+' L'+Hp(1.3,-1.5)+' L'+Hp(1.1,6)+' L'+Hp(-1.1,6)+' Z" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(.9)+'"/>';
+  o+='<path d="M'+Hp(-2,-14)+HQ(2,-24,18,-18)+HQ(14,-15,10,-13.5)+HQ(5,-14,2,-11.5)+' Z" fill="'+G+'" fill-opacity=".45" stroke="'+GL+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
+  for(let k=0;k<4;k++)o+=hilite('M'+Hp(1+k*2,-13-k*.8)+HQ(5+k*2.5,-19-k*.6,12+k*1.5,-17.5-k*.3),.35);
 
   // ── raised arm with the club: Betelgeuse > mu > nu, club head on the chi stars
   o+=tube([bet,mu],12.5*u)+tube([mu,nu],10.5*u)+knob(mu,5);
@@ -458,23 +471,20 @@ ursamajor:function(sky){
   const upOf=T=>{const n=perp(T);return n.y<0?n:mul(n,-1)};  // screen-up side of a centerline
   const paw=(p,dir,r)=>{const a=Math.atan2(dir.y,dir.x)*180/Math.PI;let s='<ellipse cx="'+f(p.x)+'" cy="'+f(p.y)+'" rx="'+sw(r)+'" ry="'+sw(r*.7)+'" transform="rotate('+f(a)+' '+f(p.x)+' '+f(p.y)+')" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1.1)+'"/>';
     for(let k=-1;k<=1;k++){const q=add(add(p,mul(dir,r*.75*u)),mul(perp(dir),k*r*.42*u));s+='<circle cx="'+f(q.x)+'" cy="'+f(q.y)+'" r="'+sw(r*.22)+'" fill="'+G+'" fill-opacity=".7"/>'}return s};
-  const leg=(P,w0,w1,pawAt,toe)=>{const C=spline(P,8),sh=shell(C,profile([[0,w0],[.6,(w0+w1)/2],[1,w1]],u));
-    let s=plate(sh.d,1.2)+hair('M'+C.slice(2,-2).map(pt).join(' L'),.3);
+  const leg=(P,w0,w1,pawAt,toe)=>{const C=spline(P,8),sh=shell(C,profile([[0,w0],[.3,w0*.78],[.7,(w0*.78+w1)/2],[1,w1]],u));
+    let s=plate(sh.d,1.2);
     const T=tangents(C);s+=paw(pawAt,T[T.length-1],w1*1.3);return s};
   const shoulder=mix(dub,mer,.55),hips=mix(meg,phe,.5),axis=nrm(sub(hips,shoulder)),
         rump=add(hips,mul(axis,16*u)),rumpEnd=add(hips,mul(axis,30*u));   // body ends along its own axis; the tail curves off it
 
-  // ── far legs first, dimmer, so the body reads as having depth
-  o+='<g opacity=".55">'+leg([add(shoulder,mul({x:0,y:1},4*u)),add(ups,{x:-6*u,y:14*u}),add(the,{x:-14*u,y:-6*u}),add(iot,{x:-16*u,y:-8*u})],9,5,add(iot,{x:-16*u,y:-8*u}),0)
-    +leg([hips,add(chi,{x:-12*u,y:-4*u}),add(psi,{x:-14*u,y:-6*u}),add(muT,{x:-14*u,y:-8*u})],10,5.5,add(muT,{x:-14*u,y:-8*u}),0)+'</g>';
-
   // ── near hind legs: Phecda > chi (hip) > Alula pair, and chi > psi > Tania pair
-  o+=leg([phe,chi,nuB,xiA],12,6,xiA,0);
-  o+=leg([add(chi,{x:4*u,y:-2*u}),psi,lamT,muT],11,6,muT,0);
+  o+=leg([add(phe,{x:2*u,y:-6*u}),chi,nuB,xiA],15,6,xiA,0);
+  o+=leg([add(chi,{x:5*u,y:-3*u}),psi,lamT,muT],13,6,muT,0);
 
   // ── body: snout at Muscida, brow at h, shoulders over Dubhe/Merak, hips over Megrez/Phecda
   const bodyC=spline([add(omi,mul(nrm(sub(omi,h23)),4*u)),omi,mix(omi,h23,.5),mix(h23,ups,.5),shoulder,hips,rump,rumpEnd],12);
-  const body=shell(bodyC,profile([[0,5],[.1,9.5],[.22,13.5],[.38,19],[.55,30],[.72,31],[.86,24],[.95,13],[1,3]],u));
+  // snout, skull, neck, shoulder hump, back dip, rounded rump
+  const body=shell(bodyC,profile([[0,4],[.07,7.5],[.16,12.5],[.28,13],[.4,21],[.5,33],[.6,30],[.74,31],[.86,26],[.94,15],[1,3]],u));
   o+=plate(body.d,1.6);
   // belly shadow and back highlight, then fur
   const belly=bodyC.map((p,i)=>i).filter(i=>i>Math.floor(bodyC.length*.42)&&i<bodyC.length-2);
@@ -494,11 +504,11 @@ ursamajor:function(sky){
   o+=hilite('M'+tail.L.slice(6,-6).map((p,i)=>pt(mix(p,tailC[i+6],.35))).join(' L'),.3);
 
   // ── near front leg: Merak > phi > theta > Talitha, with kappa as the outer toe
-  o+=leg([add(shoulder,{x:6*u,y:6*u}),phi,the,mix(iot,kap,.45)],11,6,mix(iot,kap,.45),0);
+  o+=leg([add(shoulder,{x:8*u,y:2*u}),phi,the,mix(iot,kap,.45)],13,6,mix(iot,kap,.45),0);
 
   // ── head details: ear, eye, nose, mouth
   const headT=tangents(bodyC)[3],hu=upOf(headT);
-  const ear=add(mix(omi,h23,.6),mul(hu,11*u));
+  const ear=add(mix(omi,h23,.62),mul(hu,14.5*u));
   o+='<path d="M'+pt(add(ear,mul(perp(hu),-6.5*u)))+' Q'+pt(add(ear,mul(hu,9*u)))+' '+pt(add(ear,mul(perp(hu),6.5*u)))+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.2)+'" stroke-linejoin="round"/>';
   const eye=add(mix(omi,h23,.42),mul(hu,2.5*u));
   o+='<circle cx="'+f(eye.x)+'" cy="'+f(eye.y)+'" r="'+sw(1.9)+'" fill="'+INK+'" stroke="'+GL+'" stroke-width="'+sw(.9)+'"/>';
