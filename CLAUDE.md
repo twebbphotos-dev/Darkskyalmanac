@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v3.65, service-worker cache `zion-sky-v331`.**
-Next release: v3.66, cache `zion-sky-v332`.
+**Current release: v3.66, service-worker cache `zion-sky-v332`.**
+Next release: v3.67, cache `zion-sky-v333`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -50,7 +50,7 @@ sw.js                  the only service worker (root scope)
 _headers .assetsignore Cloudflare headers / files never published
 verify-assets.py       ship gate (see Release)
 src/                   one-off generator and patch scripts kept for provenance (not deployed)
-tools/                 build, cache bump, local server, page sweep
+tools/                 build, cache bump, local server, page sweep, build-figures (Star ID figures from the page)
 tests/solver/          Star ID regression frames, harness and baseline
 docs/                  handoff notes
 ```
@@ -126,7 +126,7 @@ node tests/solver/regress.mjs                     # compare with tests/solver/ba
 
 ## Gotchas learned the hard way
 
-- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* on the Constellations page and in Star ID both follow the IAU / S&T lines (regenerated from the same set; `solver/solver/figures.js`).
+- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* on the Constellations page follow the IAU / S&T lines, except Scorpius (claw lines kept for the illustration) and the simplified Lyra. Star ID's `solver/solver/figures.js` is generated from the page's data by `tools/build-figures.py`; run it after changing any figure.
 - **Check sky drawings with the app's own projection**: `buildMap` stereographic, `_project` with `{x:-p.xi, y:-p.eta}`. Flat test renders mislead.
 - **Map pins:**
   - Anchor to fixed features (interchanges, reservoir shapes), never town-label boxes.

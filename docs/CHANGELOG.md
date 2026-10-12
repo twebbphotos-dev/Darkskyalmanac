@@ -3,6 +3,21 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.66 / zion-sky-v332 — 2026-10-12
+- Hardening pass after a code review of everything since v3.52.
+- Remaining page figures on the IAU / S&T lines (Leo, Virgo, Boötes, Aquila,
+  Sagittarius, Gemini, Canis Major, Auriga, Perseus, Pegasus, Cepheus,
+  Ophiuchus, Cancer, Cetus, Camelopardalis, Corona Borealis, Cassiopeia,
+  Orion). Scorpius keeps its claw lines for the illustration; Lyra stays
+  simplified. Alterf and Mira stay as labeled stars off the figure.
+- Star ID's figures are now generated from the page by
+  tools/build-figures.py, so the two can't drift. Why: they disagreed on
+  20 constellations while the docs claimed they matched.
+- Sky tilt: eases out between 75° and 85° instead of snapping to north-up
+  at 80°; redraws when a hidden tab returns; skips redraws when the tilt
+  hasn't changed. Location now comes from the shared ZCLTZ.loc().
+- Seestar preset sources cited in code. www deploy uses npm ci.
+
 ## v3.65 / zion-sky-v331 — 2026-10-12
 - Star ID: Seestar S30 Pro and S50 Pro presets. One tap in the lens row sets
   the focal length (160 or 260 mm) and the 11.1 mm sensor; the sensor list

@@ -119,7 +119,10 @@ worker.postMessage({ type: 'load' });
    as a failure afterwards: many manual lenses write none into the file. */
 const LENSES = [14, 16, 20, 24, 35, 50, 85, 135, 200, 300];
 // Smart scopes: one tap sets the focal length and the sensor. Both Pro models use
-// the same 3840 x 2160 sensor with 2.9 um pixels, 11.1 mm wide.
+// the same 3840 x 2160 sensor with 2.9 um pixels, 11.1 mm wide. Sources: ZWO's
+// S30 Pro page (30 mm f/5.3, 160 mm; seestar.com) and the S50 Pro announcement
+// (50 mm f/5.2, 260 mm; 2.9 um). Their published 4.6 deg and 2.8 deg fields match
+// these numbers on the sensor diagonal.
 const SCOPES = [{ n: 'Seestar S30 Pro', f: 160, sw: '11.1' }, { n: 'Seestar S50 Pro', f: 260, sw: '11.1' }];
 const chipBox = $('focal-chips'), focalSub = $('focal-sub'), drop = $('drop');
 const FOCAL_HINT = focalSub ? focalSub.textContent : '';
