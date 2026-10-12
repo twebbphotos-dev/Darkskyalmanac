@@ -3,6 +3,21 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.53 / zion-sky-v319 — 2026-10-12
+- Constellations: Ursa Major now uses the IAU / Sky & Telescope figure (bowl,
+  handle, head at Muscida, legs hanging below). Why: the Rey bear crouched
+  sideways and didn't match any standard chart. Also removed a stray mag-7
+  point near Mizar.
+- Orion: raised arm now ends on ν Ori. Why: it ended on a phantom mag-7.4
+  point 0.6° from any real star.
+- New "Natural sky" option: figure lines fade to a trace and stars size on
+  one continuous magnitude scale. Why: the default scale floors everything
+  fainter than ~4.3 to one size.
+- New "Illustration" option (Scorpius first): a drawn scorpion registered to
+  the stars through the map's own projection. Head and eyes on Alniyat,
+  Antares at the heart, sting at Shaula/Lesath.
+- Star-label toggle now survives switching constellations.
+
 ## v3.52 / zion-sky-v318 — 2026-10-11
 - Star ID: fixed "Maximum call stack size exceeded" on wide-field frames.
   Why: `cand.push(...sorted)` spread ~240k candidates as call arguments,
