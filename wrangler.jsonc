@@ -1,0 +1,11 @@
+// Cloudflare Worker "almanac1" (static assets only) -> app.darkskyalmanac.com
+// Workers Builds runs `bash tools/build.sh ci` (copies the site into dist/ and
+// runs the verify-assets ship gate), then `npx wrangler deploy` uploads dist/.
+// If the gate fails, the build stops and the live site is left untouched.
+{
+  "name": "almanac1",
+  "compatibility_date": "2026-10-06",
+  "assets": {
+    "directory": "./dist"
+  }
+}

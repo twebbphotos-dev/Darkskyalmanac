@@ -89,9 +89,12 @@ tools/build.sh 3.53                # -> dist/ + out/dark-sky-almanac-v3.53.zip, 
 - `build.sh` copies the root files by type, then `img/ models/ solver/ _headers .assetsignore`.
   - `*.html *.js` alone silently drops the images; that's why the gate exists.
   - `src/ tools/ tests/ docs/` are never shipped.
-- **Deploy:**
-  - **Current:** upload the zip in the Cloudflare dashboard (Workers & Pages → darkskyalmanac → new deployment).
-  - **Alternative:** connect this GitHub repo in Cloudflare so it builds and deploys `dist/` on push. See `docs/HANDOFF.md`.
+- **Deploy = push to `main`.** Cloudflare Worker `almanac1` (static assets) is connected to this repo (Workers Builds).
+  - It runs `bash tools/build.sh ci` (the ship gate), then `npx wrangler deploy` uploads `dist/` (see `wrangler.jsonc`). Takes about a minute.
+  - If the gate fails, nothing deploys and the live site stays as it was.
+  - Other branches get preview builds (`npx wrangler versions upload`). Use a branch to check bigger changes on the iPhone before merging.
+  - Rollback: Cloudflare dashboard → almanac1 → Deployments, or `git revert` and push.
+  - So **only push to `main` when it's ready to go live**, with the cache bumped.
 - After shipping, add a short entry to `docs/CHANGELOG.md` (newest first): version, cache, what changed, and why.
 
 ## Testing

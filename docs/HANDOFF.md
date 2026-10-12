@@ -7,13 +7,10 @@ Written at v3.52 (cache `zion-sky-v318`), 2026-10-11. Until now the app was deve
 1. **Done (2026-10-12):** this repo is `github.com/twebbphotos-dev/Darkskyalmanac`, branch `main`. The old v3.15-era upload is the previous commit. The repo is **public**; switch it to private in GitHub → Settings if you prefer. The site files are public anyway, but this repo also holds docs, test photos and source scripts.
 2. **Open the repo in Claude Code** (on the web or the desktop app) and start every session from it. `CLAUDE.md` loads automatically, so there's no need to re-explain the project.
 3. **Install the test tools** in the cloud environment: `pip install playwright numpy pillow && python3 -m playwright install chromium`. Node 18+ is needed for the solver harness.
-4. **Pick a deploy route.**
-   - **Keep the zip.** Run `tools/build.sh 3.53`, download `out/dark-sky-almanac-v3.53.zip`, and upload it in Cloudflare as before. Nothing else changes.
-   - **Or deploy from GitHub (recommended).** In the Cloudflare dashboard, connect the repo to the darkskyalmanac project (Workers & Pages → project → Settings → Build / Git integration).
-     - Build command: `bash tools/build.sh ci`. The ship gate runs as part of the build.
-     - Output / assets directory: `dist`.
-     - Every push to `main` then deploys, and other branches can get preview URLs.
-     - Check the exact screen names in the dashboard: they differ between a Pages project and a Worker with static assets. `.assetsignore` already keeps `src/ tools/ tests/ docs/` private, even if the root were ever served.
+4. **Deploys are automatic (set up 2026-10-12).** Cloudflare Worker `almanac1` is connected to this repo.
+   - Every push to `main` runs `bash tools/build.sh ci` (ship gate), then `npx wrangler deploy` of `dist/` per `wrangler.jsonc`, live in about a minute.
+   - Other branches get preview builds.
+   - Manual zip upload still works as a fallback: `tools/build.sh 3.53` → `out/…zip`.
 5. **Keep the claude.ai Project for reference only.** Its file mirror (the HTML pages listed there) is stale. Its `claude/CHANGELOG-v239…v318.md` docs are the full release history, if you ever need detail older than `docs/CHANGELOG.md`.
 6. **Don't use old harness paths.** Earlier chats used scratch paths that no longer exist: `/home/claude/work/v2`, `/mnt/user-data/outputs`, `/tmp/claude-0/...`. Everything those tools did is now in `tools/` and `tests/`.
 
@@ -22,7 +19,7 @@ Written at v3.52 (cache `zion-sky-v318`), 2026-10-11. Until now the app was deve
 | Before (chat) | Now (Claude Code + GitHub) |
 |---|---|
 | Unzip the latest zip to get the current state | `git pull`. The repo is the state |
-| One zip per change, sent to chat | A commit (or PR) per change. A zip only if deploying by hand |
+| One zip per change, uploaded by hand | Push to `main` = live in about a minute (gate runs first) |
 | `claude/CHANGELOG-vNNN.md` in the Project | `docs/CHANGELOG.md` in the repo, newest first, plus commit messages |
 | Version label and cache bumped by hand | `tools/bump-cache.py`, then `tools/build.sh <version>` |
 | Rollback = re-upload an older zip | `git revert`, or redeploy an earlier commit in Cloudflare |
