@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.58 / zion-sky-v324 — 2026-10-12
+- Ursa Major: the head is its own drawn shape, snout on Muscida and skull
+  at h: heavy brow, small angled eye, snarling muzzle, open jaw with
+  canines, rounded ear, thick neck. Why: the old head was just the body
+  shell tapering to a point, and its mouth line curved up into a smile.
+  The body now starts along the neck line so its shell can't fold back
+  on itself at the cheek.
+
 ## v3.57 / zion-sky-v323 — 2026-10-12
 - Ursa Major: bear-like profile (shoulder hump, rounded rump, thicker
   haunches), ear raised clear of the head outline, far legs and leg
