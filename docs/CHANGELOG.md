@@ -3,6 +3,18 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.60 / zion-sky-v326 — 2026-10-12
+- 20 new constellations: Libra, Pisces, Hydra, Lepus, Canes Venatici, Coma
+  Berenices, Lacerta, Lynx, Monoceros, Eridanus, Piscis Austrinus, Sagitta,
+  Vulpecula, Equuleus, Crater, Sextans, Corona Australis, Lupus, Puppis,
+  Columba. Figures from the IAU / Sky & Telescope lines; only IAU-approved
+  star names labeled.
+- Zodiac chip: the twelve in the order the Sun passes through them, with
+  an intro on Ophiuchus and precession.
+- Default line strength no longer drops when star names are hidden. Why:
+  the old eye button dimmed lines along with the labels, and that carried
+  over to the Star names checkbox.
+
 ## v3.59 / zion-sky-v325 — 2026-10-12
 - Constellation charts now tilt the way the figure sits in the sky right
   now for the saved location: a point just above the figure's center
