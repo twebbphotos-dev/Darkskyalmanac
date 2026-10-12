@@ -420,11 +420,14 @@ scorpius:function(sky){
   const td=nrm(sub(lambda,kappa)),turn=Math.sign((kappa.x-iota.x)*(lambda.y-kappa.y)-(kappa.y-iota.y)*(lambda.x-kappa.x))||1;
   const hook=mul(perp(td),turn);
   const stingC=spline([mix(kappa,lambda,.55),lambda,add(add(lambda,mul(td,14*u)),mul(hook,2*u)),add(add(lambda,mul(td,22*u)),mul(hook,10*u)),add(add(lambda,mul(td,23*u)),mul(hook,21*u)),add(add(lambda,mul(td,17*u)),mul(hook,29*u))],10);
-  const stW=t=>t<.34?u*(5.6+7.4*Math.pow(Math.sin(Math.PI*t/.34),.7)):u*(5.6*Math.pow(1-(t-.34)/.66,.85)+.3);
+  const stW=t=>t<.34?u*(5.2+8*Math.pow(Math.sin(Math.PI*t/.34),.7)):u*(5.2*Math.pow(1-(t-.34)/.66,.72)+.25);
   const stSh=shell(stingC,stW);
   o+=plate(stSh.d,1.3);
+  for(let i=2;i<=12;i+=2){const a=stSh.R[i],b=mix(a,stingC[i],.4);o+='<line x1="'+f(a.x)+'" y1="'+f(a.y)+'" x2="'+f(b.x)+'" y2="'+f(b.y)+'" stroke="'+G+'" stroke-opacity=".4" stroke-width="'+sw(.7)+'"/>'}
+  {const j=Math.round(.34*(stingC.length-1)),m=add(stingC[j],mul(tangents(stingC)[j],2*u));o+='<path d="M'+pt(stSh.L[j])+' Q'+pt(m)+' '+pt(stSh.R[j])+'" fill="none" stroke="'+G+'" stroke-opacity=".7" stroke-width="'+sw(1)+'"/>'}
   const acu=stingC.filter((p,i)=>i/(stingC.length-1)>=.36),acuSh=shell(acu,t=>stW(.36+.64*t));
   o+='<path d="'+acuSh.d+'" fill="'+G+'" fill-opacity=".5" stroke="'+GL+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
+  {const tipP=stingC.filter((p,i)=>i/(stingC.length-1)>=.72),tipSh=shell(tipP,t=>stW(.72+.28*t));o+='<path d="'+tipSh.d+'" fill="'+GL+'" fill-opacity=".55" stroke="none"/>'}
   o+='<path d="M'+stSh.L.slice(3,16).map((p,i)=>pt(mix(p,stingC[i+3],.3))).join(' L')+'" fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"/>';
 
   // ── mesosoma: seven broad plates from behind the head to Larawag, Antares at its heart
@@ -450,7 +453,7 @@ scorpius:function(sky){
   // units of that span; y is the outer side (away from the body). A heavy egg-shaped manus
   // carries a bowed fixed finger in line with it and a movable finger hinged on the outside.
   hands.forEach(function(h){
-    const A=h.A,B=h.B,q=1.55*Math.hypot(B.x-A.x,B.y-A.y),d=nrm(sub(B,A));
+    const A=h.A,B=h.B,q=1.22*Math.hypot(B.x-A.x,B.y-A.y),d=nrm(sub(B,A));
     let n=perp(d);if(n.x*fwd.x+n.y*fwd.y<0)n=mul(n,-1);
     const P=(x,y)=>pt(add(add(A,mul(d,x*q)),mul(n,y*q)));
     let SOLID,HAIR;
@@ -460,12 +463,14 @@ scorpius:function(sky){
     o+=path('M'+P(.42,-.16)+' C'+P(.68,-.22)+' '+P(.98,-.14)+' '+P(1.14,.1)+' C'+P(.98,.06)+' '+P(.68,.03)+' '+P(.42,.02)+' Z',SOLID);
     for(let k=0;k<7;k++){const x=.5+k*.085,y=.025+k*.006;o+=path('M'+P(x,y)+' L'+P(x+.014,y+.028)+' L'+P(x+.028,y)+' Z','fill="'+GL+'" fill-opacity=".75" stroke="none"')}
     o+=path('M'+P(.47,-.13)+' C'+P(.7,-.18)+' '+P(.96,-.11)+' '+P(1.1,.07),'fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"');
+    o+=path('M'+P(.5,-.07)+' C'+P(.72,-.1)+' '+P(.94,-.05)+' '+P(1.06,.06),HAIR);
     // movable finger: a sickle hinged at the front of the manus, opened wide and curling back in
     const H=add(add(A,mul(d,.43*q)),mul(n,.15*q)),fd=rot(d,.78*turnSign(d,n)),fnn=mul(perp(fd),turnSign(d,n));
     const F=(x,y)=>pt(add(add(H,mul(fd,x*q)),mul(fnn,y*q)));
     o+=path('M'+F(0,.095)+' C'+F(.3,.1)+' '+F(.58,-.02)+' '+F(.72,-.2)+' C'+F(.55,-.1)+' '+F(.28,-.1)+' '+F(0,-.09)+' Z',SOLID);
     for(let k=0;k<7;k++){const x=.08+k*.075,y=-.09+k*.004;o+=path('M'+F(x,y)+' L'+F(x+.014,y-.028)+' L'+F(x+.028,y)+' Z','fill="'+GL+'" fill-opacity=".75" stroke="none"')}
     o+=path('M'+F(.03,.07)+' C'+F(.3,.07)+' '+F(.55,-.04)+' '+F(.68,-.17),'fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"');
+    o+=path('M'+F(.05,.0)+' C'+F(.3,.0)+' '+F(.52,-.07)+' '+F(.64,-.15),HAIR);
     // manus, drawn last so it sits over both finger roots
     o+=path('M'+P(-.2,-.04)+' C'+P(-.22,-.24)+' '+P(.02,-.34)+' '+P(.22,-.32)+' C'+P(.38,-.3)+' '+P(.48,-.19)+' '+P(.48,-.08)
       +' L'+P(.48,.11)+' C'+P(.45,.24)+' '+P(.3,.33)+' '+P(.14,.32)+' C'+P(-.02,.31)+' '+P(-.19,.19)+' '+P(-.2,.04)+' Z',SOLID);
@@ -474,6 +479,9 @@ scorpius:function(sky){
     for(let k=1;k<=4;k++){const y=-.27+k*.045;o+=path('M'+P(-.02,y+.02)+' C'+P(.14,y-.03)+' '+P(.3,y-.02)+' '+P(.43,y+.07),HAIR)}
     o+=path('M'+P(-.06,.13)+' C'+P(.07,.25)+' '+P(.26,.26)+' '+P(.4,.17),'fill="none" stroke="'+GL+'" stroke-opacity=".4" stroke-width="'+sw(.9)+'"');
     o+=path('M'+P(-.04,-.26)+' C'+P(-.1,-.1)+' '+P(-.1,.1)+' '+P(-.04,.26),HAIR);
+    o+=path('M'+P(-.12,.02)+' C'+P(.05,-.02)+' '+P(.3,-.04)+' '+P(.47,.0),'fill="none" stroke="'+G+'" stroke-opacity=".55" stroke-width="'+sw(1)+'"');
+    o+=path('M'+P(-.14,-.12)+' C'+P(-.02,-.3)+' '+P(.2,-.33)+' '+P(.4,-.24)+' C'+P(.22,-.27)+' '+P(.02,-.24)+' '+P(-.14,-.12)+' Z','fill="'+INK+'" fill-opacity=".35" stroke="none"');
+    o+='<ellipse cx="'+P(.12,.17).replace(' ','" cy="')+'" rx="'+sw(.1*q/u)+'" ry="'+sw(.04*q/u)+'" fill="'+GL+'" fill-opacity=".18" transform="rotate('+f(Math.atan2(d.y,d.x)*180/Math.PI)+' '+P(.12,.17)+')"/>';
   });
   // sign that makes perp(d) point toward n (the outside), so the movable finger opens outward
   function turnSign(d,n){const q=perp(d);return (q.x*n.x+q.y*n.y)>=0?1:-1}
