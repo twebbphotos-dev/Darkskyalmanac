@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+<defs>
+<radialGradient id="bg" cx="50%" cy="42%" r="75%">
+<stop offset="0%" stop-color="#221f2e"/><stop offset="55%" stop-color="#141319"/><stop offset="100%" stop-color="#0d0a18"/>
+</radialGradient>
+<linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+<stop offset="0%" stop-color="#E6CC85"/><stop offset="100%" stop-color="#CBA85A"/>
+</linearGradient>
+</defs>
+<rect width="512" height="512" rx="112" fill="url(#bg)"/>
+<rect x="8" y="8" width="496" height="496" rx="106" fill="none" stroke="#CBA85A" stroke-opacity="0.30" stroke-width="3"/>
+
+<circle cx="256" cy="256" r="150" fill="none" stroke="#CBA85A" stroke-opacity="0.25" stroke-width="2"/>
+<polygon points="256.00,106.00 272.07,217.20 338.02,173.98 294.80,239.93 406.00,256.00 294.80,272.07 338.02,338.02 272.07,294.80 256.00,406.00 239.93,294.80 173.98,338.02 217.20,272.07 106.00,256.00 217.20,239.93 173.98,173.98 239.93,217.20" fill="url(#gold)" opacity="1.0"/>
+<polygon points="292.74,167.31 274.38,237.62 324.37,227.68 282.00,256.00 344.69,292.74 274.38,274.38 284.32,324.37 256.00,282.00 219.26,344.69 237.62,274.38 187.63,284.32 230.00,256.00 167.31,219.26 237.62,237.62 227.68,187.63 256.00,230.00" fill="#0d0a18" opacity="0.9"/>
+<circle cx="256" cy="256" r="20" fill="url(#gold)"/>
+<circle cx="256" cy="256" r="9" fill="#0d0a18"/>
+</svg>
