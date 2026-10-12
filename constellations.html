@@ -390,17 +390,19 @@ scorpius:function(sky){
       o+=tube([b,kn],4*u)+tube([kn,an],3*u)+tube([an,ft],2*u)});
   });
 
-  // ── pedipalps: coxa off the head, femur to the elbow, patella to the wrist; chelae drawn last
+  // ── pedipalps, on the constellation's own lines: Alniyat > omega > Acrab > Dschubba and
+  // Alniyat > rho > Fang. Each chela spans the last segment, so the claws curve in toward
+  // each other with the fingers nearly meeting in front of the head.
+  const omega=sky(16.1999,-19.4607),nu14=sky(16.2051,-27.9264),delta=sky(16.0056,-22.6217);
   const hands=[];
-  function arm(sd,elbow,wrist,hdir){
-    const base=at(15,sd*12),coxa=at(20,sd*16);
-    o+=tube([base,coxa],9*u)+tube([coxa,elbow],8*u)+tube([elbow,wrist],7*u);
-    o+='<circle cx="'+f(elbow.x)+'" cy="'+f(elbow.y)+'" r="'+sw(4.6)+'" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1)+'"/>';
-    hands.push({wrist:wrist,d:nrm(hdir),n:sd>0?up:dn});
+  const knob=(p,r)=>'<circle cx="'+f(p.x)+'" cy="'+f(p.y)+'" r="'+sw(r)+'" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1)+'"/>';
+  function arm(sd,joint,wrist,tip){
+    const base=at(14,sd*12),coxa=at(21,sd*17);
+    o+=tube([base,coxa],10*u)+tube([coxa,joint],9*u)+tube([joint,wrist],8.5*u)+knob(coxa,4.6)+knob(joint,4.4);
+    hands.push({A:wrist,B:tip});
   }
-  // upper arm rises to Acrab, lower arm drops to rho then comes up to Fang; both chelae point forward
-  arm(1,add(mix(sigma,beta,.5),mul(up,5*u)),beta,add(fwd,mul(up,.55)));
-  arm(-1,add(rho,mul(dn,2*u)),add(pi,mul(fwd,2*u)),add(fwd,mul(up,.15)));
+  arm(1,omega,beta,delta);
+  arm(-1,nu14,rho,pi);
 
   // ── tail: five armored segments, then the telson
   const tail=spline([eps,mu,zeta,eta,theta,iota,kappa,lambda],12);
@@ -444,25 +446,34 @@ scorpius:function(sky){
     o+='<circle cx="'+f(e.x)+'" cy="'+f(e.y)+'" r="'+sw(2.6)+'" fill="'+INK+'" stroke="'+GL+'" stroke-width="'+sw(.9)+'"/>';
     [[15,11],[13.5,13.5],[12,16]].forEach(q=>{const l=at(q[0],sd*q[1]);o+='<circle cx="'+f(l.x)+'" cy="'+f(l.y)+'" r="'+sw(1)+'" fill="'+GL+'" opacity=".8"/>'})});
 
-  // ── chelae: egg-shaped manus, the fixed finger in line with it, the movable finger
-  // hinged on the outer side and swung open. Drawn in a local frame: x along the hand,
-  // y toward the outside.
-  hands.forEach(function(h){const d=h.d,n=h.n,W=h.wrist;
-    const T=(x,y)=>pt(add(add(W,mul(d,x*u)),mul(n,y*u)));
-    const C=(a,b,c,d2,e,g)=>' C'+T(a,b)+' '+T(c,d2)+' '+T(e,g);
-    o+='<path d="M'+T(-2,-6)+C(6,-14,20,-13,27,-6)+' L'+T(27,6)+C(20,13,6,14,-2,6)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.4)+'" stroke-linejoin="round"/>';
-    o+='<path d="M'+T(3,-9)+C(8,-10,20,-10,25,-6)+'" fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"/>';
-    o+='<path d="M'+T(2,0)+C(8,-3,18,-3,26,0)+'" fill="none" stroke="'+G+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"/>';
-    // fixed finger: long, slightly curved toward the movable one
-    o+='<path d="M'+T(26,-7)+C(36,-8,47,-6,55,0)+C(47,-1,36,1,26,2)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.25)+'" stroke-linejoin="round"/>';
-    for(let k=1;k<=5;k++){const x=26+k*4.6;o+='<line x1="'+T(x,1.6-k*.3).replace(' ','" y1="')+'" x2="'+T(x,-.2-k*.2).replace(' ','" y2="')+'" stroke="'+GL+'" stroke-opacity=".6" stroke-width="'+sw(.7)+'"/>'}
-    // movable finger: hinged at the front of the manus, opened about 40 degrees
-    const H=add(add(W,mul(d,25*u)),mul(n,4*u)),fd=rot(d,.7*turnSign(d,n));
-    const FT=(x,y)=>{const q=add(add(H,mul(fd,x*u)),mul(perp(fd),y*u*turnSign(d,n)));return pt(q)};
-    const FC=(a1,b1,c1,d1,e1,g1)=>' C'+FT(a1,b1)+' '+FT(c1,d1)+' '+FT(e1,g1);
-    o+='<path d="M'+FT(0,-3.5)+FC(10,-5,20,-3,28,1)+FC(20,1,10,3.5,0,4)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.25)+'" stroke-linejoin="round"/>';
-    for(let k=1;k<=4;k++){const x=k*5;o+='<line x1="'+FT(x,-2.4+k*.3).replace(' ','" y1="')+'" x2="'+FT(x,-.6+k*.2).replace(' ','" y2="')+'" stroke="'+GL+'" stroke-opacity=".6" stroke-width="'+sw(.7)+'"/>'}
-    o+='<circle cx="'+f(H.x)+'" cy="'+f(H.y)+'" r="'+sw(1.6)+'" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(.8)+'"/>';
+  // ── chelae. Local frame: x runs from the wrist (A) to where the fingers close (B), in
+  // units of that span; y is the outer side (away from the body). A heavy egg-shaped manus
+  // carries a bowed fixed finger in line with it and a movable finger hinged on the outside.
+  hands.forEach(function(h){
+    const A=h.A,B=h.B,q=1.55*Math.hypot(B.x-A.x,B.y-A.y),d=nrm(sub(B,A));
+    let n=perp(d);if(n.x*fwd.x+n.y*fwd.y<0)n=mul(n,-1);
+    const P=(x,y)=>pt(add(add(A,mul(d,x*q)),mul(n,y*q)));
+    let SOLID,HAIR;
+    const path=(segs,style)=>(style===SOLID?'<path d="'+segs+'" fill="'+INK+'" fill-opacity=".6" stroke="none"/>':'')+'<path d="'+segs+'" '+style+' stroke-linejoin="round"/>';
+    SOLID='fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.4)+'"';HAIR='fill="none" stroke="'+G+'" stroke-opacity=".5" stroke-width="'+sw(.75)+'"';
+    // fixed finger, bowed toward the movable one
+    o+=path('M'+P(.42,-.15)+' C'+P(.62,-.19)+' '+P(.88,-.13)+' '+P(1.03,.07)+' C'+P(.88,.03)+' '+P(.64,.02)+' '+P(.42,.02)+' Z',SOLID);
+    for(let k=0;k<5;k++){const x=.52+k*.095,y=.02+k*.004;o+=path('M'+P(x,y)+' L'+P(x+.02,y+.035)+' L'+P(x+.04,y)+' Z','fill="'+GL+'" fill-opacity=".7" stroke="none"')}
+    o+=path('M'+P(.46,-.12)+' C'+P(.64,-.15)+' '+P(.86,-.1)+' '+P(.99,.04),'fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"');
+    // movable finger, hinged at the front of the manus and swung open
+    const H=add(add(A,mul(d,.43*q)),mul(n,.14*q)),fd=rot(d,.6*turnSign(d,n)),fnn=mul(perp(fd),turnSign(d,n));
+    const F=(x,y)=>pt(add(add(H,mul(fd,x*q)),mul(fnn,y*q)));
+    o+=path('M'+F(0,-.085)+' C'+F(.22,-.135)+' '+F(.46,-.125)+' '+F(.6,-.05)+' C'+F(.47,.0)+' '+F(.24,.075)+' '+F(0,.085)+' Z',SOLID);
+    for(let k=0;k<5;k++){const x=.1+k*.09,y=-.085+k*.012;o+=path('M'+F(x,y)+' L'+F(x+.02,y-.035)+' L'+F(x+.04,y)+' Z','fill="'+GL+'" fill-opacity=".7" stroke="none"')}
+    o+=path('M'+F(.03,.06)+' C'+F(.24,.045)+' '+F(.44,-.02)+' '+F(.56,-.05),'fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"');
+    // manus, drawn last so it sits over both finger roots
+    o+=path('M'+P(-.16,-.05)+' C'+P(-.17,-.24)+' '+P(.04,-.33)+' '+P(.22,-.31)+' C'+P(.37,-.29)+' '+P(.47,-.18)+' '+P(.47,-.07)
+      +' L'+P(.47,.1)+' C'+P(.44,.23)+' '+P(.3,.32)+' '+P(.15,.31)+' C'+P(0,.3)+' '+P(-.15,.2)+' '+P(-.16,.05)+' Z',SOLID);
+    o+=knob(H,.055*q/u);
+    // engraving: hatch on the shadow side, one highlight along the crown, a seam at the wrist
+    for(let k=1;k<=4;k++){const y=-.27+k*.045;o+=path('M'+P(-.02,y+.02)+' C'+P(.14,y-.03)+' '+P(.3,y-.02)+' '+P(.43,y+.07),HAIR)}
+    o+=path('M'+P(-.06,.13)+' C'+P(.07,.25)+' '+P(.26,.26)+' '+P(.4,.17),'fill="none" stroke="'+GL+'" stroke-opacity=".4" stroke-width="'+sw(.9)+'"');
+    o+=path('M'+P(-.04,-.26)+' C'+P(-.1,-.1)+' '+P(-.1,.1)+' '+P(-.04,.26),HAIR);
   });
   // sign that makes perp(d) point toward n (the outside), so the movable finger opens outward
   function turnSign(d,n){const q=perp(d);return (q.x*n.x+q.y*n.y)>=0?1:-1}
