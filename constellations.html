@@ -166,7 +166,10 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 /* star map card */
 .zcl-c-mapcard{background:radial-gradient(ellipse 90% 80% at 50% 40%,rgba(40,38,52,.55),transparent 75%),#0c0a16;
   border:1px solid rgba(203,168,90,.2);border-radius:10px;padding:8px;position:relative;
-  width:100%;max-width:100%;box-sizing:border-box;overflow:hidden}
+  width:100%;margin:0 auto;box-sizing:border-box;overflow:hidden}
+/* cap by viewport height so the map never outgrows a laptop screen; the id matches
+   the #zcl-con-wrap * rule's specificity, which otherwise forces max-width:100% */
+#zcl-con-wrap .zcl-c-mapcard,#zcl-con-wrap .zcl-c-opts{max-width:min(100%,calc(62vh * 1.24))}
 #zcl-c-map{display:block;width:100%;max-width:100%;height:auto;
   aspect-ratio: 520 / 420;border-radius:7px}
 .zcl-c-maptag{position:absolute;top:13px;left:15px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8A6E32}
@@ -180,7 +183,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-c-detail{margin-top:14px;transition:opacity .2s;width:100%;max-width:100%;overflow-wrap:break-word}
 .zcl-c-detail.hidden{display:none}
 #zcl-c-map.labels-hidden .zcl-c-starlbl{display:none}
-.zcl-c-opts{display:flex;flex-wrap:wrap;gap:8px 18px;margin-top:9px;padding:0 2px}
+.zcl-c-opts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:9px auto 0;padding:0 2px}
+.zcl-c-opts .zcl-c-eyebtn{position:static;width:26px;height:26px}
 .zcl-c-opt{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66;cursor:pointer;user-select:none;-webkit-user-select:none}
 .zcl-c-opt[hidden]{display:none}
 .zcl-c-opt input{appearance:none;-webkit-appearance:none;width:15px;height:15px;margin:0;border:1px solid rgba(203,168,90,.55);border-radius:3px;background:rgba(0,0,0,.3);display:grid;place-content:center;cursor:pointer}
@@ -253,17 +257,17 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-c-mapcard">
           <svg id="zcl-c-map" viewBox="0 0 520 420" width="100%" preserveAspectRatio="xMidYMid meet"></svg>
           <div class="zcl-c-maptag" id="zcl-c-maptag"></div>
-          <button class="zcl-c-eyebtn" id="zcl-c-eyebtn" title="Show/hide details" aria-label="Toggle details">
+        </div>
+        <div class="zcl-c-opts">
+          <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-natural"><span>Natural sky</span></label>
+          <label class="zcl-c-opt" id="zcl-c-artopt" hidden><input type="checkbox" id="zcl-c-art"><span>Illustration</span></label>
+          <button class="zcl-c-eyebtn" id="zcl-c-eyebtn" title="Show/hide star names" aria-label="Show or hide star names">
             <svg id="zcl-c-eyesvg" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
               <ellipse cx="8" cy="8" rx="6.5" ry="4" stroke="#CBA85A" stroke-width="1.2"/>
               <circle cx="8" cy="8" r="2" fill="#CBA85A"/>
               <line id="zcl-c-eyeslash" x1="3" y1="13" x2="13" y2="3" stroke="#CBA85A" stroke-width="1.2" stroke-linecap="round" opacity="0"/>
             </svg>
           </button>
-        </div>
-        <div class="zcl-c-opts">
-          <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-natural"><span>Natural sky</span></label>
-          <label class="zcl-c-opt" id="zcl-c-artopt" hidden><input type="checkbox" id="zcl-c-art"><span>Illustration</span></label>
         </div>
         <div class="zcl-c-detail" id="zcl-c-detail"></div>
       </div>
@@ -307,7 +311,8 @@ function bvColor(bv,blend){
 // every star on one continuous magnitude scale, so the pattern reads the way it
 // looks to the eye. (_magR above floors everything fainter than ~4.3 to one size.)
 let labelsVisible=true,naturalSky=false,artOn=false;
-function _magN(m){return Math.max(0.9,2.6*Math.pow(10,-0.12*(m-2)))}
+function _magN(m){return Math.max(0.55,2.8*Math.pow(10,-0.16*(m-2)))}
+function _magA(m){return Math.max(0.35,Math.min(1,1-(m-3)*0.18))}
 function buildMap(entry,W,H,pad){
   const c=_center(entry.stars);
   const pts=entry.stars.map(s=>{const p=_project(s[1],s[2],c.ra0,c.dec0);return {x:-p.xi,y:-p.eta,name:s[0],mag:s[3],bv:s[4]}});
@@ -318,7 +323,7 @@ function buildMap(entry,W,H,pad){
   const offX=(W-spanX*s)/2-minX*s,offY=(H-spanY*s)/2-minY*s;
   const X=p=>p.x*s+offX,Y=p=>p.y*s+offY;
   const art=artOn&&ART[entry.key];
-  const lineOp=naturalSky?'.1':art?'.16':labelsVisible?'.4':'.08';
+  const lineOp=naturalSky?'.045':art?'.16':labelsVisible?'.4':'.08';
   let svg='';
   if(art){
     // Same projection and fit as the stars, so the drawing stays registered to them.
@@ -328,8 +333,8 @@ function buildMap(entry,W,H,pad){
   entry.lines.forEach(function(L){const a=pts[L[0]],b=pts[L[1]];
     svg+='<line x1="'+X(a).toFixed(1)+'" y1="'+Y(a).toFixed(1)+'" x2="'+X(b).toFixed(1)+'" y2="'+Y(b).toFixed(1)+'" stroke="#CBA85A" stroke-width="1" stroke-opacity="'+lineOp+'"/>'});
   pts.forEach(function(p){const r=naturalSky?_magN(p.mag):_magR(p.mag),col=bvColor(p.bv),cx=X(p).toFixed(1),cy=Y(p).toFixed(1);
-    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(naturalSky?r*2.6:r+3).toFixed(1)+'" fill="'+col+'" opacity="'+(naturalSky?'.11':'.13')+'"/>';
-    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'" fill="'+col+'"/>';
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+(naturalSky?r*2.6:r+3).toFixed(1)+'" fill="'+col+'" opacity="'+(naturalSky?(.11*_magA(p.mag)).toFixed(3):'.13')+'"/>';
+    svg+='<circle cx="'+cx+'" cy="'+cy+'" r="'+r.toFixed(1)+'" fill="'+col+'"'+(naturalSky?' opacity="'+_magA(p.mag).toFixed(2)+'"':'')+'/>';
     if(p.name){svg+='<text class="zcl-c-starlbl" x="'+cx+'" y="'+(Y(p)-r-6).toFixed(1)+'" text-anchor="middle" font-family="Montserrat,sans-serif" font-size="12" fill="#C9BD97" opacity=".92">'+p.name+'</text>'}
   });
   return svg;
@@ -566,7 +571,7 @@ function renderList(){
 
 function drawMap(){
   const d=byKey[selKey],map=$('zcl-c-map');
-  map.innerHTML=buildMap(d,520,420,52);
+  map.innerHTML=buildMap(d,520,420,artOn&&ART[d.key]?80:52);
   map.classList.toggle('labels-hidden',!labelsVisible);
   $('zcl-c-artopt').hidden=!ART[d.key];
 }

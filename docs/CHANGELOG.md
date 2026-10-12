@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.54 / zion-sky-v320 — 2026-10-12
+- Constellation map capped by viewport height so it fits a laptop screen.
+  Why: the `#zcl-con-wrap *` rule forces `max-width:100%` on everything, so
+  the card filled the column (~1100 px wide, taller than the screen).
+- Star-name eye button moved out of the map corner into the options row.
+- Natural sky stronger: lines fainter, faint stars smaller and dimmer.
+- Illustrated figures get more margin inside the map.
+
 ## v3.53 / zion-sky-v319 — 2026-10-12
 - Constellations: Ursa Major now uses the IAU / Sky & Telescope figure (bowl,
   handle, head at Muscida, legs hanging below). Why: the Rey bear crouched
