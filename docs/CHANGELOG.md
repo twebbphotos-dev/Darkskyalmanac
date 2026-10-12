@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.62 / zion-sky-v328 — 2026-10-12
+- Taurus on the IAU / Sky & Telescope figure. Why: both horns came off
+  tau Tau, with a stray line from there to Tianguan; the standard figure
+  runs Ain to Elnath and Aldebaran to Tianguan from the Hyades. The
+  Pleiades stay as a labeled star off the figure.
+
 ## v3.61 / zion-sky-v327 — 2026-10-12
 - Zodiac intro: dropped the line about planets being the bright points not on the chart.
 
