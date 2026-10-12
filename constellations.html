@@ -390,15 +390,17 @@ scorpius:function(sky){
       o+=tube([b,kn],4*u)+tube([kn,an],3*u)+tube([an,ft],2*u)});
   });
 
-  // ── pedipalp arms (chelae drawn last, on top)
+  // ── pedipalps: coxa off the head, femur to the elbow, patella to the wrist; chelae drawn last
   const hands=[];
-  function arm(sd,elbowS,wrist,hand){
-    const base=at(15,sd*12),elbow=at(17,sd*elbowS);
-    o+=tube([base,elbow],8.5*u)+tube([elbow,wrist],7.5*u)+tube([wrist,hand],6.5*u);
-    hands.push([wrist,hand]);
+  function arm(sd,elbow,wrist,hdir){
+    const base=at(15,sd*12),coxa=at(20,sd*16);
+    o+=tube([base,coxa],9*u)+tube([coxa,elbow],8*u)+tube([elbow,wrist],7*u);
+    o+='<circle cx="'+f(elbow.x)+'" cy="'+f(elbow.y)+'" r="'+sw(4.6)+'" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1)+'"/>';
+    hands.push({wrist:wrist,d:nrm(hdir),n:sd>0?up:dn});
   }
-  arm(1,40,add(beta,mul(sub(at(17,40),beta),.45)),add(beta,mul(up,6*u)));
-  arm(-1,42,mix(pi,rho,.6),add(add(rho,mul(dn,12*u)),mul(fwd,8*u)));
+  // upper arm rises to Acrab, lower arm drops to rho then comes up to Fang; both chelae point forward
+  arm(1,add(mix(sigma,beta,.5),mul(up,5*u)),beta,add(fwd,mul(up,.55)));
+  arm(-1,add(rho,mul(dn,2*u)),add(pi,mul(fwd,2*u)),add(fwd,mul(up,.15)));
 
   // ── tail: five armored segments, then the telson
   const tail=spline([eps,mu,zeta,eta,theta,iota,kappa,lambda],12);
@@ -411,14 +413,17 @@ scorpius:function(sky){
     o+='<path d="M'+S.map(pt).join(' L')+'" fill="none" stroke="'+G+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'" stroke-dasharray="'+sw(2.2)+' '+sw(1.6)+'"/>';
     o+='<path d="M'+sh.L.slice(2,-2).map((p,i)=>pt(mix(p,S[i+2],.32))).join(' L')+'" fill="none" stroke="'+GL+'" stroke-opacity=".28" stroke-width="'+sw(.8)+'"/>';
   });
-  // telson: swollen vesicle and a hooked aculeus curling past Lesath
-  const tv=tail.filter(p=>p.i>=6),td=nrm(sub(lambda,kappa)),tn=perp(td);
-  const ves=mix(tv[0],lambda,.55),ta=Math.atan2(td.y,td.x)*180/Math.PI;
-  o+='<ellipse cx="'+f(ves.x)+'" cy="'+f(ves.y)+'" rx="'+sw(15)+'" ry="'+sw(11)+'" transform="rotate('+f(ta)+' '+f(ves.x)+' '+f(ves.y)+')" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.3)+'"/>';
-  const sd0=nrm(sub(upsilon,lambda)),sn0=perp(sd0),hookS=(sn0.x*td.x+sn0.y*td.y)>0?-1:1;
-  const sb=add(ves,mul(td,11*u)),stip=add(add(upsilon,mul(sd0,22*u)),mul(sn0,hookS*14*u));
-  o+='<path d="M'+pt(add(sb,mul(tn,7*u)))+' Q'+pt(add(add(mix(sb,stip,.45),mul(sn0,-hookS*10*u)),mul(sd0,8*u)))+' '+pt(stip)
-    +' Q'+pt(add(mix(sb,stip,.55),mul(sn0,-hookS*2*u)))+' '+pt(add(sb,mul(tn,-7*u)))+' Z" fill="'+G+'" fill-opacity=".55" stroke="'+GL+'" stroke-width="'+sw(1.1)+'" stroke-linejoin="round"/>';
+  // telson: one shell from inside the last segment, swelling into the vesicle at Shaula and
+  // tapering into the aculeus, which curls on in the direction the tail was already turning
+  const td=nrm(sub(lambda,kappa)),turn=Math.sign((kappa.x-iota.x)*(lambda.y-kappa.y)-(kappa.y-iota.y)*(lambda.x-kappa.x))||1;
+  const hook=mul(perp(td),turn);
+  const stingC=spline([mix(kappa,lambda,.55),lambda,add(add(lambda,mul(td,14*u)),mul(hook,2*u)),add(add(lambda,mul(td,22*u)),mul(hook,10*u)),add(add(lambda,mul(td,23*u)),mul(hook,21*u)),add(add(lambda,mul(td,17*u)),mul(hook,29*u))],10);
+  const stW=t=>t<.34?u*(5.6+7.4*Math.pow(Math.sin(Math.PI*t/.34),.7)):u*(5.6*Math.pow(1-(t-.34)/.66,.85)+.3);
+  const stSh=shell(stingC,stW);
+  o+=plate(stSh.d,1.3);
+  const acu=stingC.filter((p,i)=>i/(stingC.length-1)>=.36),acuSh=shell(acu,t=>stW(.36+.64*t));
+  o+='<path d="'+acuSh.d+'" fill="'+G+'" fill-opacity=".5" stroke="'+GL+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
+  o+='<path d="M'+stSh.L.slice(3,16).map((p,i)=>pt(mix(p,stingC[i+3],.3))).join(' L')+'" fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"/>';
 
   // ── mesosoma: seven broad plates from behind the head to Larawag, Antares at its heart
   const rear=at(-21,0),waist=mix(mix(antares,eps,.32),tau,.4);
@@ -439,22 +444,28 @@ scorpius:function(sky){
     o+='<circle cx="'+f(e.x)+'" cy="'+f(e.y)+'" r="'+sw(2.6)+'" fill="'+INK+'" stroke="'+GL+'" stroke-width="'+sw(.9)+'"/>';
     [[15,11],[13.5,13.5],[12,16]].forEach(q=>{const l=at(q[0],sd*q[1]);o+='<circle cx="'+f(l.x)+'" cy="'+f(l.y)+'" r="'+sw(1)+'" fill="'+GL+'" opacity=".8"/>'})});
 
-  // ── chelae: swollen palms, fingers flung wide open
-  hands.forEach(function(h){const wrist=h[0],hand=h[1],d=nrm(sub(hand,wrist)),n=perp(d),ang=Math.atan2(d.y,d.x)*180/Math.PI;
-    const palm=add(hand,mul(d,2.7*u));
-    o+='<path d="M'+pt(add(palm,mul(d,-16.2*u)))+' Q'+pt(add(add(palm,mul(d,-8.1*u)),mul(n,14.85*u)))+' '+pt(add(add(palm,mul(d,12.15*u)),mul(n,10.8*u)))
-      +' L'+pt(add(add(palm,mul(d,12.15*u)),mul(n,-9.45*u)))+' Q'+pt(add(add(palm,mul(d,-8.1*u)),mul(n,-13.5*u)))+' '+pt(add(palm,mul(d,-16.2*u)))+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.4)+'" stroke-linejoin="round"/>';
-    o+='<path d="M'+pt(add(add(palm,mul(d,-9.45*u)),mul(n,8.1*u)))+' Q'+pt(add(palm,mul(n,12.15*u)))+' '+pt(add(add(palm,mul(d,8.1*u)),mul(n,8.1*u)))+'" fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"/>';
-    const root=add(palm,mul(d,12.15*u));
-    // fixed finger (outer) and movable finger (inner), opened about 50 degrees
-    [[1,.34,32],[-1,-.6,29]].forEach(function(F){const sd=F[0],dir=rot(d,F[1]),fn=perp(dir);
-      const o1=add(root,mul(n,sd*7*u)),i1=add(root,mul(n,sd*.5*u)),tip=add(add(root,mul(dir,F[2]*u)),mul(fn,-sd*3*u));
-      const outer=add(mix(o1,tip,.45),mul(fn,sd*6*u)),inner=add(mix(i1,tip,.55),mul(fn,sd*1.5*u));
-      o+='<path d="M'+pt(o1)+' Q'+pt(outer)+' '+pt(tip)+' Q'+pt(inner)+' '+pt(i1)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.25)+'" stroke-linejoin="round"/>';
-      for(let k=1;k<=4;k++){const q=mix(i1,tip,k*.18),qn=add(q,mul(fn,-sd*1.8*u));
-        o+='<line x1="'+f(q.x)+'" y1="'+f(q.y)+'" x2="'+f(qn.x)+'" y2="'+f(qn.y)+'" stroke="'+GL+'" stroke-opacity=".6" stroke-width="'+sw(.7)+'"/>'}
-    });
+  // ── chelae: egg-shaped manus, the fixed finger in line with it, the movable finger
+  // hinged on the outer side and swung open. Drawn in a local frame: x along the hand,
+  // y toward the outside.
+  hands.forEach(function(h){const d=h.d,n=h.n,W=h.wrist;
+    const T=(x,y)=>pt(add(add(W,mul(d,x*u)),mul(n,y*u)));
+    const C=(a,b,c,d2,e,g)=>' C'+T(a,b)+' '+T(c,d2)+' '+T(e,g);
+    o+='<path d="M'+T(-2,-6)+C(6,-14,20,-13,27,-6)+' L'+T(27,6)+C(20,13,6,14,-2,6)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.4)+'" stroke-linejoin="round"/>';
+    o+='<path d="M'+T(3,-9)+C(8,-10,20,-10,25,-6)+'" fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"/>';
+    o+='<path d="M'+T(2,0)+C(8,-3,18,-3,26,0)+'" fill="none" stroke="'+G+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"/>';
+    // fixed finger: long, slightly curved toward the movable one
+    o+='<path d="M'+T(26,-7)+C(36,-8,47,-6,55,0)+C(47,-1,36,1,26,2)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.25)+'" stroke-linejoin="round"/>';
+    for(let k=1;k<=5;k++){const x=26+k*4.6;o+='<line x1="'+T(x,1.6-k*.3).replace(' ','" y1="')+'" x2="'+T(x,-.2-k*.2).replace(' ','" y2="')+'" stroke="'+GL+'" stroke-opacity=".6" stroke-width="'+sw(.7)+'"/>'}
+    // movable finger: hinged at the front of the manus, opened about 40 degrees
+    const H=add(add(W,mul(d,25*u)),mul(n,4*u)),fd=rot(d,.7*turnSign(d,n));
+    const FT=(x,y)=>{const q=add(add(H,mul(fd,x*u)),mul(perp(fd),y*u*turnSign(d,n)));return pt(q)};
+    const FC=(a1,b1,c1,d1,e1,g1)=>' C'+FT(a1,b1)+' '+FT(c1,d1)+' '+FT(e1,g1);
+    o+='<path d="M'+FT(0,-3.5)+FC(10,-5,20,-3,28,1)+FC(20,1,10,3.5,0,4)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.25)+'" stroke-linejoin="round"/>';
+    for(let k=1;k<=4;k++){const x=k*5;o+='<line x1="'+FT(x,-2.4+k*.3).replace(' ','" y1="')+'" x2="'+FT(x,-.6+k*.2).replace(' ','" y2="')+'" stroke="'+GL+'" stroke-opacity=".6" stroke-width="'+sw(.7)+'"/>'}
+    o+='<circle cx="'+f(H.x)+'" cy="'+f(H.y)+'" r="'+sw(1.6)+'" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(.8)+'"/>';
   });
+  // sign that makes perp(d) point toward n (the outside), so the movable finger opens outward
+  function turnSign(d,n){const q=perp(d);return (q.x*n.x+q.y*n.y)>=0?1:-1}
   return o+'</g>';
 }
 };
