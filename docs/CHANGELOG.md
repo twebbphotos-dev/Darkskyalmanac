@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.68 / zion-sky-v334 — 2026-10-12
+- Star ID overlay made cohesive: labels 11.5 px with tighter plates,
+  object squares smaller at the rings' 50% opacity and 1.2 px weight,
+  label offsets follow the smaller rings.
+
 ## v3.67 / zion-sky-v333 — 2026-10-12
 - Star ID overlay: star rings at half opacity, thinner and a fifth smaller,
   so they sit with the figure lines instead of competing with the labels.

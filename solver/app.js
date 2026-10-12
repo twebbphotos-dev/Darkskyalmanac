@@ -495,7 +495,7 @@ function drawOverlay(canvas, m, show, opts = {}) {
   const k = Math.max(1 / f, w / shown);
   const hot = '#E6CC85', cool = '#9DC4E6', dim = 'rgba(203,168,90,.6)';
   g.lineWidth = 1.4 * k;
-  g.font = `500 ${13 * k}px Montserrat, -apple-system, system-ui, sans-serif`;
+  g.font = `500 ${11.5 * k}px Montserrat, -apple-system, system-ui, sans-serif`;
   g.textBaseline = 'middle';
 
   if (show.found && m.detected) {
@@ -555,7 +555,7 @@ function drawOverlay(canvas, m, show, opts = {}) {
     const m2 = 12 * q, bx = w - bw - m2, by = h - bh - m2;
     mark = { bx, by, bw, bh, pad, gap, f1, f2, star, t1, t2, q };
     taken.push([bx - 4 * k, by - 4 * k, w, h]);
-    g.font = `500 ${13 * k}px Montserrat, -apple-system, system-ui, sans-serif`;
+    g.font = `500 ${11.5 * k}px Montserrat, -apple-system, system-ui, sans-serif`;
   }
 
   // Labels go only where they fit. A wide field holds hundreds of catalog
@@ -568,8 +568,8 @@ function drawOverlay(canvas, m, show, opts = {}) {
     return true;
   };
   const place = (cxp, cyp, rad, text, colour) => {
-    const tw = g.measureText(text).width + 7 * k;
-    const th = 19 * k;
+    const tw = g.measureText(text).width + 6 * k;
+    const th = 17 * k;
     const spots = [
       [cxp + rad + 5 * k, cyp - th / 2],
       [cxp - rad - 5 * k - tw, cyp - th / 2],
@@ -581,7 +581,7 @@ function drawOverlay(canvas, m, show, opts = {}) {
       g.fillStyle = 'rgba(13,10,24,.72)';
       g.fillRect(x, y, tw, th);
       g.fillStyle = colour;
-      g.fillText(text, x + 3.5 * k, y + th / 2);
+      g.fillText(text, x + 3 * k, y + th / 2);
       taken.push([x, y, x + tw, y + th]);
       return true;
     }
@@ -606,12 +606,12 @@ function drawOverlay(canvas, m, show, opts = {}) {
   // Objects: with Names on, an object is marked only if its name fits too —
   // an unnamed box tells you nothing.
   if (show.objects && m.dsos) {
-    const sz = 22 * k, list = m.dsos.slice(0, show.nObj ?? 8);
+    const sz = 18 * k, list = m.dsos.slice(0, show.nObj ?? 8);
     if (show.labels) for (const o of list) taken.push([o.x - sz / 2, o.y - sz / 2, o.x + sz / 2, o.y + sz / 2]);
     for (const o of list) {
-      if (show.labels && !place(o.x, o.y, 14 * k, o.n, cool)) continue;
-      g.strokeStyle = cool;
-      g.lineWidth = 1.4 * k;
+      if (show.labels && !place(o.x, o.y, 11 * k, o.n, cool)) continue;
+      g.strokeStyle = 'rgba(157,196,230,.5)';   // same weight and opacity as the star rings
+      g.lineWidth = 1.2 * k;
       g.strokeRect(o.x - sz / 2, o.y - sz / 2, sz, sz);
     }
   }
@@ -621,7 +621,7 @@ function drawOverlay(canvas, m, show, opts = {}) {
       if (n >= (opts.nStars || 10)) break;
       const t = s.name || prettyBayer(s.bayer);
       if (!t) continue;
-      place(s.x, s.y, Math.max(4, 15 - s.mag * 1.5) * k, t, '#F2E4BE');
+      place(s.x, s.y, Math.max(3.2, 12 - s.mag * 1.2) * k, t, '#F2E4BE');
       n++;
     }
   }
