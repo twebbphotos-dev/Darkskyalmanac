@@ -175,16 +175,10 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-c-maptag{position:absolute;top:13px;left:15px;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:#8A6E32}
 .zcl-c-maptag b{color:#CBA85A;font-weight:600}
 .zcl-c-orient{position:absolute;bottom:12px;right:15px;font-size:9px;letter-spacing:.1em;color:#6E6450}
-.zcl-c-eyebtn{position:absolute;bottom:10px;left:13px;width:28px;height:28px;border-radius:50%;
-  border:1px solid rgba(203,168,90,.35);background:rgba(0,0,0,.35);cursor:pointer;
-  display:flex;align-items:center;justify-content:center;transition:background .15s,border-color .15s;z-index:4}
-.zcl-c-eyebtn:hover{background:rgba(203,168,90,.15);border-color:#CBA85A}
-.zcl-c-eyebtn svg{width:14px;height:14px}
 .zcl-c-detail{margin-top:14px;transition:opacity .2s;width:100%;max-width:100%;overflow-wrap:break-word}
 .zcl-c-detail.hidden{display:none}
 #zcl-c-map.labels-hidden .zcl-c-starlbl{display:none}
 .zcl-c-opts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:9px auto 0;padding:0 2px}
-.zcl-c-opts .zcl-c-eyebtn{position:static;width:26px;height:26px}
 .zcl-c-opt{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66;cursor:pointer;user-select:none;-webkit-user-select:none}
 .zcl-c-opt[hidden]{display:none}
 .zcl-c-opt input{appearance:none;-webkit-appearance:none;width:15px;height:15px;margin:0;border:1px solid rgba(203,168,90,.55);border-radius:3px;background:rgba(0,0,0,.3);display:grid;place-content:center;cursor:pointer}
@@ -259,15 +253,9 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
           <div class="zcl-c-maptag" id="zcl-c-maptag"></div>
         </div>
         <div class="zcl-c-opts">
+          <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-names" checked><span>Star names</span></label>
           <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-natural"><span>Natural sky</span></label>
           <label class="zcl-c-opt" id="zcl-c-artopt" hidden><input type="checkbox" id="zcl-c-art"><span>Illustration</span></label>
-          <button class="zcl-c-eyebtn" id="zcl-c-eyebtn" title="Show/hide star names" aria-label="Show or hide star names">
-            <svg id="zcl-c-eyesvg" viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <ellipse cx="8" cy="8" rx="6.5" ry="4" stroke="#CBA85A" stroke-width="1.2"/>
-              <circle cx="8" cy="8" r="2" fill="#CBA85A"/>
-              <line id="zcl-c-eyeslash" x1="3" y1="13" x2="13" y2="3" stroke="#CBA85A" stroke-width="1.2" stroke-linecap="round" opacity="0"/>
-            </svg>
-          </button>
         </div>
         <div class="zcl-c-detail" id="zcl-c-detail"></div>
       </div>
@@ -571,7 +559,9 @@ function renderList(){
 
 function drawMap(){
   const d=byKey[selKey],map=$('zcl-c-map');
-  map.innerHTML=buildMap(d,520,420,artOn&&ART[d.key]?80:52);
+  // extra margin for figures that have artwork, whether or not it's showing, so
+  // toggling the illustration never moves the stars
+  map.innerHTML=buildMap(d,520,420,ART[d.key]?76:52);
   map.classList.toggle('labels-hidden',!labelsVisible);
   $('zcl-c-artopt').hidden=!ART[d.key];
 }
@@ -605,8 +595,8 @@ function renderSelection(){
   +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
   document.querySelectorAll('.zcl-c-fl').forEach(el=>el.innerHTML=fl)})();
 
-try{const o=JSON.parse(localStorage.getItem('dsa-con-opts')||'{}');naturalSky=!!o.natural;artOn=!!o.art}catch(e){}
-$('zcl-c-natural').checked=naturalSky;$('zcl-c-art').checked=artOn;
+try{const o=JSON.parse(localStorage.getItem('dsa-con-opts')||'{}');naturalSky=!!o.natural;artOn=!!o.art;labelsVisible=o.names!==false}catch(e){}
+$('zcl-c-names').checked=labelsVisible;$('zcl-c-natural').checked=naturalSky;$('zcl-c-art').checked=artOn;
 renderList();
 
 // ── scroll arrows: show left/right chevrons when list overflows ─────
@@ -629,20 +619,11 @@ renderList();
   setTimeout(updateArrows,80); // first check after layout settles
 })();
 
-// ── eye toggle — hides/shows star name labels on the map ────────────
-// Redraws rather than editing the DOM, so the faded lines survive switching
-// constellations (the old in-place edit was undone by the next render).
-$('zcl-c-eyebtn').addEventListener('click',()=>{
-  labelsVisible=!labelsVisible;
-  drawMap();
-  // open eye = labels showing (pupil visible, no slash)
-  // closed eye = labels hidden (no pupil, slash through eye)
-  document.getElementById('zcl-c-eyesvg').querySelector('circle').style.opacity=labelsVisible?'1':'0';
-  document.getElementById('zcl-c-eyeslash').style.opacity=labelsVisible?'0':'1';
-});
+// ── star names toggle ────────────────────────────────────────────────
+$('zcl-c-names').addEventListener('change',e=>{labelsVisible=e.target.checked;saveOpts();drawMap()});
 
 // ── map options: natural sky, illustrated figure ─────────────────────
-function saveOpts(){try{localStorage.setItem('dsa-con-opts',JSON.stringify({natural:naturalSky,art:artOn}))}catch(e){}}
+function saveOpts(){try{localStorage.setItem('dsa-con-opts',JSON.stringify({names:labelsVisible,natural:naturalSky,art:artOn}))}catch(e){}}
 $('zcl-c-natural').addEventListener('change',e=>{naturalSky=e.target.checked;saveOpts();drawMap()});
 $('zcl-c-art').addEventListener('change',e=>{artOn=e.target.checked;saveOpts();drawMap()});
 

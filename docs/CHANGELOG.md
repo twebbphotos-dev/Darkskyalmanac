@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.55 / zion-sky-v321 — 2026-10-12
+- Illustration toggle no longer moves the stars. Why: it changed the map
+  margin, which re-fit the whole projection. Figures with artwork now
+  always use the larger margin.
+- "Star names" is a labeled checkbox in the options row; the eye button is gone.
+
 ## v3.54 / zion-sky-v320 — 2026-10-12
 - Constellation map capped by viewport height so it fits a laptop screen.
   Why: the `#zcl-con-wrap *` rule forces `max-width:100%` on everything, so
