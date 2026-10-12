@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.56 / zion-sky-v322 — 2026-10-12
+- Illustrations for Orion (hunter with club, lion pelt and sword) and Ursa
+  Major (bear with the long Dipper tail), drawn through the map projection
+  like Scorpius. The drawing helpers are now shared by all three figures.
+
 ## v3.55 / zion-sky-v321 — 2026-10-12
 - Illustration toggle no longer moves the stars. Why: it changed the map
   margin, which re-fit the whole projection. Figures with artwork now

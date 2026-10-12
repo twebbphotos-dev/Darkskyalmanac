@@ -331,47 +331,197 @@ function buildMap(entry,W,H,pad){
 // ───────────────  ILLUSTRATED FIGURES  ───────────────
 // Each figure is drawn procedurally from its stars' RA/Dec, through the map's own
 // projection, so it can never drift off the stars it belongs to.
+// Shared kit: pure geometry helpers, plus kit(u) for strokes that scale with the map.
+const AG='#CBA85A',AGL='#E6CC85',AINK='#16111f',AFILL='url(#zcl-art-fill)';
+const ADEFS='<defs><linearGradient id="zcl-art-fill" x1="1" y1="0" x2="0" y2="1">'
+  +'<stop offset="0" stop-color="'+AG+'" stop-opacity=".34"/><stop offset=".5" stop-color="'+AG+'" stop-opacity=".18"/>'
+  +'<stop offset="1" stop-color="'+AG+'" stop-opacity=".08"/></linearGradient></defs>';
+const add=(p,q)=>({x:p.x+q.x,y:p.y+q.y}),sub=(p,q)=>({x:p.x-q.x,y:p.y-q.y}),mul=(p,k)=>({x:p.x*k,y:p.y*k});
+const mix=(p,q,t)=>({x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t});
+const nrm=p=>{const l=Math.hypot(p.x,p.y)||1;return {x:p.x/l,y:p.y/l}},perp=p=>({x:-p.y,y:p.x});
+const rot=(p,a)=>({x:p.x*Math.cos(a)-p.y*Math.sin(a),y:p.x*Math.sin(a)+p.y*Math.cos(a)});
+const f=v=>v.toFixed(1),pt=p=>f(p.x)+' '+f(p.y);
+// Catmull-Rom through pts, n samples per span; returns points with the span index
+function spline(P,n){const out=[];
+  for(let i=0;i<P.length-1;i++){const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)];
+    for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;
+      out.push({x:.5*(2*p1.x+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
+                y:.5*(2*p1.y+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3),i:i+t})}}
+  const e=P[P.length-1];out.push({x:e.x,y:e.y,i:P.length-1});return out}
+const tangents=S=>S.map((p,i)=>nrm(sub(S[Math.min(S.length-1,i+1)],S[Math.max(0,i-1)])));
+// closed outline around a centerline with half-width w(t), t in 0..1
+function shell(S,w){const T=tangents(S),n=S.length-1;
+  const L=S.map((p,i)=>add(p,mul(perp(T[i]),w(i/n)))),R=S.map((p,i)=>sub(p,mul(perp(T[i]),w(i/n))));
+  return {d:'M'+L.map(pt).join(' L')+' L'+R.slice().reverse().map(pt).join(' L')+' Z',L,R,T}}
+// piecewise-linear width profile: pairs of [t, halfwidth-in-units]
+const profile=(pairs,u)=>t=>{for(let i=1;i<pairs.length;i++){if(t<=pairs[i][0]){const a=pairs[i-1],b=pairs[i];return u*(a[1]+(b[1]-a[1])*(t-a[0])/(b[0]-a[0]||1))}}return u*pairs[pairs.length-1][1]};
+function kit(u){
+  const sw=k=>f(k*u);
+  const tube=(P,w)=>{const d='M'+P.map(pt).join(' L');
+    return '<path d="'+d+'" fill="none" stroke="'+AG+'" stroke-opacity=".8" stroke-width="'+f(w+2.2*u)+'" stroke-linecap="round" stroke-linejoin="round"/>'
+          +'<path d="'+d+'" fill="none" stroke="'+AINK+'" stroke-width="'+f(w)+'" stroke-linecap="round" stroke-linejoin="round"/>'
+          +'<path d="'+d+'" fill="none" stroke="'+AG+'" stroke-opacity=".26" stroke-width="'+f(w)+'" stroke-linecap="round" stroke-linejoin="round"/>'};
+  const plate=(d,k)=>'<path d="'+d+'" fill="'+AINK+'" fill-opacity=".55" stroke="none"/><path d="'+d+'" fill="'+AFILL+'" stroke="'+AG+'" stroke-width="'+sw(k||1.3)+'" stroke-linejoin="round"/>';
+  const knob=(p,r)=>'<circle cx="'+f(p.x)+'" cy="'+f(p.y)+'" r="'+sw(r)+'" fill="'+AINK+'" stroke="'+AG+'" stroke-width="'+sw(1)+'"/>';
+  const hair=(d,op)=>'<path d="'+d+'" fill="none" stroke="'+AG+'" stroke-opacity="'+(op||.5)+'" stroke-width="'+sw(.75)+'"/>';
+  const hilite=(d,op)=>'<path d="'+d+'" fill="none" stroke="'+AGL+'" stroke-opacity="'+(op||.35)+'" stroke-width="'+sw(.85)+'"/>';
+  // fur / hatch ticks along one side of a shell
+  const ticks=(side,S,from,to,step,len,op)=>{let o='';for(let i=from;i<to;i+=step){const a=side[i],b=add(a,mul(nrm(sub(a,S[i])),len*u));o+='<line x1="'+f(a.x)+'" y1="'+f(a.y)+'" x2="'+f(b.x)+'" y2="'+f(b.y)+'" stroke="'+AG+'" stroke-opacity="'+(op||.45)+'" stroke-width="'+sw(.7)+'"/>'}return o};
+  return {sw,tube,plate,knob,hair,hilite,ticks};
+}
 const ART={
+orion:function(sky){
+  const bet=sky(5.9195,7.4071),bel=sky(5.4189,6.3497),mei=sky(5.5856,9.9342),
+        aln=sky(5.6793,-1.9426),ani=sky(5.6036,-1.2019),min=sky(5.5334,-0.2991),
+        sai=sky(5.7959,-9.6696),rig=sky(5.2423,-8.2016),eta=sky(5.4079,-2.3971),
+        mu=sky(6.0397,9.6473),nu=sky(6.1262,14.7685),chi1=sky(5.9064,20.2762),chi2=sky(6.0653,20.1385),c4=sky(6.199,14.2088),
+        tab=sky(4.8307,6.9613),pi4=sky(4.8534,5.6051),pi5=sky(4.9042,2.4407),pi6=sky(4.9758,1.714),pi2=sky(4.8435,8.9002),pi1=sky(4.9149,10.1508),o2=sky(4.9395,13.5145),
+        hat=sky(5.5906,-5.9099);                       // Hatysa, tip of the sword
+  const u=Math.hypot(bet.x-rig.x,bet.y-rig.y)/166;    // drawing unit (1 at the default map size)
+  const {sw,tube,plate,knob,hair,hilite,ticks}=kit(u),G=AG,GL=AGL,INK=AINK,FILL=AFILL;
+  let o=ADEFS+'<g class="zcl-art" opacity=".93">';
+  const down=nrm(sub(ani,mei)),up=mul(down,-1),west=nrm(sub(bel,bet)),east=mul(west,-1);
+  const sh=mix(bet,bel,.5),hip=mix(aln,min,.5);
+
+  // ── legs: thigh and shin as tubes, knee knobs, feet turned outward
+  const kneeE=add(mix(aln,sai,.5),mul(east,6*u)),kneeW=eta;
+  o+=tube([add(aln,mul(east,3*u)),kneeE],15*u)+tube([kneeE,sai],11.5*u)+knob(kneeE,5);
+  o+=tube([add(min,mul(west,3*u)),kneeW],15*u)+tube([kneeW,rig],11.5*u)+knob(kneeW,5);
+  const foot=(p,dir)=>{const q=add(p,mul(dir,7*u)),a=Math.atan2(dir.y,dir.x)*180/Math.PI;return '<ellipse cx="'+f(q.x)+'" cy="'+f(q.y)+'" rx="'+sw(8)+'" ry="'+sw(4)+'" transform="rotate('+f(a)+' '+f(q.x)+' '+f(q.y)+')" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1.1)+'"/>'};
+  o+=foot(sai,nrm(add(east,mul(down,.3))))+foot(rig,nrm(add(west,mul(down,.3))));
+
+  // ── tunic: belt to mid-thigh, scalloped hem
+  const hemE=add(add(aln,mul(down,34*u)),mul(east,9*u)),hemW=add(add(min,mul(down,34*u)),mul(west,9*u));
+  let hem='';for(let k=0;k<4;k++){const a=mix(hemE,hemW,k/4),b=mix(hemE,hemW,(k+1)/4),m=add(mix(a,b,.5),mul(down,4*u));hem+=' Q'+pt(m)+' '+pt(b)}
+  o+=plate('M'+pt(add(aln,mul(east,5*u)))+' L'+pt(hemE)+hem+' L'+pt(add(min,mul(west,5*u)))+' Z',1.3);
+  for(let k=1;k<4;k++){const a=mix(add(aln,mul(east,3*u)),add(min,mul(west,3*u)),k/4),b=mix(hemE,hemW,k/4);o+=hair('M'+pt(a)+' L'+pt(b),.35)}
+
+  // ── torso: broad shoulders tapering to the belt, pectorals and abdomen engraved
+  const shE=add(add(bet,mul(east,9*u)),mul(up,3*u)),shW=add(add(bel,mul(west,9*u)),mul(up,3*u));
+  const wE=add(aln,mul(east,8*u)),wW=add(min,mul(west,8*u));
+  o+=plate('M'+pt(shE)+' C'+pt(add(mix(shE,wE,.4),mul(west,4*u)))+' '+pt(add(mix(shE,wE,.75),mul(west,5*u)))+' '+pt(wE)
+    +' L'+pt(wW)+' C'+pt(add(mix(shW,wW,.75),mul(east,5*u)))+' '+pt(add(mix(shW,wW,.4),mul(east,4*u)))+' '+pt(shW)
+    +' C'+pt(add(mix(shW,sh,.5),mul(up,6*u)))+' '+pt(add(mix(shE,sh,.5),mul(up,6*u)))+' '+pt(shE)+' Z',1.5);
+  const pecE=add(mix(bet,sh,.5),mul(down,10*u)),pecW=add(mix(bel,sh,.5),mul(down,10*u));
+  o+=hair('M'+pt(add(bet,mul(down,4*u)))+' Q'+pt(add(pecE,mul(down,8*u)))+' '+pt(add(sh,mul(down,13*u))),.55);
+  o+=hair('M'+pt(add(bel,mul(down,4*u)))+' Q'+pt(add(pecW,mul(down,8*u)))+' '+pt(add(sh,mul(down,13*u))),.55);
+  o+=hair('M'+pt(add(sh,mul(down,14*u)))+' L'+pt(add(hip,mul(up,4*u))),.4);
+  for(let k=0;k<3;k++){const c=add(sh,mul(down,(20+8*k)*u));o+=hair('M'+pt(add(c,mul(east,7*u)))+' Q'+pt(add(c,mul(down,2*u)))+' '+pt(add(c,mul(west,7*u))),.35)}
+  o+=hilite('M'+pt(add(shW,mul(down,3*u)))+' Q'+pt(add(mix(shW,wW,.5),mul(east,2*u)))+' '+pt(add(wW,mul(up,4*u))));
+
+  // ── belt and sword
+  o+=tube([add(aln,mul(east,5*u)),add(min,mul(west,5*u))],6*u);
+  const sHilt=add(ani,mul(down,5*u)),sTip=hat;
+  o+=tube([add(sHilt,mul(east,6*u)),add(sHilt,mul(west,6*u))],2.4*u);
+  const blade=shell(spline([sHilt,mix(sHilt,sTip,.5),sTip],8),profile([[0,2.6],[.8,2],[1,.3]],u));
+  o+='<path d="'+blade.d+'" fill="'+GL+'" fill-opacity=".55" stroke="'+G+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
+
+  // ── neck and head: Meissa marks the brow; helmet with a crest, beard below
+  o+=tube([mei,add(sh,mul(up,2*u))],9.5*u);
+  const hc=add(mei,mul(up,1.5*u));
+  o+='<circle cx="'+f(hc.x)+'" cy="'+f(hc.y)+'" r="'+sw(11)+'" fill="'+INK+'" fill-opacity=".7" stroke="'+G+'" stroke-width="'+sw(1.3)+'"/>';
+  const ha=Math.atan2(up.y,up.x);
+  o+='<path d="M'+pt(add(hc,rot({x:11*u,y:0},ha-1.35)))+' A'+sw(11)+' '+sw(11)+' 0 0 1 '+pt(add(hc,rot({x:11*u,y:0},ha+1.35)))+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.2)+'"/>';
+  o+='<path d="M'+pt(add(hc,mul(up,10.5*u)))+' Q'+pt(add(add(hc,mul(up,19*u)),mul(east,3*u)))+' '+pt(add(add(hc,mul(up,9*u)),mul(east,14*u)))+'" fill="none" stroke="'+GL+'" stroke-opacity=".7" stroke-width="'+sw(2.2)+'" stroke-linecap="round"/>';
+  o+='<path d="M'+pt(add(add(hc,mul(down,7*u)),mul(east,7*u)))+' Q'+pt(add(hc,mul(down,16*u)))+' '+pt(add(add(hc,mul(down,7*u)),mul(west,7*u)))+'" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1)+'"/>';
+  [east,west].forEach(d=>{const e=add(add(hc,mul(d,4*u)),mul(up,1.5*u));o+='<circle cx="'+f(e.x)+'" cy="'+f(e.y)+'" r="'+sw(1.1)+'" fill="'+GL+'"/>'});
+
+  // ── raised arm with the club: Betelgeuse > mu > nu, club head on the chi stars
+  o+=tube([bet,mu],12.5*u)+tube([mu,nu],10.5*u)+knob(mu,5);
+  const top=mix(chi1,chi2,.5),clubDir=nrm(sub(top,nu)),clubEnd=add(top,mul(clubDir,7*u));
+  const club=shell(spline([add(nu,mul(clubDir,-4*u)),mix(nu,c4,.5),mix(mix(nu,c4,.5),top,.5),clubEnd],8),profile([[0,2.8],[.45,4.5],[.8,11],[1,8.5]],u));
+  o+=plate(club.d,1.3);
+  o+=ticks(club.R,spline([add(nu,mul(clubDir,-4*u)),mix(nu,c4,.5),mix(mix(nu,c4,.5),top,.5),clubEnd],8),14,24,3,-2.5,.4);
+  [chi1,chi2,c4].forEach(p=>o+='<circle cx="'+f(mix(p,top,.3).x)+'" cy="'+f(mix(p,top,.3).y)+'" r="'+sw(1.6)+'" fill="'+G+'" fill-opacity=".6"/>');
+  o+=knob(nu,4.5);
+
+  // ── shield arm and the lion pelt along the pi stars
+  const elbowW=add(mix(bel,tab,.5),mul(down,9*u));
+  const peltC=spline([add(o2,mul(up,5*u)),o2,pi1,pi2,tab,pi4,pi5,pi6,add(pi6,mul(down,4*u))],6);
+  const pelt=shell(peltC,profile([[0,4],[.15,8.5],[.5,10],[.85,8.5],[1,4]],u));
+  let outerIsL=0;{const i=Math.floor(peltC.length/2),q=sub(pelt.L[i],peltC[i]);outerIsL=(q.x*west.x+q.y*west.y)>0}
+  o+=plate(pelt.d,1.3);
+  o+=ticks(outerIsL?pelt.L:pelt.R,peltC,2,peltC.length-2,2,3.2,.5);
+  o+=hair('M'+peltC.slice(1,-1).map(pt).join(' L'),.3);
+  o+=tube([bel,elbowW],12.5*u)+tube([elbowW,tab],10.5*u)+knob(elbowW,5)+knob(tab,5);
+  return o+'</g>';
+},
+ursamajor:function(sky){
+  const meg=sky(12.2571,57.0326),dub=sky(11.0621,61.751),mer=sky(11.0307,56.3824),phe=sky(11.8972,53.6948),
+        ali=sky(12.9005,55.9598),miz=sky(13.3988,54.9254),alk=sky(13.7923,49.3133),
+        chi=sky(11.7675,47.7794),nuB=sky(11.308,33.0943),xiA=sky(11.3031,31.5308),psi=sky(11.1611,44.4985),
+        muT=sky(10.3722,41.4995),lamT=sky(10.2849,42.9144),h23=sky(9.5255,63.0619),omi=sky(8.5044,60.7182),
+        ups=sky(9.8498,59.0387),phi=sky(9.8684,54.0643),the=sky(9.5476,51.6773),iot=sky(8.9868,48.0418),kap=sky(9.0604,47.1565);
+  const u=Math.hypot(dub.x-alk.x,dub.y-alk.y)/208;
+  const {sw,tube,plate,knob,hair,hilite,ticks}=kit(u),G=AG,GL=AGL,INK=AINK,FILL=AFILL;
+  let o=ADEFS+'<g class="zcl-art" opacity=".93">';
+  const upOf=T=>{const n=perp(T);return n.y<0?n:mul(n,-1)};  // screen-up side of a centerline
+  const paw=(p,dir,r)=>{const a=Math.atan2(dir.y,dir.x)*180/Math.PI;let s='<ellipse cx="'+f(p.x)+'" cy="'+f(p.y)+'" rx="'+sw(r)+'" ry="'+sw(r*.7)+'" transform="rotate('+f(a)+' '+f(p.x)+' '+f(p.y)+')" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1.1)+'"/>';
+    for(let k=-1;k<=1;k++){const q=add(add(p,mul(dir,r*.75*u)),mul(perp(dir),k*r*.42*u));s+='<circle cx="'+f(q.x)+'" cy="'+f(q.y)+'" r="'+sw(r*.22)+'" fill="'+G+'" fill-opacity=".7"/>'}return s};
+  const leg=(P,w0,w1,pawAt,toe)=>{const C=spline(P,8),sh=shell(C,profile([[0,w0],[.6,(w0+w1)/2],[1,w1]],u));
+    let s=plate(sh.d,1.2)+hair('M'+C.slice(2,-2).map(pt).join(' L'),.3);
+    const T=tangents(C);s+=paw(pawAt,T[T.length-1],w1*1.3);return s};
+  const shoulder=mix(dub,mer,.55),hips=mix(meg,phe,.5),axis=nrm(sub(hips,shoulder)),
+        rump=add(hips,mul(axis,16*u)),rumpEnd=add(hips,mul(axis,30*u));   // body ends along its own axis; the tail curves off it
+
+  // ── far legs first, dimmer, so the body reads as having depth
+  o+='<g opacity=".55">'+leg([add(shoulder,mul({x:0,y:1},4*u)),add(ups,{x:-6*u,y:14*u}),add(the,{x:-14*u,y:-6*u}),add(iot,{x:-16*u,y:-8*u})],9,5,add(iot,{x:-16*u,y:-8*u}),0)
+    +leg([hips,add(chi,{x:-12*u,y:-4*u}),add(psi,{x:-14*u,y:-6*u}),add(muT,{x:-14*u,y:-8*u})],10,5.5,add(muT,{x:-14*u,y:-8*u}),0)+'</g>';
+
+  // ── near hind legs: Phecda > chi (hip) > Alula pair, and chi > psi > Tania pair
+  o+=leg([phe,chi,nuB,xiA],12,6,xiA,0);
+  o+=leg([add(chi,{x:4*u,y:-2*u}),psi,lamT,muT],11,6,muT,0);
+
+  // ── body: snout at Muscida, brow at h, shoulders over Dubhe/Merak, hips over Megrez/Phecda
+  const bodyC=spline([add(omi,mul(nrm(sub(omi,h23)),4*u)),omi,mix(omi,h23,.5),mix(h23,ups,.5),shoulder,hips,rump,rumpEnd],12);
+  const body=shell(bodyC,profile([[0,5],[.1,9.5],[.22,13.5],[.38,19],[.55,30],[.72,31],[.86,24],[.95,13],[1,3]],u));
+  o+=plate(body.d,1.6);
+  // belly shadow and back highlight, then fur
+  const belly=bodyC.map((p,i)=>i).filter(i=>i>Math.floor(bodyC.length*.42)&&i<bodyC.length-2);
+  o+='<path d="M'+belly.map(i=>pt(body.R[i])).join(' L')+' L'+belly.slice().reverse().map(i=>pt(mix(body.R[i],bodyC[i],.3))).join(' L')+' Z" fill="'+INK+'" fill-opacity=".4" stroke="none"/>';
+  o+=hilite('M'+bodyC.map((p,i)=>i).filter(i=>i>Math.floor(bodyC.length*.45)&&i<bodyC.length-3).map(i=>pt(mix(body.L[i],bodyC[i],.25))).join(' L'),.28);
+  o+=ticks(body.L,bodyC,Math.floor(bodyC.length*.3),bodyC.length-2,2,2.6,.4);
+  o+=ticks(body.R,bodyC,Math.floor(bodyC.length*.45),bodyC.length-3,3,2.2,.3);
+  // shoulder and haunch contours
+  o+=hair('M'+pt(add(shoulder,{x:10*u,y:-16*u}))+' Q'+pt(add(shoulder,{x:-2*u,y:0}))+' '+pt(add(shoulder,{x:6*u,y:22*u})),.4);
+  o+=hair('M'+pt(add(hips,{x:-4*u,y:-14*u}))+' Q'+pt(add(hips,{x:6*u,y:4*u}))+' '+pt(add(chi,{x:-2*u,y:-6*u})),.4);
+
+  // ── the long tail (drawn over the rump so the root covers the body's end cap): Megrez > Alioth > Mizar > Alkaid, bushy, curling past the last star
+  const tailC=spline([hips,rump,ali,miz,alk,add(alk,mul(nrm(sub(alk,miz)),9*u))],10);
+  const tail=shell(tailC,t=>u*(7-2*t+5.5*Math.pow(Math.sin(Math.PI*Math.min(1,t*1.05)),.8)+ .8*Math.sin(t*38)));
+  o+=plate(tail.d,1.3);
+  o+=ticks(tail.R,tailC,8,tailC.length-3,3,3,.45)+ticks(tail.L,tailC,10,tailC.length-3,4,2.2,.3);
+  o+=hilite('M'+tail.L.slice(6,-6).map((p,i)=>pt(mix(p,tailC[i+6],.35))).join(' L'),.3);
+
+  // ── near front leg: Merak > phi > theta > Talitha, with kappa as the outer toe
+  o+=leg([add(shoulder,{x:6*u,y:6*u}),phi,the,mix(iot,kap,.45)],11,6,mix(iot,kap,.45),0);
+
+  // ── head details: ear, eye, nose, mouth
+  const headT=tangents(bodyC)[3],hu=upOf(headT);
+  const ear=add(mix(omi,h23,.6),mul(hu,11*u));
+  o+='<path d="M'+pt(add(ear,mul(perp(hu),-6.5*u)))+' Q'+pt(add(ear,mul(hu,9*u)))+' '+pt(add(ear,mul(perp(hu),6.5*u)))+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.2)+'" stroke-linejoin="round"/>';
+  const eye=add(mix(omi,h23,.42),mul(hu,2.5*u));
+  o+='<circle cx="'+f(eye.x)+'" cy="'+f(eye.y)+'" r="'+sw(1.9)+'" fill="'+INK+'" stroke="'+GL+'" stroke-width="'+sw(.9)+'"/>';
+  const nose=add(omi,mul(nrm(sub(omi,h23)),3*u));
+  o+='<circle cx="'+f(nose.x)+'" cy="'+f(nose.y)+'" r="'+sw(2.4)+'" fill="'+G+'" fill-opacity=".85"/>';
+  o+=hair('M'+pt(add(nose,mul(hu,-2*u)))+' Q'+pt(add(mix(omi,h23,.15),mul(hu,-5*u)))+' '+pt(add(mix(omi,h23,.3),mul(hu,-4*u))),.6);
+  return o+'</g>';
+},
 scorpius:function(sky){
-  const add=(p,q)=>({x:p.x+q.x,y:p.y+q.y}),sub=(p,q)=>({x:p.x-q.x,y:p.y-q.y}),mul=(p,k)=>({x:p.x*k,y:p.y*k});
-  const mix=(p,q,t)=>({x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t});
-  const nrm=p=>{const l=Math.hypot(p.x,p.y)||1;return {x:p.x/l,y:p.y/l}},perp=p=>({x:-p.y,y:p.x});
-  const rot=(p,a)=>({x:p.x*Math.cos(a)-p.y*Math.sin(a),y:p.x*Math.sin(a)+p.y*Math.cos(a)});
-  const f=v=>v.toFixed(1),pt=p=>f(p.x)+' '+f(p.y);
   // anchor stars (J2000 RA hours, Dec degrees)
   const beta=sky(16.0906,-19.8055),pi=sky(15.9809,-26.1141),rho=sky(15.9481,-29.2141),
         sigma=sky(16.3531,-25.5928),antares=sky(16.4901,-26.432),tau=sky(16.598,-28.216),eps=sky(16.8361,-34.2932),
         mu=sky(16.8645,-38.0474),zeta=sky(16.9097,-42.3613),eta=sky(17.2026,-43.2392),theta=sky(17.622,-42.9978),
         iota=sky(17.7931,-40.127),kappa=sky(17.7081,-39.03),lambda=sky(17.5601,-37.1038),upsilon=sky(17.5127,-37.2958);
   const u=Math.hypot(antares.x-lambda.x,antares.y-lambda.y)/227;   // drawing unit (1 at the default map size)
-  const G='#CBA85A',GL='#E6CC85',INK='#16111f';
-  const FILL='url(#zcl-art-sco)',sw=k=>f(k*u);
-  // Catmull-Rom through pts, n samples per span; returns points with the span index
-  function spline(P,n){const out=[];
-    for(let i=0;i<P.length-1;i++){const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)];
-      for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;
-        out.push({x:.5*(2*p1.x+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
-                  y:.5*(2*p1.y+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3),i:i+t})}}
-    const e=P[P.length-1];out.push({x:e.x,y:e.y,i:P.length-1});return out}
-  const tangents=S=>S.map((p,i)=>nrm(sub(S[Math.min(S.length-1,i+1)],S[Math.max(0,i-1)])));
-  // closed outline around a centerline with half-width w(t), t in 0..1
-  function shell(S,w){const T=tangents(S),n=S.length-1;
-    const L=S.map((p,i)=>add(p,mul(perp(T[i]),w(i/n)))),R=S.map((p,i)=>sub(p,mul(perp(T[i]),w(i/n))));
-    return {d:'M'+L.map(pt).join(' L')+' L'+R.slice().reverse().map(pt).join(' L')+' Z',L,R,T}}
-  const tube=(P,w)=>{const d='M'+P.map(pt).join(' L');
-    return '<path d="'+d+'" fill="none" stroke="'+G+'" stroke-opacity=".8" stroke-width="'+f(w+2.2*u)+'" stroke-linecap="round" stroke-linejoin="round"/>'
-          +'<path d="'+d+'" fill="none" stroke="'+INK+'" stroke-width="'+f(w)+'" stroke-linecap="round" stroke-linejoin="round"/>'
-          +'<path d="'+d+'" fill="none" stroke="'+G+'" stroke-opacity=".26" stroke-width="'+f(w)+'" stroke-linecap="round" stroke-linejoin="round"/>'};
-  const plate=(d,k)=>'<path d="'+d+'" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(k||1.3)+'" stroke-linejoin="round"/>';
+  const G=AG,GL=AGL,INK=AINK,FILL=AFILL,{sw,tube,plate}=kit(u);
 
   // Body axis: the head faces west (toward Libra), from Antares through Alniyat.
   const fwd=nrm(sub(sigma,antares)),side=perp(fwd);
   const up=(side.x*(beta.x-sigma.x)+side.y*(beta.y-sigma.y))>0?side:mul(side,-1),dn=mul(up,-1);
   const at=(a,s)=>add(add(sigma,mul(fwd,a*u)),mul(up,s*u));     // carapace frame: a forward, s toward the upper claw
 
-  let o='<defs><linearGradient id="zcl-art-sco" x1="1" y1="0" x2="0" y2="1">'
-    +'<stop offset="0" stop-color="'+G+'" stop-opacity=".34"/><stop offset=".5" stop-color="'+G+'" stop-opacity=".18"/>'
-    +'<stop offset="1" stop-color="'+G+'" stop-opacity=".08"/></linearGradient></defs><g class="zcl-art" opacity=".93">';
+  let o=ADEFS+'<g class="zcl-art" opacity=".93">';
 
   // ── legs: four pairs splayed from the carapace, front pair reaching forward, rear pair raking back
   [[11,20,1.0],[3,24,.35],[-6,27,-.35],[-15,29,-1.0]].forEach(function(L){
