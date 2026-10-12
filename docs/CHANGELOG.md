@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.63 / zion-sky-v329 — 2026-10-12
+- Delphinus, Aries, Serpens, Aquarius, Corvus, Cygnus, Hercules and
+  Capricornus switched to the IAU / Sky & Telescope figures, with their
+  star names kept. Skat, Maasym and Algedi stay as labeled stars off the
+  figure, since the standard lines skip them.
+
 ## v3.62 / zion-sky-v328 — 2026-10-12
 - Taurus on the IAU / Sky & Telescope figure. Why: both horns came off
   tau Tau, with a stray line from there to Tianguan; the standard figure
