@@ -591,13 +591,17 @@ function drawOverlay(canvas, m, show, opts = {}) {
   // The brightness slider trims stars, faintest first.
   const stars = (m.stars || []).filter((s) => s.mag <= show.mag);
   if (show.stars) {
-    g.strokeStyle = hot;
+    // Rings sit closer to the figure lines (30% gold) than to the labels, so
+    // the eye reads the lines and names first and the rings as a quiet cue.
+    g.strokeStyle = 'rgba(230,204,133,.5)';
+    g.lineWidth = 1.2 * k;
     for (const s of stars) {
-      const r = Math.max(4, 15 - s.mag * 1.5) * k;
+      const r = Math.max(3.2, 12 - s.mag * 1.2) * k;
       g.beginPath();
       g.arc(s.x, s.y, r, 0, 6.2832);
       g.stroke();
     }
+    g.lineWidth = 1.4 * k;
   }
   // Objects: with Names on, an object is marked only if its name fits too —
   // an unnamed box tells you nothing.

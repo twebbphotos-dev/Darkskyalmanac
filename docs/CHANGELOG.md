@@ -3,6 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.67 / zion-sky-v333 — 2026-10-12
+- Star ID overlay: star rings at half opacity, thinner and a fifth smaller,
+  so they sit with the figure lines instead of competing with the labels.
+
 ## v3.66 / zion-sky-v332 — 2026-10-12
 - Hardening pass after a code review of everything since v3.52.
 - Remaining page figures on the IAU / S&T lines (Leo, Virgo, Boötes, Aquila,
