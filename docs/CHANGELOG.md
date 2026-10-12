@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.61 / zion-sky-v327 — 2026-10-12
+- Zodiac intro: dropped the line about planets being the bright points not on the chart.
+
 ## v3.60 / zion-sky-v326 — 2026-10-12
 - 20 new constellations: Libra, Pisces, Hydra, Lepus, Canes Venatici, Coma
   Berenices, Lacerta, Lynx, Monoceros, Eridanus, Piscis Austrinus, Sagitta,
