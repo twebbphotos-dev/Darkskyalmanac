@@ -4,13 +4,7 @@ Written at v3.52 (cache `zion-sky-v318`), 2026-10-11. Until now the app was deve
 
 ## 1. Migration steps
 
-1. **Create a private GitHub repo** (e.g. `dark-sky-almanac`) and push this folder as the first commit.
-   ```bash
-   git init && git add . && git commit -m "Dark Sky Almanac v3.52 (zion-sky-v318)"
-   git branch -M main && git remote add origin git@github.com:<you>/dark-sky-almanac.git && git push -u origin main
-   ```
-   - The repo is about 40 MB. The largest pieces are `models/` (18 MB, 3D spacecraft) and `solver/catalog/` (6 MB).
-   - That's fine for Git, and no single file is near GitHub's 100 MB limit.
+1. **Done (2026-10-12):** this repo is `github.com/twebbphotos-dev/Darkskyalmanac`, branch `main`. The old v3.15-era upload is the previous commit. The repo is **public**; switch it to private in GitHub → Settings if you prefer. The site files are public anyway, but this repo also holds docs, test photos and source scripts.
 2. **Open the repo in Claude Code** (on the web or the desktop app) and start every session from it. `CLAUDE.md` loads automatically, so there's no need to re-explain the project.
 3. **Install the test tools** in the cloud environment: `pip install playwright numpy pillow && python3 -m playwright install chromium`. Node 18+ is needed for the solver harness.
 4. **Pick a deploy route.**
