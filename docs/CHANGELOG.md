@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.64 / zion-sky-v330 — 2026-10-12
+- Star ID overlay figures regenerated for all 88 constellations from the
+  IAU / Sky & Telescope line set, matching the Constellations page. The
+  solver itself is untouched (figures are overlay-only); e2e passes.
+- Andromeda on the IAU figure. Why: the old one had a detour through
+  Titawin and a pi-to-Mirach link that read as stray stars.
+
 ## v3.63 / zion-sky-v329 — 2026-10-12
 - Delphinus, Aries, Serpens, Aquarius, Corvus, Cygnus, Hercules and
   Capricornus switched to the IAU / Sky & Telescope figures, with their

@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v3.63, service-worker cache `zion-sky-v329`.**
-Next release: v3.64, cache `zion-sky-v330`.
+**Current release: v3.64, service-worker cache `zion-sky-v330`.**
+Next release: v3.65, cache `zion-sky-v331`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -126,7 +126,7 @@ node tests/solver/regress.mjs                     # compare with tests/solver/ba
 
 ## Gotchas learned the hard way
 
-- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* on the Constellations page follow the IAU / S&T lines (Lyra simplified); Star ID still uses H.A. Rey shapes.
+- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* on the Constellations page and in Star ID both follow the IAU / S&T lines (regenerated from the same set; `solver/solver/figures.js`).
 - **Check sky drawings with the app's own projection**: `buildMap` stereographic, `_project` with `{x:-p.xi, y:-p.eta}`. Flat test renders mislead.
 - **Map pins:**
   - Anchor to fixed features (interchanges, reservoir shapes), never town-label boxes.
