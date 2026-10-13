@@ -261,8 +261,22 @@ async function loadFrame(file, forceFocal = false) {
     return;
   }
 
+  // A Seestar preset applies only to Seestar-shaped frames (16:9). Any other
+  // photo is solved as a full-frame camera with the lens unknown, so a preset
+  // left on from last time can't sink an ordinary wide-field shot: with an
+  // 11.1 mm sensor the lens ladder only reaches a 49-degree field.
+  let sensorMm = sensorWidth();
+  const aspect = Math.max(w, h) / Math.min(w, h);
+  if (el.sensor.value === '11.1' && Math.abs(aspect / (16 / 9) - 1) > 0.03) {
+    sensorMm = 35.9;
+    focalList = fx ? [fx, ...LADDER.filter((f) => Math.abs(f / fx - 1) > 0.12)] : LADDER.slice();
+    focal = focalList[0];
+    if (focalSub) focalSub.textContent = 'Not a Seestar frame (those are 16:9), so this one is solved as a full-frame camera with the lens unknown.';
+  }
+  state.sensorMm = sensorMm;
+  state.fellBack = false;
   const job = { rgba: rgba.data.buffer, width: w, height: h,
-    focalMm: focal, sensorWidthMm: sensorWidth(), focalList };
+    focalMm: focal, sensorWidthMm: sensorMm, focalList };
 
   if (!catalogReady) {
     pending = job;
@@ -296,6 +310,18 @@ function smallAdvice() {
 function handleResult(m) {
   el.busyBar.style.width = '100%';
   if (!m.ok) {
+    // One more try as a full-frame camera with the lens unknown when a smaller
+    // sensor width was in force. A wrong width can't be corrected by the solve,
+    // and it is the usual reason a frame that solved before stops solving.
+    if (!state.fellBack && state.sensorMm !== 35.9 && state.bitmap && m.reason !== 'too-few-stars' && (m.snrP90 || 10) >= 10) {
+      state.fellBack = true;
+      const ctx = state.bitmap.getContext('2d', { willReadFrequently: true });
+      const rgba = ctx.getImageData(0, 0, state.width, state.height);
+      const fl = LADDER.slice();
+      if (focalSub) focalSub.textContent = 'No match with that sensor width. Trying again as a full-frame camera with the lens unknown.';
+      runSolve({ rgba: rgba.data.buffer, width: state.width, height: state.height, focalMm: fl[0], sensorWidthMm: 35.9, focalList: fl });
+      return;
+    }
     state.result = m;
     const n = m.nDetected || (m.detected ? m.detected.length : 0);
     if (m.reason === 'too-few-stars') {
@@ -324,6 +350,10 @@ function handleResult(m) {
   show('out');
   drawOverlay(el.view, m, state.show);
   renderText(m);
+  if (state.fellBack && focalSub) {
+    focalSub.textContent = `Solved as a full-frame camera at ${Math.round(m.focalMm)} mm. The sensor width under Camera & Location did not fit this photo.`;
+    return;
+  }
   if (!state.unknown && focalSub && m.focalNominalMm && Math.abs(m.focalMm / m.focalNominalMm - 1) > 0.12) {
     const pct = Math.round((m.focalMm / m.focalNominalMm - 1) * 100);
     focalSub.textContent = `Solved at ${Math.round(m.focalMm)} mm, ${Math.abs(pct)}% ${pct > 0 ? 'more' : 'less'} than entered. The photo may be cropped, or the sensor width under Camera & Location may not match your camera.`;

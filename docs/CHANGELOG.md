@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.69 / zion-sky-v335 — 2026-10-13
+- Star ID: a Seestar preset now applies only to 16:9 frames; any other
+  photo is solved as a full-frame camera with the lens unknown. A failed
+  solve with a smaller sensor width retries once the same way and says
+  so. Why: tapping a Seestar chip left 11.1 mm set for every later frame,
+  and with that width the lens ladder tops out at a 49-degree field, so
+  wide Milky Way shots that used to solve stopped solving.
+
 ## v3.68 / zion-sky-v334 — 2026-10-12
 - Star ID overlay made cohesive: labels 11.5 px with tighter plates,
   object squares smaller at the rings' 50% opacity and 1.2 px weight,
