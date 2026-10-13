@@ -3,6 +3,17 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.77 / zion-sky-v344 — 2026-10-13
+- Sky Finder: the menu button is now the one control for the bottom box.
+  Open shows the time slider, status and buttons; hidden leaves a small
+  round button in the corner, and the choice is remembered. The X is gone.
+  The live view now fills the screen exactly below the nav, in the browser
+  and the home-screen app, and the box clears the home indicator and caps
+  its width on tablets. Why: the X turned overlays off and hid the panel
+  with no way back, and the view was sized for a 56 px nav that is really
+  43 px and ignored the notch inset, leaving a gap on top and pushing the
+  bottom off-screen in home-screen mode.
+
 ## v3.76 / zion-sky-v343 — 2026-10-13
 - Sky Finder: overlay buttons regrouped as two rows of three (Stars,
   Objects, Moon / Milky Way, Boost, Lens). Removed Sun, which has its own
