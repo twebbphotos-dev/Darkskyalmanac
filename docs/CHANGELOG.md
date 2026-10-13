@@ -3,6 +3,19 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.74 / zion-sky-v341 — 2026-10-13
+- Constellations: Sagittarius's head group now joins the handle (Nunki to
+  omicron Sgr) instead of floating; Taurus gains the Pleiades line from
+  Secunda Hyadum to Alcyone. Stars hanging off their figures removed
+  (Pisces, Canis Major). Kemble's Cascade removed to keep the list to
+  classic constellations and asterisms.
+- Sky Finder: draws the same 88 figures as the Constellations page and
+  Star ID, from a shared generated file, instead of its own copy. Hides
+  iOS's native play button over the camera feed and restarts the feed on
+  the next touch. Why: iOS overlays a play button when it blocks video
+  autoplay (Low Power Mode, or after an app switch), and the Finder kept a
+  separate set of figures that could drift from the page.
+
 ## v3.73 / zion-sky-v339 — 2026-10-13
 - Constellations, Star ID and Sky Finder: every figure now follows the IAU /
   Sky & Telescope charts, taken from Stellarium's modern_iau sky culture.

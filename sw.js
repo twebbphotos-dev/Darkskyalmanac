@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v340';
+const CACHE = 'zion-sky-v341';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -35,6 +35,7 @@ const CRITICAL = [
   // Shared timezone resolver — every page renders sun/moon times through this,
   // so it must be present offline or the app has no clock at all.
   'zcl-tz.js',
+  'zcl-figures.js',
   // SunCalc, self-hosted so sunrise/moonrise never wait on a CDN
   'suncalc.min.js',
   'zcl-events.js',
