@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.70 / zion-sky-v336 — 2026-10-13
+- Constellations: Scorpius now follows the IAU / Sky & Telescope lines
+  (the one on the IAU chart), plus the short Fang–rho branch. Fuyue and
+  Lesath stay as labeled stars off the figure. The illustration's claw
+  arms re-anchored at Dschubba to match. Star ID figures regenerated.
+  Why: the old figure was the app's original Stellarium/Rey-style set and
+  did not match any published chart.
+
 ## v3.69 / zion-sky-v335 — 2026-10-13
 - Star ID: a Seestar preset now applies only to 16:9 frames; any other
   photo is solved as a full-frame camera with the lens unknown. A failed
