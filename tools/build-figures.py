@@ -3,7 +3,7 @@
 
 The Constellations page is the source of truth: every constellation it carries is
 written out from its DATA (stars in RA/Dec, lines by index), so the two can never
-drift apart. Constellations the page doesn't have keep their existing entry.
+drift apart. Constellations the page doesn't have come from tools/data/iau-figures.json.
 Run after changing any figure in constellations.html.
 """
 import json, re, pathlib
@@ -17,8 +17,11 @@ k = astro.index('CONSTELLATIONS = {'); names = dict(re.findall(r"(\w{3}):\s*'([^
 KEY = {'orion':'Ori','ursamajor':'UMa','cassiopeia':'Cas','leo':'Leo','virgo':'Vir','bootes':'Boo','cygnus':'Cyg','lyra':'Lyr','aquila':'Aql','scorpius':'Sco','sagittarius':'Sgr','taurus':'Tau','gemini':'Gem','canismajor':'CMa','canisminor':'CMi','auriga':'Aur','perseus':'Per','andromeda':'And','pegasus':'Peg','cepheus':'Cep','draco':'Dra','corvus':'Crv','ophiuchus':'Oph','serpens':'Ser','hercules':'Her','cancer':'Cnc','aquarius':'Aqr','capricornus':'Cap','cetus':'Cet','triangulum':'Tri','ursaminor':'UMi','camelopardalis':'Cam','delphinus':'Del','aries':'Ari','scutum':'Sct','leoMinor':'LMi','coronaborealis':'CrB','libra':'Lib','pisces':'Psc','hydra':'Hya','lepus':'Lep','canesvenatici':'CVn','comaberenices':'Com','lacerta':'Lac','lynx':'Lyn','monoceros':'Mon','eridanus':'Eri','piscisaustrinus':'PsA','sagitta':'Sge','vulpecula':'Vul','equuleus':'Equ','crater':'Crt','sextans':'Sex','coronaaustralis':'CrA','lupus':'Lup','puppis':'Pup','columba':'Col'}
 fig_path = ROOT / 'solver/solver/figures.js'
 old = fig_path.read_text(); j = old.index('export const FIGURES = ')
-existing = {f['n']: f for f in json.loads(old[j + len('export const FIGURES = '):].rstrip().rstrip(';'))}
-order = list(existing.keys())
+order = [f['n'] for f in json.loads(old[j + len('export const FIGURES = '):].rstrip().rstrip(';'))]
+# constellations the page doesn't carry come straight from the IAU / S&T set (src/iau-figures.py)
+iau = json.loads((ROOT / 'tools/data/iau-figures.json').read_text())
+existing = {names[a]: {'n': names[a], **f} for a, f in iau.items()}
+order += [n for n in existing if n not in order]
 for d in data:
     if d['type'] != 'Constellation': continue
     name = names[KEY[d['key']]]

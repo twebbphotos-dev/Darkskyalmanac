@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.73 / zion-sky-v339 — 2026-10-13
+- Constellations, Star ID and Sky Finder: every figure now follows the IAU /
+  Sky & Telescope charts, taken from Stellarium's modern_iau sky culture.
+  34 of the page's 57 constellations changed (Leo, Gemini, Canis Major,
+  Sagittarius, Cygnus, Hercules, Perseus, Pisces and more); Star ID's other
+  31 and the Sky Finder's H.A. Rey figures switched too. zeta Persei no
+  longer carries a second "Atik" label (the IAU name belongs to omicron).
+  Why: the earlier audit compared against d3-celestial's line set, which
+  is not the IAU set, so figures that "passed" still didn't match the charts.
+
 ## v3.72 / zion-sky-v338 — 2026-10-13
 - Constellations: Scorpius stinger completed as on the IAU chart: Shaula now
   joins Lesath and Fuyue (G Scorpii). The tail label Girtab moved to kappa
