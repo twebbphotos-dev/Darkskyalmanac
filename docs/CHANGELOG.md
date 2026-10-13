@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.75 / zion-sky-v342 — 2026-10-13
+- Sky Finder: the camera feed no longer takes taps, so iOS stops drawing its
+  play/pause button over it (v3.74 only hid the autoplay variant; a tap
+  still brought up the pause control in Chrome and Safari). Negative
+  altitudes now show their minus sign ("−48° Below horizon", not "48°").
+  Constellation names stay below the direction/altitude boxes and only
+  appear when some of the figure's lines are in view.
+
 ## v3.74 / zion-sky-v341 — 2026-10-13
 - Constellations: Sagittarius's head group now joins the handle (Nunki to
   omicron Sgr) instead of floating; Taurus gains the Pleiades line from

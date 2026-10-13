@@ -125,9 +125,9 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
 @supports not (height: 100dvh){
   .zcl-sf-stage{height:calc(100vh - env(safe-area-inset-bottom) - 56px)}
 }
-#zcl-sf-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
-/* iOS draws its own play button over a video it won't autoplay (Low Power Mode,
-   or a paused stream after an app switch). Never show native video chrome. */
+#zcl-sf-video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;pointer-events:none;-webkit-touch-callout:none;-webkit-user-select:none;user-select:none}
+/* iOS (Safari and Chrome) draws its own play/pause button over a video when it
+   is tapped or won't autoplay. The feed takes no taps and shows no native chrome. */
 #zcl-sf-video::-webkit-media-controls,#zcl-sf-video::-webkit-media-controls-panel,
 #zcl-sf-video::-webkit-media-controls-start-playback-button,
 #zcl-sf-video::-webkit-media-controls-overlay-play-button{display:none!important;-webkit-appearance:none;opacity:0}
@@ -3766,11 +3766,20 @@ function sfRenderConstellations(ptAz, ptAlt){
     paths += '<line class="cline" x1="'+P[a].x.toFixed(1)+'" y1="'+P[a].y.toFixed(1)
           +  '" x2="'+P[b].x.toFixed(1)+'" y2="'+P[b].y.toFixed(1)+'"/>';
   }
+  // No line of the figure in front of the camera: show nothing, not a lone name.
+  if(!paths){
+    if(sfConstelShown){ svg.classList.remove('show'); svg.innerHTML=''; sfConstelShown=null; }
+    return;
+  }
   const cProj = proj({ az:best.cAz, alt:best.cAlt });
   // Place the title a little above the centroid so it clears the crosshair,
   // and keep it on-screen even if the centroid drifts to an edge.
   const tx = Math.max(60, Math.min(W-60, cProj.x));
-  const ty = Math.max(24, Math.min(H-16, cProj.y - 46));
+  // Never under the direction/altitude boxes at the top of the view.
+  let topY = 24;
+  const rb = $('zcl-sf-azval') && $('zcl-sf-azval').parentElement;
+  if(rb){ const r1 = rb.getBoundingClientRect(), r0 = svg.getBoundingClientRect(); topY = Math.max(topY, r1.bottom - r0.top + 20); }
+  const ty = Math.max(topY, Math.min(H-16, cProj.y - 46));
   const title = '<text class="ctitle" x="'+tx.toFixed(1)+'" y="'+ty.toFixed(1)
              +  '" text-anchor="middle">'+best.fig.name+'</text>';
 
@@ -3833,7 +3842,7 @@ function updateReadouts(az, alt){
   $('zcl-sf-azval').textContent = String(azR).padStart(3,'0') + '\u00B0';
   $('zcl-sf-azdir').textContent = cdir(az, true);
   const altR = Math.round(alt);
-  $('zcl-sf-altval').textContent = (altR >= 0 ? '+' : '') + String(Math.abs(altR)).padStart(2,'0') + '\u00B0';
+  $('zcl-sf-altval').textContent = (altR >= 0 ? '+' : '\u2212') + String(Math.abs(altR)).padStart(2,'0') + '\u00B0';
   $('zcl-sf-altdesc').textContent = altDesc(alt);
 }
 
@@ -3850,6 +3859,7 @@ function sfHidePill(id){ const el=$(id); if(el) el.classList.remove('on') }
 // on the next touch anywhere instead of leaving a paused, play-button video.
 function sfPlay(v){
   if(!v) return Promise.resolve();
+  v.controls = false; v.setAttribute('playsinline',''); v.setAttribute('webkit-playsinline','');
   return v.play().catch(function(){
     const kick=function(){
       document.removeEventListener('touchend',kick,true);
