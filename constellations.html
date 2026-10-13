@@ -181,7 +181,6 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 #zcl-c-map.labels-hidden .zcl-c-starlbl{display:none}
 .zcl-c-opts{display:flex;flex-wrap:wrap;align-items:center;gap:8px 18px;margin:9px auto 0;padding:0 2px}
 .zcl-c-opt{display:inline-flex;align-items:center;gap:7px;font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66;cursor:pointer;user-select:none;-webkit-user-select:none}
-.zcl-c-opt[hidden]{display:none}
 .zcl-c-opt input{appearance:none;-webkit-appearance:none;width:15px;height:15px;margin:0;border:1px solid rgba(203,168,90,.55);border-radius:3px;background:rgba(0,0,0,.3);display:grid;place-content:center;cursor:pointer}
 .zcl-c-opt input::after{content:'';width:7px;height:7px;border-radius:1px;background:#CBA85A;transform:scale(0);transition:transform .12s}
 .zcl-c-opt input:checked::after{transform:scale(1)}
@@ -257,7 +256,6 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <div class="zcl-c-opts">
           <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-names" checked><span>Star names</span></label>
           <label class="zcl-c-opt"><input type="checkbox" id="zcl-c-natural"><span>Natural sky</span></label>
-          <label class="zcl-c-opt" id="zcl-c-artopt" hidden><input type="checkbox" id="zcl-c-art"><span>Illustration</span></label>
         </div>
         <div class="zcl-c-detail" id="zcl-c-detail"></div>
       </div>
@@ -332,7 +330,7 @@ function bvColor(bv,blend){
 // Map options. "Natural sky" drops the stick figure to a faint trace and sizes
 // every star on one continuous magnitude scale, so the pattern reads the way it
 // looks to the eye. (_magR above floors everything fainter than ~4.3 to one size.)
-let labelsVisible=true,naturalSky=false,artOn=false;
+let labelsVisible=true,naturalSky=false;
 function _magN(m){return Math.max(0.55,2.8*Math.pow(10,-0.16*(m-2)))}
 function _magA(m){return Math.max(0.35,Math.min(1,1-(m-3)*0.18))}
 function buildMap(entry,W,H,pad){
@@ -346,14 +344,8 @@ function buildMap(entry,W,H,pad){
   const s=Math.min((W-2*pad)/spanX,(H-2*pad)/spanY);
   const offX=(W-spanX*s)/2-minX*s,offY=(H-spanY*s)/2-minY*s;
   const X=p=>p.x*s+offX,Y=p=>p.y*s+offY;
-  const art=artOn&&ART[entry.key];
-  const lineOp=naturalSky?'.045':art?'.16':'.4';
+  const lineOp=naturalSky?'.045':'.4';
   let svg='';
-  if(art){
-    // Same projection and fit as the stars, so the drawing stays registered to them.
-    const sky=(raH,decD)=>{const p=_project(raH,decD,c.ra0,c.dec0),q=rotp({x:-p.xi,y:-p.eta});return {x:q.x*s+offX,y:q.y*s+offY}};
-    svg+=art(sky);
-  }
   entry.lines.forEach(function(L){const a=pts[L[0]],b=pts[L[1]];
     svg+='<line x1="'+X(a).toFixed(1)+'" y1="'+Y(a).toFixed(1)+'" x2="'+X(b).toFixed(1)+'" y2="'+Y(b).toFixed(1)+'" stroke="#CBA85A" stroke-width="1" stroke-opacity="'+lineOp+'"/>'});
   pts.forEach(function(p){const r=naturalSky?_magN(p.mag):_magR(p.mag),col=bvColor(p.bv),cx=X(p).toFixed(1),cy=Y(p).toFixed(1);
@@ -363,264 +355,6 @@ function buildMap(entry,W,H,pad){
   });
   return svg;
 }
-
-// ───────────────  ILLUSTRATED FIGURES  ───────────────
-// Each figure is drawn procedurally from its stars' RA/Dec, through the map's own
-// projection, so it can never drift off the stars it belongs to.
-// Shared kit: pure geometry helpers, plus kit(u) for strokes that scale with the map.
-const AG='#CBA85A',AGL='#E6CC85',AINK='#16111f',AFILL='url(#zcl-art-fill)';
-const ADEFS='<defs><linearGradient id="zcl-art-fill" x1="1" y1="0" x2="0" y2="1">'
-  +'<stop offset="0" stop-color="'+AG+'" stop-opacity=".34"/><stop offset=".5" stop-color="'+AG+'" stop-opacity=".18"/>'
-  +'<stop offset="1" stop-color="'+AG+'" stop-opacity=".08"/></linearGradient></defs>';
-const add=(p,q)=>({x:p.x+q.x,y:p.y+q.y}),sub=(p,q)=>({x:p.x-q.x,y:p.y-q.y}),mul=(p,k)=>({x:p.x*k,y:p.y*k});
-const mix=(p,q,t)=>({x:p.x+(q.x-p.x)*t,y:p.y+(q.y-p.y)*t});
-const nrm=p=>{const l=Math.hypot(p.x,p.y)||1;return {x:p.x/l,y:p.y/l}},perp=p=>({x:-p.y,y:p.x});
-const rot=(p,a)=>({x:p.x*Math.cos(a)-p.y*Math.sin(a),y:p.x*Math.sin(a)+p.y*Math.cos(a)});
-const f=v=>v.toFixed(1),pt=p=>f(p.x)+' '+f(p.y);
-// Catmull-Rom through pts, n samples per span; returns points with the span index
-function spline(P,n){const out=[];
-  for(let i=0;i<P.length-1;i++){const p0=P[Math.max(0,i-1)],p1=P[i],p2=P[i+1],p3=P[Math.min(P.length-1,i+2)];
-    for(let k=0;k<n;k++){const t=k/n,t2=t*t,t3=t2*t;
-      out.push({x:.5*(2*p1.x+(-p0.x+p2.x)*t+(2*p0.x-5*p1.x+4*p2.x-p3.x)*t2+(-p0.x+3*p1.x-3*p2.x+p3.x)*t3),
-                y:.5*(2*p1.y+(-p0.y+p2.y)*t+(2*p0.y-5*p1.y+4*p2.y-p3.y)*t2+(-p0.y+3*p1.y-3*p2.y+p3.y)*t3),i:i+t})}}
-  const e=P[P.length-1];out.push({x:e.x,y:e.y,i:P.length-1});return out}
-const tangents=S=>S.map((p,i)=>nrm(sub(S[Math.min(S.length-1,i+1)],S[Math.max(0,i-1)])));
-// closed outline around a centerline with half-width w(t), t in 0..1
-function shell(S,w){const T=tangents(S),n=S.length-1;
-  const L=S.map((p,i)=>add(p,mul(perp(T[i]),w(i/n)))),R=S.map((p,i)=>sub(p,mul(perp(T[i]),w(i/n))));
-  return {d:'M'+L.map(pt).join(' L')+' L'+R.slice().reverse().map(pt).join(' L')+' Z',L,R,T}}
-// piecewise-linear width profile: pairs of [t, halfwidth-in-units]
-const profile=(pairs,u)=>t=>{for(let i=1;i<pairs.length;i++){if(t<=pairs[i][0]){const a=pairs[i-1],b=pairs[i];return u*(a[1]+(b[1]-a[1])*(t-a[0])/(b[0]-a[0]||1))}}return u*pairs[pairs.length-1][1]};
-function kit(u){
-  const sw=k=>f(k*u);
-  const tube=(P,w)=>{const d='M'+P.map(pt).join(' L');
-    return '<path d="'+d+'" fill="none" stroke="'+AG+'" stroke-opacity=".8" stroke-width="'+f(w+2.2*u)+'" stroke-linecap="round" stroke-linejoin="round"/>'
-          +'<path d="'+d+'" fill="none" stroke="'+AINK+'" stroke-width="'+f(w)+'" stroke-linecap="round" stroke-linejoin="round"/>'
-          +'<path d="'+d+'" fill="none" stroke="'+AG+'" stroke-opacity=".26" stroke-width="'+f(w)+'" stroke-linecap="round" stroke-linejoin="round"/>'};
-  const plate=(d,k)=>'<path d="'+d+'" fill="'+AINK+'" fill-opacity=".55" stroke="none"/><path d="'+d+'" fill="'+AFILL+'" stroke="'+AG+'" stroke-width="'+sw(k||1.3)+'" stroke-linejoin="round"/>';
-  const knob=(p,r)=>'<circle cx="'+f(p.x)+'" cy="'+f(p.y)+'" r="'+sw(r)+'" fill="'+AINK+'" stroke="'+AG+'" stroke-width="'+sw(1)+'"/>';
-  const hair=(d,op)=>'<path d="'+d+'" fill="none" stroke="'+AG+'" stroke-opacity="'+(op||.5)+'" stroke-width="'+sw(.75)+'"/>';
-  const hilite=(d,op)=>'<path d="'+d+'" fill="none" stroke="'+AGL+'" stroke-opacity="'+(op||.35)+'" stroke-width="'+sw(.85)+'"/>';
-  // fur / hatch ticks along one side of a shell
-  const ticks=(side,S,from,to,step,len,op)=>{let o='';for(let i=from;i<to;i+=step){const a=side[i],b=add(a,mul(nrm(sub(a,S[i])),len*u));o+='<line x1="'+f(a.x)+'" y1="'+f(a.y)+'" x2="'+f(b.x)+'" y2="'+f(b.y)+'" stroke="'+AG+'" stroke-opacity="'+(op||.45)+'" stroke-width="'+sw(.7)+'"/>'}return o};
-  return {sw,tube,plate,knob,hair,hilite,ticks};
-}
-const ART={
-orion:function(sky){
-  const bet=sky(5.9195,7.4071),bel=sky(5.4189,6.3497),mei=sky(5.5856,9.9342),
-        aln=sky(5.6793,-1.9426),ani=sky(5.6036,-1.2019),min=sky(5.5334,-0.2991),
-        sai=sky(5.7959,-9.6696),rig=sky(5.2423,-8.2016),eta=sky(5.4079,-2.3971),
-        mu=sky(6.0397,9.6473),nu=sky(6.1262,14.7685),chi1=sky(5.9064,20.2762),chi2=sky(6.0653,20.1385),c4=sky(6.199,14.2088),
-        tab=sky(4.8307,6.9613),pi4=sky(4.8534,5.6051),pi5=sky(4.9042,2.4407),pi6=sky(4.9758,1.714),pi2=sky(4.8435,8.9002),pi1=sky(4.9149,10.1508),o2=sky(4.9395,13.5145),
-        hat=sky(5.5906,-5.9099);                       // Hatysa, tip of the sword
-  const u=Math.hypot(bet.x-rig.x,bet.y-rig.y)/166;    // drawing unit (1 at the default map size)
-  const {sw,tube,plate,knob,hair,hilite,ticks}=kit(u),G=AG,GL=AGL,INK=AINK,FILL=AFILL;
-  let o=ADEFS+'<g class="zcl-art" opacity=".93">';
-  const down=nrm(sub(ani,mei)),up=mul(down,-1),west=nrm(sub(bel,bet)),east=mul(west,-1);
-  const sh=mix(bet,bel,.5),hip=mix(aln,min,.5);
-
-  // ── legs: thigh and shin as tubes, knee knobs, feet turned outward
-  const kneeE=add(mix(aln,sai,.5),mul(east,6*u)),kneeW=eta;
-  o+=tube([add(aln,mul(east,3*u)),kneeE],15*u)+tube([kneeE,sai],11.5*u)+knob(kneeE,5);
-  o+=tube([add(min,mul(west,3*u)),kneeW],15*u)+tube([kneeW,rig],11.5*u)+knob(kneeW,5);
-  const foot=(p,dir)=>{const q=add(p,mul(dir,7*u)),a=Math.atan2(dir.y,dir.x)*180/Math.PI;return '<ellipse cx="'+f(q.x)+'" cy="'+f(q.y)+'" rx="'+sw(8)+'" ry="'+sw(4)+'" transform="rotate('+f(a)+' '+f(q.x)+' '+f(q.y)+')" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1.1)+'"/>'};
-  o+=foot(sai,nrm(add(east,mul(down,.3))))+foot(rig,nrm(add(west,mul(down,.3))));
-
-  // ── tunic: belt to mid-thigh, scalloped hem
-  const hemE=add(add(aln,mul(down,34*u)),mul(east,9*u)),hemW=add(add(min,mul(down,34*u)),mul(west,9*u));
-  let hem='';for(let k=0;k<4;k++){const a=mix(hemE,hemW,k/4),b=mix(hemE,hemW,(k+1)/4),m=add(mix(a,b,.5),mul(down,4*u));hem+=' Q'+pt(m)+' '+pt(b)}
-  o+=plate('M'+pt(add(aln,mul(east,5*u)))+' L'+pt(hemE)+hem+' L'+pt(add(min,mul(west,5*u)))+' Z',1.3);
-  for(let k=1;k<4;k++){const a=mix(add(aln,mul(east,3*u)),add(min,mul(west,3*u)),k/4),b=mix(hemE,hemW,k/4);o+=hair('M'+pt(a)+' L'+pt(b),.35)}
-
-  // ── torso: broad shoulders tapering to the belt, pectorals and abdomen engraved
-  const shE=add(add(bet,mul(east,9*u)),mul(up,3*u)),shW=add(add(bel,mul(west,9*u)),mul(up,3*u));
-  const wE=add(aln,mul(east,8*u)),wW=add(min,mul(west,8*u));
-  o+=plate('M'+pt(shE)+' C'+pt(add(mix(shE,wE,.4),mul(west,4*u)))+' '+pt(add(mix(shE,wE,.75),mul(west,5*u)))+' '+pt(wE)
-    +' L'+pt(wW)+' C'+pt(add(mix(shW,wW,.75),mul(east,5*u)))+' '+pt(add(mix(shW,wW,.4),mul(east,4*u)))+' '+pt(shW)
-    +' C'+pt(add(mix(shW,sh,.5),mul(up,6*u)))+' '+pt(add(mix(shE,sh,.5),mul(up,6*u)))+' '+pt(shE)+' Z',1.5);
-  const pecE=add(mix(bet,sh,.5),mul(down,10*u)),pecW=add(mix(bel,sh,.5),mul(down,10*u));
-  o+=hair('M'+pt(add(bet,mul(down,4*u)))+' Q'+pt(add(pecE,mul(down,8*u)))+' '+pt(add(sh,mul(down,13*u))),.55);
-  o+=hair('M'+pt(add(bel,mul(down,4*u)))+' Q'+pt(add(pecW,mul(down,8*u)))+' '+pt(add(sh,mul(down,13*u))),.55);
-  o+=hair('M'+pt(add(sh,mul(down,14*u)))+' L'+pt(add(hip,mul(up,4*u))),.4);
-  for(let k=0;k<3;k++){const c=add(sh,mul(down,(20+8*k)*u));o+=hair('M'+pt(add(c,mul(east,7*u)))+' Q'+pt(add(c,mul(down,2*u)))+' '+pt(add(c,mul(west,7*u))),.35)}
-  o+=hilite('M'+pt(add(shW,mul(down,3*u)))+' Q'+pt(add(mix(shW,wW,.5),mul(east,2*u)))+' '+pt(add(wW,mul(up,4*u))));
-
-  // ── belt and sword
-  o+=tube([add(aln,mul(east,5*u)),add(min,mul(west,5*u))],6*u);
-  const sHilt=add(ani,mul(down,5*u)),sTip=hat;
-  o+=tube([add(sHilt,mul(east,6*u)),add(sHilt,mul(west,6*u))],2.4*u);
-  const blade=shell(spline([sHilt,mix(sHilt,sTip,.5),sTip],8),profile([[0,2.6],[.8,2],[1,.3]],u));
-  o+='<path d="'+blade.d+'" fill="'+GL+'" fill-opacity=".55" stroke="'+G+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
-
-  // ── neck and head: Meissa marks the brow; helmet with a crest, beard below
-  o+=tube([mei,add(sh,mul(up,2*u))],9.5*u);
-  const hc=add(mei,mul(up,1.5*u)),Hp=(x,y)=>pt(add(add(hc,mul(east,x*u)),mul(down,y*u)));
-  const HC=(a1,b1,c1,d1,e1,g1)=>' C'+Hp(a1,b1)+' '+Hp(c1,d1)+' '+Hp(e1,g1),HQ=(a1,b1,c1,d1)=>' Q'+Hp(a1,b1)+' '+Hp(c1,d1);
-  // face
-  o+='<path d="M'+Hp(-9.5,-3)+HC(-10.5,8,-5,13,0,13.5)+HC(5,13,10.5,8,9.5,-3)+HC(8,-10,-8,-10,-9.5,-3)+' Z" fill="'+INK+'" fill-opacity=".75" stroke="'+G+'" stroke-width="'+sw(1.2)+'"/>';
-  // beard and mustache
-  o+='<path d="M'+Hp(-8.5,3)+HQ(-10.5,13,-3,17.5)+HQ(0,19,3,17.5)+HQ(10.5,13,8.5,3)+HQ(5.5,8.5,0,9.5)+HQ(-5.5,8.5,-8.5,3)+' Z" fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
-  for(let k=-2;k<=2;k++)o+=hair('M'+Hp(k*2.6,10.5+Math.abs(k)*.4)+HQ(k*3,14,k*2.2,16.5-Math.abs(k)*1.2),.45);
-  o+=hair('M'+Hp(-4.5,6.5)+HQ(-2,8.5,0,7.2)+HQ(2,8.5,4.5,6.5),.7);
-  // eyes and brows under the brim, nose
-  [-1,1].forEach(sd=>{o+='<ellipse cx="'+Hp(sd*4,2).replace(' ','" cy="')+'" rx="'+sw(1.5)+'" ry="'+sw(1)+'" transform="rotate('+f(Math.atan2(east.y,east.x)*180/Math.PI)+' '+Hp(sd*4,2)+')" fill="'+GL+'" fill-opacity=".9"/>';
-    o+=hair('M'+Hp(sd*6.5,.2)+HQ(sd*4,-1,sd*1.8,.4),.7)});
-  o+=hair('M'+Hp(0,1.5)+' L'+Hp(.8,5.5)+' L'+Hp(-.8,5.8),.6);
-  // helmet: dome, brim, cheek guards, nose guard, crest
-  o+=plate('M'+Hp(-11,-1)+HC(-12.5,-16,12.5,-16,11,-1)+HC(6,-2.5,-6,-2.5,-11,-1)+' Z',1.3);
-  o+=hilite('M'+Hp(-8,-5)+HQ(-2,-13,6,-11),.4);
-  o+=hair('M'+Hp(-10,-1.5)+HQ(0,-3.8,10,-1.5),.6);
-  [-1,1].forEach(sd=>o+=plate('M'+Hp(sd*10.5,-1)+HQ(sd*11,6,sd*7,8.5)+HQ(sd*6,4,sd*6.5,-1.2)+' Z',1));
-  o+='<path d="M'+Hp(-1.3,-1.5)+' L'+Hp(1.3,-1.5)+' L'+Hp(1.1,6)+' L'+Hp(-1.1,6)+' Z" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(.9)+'"/>';
-  o+='<path d="M'+Hp(-2,-14)+HQ(2,-24,18,-18)+HQ(14,-15,10,-13.5)+HQ(5,-14,2,-11.5)+' Z" fill="'+G+'" fill-opacity=".45" stroke="'+GL+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
-  for(let k=0;k<4;k++)o+=hilite('M'+Hp(1+k*2,-13-k*.8)+HQ(5+k*2.5,-19-k*.6,12+k*1.5,-17.5-k*.3),.35);
-
-  // ── raised arm with the club: Betelgeuse > mu > nu, club head on the chi stars
-  o+=tube([bet,mu],12.5*u)+tube([mu,nu],10.5*u)+knob(mu,5);
-  const top=mix(chi1,chi2,.5),clubDir=nrm(sub(top,nu)),clubEnd=add(top,mul(clubDir,7*u));
-  const clubC=spline([add(nu,mul(clubDir,-4*u)),mix(nu,c4,.5),mix(mix(nu,c4,.5),top,.5),clubEnd],8);
-  const club=shell(clubC,profile([[0,2.8],[.45,4.5],[.8,11],[1,8.5]],u));
-  o+=plate(club.d,1.3);
-  o+=ticks(club.R,clubC,14,24,3,-2.5,.4);
-  [chi1,chi2,c4].forEach(p=>o+='<circle cx="'+f(mix(p,top,.3).x)+'" cy="'+f(mix(p,top,.3).y)+'" r="'+sw(1.6)+'" fill="'+G+'" fill-opacity=".6"/>');
-  o+=knob(nu,4.5);
-
-  // ── shield arm and the lion pelt along the pi stars
-  const elbowW=add(mix(bel,tab,.5),mul(down,9*u));
-  const peltC=spline([add(o2,mul(up,5*u)),o2,pi1,pi2,tab,pi4,pi5,pi6,add(pi6,mul(down,4*u))],6);
-  const pelt=shell(peltC,profile([[0,4],[.15,8.5],[.5,10],[.85,8.5],[1,4]],u));
-  let outerIsL=0;{const i=Math.floor(peltC.length/2),q=sub(pelt.L[i],peltC[i]);outerIsL=(q.x*west.x+q.y*west.y)>0}
-  o+=plate(pelt.d,1.3);
-  o+=ticks(outerIsL?pelt.L:pelt.R,peltC,2,peltC.length-2,2,3.2,.5);
-  o+=hair('M'+peltC.slice(1,-1).map(pt).join(' L'),.3);
-  o+=tube([bel,elbowW],12.5*u)+tube([elbowW,tab],10.5*u)+knob(elbowW,5)+knob(tab,5);
-  return o+'</g>';
-},
-scorpius:function(sky){
-  // anchor stars (J2000 RA hours, Dec degrees)
-  const beta=sky(16.0906,-19.8055),pi=sky(15.9809,-26.1141),rho=sky(15.9481,-29.2141),
-        sigma=sky(16.3531,-25.5928),antares=sky(16.4901,-26.432),tau=sky(16.598,-28.216),eps=sky(16.8361,-34.2932),
-        mu=sky(16.8645,-38.0474),zeta=sky(16.9097,-42.3613),eta=sky(17.2026,-43.2392),theta=sky(17.622,-42.9978),
-        iota=sky(17.7931,-40.127),kappa=sky(17.7081,-39.03),lambda=sky(17.5601,-37.1038),upsilon=sky(17.5127,-37.2958);
-  const u=Math.hypot(antares.x-lambda.x,antares.y-lambda.y)/227;   // drawing unit (1 at the default map size)
-  const G=AG,GL=AGL,INK=AINK,FILL=AFILL,{sw,tube,plate}=kit(u);
-
-  // Body axis: the head faces west (toward Libra), from Antares through Alniyat.
-  const fwd=nrm(sub(sigma,antares)),side=perp(fwd);
-  const up=(side.x*(beta.x-sigma.x)+side.y*(beta.y-sigma.y))>0?side:mul(side,-1),dn=mul(up,-1);
-  const at=(a,s)=>add(add(sigma,mul(fwd,a*u)),mul(up,s*u));     // carapace frame: a forward, s toward the upper claw
-
-  let o=ADEFS+'<g class="zcl-art" opacity=".93">';
-
-  // ── legs: four pairs splayed from the carapace, front pair reaching forward, rear pair raking back
-  [[11,20,1.0],[3,24,.35],[-6,27,-.35],[-15,29,-1.0]].forEach(function(L){
-    [1,-1].forEach(function(sd){const out=sd>0?up:dn,a=L[0],sk=L[2];
-      const b=at(a,sd*L[1]*.8),
-            kn=add(add(b,mul(out,14*u)),mul(fwd,sk*8*u)),
-            an=add(add(kn,mul(out,10*u)),mul(fwd,sk*11*u+2*u)),
-            ft=add(add(an,mul(out,3*u)),mul(fwd,sk*7*u+3*u));
-      o+=tube([b,kn],4*u)+tube([kn,an],3*u)+tube([an,ft],2*u)});
-  });
-
-  // ── pedipalps, on the constellation's own lines: both arms run from the head to
-  // Dschubba, where the figure forks; one goes on to Acrab, the other to Fang and rho.
-  // The upper chela sits on Acrab pointing on past it; the lower spans Fang to rho.
-  const delta=sky(16.0056,-22.6217);
-  const hands=[];
-  const knob=(p,r)=>'<circle cx="'+f(p.x)+'" cy="'+f(p.y)+'" r="'+sw(r)+'" fill="'+INK+'" stroke="'+G+'" stroke-width="'+sw(1)+'"/>';
-  function arm(sd,joint,wrist,tip){
-    const base=at(14,sd*12),coxa=at(21,sd*17);
-    o+=tube([base,coxa],9.5*u)+tube([coxa,joint],8.5*u)+tube([joint,wrist],7.5*u)+knob(coxa,4.4);
-    hands.push({A:wrist,B:tip});
-  }
-  arm(1,delta,beta,add(beta,mul(nrm(sub(beta,delta)),30*u)));
-  arm(-1,delta,pi,rho);
-  o+=knob(delta,4.6);
-
-  // ── tail: five armored segments, then the telson
-  const tail=spline([eps,mu,zeta,eta,theta,iota,kappa,lambda],12);
-  const segSpans=[[0,1],[1,2],[2,3],[3,4],[4,6]],segW=[10,10.4,10.8,11.2,11.8];
-  segSpans.forEach(function(r,k){
-    const S=tail.filter(p=>p.i>=r[0]&&p.i<=r[1]);if(S.length<3)return;
-    const w=segW[k]*u,sh=shell(S,t=>w*(.7+.3*Math.pow(Math.sin(Math.PI*t),.55)));
-    o+=plate(sh.d);
-    // keel ridge and a highlight along the upper flank
-    o+='<path d="M'+S.map(pt).join(' L')+'" fill="none" stroke="'+G+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'" stroke-dasharray="'+sw(2.2)+' '+sw(1.6)+'"/>';
-    o+='<path d="M'+sh.L.slice(2,-2).map((p,i)=>pt(mix(p,S[i+2],.32))).join(' L')+'" fill="none" stroke="'+GL+'" stroke-opacity=".28" stroke-width="'+sw(.8)+'"/>';
-  });
-  // telson: one shell from inside the last segment, swelling into the vesicle at Shaula and
-  // tapering into the aculeus, which curls on in the direction the tail was already turning
-  const td=nrm(sub(lambda,kappa)),turn=Math.sign((kappa.x-iota.x)*(lambda.y-kappa.y)-(kappa.y-iota.y)*(lambda.x-kappa.x))||1;
-  const hook=mul(perp(td),turn);
-  const stingC=spline([mix(kappa,lambda,.55),lambda,add(add(lambda,mul(td,14*u)),mul(hook,2*u)),add(add(lambda,mul(td,22*u)),mul(hook,10*u)),add(add(lambda,mul(td,23*u)),mul(hook,21*u)),add(add(lambda,mul(td,17*u)),mul(hook,29*u))],10);
-  const stW=t=>t<.34?u*(5.2+8*Math.pow(Math.sin(Math.PI*t/.34),.7)):u*(5.2*Math.pow(1-(t-.34)/.66,.72)+.25);
-  const stSh=shell(stingC,stW);
-  o+=plate(stSh.d,1.3);
-  for(let i=2;i<=12;i+=2){const a=stSh.R[i],b=mix(a,stingC[i],.4);o+='<line x1="'+f(a.x)+'" y1="'+f(a.y)+'" x2="'+f(b.x)+'" y2="'+f(b.y)+'" stroke="'+G+'" stroke-opacity=".4" stroke-width="'+sw(.7)+'"/>'}
-  {const j=Math.round(.34*(stingC.length-1)),m=add(stingC[j],mul(tangents(stingC)[j],2*u));o+='<path d="M'+pt(stSh.L[j])+' Q'+pt(m)+' '+pt(stSh.R[j])+'" fill="none" stroke="'+G+'" stroke-opacity=".7" stroke-width="'+sw(1)+'"/>'}
-  const acu=stingC.filter((p,i)=>i/(stingC.length-1)>=.36),acuSh=shell(acu,t=>stW(.36+.64*t));
-  o+='<path d="'+acuSh.d+'" fill="'+G+'" fill-opacity=".5" stroke="'+GL+'" stroke-width="'+sw(1)+'" stroke-linejoin="round"/>';
-  {const tipP=stingC.filter((p,i)=>i/(stingC.length-1)>=.72),tipSh=shell(tipP,t=>stW(.72+.28*t));o+='<path d="'+tipSh.d+'" fill="'+GL+'" fill-opacity=".55" stroke="none"/>'}
-  o+='<path d="M'+stSh.L.slice(3,16).map((p,i)=>pt(mix(p,stingC[i+3],.3))).join(' L')+'" fill="none" stroke="'+GL+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'"/>';
-
-  // ── mesosoma: seven broad plates from behind the head to Larawag, Antares at its heart
-  const rear=at(-21,0),waist=mix(mix(antares,eps,.32),tau,.4);
-  const meso=spline([rear,waist,eps],16),mshell=shell(meso,t=>u*(11.5+21*Math.pow(Math.sin(Math.PI*(.2+.8*t)),.75)));
-  o+=plate(mshell.d,1.4);
-  for(let k=1;k<7;k++){const i=Math.round(k/7*(meso.length-1)),a=mshell.L[i],b=mshell.R[i],m=add(meso[i],mul(mshell.T[i],7*u));
-    o+='<path d="M'+pt(a)+' Q'+pt(m)+' '+pt(b)+'" fill="none" stroke="'+G+'" stroke-opacity=".6" stroke-width="'+sw(1)+'"/>'}
-  o+='<path d="M'+meso.map(pt).join(' L')+'" fill="none" stroke="'+G+'" stroke-opacity=".3" stroke-width="'+sw(.8)+'" stroke-dasharray="'+sw(2.5)+' '+sw(2)+'"/>';
-  for(let i=2;i<meso.length-2;i+=2){const a=mshell.R[i],b=mix(a,meso[i],.3);o+='<line x1="'+f(a.x)+'" y1="'+f(a.y)+'" x2="'+f(b.x)+'" y2="'+f(b.y)+'" stroke="'+G+'" stroke-opacity=".3" stroke-width="'+sw(.7)+'"/>'}
-
-  // ── carapace: a shield narrowing to the front, eyes on a mound at Alniyat
-  o+=plate('M'+pt(at(20,-15))+' Q'+pt(at(16,0))+' '+pt(at(20,15))+' Q'+pt(at(6,32))+' '+pt(at(-23,33))
-    +' Q'+pt(at(-27,0))+' '+pt(at(-23,-33))+' Q'+pt(at(6,-32))+' '+pt(at(20,-15))+' Z',1.5);
-  o+='<path d="M'+pt(at(15,0))+' L'+pt(at(-23,0))+'" stroke="'+G+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"/>';
-  o+='<path d="M'+pt(at(-9,-23))+' Q'+pt(at(-16,0))+' '+pt(at(-9,23))+'" fill="none" stroke="'+G+'" stroke-opacity=".45" stroke-width="'+sw(.9)+'"/>';
-  o+='<ellipse cx="'+f(sigma.x)+'" cy="'+f(sigma.y)+'" rx="'+sw(8)+'" ry="'+sw(6.5)+'" fill="'+INK+'" fill-opacity=".5" stroke="'+G+'" stroke-opacity=".7" stroke-width="'+sw(.9)+'"/>';
-  [1,-1].forEach(function(sd){const e=at(0,sd*4.6);
-    o+='<circle cx="'+f(e.x)+'" cy="'+f(e.y)+'" r="'+sw(2.6)+'" fill="'+INK+'" stroke="'+GL+'" stroke-width="'+sw(.9)+'"/>';
-    [[15,11],[13.5,13.5],[12,16]].forEach(q=>{const l=at(q[0],sd*q[1]);o+='<circle cx="'+f(l.x)+'" cy="'+f(l.y)+'" r="'+sw(1)+'" fill="'+GL+'" opacity=".8"/>'})});
-
-  // ── chelae. Local frame: x runs from the wrist (A) to where the fingers close (B), in
-  // units of that span; y is the outer side (away from the body). A heavy egg-shaped manus
-  // carries a bowed fixed finger in line with it and a movable finger hinged on the outside.
-  hands.forEach(function(h){
-    const A=h.A,B=h.B,q=1.22*Math.hypot(B.x-A.x,B.y-A.y),d=nrm(sub(B,A));
-    let n=perp(d);if(n.x*fwd.x+n.y*fwd.y<0)n=mul(n,-1);
-    const P=(x,y)=>pt(add(add(A,mul(d,x*q)),mul(n,y*q)));
-    let SOLID,HAIR;
-    const path=(segs,style)=>(style===SOLID?'<path d="'+segs+'" fill="'+INK+'" fill-opacity=".6" stroke="none"/>':'')+'<path d="'+segs+'" '+style+' stroke-linejoin="round"/>';
-    SOLID='fill="'+FILL+'" stroke="'+G+'" stroke-width="'+sw(1.4)+'"';HAIR='fill="none" stroke="'+G+'" stroke-opacity=".5" stroke-width="'+sw(.75)+'"';
-    // fixed finger: long, slender, bowing in toward the movable one at the tip
-    o+=path('M'+P(.42,-.16)+' C'+P(.68,-.22)+' '+P(.98,-.14)+' '+P(1.14,.1)+' C'+P(.98,.06)+' '+P(.68,.03)+' '+P(.42,.02)+' Z',SOLID);
-    for(let k=0;k<7;k++){const x=.5+k*.085,y=.025+k*.006;o+=path('M'+P(x,y)+' L'+P(x+.014,y+.028)+' L'+P(x+.028,y)+' Z','fill="'+GL+'" fill-opacity=".75" stroke="none"')}
-    o+=path('M'+P(.47,-.13)+' C'+P(.7,-.18)+' '+P(.96,-.11)+' '+P(1.1,.07),'fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"');
-    o+=path('M'+P(.5,-.07)+' C'+P(.72,-.1)+' '+P(.94,-.05)+' '+P(1.06,.06),HAIR);
-    // movable finger: a sickle hinged at the front of the manus, opened wide and curling back in
-    const H=add(add(A,mul(d,.43*q)),mul(n,.15*q)),fd=rot(d,.78*turnSign(d,n)),fnn=mul(perp(fd),turnSign(d,n));
-    const F=(x,y)=>pt(add(add(H,mul(fd,x*q)),mul(fnn,y*q)));
-    o+=path('M'+F(0,.095)+' C'+F(.3,.1)+' '+F(.58,-.02)+' '+F(.72,-.2)+' C'+F(.55,-.1)+' '+F(.28,-.1)+' '+F(0,-.09)+' Z',SOLID);
-    for(let k=0;k<7;k++){const x=.08+k*.075,y=-.09+k*.004;o+=path('M'+F(x,y)+' L'+F(x+.014,y-.028)+' L'+F(x+.028,y)+' Z','fill="'+GL+'" fill-opacity=".75" stroke="none"')}
-    o+=path('M'+F(.03,.07)+' C'+F(.3,.07)+' '+F(.55,-.04)+' '+F(.68,-.17),'fill="none" stroke="'+GL+'" stroke-opacity=".35" stroke-width="'+sw(.8)+'"');
-    o+=path('M'+F(.05,.0)+' C'+F(.3,.0)+' '+F(.52,-.07)+' '+F(.64,-.15),HAIR);
-    // manus, drawn last so it sits over both finger roots
-    o+=path('M'+P(-.2,-.04)+' C'+P(-.22,-.24)+' '+P(.02,-.34)+' '+P(.22,-.32)+' C'+P(.38,-.3)+' '+P(.48,-.19)+' '+P(.48,-.08)
-      +' L'+P(.48,.11)+' C'+P(.45,.24)+' '+P(.3,.33)+' '+P(.14,.32)+' C'+P(-.02,.31)+' '+P(-.19,.19)+' '+P(-.2,.04)+' Z',SOLID);
-    o+=knob(H,.055*q/u);
-    // engraving: hatch on the shadow side, one highlight along the crown, a seam at the wrist
-    for(let k=1;k<=4;k++){const y=-.27+k*.045;o+=path('M'+P(-.02,y+.02)+' C'+P(.14,y-.03)+' '+P(.3,y-.02)+' '+P(.43,y+.07),HAIR)}
-    o+=path('M'+P(-.06,.13)+' C'+P(.07,.25)+' '+P(.26,.26)+' '+P(.4,.17),'fill="none" stroke="'+GL+'" stroke-opacity=".4" stroke-width="'+sw(.9)+'"');
-    o+=path('M'+P(-.04,-.26)+' C'+P(-.1,-.1)+' '+P(-.1,.1)+' '+P(-.04,.26),HAIR);
-    o+=path('M'+P(-.12,.02)+' C'+P(.05,-.02)+' '+P(.3,-.04)+' '+P(.47,.0),'fill="none" stroke="'+G+'" stroke-opacity=".55" stroke-width="'+sw(1)+'"');
-    o+=path('M'+P(-.14,-.12)+' C'+P(-.02,-.3)+' '+P(.2,-.33)+' '+P(.4,-.24)+' C'+P(.22,-.27)+' '+P(.02,-.24)+' '+P(-.14,-.12)+' Z','fill="'+INK+'" fill-opacity=".35" stroke="none"');
-    o+='<ellipse cx="'+P(.12,.17).replace(' ','" cy="')+'" rx="'+sw(.1*q/u)+'" ry="'+sw(.04*q/u)+'" fill="'+GL+'" fill-opacity=".18" transform="rotate('+f(Math.atan2(d.y,d.x)*180/Math.PI)+' '+P(.12,.17)+')"/>';
-  });
-  // sign that makes perp(d) point toward n (the outside), so the movable finger opens outward
-  function turnSign(d,n){const q=perp(d);return (q.x*n.x+q.y*n.y)>=0?1:-1}
-  return o+'</g>';
-}
-};
 
 // ════════════════════════  5 · DETAIL  ════════════════════════
 const ICON_LOC='<svg viewBox="0 0 16 16" fill="none"><path d="M8 1.5 C5.2 1.5 3 3.7 3 6.5 C3 10 8 14.5 8 14.5 C8 14.5 13 10 13 6.5 C13 3.7 10.8 1.5 8 1.5 Z" stroke="#CBA85A" stroke-width="1.3" fill="rgba(203,168,90,0.10)"/><circle cx="8" cy="6.4" r="1.8" fill="#CBA85A"/></svg>';
@@ -702,13 +436,10 @@ function renderList(){
 
 function drawMap(){
   const d=byKey[selKey],map=$('zcl-c-map');
-  // extra margin for figures that have artwork, whether or not it's showing, so
-  // toggling the illustration never moves the stars
-  map.innerHTML=buildMap(d,520,420,ART[d.key]?76:52);
+  map.innerHTML=buildMap(d,520,420,52);
   lastTilt=orientNote+'|'+lastA.toFixed(3);
   map.classList.toggle('labels-hidden',!labelsVisible);
   $('zcl-c-orient').textContent=orientNote;
-  $('zcl-c-artopt').hidden=!ART[d.key];
 }
 function renderSelection(){
   const d=byKey[selKey];
@@ -740,8 +471,8 @@ function renderSelection(){
   +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
   document.querySelectorAll('.zcl-c-fl').forEach(el=>el.innerHTML=fl)})();
 
-try{const o=JSON.parse(localStorage.getItem('dsa-con-opts')||'{}');naturalSky=!!o.natural;artOn=!!o.art;labelsVisible=o.names!==false}catch(e){}
-$('zcl-c-names').checked=labelsVisible;$('zcl-c-natural').checked=naturalSky;$('zcl-c-art').checked=artOn;
+try{const o=JSON.parse(localStorage.getItem('dsa-con-opts')||'{}');naturalSky=!!o.natural;labelsVisible=o.names!==false}catch(e){}
+$('zcl-c-names').checked=labelsVisible;$('zcl-c-natural').checked=naturalSky;
 renderList();
 // The sky turns about a degree every four minutes. Redraw only when the tilt or
 // its caption actually changed, and catch up as soon as a hidden tab comes back.
@@ -773,10 +504,9 @@ document.addEventListener('visibilitychange',function(){if(document.visibilitySt
 // ── star names toggle ────────────────────────────────────────────────
 $('zcl-c-names').addEventListener('change',e=>{labelsVisible=e.target.checked;saveOpts();drawMap()});
 
-// ── map options: natural sky, illustrated figure ─────────────────────
-function saveOpts(){try{localStorage.setItem('dsa-con-opts',JSON.stringify({names:labelsVisible,natural:naturalSky,art:artOn}))}catch(e){}}
+// ── map options: natural sky ─────────────────────
+function saveOpts(){try{localStorage.setItem('dsa-con-opts',JSON.stringify({names:labelsVisible,natural:naturalSky}))}catch(e){}}
 $('zcl-c-natural').addEventListener('change',e=>{naturalSky=e.target.checked;saveOpts();drawMap()});
-$('zcl-c-art').addEventListener('change',e=>{artOn=e.target.checked;saveOpts();drawMap()});
 
 })();
 </script>

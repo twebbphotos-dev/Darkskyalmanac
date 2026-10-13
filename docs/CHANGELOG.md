@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.71 / zion-sky-v337 — 2026-10-13
+- Constellations: removed the Orion and Scorpius illustrations and the
+  Illustration toggle. Every figure is now just the IAU / Sky & Telescope
+  lines. Why: keep it simple and accurate; the procedural drawings never
+  matched the quality of the rest of the page.
+
 ## v3.70 / zion-sky-v336 — 2026-10-13
 - Constellations: Scorpius now follows the IAU / Sky & Telescope lines
   (the one on the IAU chart), plus the short Fang–rho branch. Fuyue and
