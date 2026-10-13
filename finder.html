@@ -251,15 +251,16 @@ body.sf-stage-active .zcl-sf-inner{padding:0}
   transition:all .15s;font-family:inherit}
 .zcl-sf-toolstoggle:hover{color:#CBA85A;border-color:#CBA85A}
 .zcl-sf-bar:not(.collapsed) .zcl-sf-toolstoggle{background:rgba(203,168,90,.14);color:#E4D9B8;border-color:rgba(203,168,90,.6)}
-/* button row — five buttons in row 1 (sky overlays) and four in row 2 (tools);
-   flex:1 distributes width and the labels are short enough to read. */
+/* two rows of three: sky overlays, then Milky Way and camera tools.
+   flex:1 gives every button the same width. */
 .zcl-sf-btnrow{display:flex;align-items:center;justify-content:space-between;gap:3px}
 .zcl-sf-btnrow button{flex:1;font-family:inherit;font-size:9.5px;letter-spacing:.04em;
   font-weight:600;text-transform:uppercase;border-radius:5px;
-  padding:5px 2px;cursor:pointer;pointer-events:all;white-space:nowrap;
+  padding:5px 2px;line-height:1.3;cursor:pointer;pointer-events:all;white-space:nowrap;
   background:none;transition:all .15s;min-width:0;
   overflow:hidden;text-overflow:ellipsis}
 .zcl-sf-boostbtn{color:#8A6E32;border:1px solid rgba(203,168,90,.3)}
+.zcl-sf-bulb{width:1.1em;height:1.1em;vertical-align:-.1em;display:inline-block;margin:-2px 0}
 .zcl-sf-boostbtn.on{color:#FFE8A0;border-color:rgba(255,220,100,.7);
   background:rgba(255,200,50,.15);text-shadow:0 0 8px rgba(255,200,50,.6)}
 .zcl-sf-moonbtn{color:#8A6E32;border:1px solid rgba(203,168,90,.3)}
@@ -667,12 +668,10 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
             <button class="zcl-sf-starsbtn on" id="zcl-sf-starsbtn" aria-label="Toggle star markers" aria-pressed="true">&#10022; Stars</button>
             <button class="zcl-sf-messbtn on" id="zcl-sf-messbtn" aria-label="Toggle deep-sky object markers" aria-pressed="true">&#9711; Objects</button>
             <button class="zcl-sf-moonbtn" id="zcl-sf-moonbtn" aria-label="Toggle moon overlay" aria-pressed="false">&#9790; Moon</button>
-            <button class="zcl-sf-sunbtn" id="zcl-sf-sunbtn" aria-label="Toggle sun overlay" aria-pressed="false">&#9788; Sun</button>
-            <button class="zcl-sf-mwbtn" id="zcl-sf-mwbtn" aria-label="Toggle Milky Way band" aria-pressed="false">&#10042; MW</button>
           </div>
           <div class="zcl-sf-btnrow">
-            <button class="zcl-sf-boostbtn" id="zcl-sf-boostbtn" aria-label="Toggle low-light camera boost" aria-pressed="false">&#9728; Boost</button>
-            <button class="zcl-sf-gridbtn" id="zcl-sf-gridbtn" aria-label="Toggle alt-azimuth grid" aria-pressed="false">&#8862; Grid</button>
+            <button class="zcl-sf-mwbtn" id="zcl-sf-mwbtn" aria-label="Toggle Milky Way band" aria-pressed="false">&#10042; Milky Way</button>
+            <button class="zcl-sf-boostbtn" id="zcl-sf-boostbtn" aria-label="Toggle low-light camera boost" aria-pressed="false"><svg class="zcl-sf-bulb" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5.6 10.4C4.4 9.6 3.6 8.2 3.6 6.6a4.4 4.4 0 0 1 8.8 0c0 1.6-.8 3-2 3.8v1.4H5.6z"/><path d="M6 13.6h4"/></svg> Boost</button>
             <button class="zcl-sf-lensbtn" id="zcl-sf-lensbtn" aria-label="Cycle camera lens framing guides">&#9974; Lens</button>
           </div>
         </div>
@@ -2985,11 +2984,9 @@ function applyLensMode(){
 let _panelEverOpened = false;
 
 $('zcl-sf-moonbtn').addEventListener('click', function(){ setMoonOverlay(!moonOn) });
-$('zcl-sf-sunbtn').addEventListener('click', function(){ setSunOverlay(!sunOn) });
 $('zcl-sf-mwbtn').addEventListener('click',   function(){ setMwOverlay(!mwOn) });
 $('zcl-sf-starsbtn').addEventListener('click',function(){ setStarsOverlay(!arOn) });
 $('zcl-sf-messbtn').addEventListener('click', function(){ setMessOverlay(!messOn) });
-$('zcl-sf-gridbtn').addEventListener('click', function(){ setGridOverlay(!gridOn) });
 $('zcl-sf-lensbtn').addEventListener('click', cycleLensMode);
 
 // One slider, drives every active overlay (moon, Milky Way, and the bright

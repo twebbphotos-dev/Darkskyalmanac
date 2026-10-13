@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.76 / zion-sky-v343 — 2026-10-13
+- Sky Finder: overlay buttons regrouped as two rows of three (Stars,
+  Objects, Moon / Milky Way, Boost, Lens). Removed Sun, which has its own
+  page, and Grid. "MW" now reads "Milky Way"; Boost uses a lightbulb icon.
+  Why: eight cramped buttons with abbreviations were hard to read on a phone.
+
 ## v3.75 / zion-sky-v342 — 2026-10-13
 - Sky Finder: the camera feed no longer takes taps, so iOS stops drawing its
   play/pause button over it (v3.74 only hid the autoplay variant; a tap
