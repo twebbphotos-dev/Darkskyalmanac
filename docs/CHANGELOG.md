@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.72 / zion-sky-v338 — 2026-10-13
+- Constellations: Scorpius stinger completed as on the IAU chart: Shaula now
+  joins Lesath and Fuyue (G Scorpii). The tail label Girtab moved to kappa
+  Scorpii where it belongs; iota-1 is unnamed. Star ID figures regenerated.
+  Why: the two stinger stars sat detached from the figure, and the old
+  labels put Girtab on the wrong star and used Mula, a non-IAU name.
+
 ## v3.71 / zion-sky-v337 — 2026-10-13
 - Constellations: removed the Orion and Scorpius illustrations and the
   Illustration toggle. Every figure is now just the IAU / Sky & Telescope

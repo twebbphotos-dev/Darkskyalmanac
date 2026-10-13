@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v3.71, service-worker cache `zion-sky-v337`.**
-Next release: v3.72, cache `zion-sky-v338`.
+**Current release: v3.72, service-worker cache `zion-sky-v338`.**
+Next release: v3.73, cache `zion-sky-v339`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -126,7 +126,7 @@ node tests/solver/regress.mjs                     # compare with tests/solver/ba
 
 ## Gotchas learned the hard way
 
-- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* on the Constellations page follow the IAU / S&T lines (Scorpius adds the short Fang–rho branch), except the simplified Lyra. Star ID's `solver/solver/figures.js` is generated from the page's data by `tools/build-figures.py`; run it after changing any figure.
+- **Constellation lines** come from `cel_lines.json` (d3-celestial, IAU/Sky & Telescope), with vertices mapped to app stars by angular distance. Constellation *figures* on the Constellations page follow the IAU / S&T lines (Scorpius adds the Fang–rho branch and the Shaula–Lesath / Shaula–Fuyue stinger lines), except the simplified Lyra. Star ID's `solver/solver/figures.js` is generated from the page's data by `tools/build-figures.py`; run it after changing any figure.
 - **Check sky drawings with the app's own projection**: `buildMap` stereographic, `_project` with `{x:-p.xi, y:-p.eta}`. Flat test renders mislead.
 - **Map pins:**
   - Anchor to fixed features (interchanges, reservoir shapes), never town-label boxes.
