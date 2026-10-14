@@ -47,6 +47,17 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 .zcl-daylab{font-size:15px;font-weight:600;color:#E6CC85;min-width:150px;text-align:center}
 .zcl-card{background:#0d0a18;border:1px solid rgba(203,168,90,.30);border-radius:10px;padding:16px 16px 15px;margin-bottom:16px}
 .zcl-cardtit{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#9A875C;margin-bottom:10px;text-align:center}
+.zcl-sat{position:relative;width:100%;aspect-ratio:1/1;max-width:520px;margin:0 auto;overflow:hidden;border-radius:8px;background:#06050c;border:1px solid rgba(203,168,90,.22)}
+.zcl-sat-stage{position:absolute;left:0;top:0;width:768px;height:768px;transform-origin:0 0}
+.zcl-sat-stage img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-select:none;pointer-events:none}
+.zcl-sat-frame{position:absolute;inset:0;visibility:hidden}
+.zcl-sat-frame.on{visibility:visible}
+.zcl-sat-ref{position:absolute;inset:0;opacity:.55}
+.zcl-sat-pin{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #E6CC85;box-shadow:0 0 0 2px rgba(13,10,24,.7)}
+.zcl-sat-bar{display:flex;align-items:center;gap:10px;max-width:520px;margin:10px auto 0}
+.zcl-sat-play{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.45);background:rgba(203,168,90,.08);color:#E6CC85;font-size:13px;cursor:pointer;font-family:inherit}
+.zcl-sat-range{flex:1;accent-color:#CBA85A}
+.zcl-sat-time{flex:0 0 auto;min-width:64px;text-align:right;font-size:12px;color:#E6CC85;letter-spacing:.04em}
 .zcl-window{font-size:12.5px;color:#C9BD97;margin-bottom:9px;text-align:center}
 .zcl-window b{color:#E6CC85;font-weight:600}
 .zcl-leg{display:flex;flex-wrap:wrap;gap:5px 14px;justify-content:center;margin-top:7px;font-size:10.5px;color:#9A8E70}
@@ -118,6 +129,17 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
     <div id="zcl-blend"><div class="zcl-err">Loading forecast&hellip;</div></div>
   </div>
 
+  <div class="zcl-card" id="zcl-sat-card" hidden>
+    <div class="zcl-cardtit">Satellite &middot; Clouds Right Now</div>
+    <div class="zcl-sat" id="zcl-sat"><div class="zcl-sat-stage" id="zcl-sat-stage"></div><div class="zcl-sat-pin"></div></div>
+    <div class="zcl-sat-bar">
+      <button class="zcl-sat-play" id="zcl-sat-play" type="button" aria-label="Pause">&#10074;&#10074;</button>
+      <input class="zcl-sat-range" id="zcl-sat-range" type="range" min="0" max="11" value="11" aria-label="Frame time">
+      <span class="zcl-sat-time" id="zcl-sat-time"></span>
+    </div>
+    <div class="zcl-note" style="margin-top:10px;text-align:center">Last two hours of infrared imagery from the <span id="zcl-sat-name">GOES</span> weather satellite, via NASA GIBS. Brighter means colder, higher cloud tops; it works day and night. The gold ring is your location.</div>
+  </div>
+
   <div class="zcl-cardtit" style="margin:2px 0 6px">By Model &middot; Unblended</div>
   <div class="zcl-leg" style="margin:0 0 10px"><span><i style="background:#6E7686"></i>Low</span><span><i style="background:#98876E"></i>Mid</span><span><i style="background:#C9BD97;opacity:.8"></i>High cirrus</span><span><i style="background:#5F7A5F;opacity:.55"></i>Clear</span></div>
   <div class="zcl-models" id="zcl-models"></div>
@@ -130,6 +152,83 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 </div>
 </div>
 
+<script>
+// Live satellite loop: GOES Band 13 (10.3 um "clean" infrared) tiles from NASA
+// GIBS, 10-minute steps, the last two hours, centred on the saved location.
+// Covers the Americas only (GOES-West / GOES-East); elsewhere the card stays
+// hidden. Needs a connection; if no frame loads, the card stays hidden too.
+(function(){
+  const $=id=>document.getElementById(id);
+  let lat=37.1986,lng=-112.9869;
+  try{const s=JSON.parse(localStorage.getItem('dsa-location')||'null');if(s&&isFinite(+s.lat)&&isFinite(+s.lng)){lat=+s.lat;lng=+s.lng}}catch(e){}
+  if(!(lng<=-30&&lng>=-180&&Math.abs(lat)<=70)||!navigator.onLine) return;
+  const west=lng<-100, SAT=west?'GOES-West':'GOES-East';
+  $('zcl-sat-name').textContent=west?'GOES-West':'GOES-East';
+  const BASE='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';
+  const Z=6, N=12, STEP=10*60000;
+  const W=256*Math.pow(2,Z);
+  const px=(lng+180)/360*W, la=lat*Math.PI/180;
+  const py=(1-Math.log(Math.tan(la)+1/Math.cos(la))/Math.PI)/2*W;
+  const x0=px-384, y0=py-384;
+  const tiles=[];
+  for(let ty=Math.floor(y0/256);ty<=Math.floor((y0+767)/256);ty++)
+    for(let tx=Math.floor(x0/256);tx<=Math.floor((x0+767)/256);tx++) tiles.push([tx,ty]);
+  const iso=d=>d.toISOString().slice(0,16)+':00Z';
+  // GIBS has published this product under a few names and tile levels; the
+  // first variant that returns imagery is used.
+  const VARIANTS=[
+    ['best/'+SAT+'_ABI_Band13_Clean_Infrared','GoogleMapsCompatible_Level7','png'],
+    ['best/'+SAT+'_ABI_Band13_Clean_Infrared','GoogleMapsCompatible_Level6','png'],
+    ['nrt/'+SAT+'_ABI_Band13_Clean_Infrared_v0_NRT_ZENJPEG','GoogleMapsCompatible_Level7','jpg'],
+    ['nrt/'+SAT+'_ABI_Band13_Clean_Infrared_v0_NRT_ZENJPEG','GoogleMapsCompatible_Level7','png'],
+  ];
+  let V=VARIANTS[0];
+  const wrap=tx=>((tx%(1<<Z))+(1<<Z))%(1<<Z);
+  const tileUrl=(t,tx,ty)=>BASE.replace('best/','')+V[0]+'/default/'+t+'/'+V[1]+'/'+Z+'/'+ty+'/'+wrap(tx)+'.'+V[2];
+  const stage=$('zcl-sat-stage'), box=$('zcl-sat');
+  function fit(){ stage.style.transform='scale('+(box.clientWidth/768)+')' }
+  // Newest frame with imagery: GIBS lags real time, so step back 10 minutes
+  // at a time from "now" until the tile under the location loads.
+  const ct=[Math.floor(px/256),Math.floor(py/256)];
+  function probe(t){ return new Promise(res=>{ const im=new Image(); const k=setTimeout(()=>res(false),8000);
+    im.onload=()=>{clearTimeout(k);res(im.naturalWidth>0)}; im.onerror=()=>{clearTimeout(k);res(false)}; im.src=tileUrl(t,ct[0],ct[1]) }) }
+  (async function(){
+    const start=Math.floor(Date.now()/STEP)*STEP-STEP;
+    let end=null;
+    for(const v of VARIANTS){ V=v;
+      for(let i=0;i<12;i++){ const d=new Date(start-i*STEP); if(await probe(iso(d))){ end=d; break } }
+      if(end) break;
+    }
+    if(!end) return;
+    const times=[]; for(let i=N-1;i>=0;i--) times.push(new Date(end-i*STEP));
+    const frames=times.map(()=>{const f=document.createElement('div');f.className='zcl-sat-frame';stage.appendChild(f);return f});
+    times.forEach((d,i)=>tiles.forEach(([tx,ty])=>{
+      const im=new Image(); im.alt=''; im.decoding='async';
+      im.style.left=(tx*256-x0)+'px'; im.style.top=(ty*256-y0)+'px';
+      im.onerror=()=>{im.style.visibility='hidden'};
+      im.src=tileUrl(iso(d),tx,ty); frames[i].appendChild(im);
+    }));
+    // Coastlines and borders on top, so the clouds have a place to sit.
+    const ref=document.createElement('div'); ref.className='zcl-sat-ref'; stage.appendChild(ref);
+    tiles.forEach(([tx,ty])=>{const im=new Image(); im.alt='';
+      im.style.left=(tx*256-x0)+'px'; im.style.top=(ty*256-y0)+'px';
+      im.onerror=()=>{im.remove()};
+      im.src=BASE+'Reference_Features_15m/default/GoogleMapsCompatible_Level13/'+Z+'/'+ty+'/'+wrap(tx)+'.png'; ref.appendChild(im)});
+    $('zcl-sat-card').hidden=false; fit(); window.addEventListener('resize',fit);
+    let cur=N-1, playing=true, timer=null;
+    const range=$('zcl-sat-range'), btn=$('zcl-sat-play'), lab=$('zcl-sat-time');
+    function show(i){ frames[cur].classList.remove('on'); cur=i; frames[cur].classList.add('on'); range.value=cur;
+      lab.textContent=(window.ZCLTZ&&ZCLTZ.fmtTime)?ZCLTZ.fmtTime(times[cur]):times[cur].toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) }
+    function tick(){ show((cur+1)%N); timer=setTimeout(tick, cur===N-1?1600:450) }
+    function setPlay(p){ playing=p; btn.innerHTML=p?'&#10074;&#10074;':'&#9654;'; btn.setAttribute('aria-label',p?'Pause':'Play');
+      clearTimeout(timer); if(p) timer=setTimeout(tick,450) }
+    show(N-1); setTimeout(()=>setPlay(true),1200);
+    btn.addEventListener('click',()=>setPlay(!playing));
+    range.addEventListener('input',()=>{ setPlay(false); show(+range.value) });
+    document.addEventListener('visibilitychange',()=>{ if(document.hidden) clearTimeout(timer); else if(playing) setPlay(true) });
+  })();
+})();
+</script>
 <script src="zcl-tz.js"></script>
 <script src="suncalc.min.js"></script>
 <script>

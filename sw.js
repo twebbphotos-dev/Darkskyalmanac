@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v346';
+const CACHE = 'zion-sky-v347';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -269,6 +269,9 @@ self.addEventListener('fetch', function(e){
   const req = e.request;
   if(req.method !== 'GET') return;
   const url = req.url;
+  // Live satellite tiles (NASA GIBS): straight to the network, never stored.
+  // A two-hour loop is a few hundred tiles that are stale within the hour.
+  if(url.indexOf('earthdata.nasa.gov') !== -1) return;
   // The 3D spacecraft viewers: models and three.js bundles (about 20 MB) are
   // only kept if the user chose "Download everything". If they did: offline
   // we serve the saved copy; online we take the network (so an updated model
