@@ -195,6 +195,8 @@ async function loadFrame(file, forceFocal = false) {
 
   const when = exifDate(meta) || new Date();
   state.when = when;
+  state.whenTrusted = !!exifDate(meta);     // a real capture time, not "now"
+
   el.when.value = toLocalInput(when);
 
   if (meta.gps && el.lat.value === '') {
@@ -498,6 +500,45 @@ const esc = (s) => String(s).replace(/[&<>"]/g, (c) =>
 // opts (export only): src = full-resolution image, f = output pixels per
 // solve pixel, shown = width the labels are sized for, nStars / nDso = how
 // many to name. All drawing stays in solve-pixel coordinates; g.scale maps it.
+// Constellation figures, minus what is below the horizon. With a location and
+// a real capture time (EXIF, or one typed in) that is the true horizon at that
+// moment. With a location but no usable time, only the sky that never rises
+// there is dropped. With no location, everything stays.
+const DEG = Math.PI / 180;
+function skyFigures(m) {
+  const figs = m.figures || [];
+  const lat = Number(el.lat.value), lon = Number(el.lon.value);
+  if (el.lat.value === '' || el.lon.value === '' || !Number.isFinite(lat) || !Number.isFinite(lon)) return figs;
+  const when = el.when.value ? fromLocalInput(el.when.value) : state.when;
+  // A photo can't show sky below the horizon: if the frame centre is below it
+  // at this time, the time is wrong (an export date, a camera clock), so use
+  // only the never-rises rule.
+  const timed = state.whenTrusted && when instanceof Date && !isNaN(when)
+    && altAz(m.ra, m.dec, lat, lon, when).alt > -2;
+  const up = timed
+    ? (ra, dec) => altAz(ra * DEG, dec * DEG, lat, lon, when).alt > 0
+    : (ra, dec) => (lat >= 0 ? dec > lat - 90 : dec < lat + 90);
+  const out = [];
+  for (const f of figs) {
+    if (!f.segs.length || f.segs[0].length < 8) { out.push(f); continue; }   // older worker: no sky positions
+    const segs = f.segs.filter((sg) => up(sg[4], sg[5]) || up(sg[6], sg[7]));
+    if (!segs.length) continue;
+    const pts = (f.pts || []).filter((p) => up(p[2], p[3]));
+    const lab = pts.length >= 2
+      ? [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length]
+      : null;
+    out.push({ n: f.n, segs, lab });
+  }
+  return out;
+}
+
+// Constellations whose names claim label space before stars and objects, so
+// a crowded Milky Way field still says "Sagittarius". The rest go last.
+const MAJOR_CON = new Set(['Andromeda', 'Aquarius', 'Aquila', 'Aries', 'Auriga', 'Boötes', 'Bootes',
+  'Cancer', 'Canis Major', 'Capricornus', 'Cassiopeia', 'Cepheus', 'Cygnus', 'Draco', 'Gemini',
+  'Hercules', 'Leo', 'Libra', 'Lyra', 'Ophiuchus', 'Orion', 'Pegasus', 'Perseus', 'Pisces',
+  'Sagittarius', 'Scorpius', 'Taurus', 'Ursa Major', 'Ursa Minor', 'Virgo']);
+
 function drawOverlay(canvas, m, show, opts = {}) {
   if (!state.bitmap) return;
   const w = state.width, h = state.height, f = opts.f || 1;
@@ -509,12 +550,13 @@ function drawOverlay(canvas, m, show, opts = {}) {
   const lineK = Math.max(1 / f, w / (opts.shown || canvas.clientWidth || Math.min(380, w)));
 
   // Constellation figures first, faint, so everything else sits on top.
-  if (show.lines && m.figures) {
+  const figs = skyFigures(m);
+  if (show.lines && figs.length) {
     g.strokeStyle = 'rgba(203,168,90,.3)';
     g.lineWidth = 1.5 * lineK;
     g.lineCap = 'round';
     g.beginPath();
-    for (const fg of m.figures) for (const s of fg.segs) { g.moveTo(s[0], s[1]); g.lineTo(s[2], s[3]); }
+    for (const fg of figs) for (const s of fg.segs) { g.moveTo(s[0], s[1]); g.lineTo(s[2], s[3]); }
     g.stroke();
   }
 
@@ -618,6 +660,33 @@ function drawOverlay(canvas, m, show, opts = {}) {
     return false;
   };
 
+  // Constellation names: quiet spaced capitals, no plate, only where clear.
+  // Tries the centre of the figure's visible stars, then above and below it.
+  const conNames = (want) => {
+    if (!(show.labels && show.lines && figs.length)) return;
+    const font = g.font;
+    g.font = `600 ${11 * k}px Montserrat, -apple-system, system-ui, sans-serif`;
+    if ('letterSpacing' in g) g.letterSpacing = `${2 * k}px`;
+    g.fillStyle = 'rgba(230,204,133,.62)';
+    g.textAlign = 'center';
+    for (const fg of figs) {
+      if (!fg.lab || !want(fg)) continue;
+      const t = fg.n.toUpperCase(), tw = g.measureText(t).width + 6 * k, th = 15 * k;
+      for (const dy of [0, -24 * k, 24 * k, -48 * k, 48 * k]) {
+        const x = fg.lab[0] - tw / 2, y = fg.lab[1] + dy - th / 2;
+        if (!fits(x, y, tw, th)) continue;
+        g.fillText(t, fg.lab[0], fg.lab[1] + dy);
+        taken.push([x, y, x + tw, y + th]);
+        break;
+      }
+    }
+    if ('letterSpacing' in g) g.letterSpacing = '0px';
+    g.textAlign = 'start';
+    g.font = font;
+  };
+  // The well-known constellations claim their space before any star or object.
+  conNames((fg) => MAJOR_CON.has(fg.n));
+
   // The brightness slider trims stars, faintest first.
   const stars = (m.stars || []).filter((s) => s.mag <= show.mag);
   if (show.stars) {
@@ -655,26 +724,8 @@ function drawOverlay(canvas, m, show, opts = {}) {
       n++;
     }
   }
-  // Constellation names: quiet spaced capitals, no plate, only where clear.
-  if (show.labels && show.lines && m.figures) {
-    g.font = `600 ${11 * k}px Montserrat, -apple-system, system-ui, sans-serif`;
-    if ('letterSpacing' in g) g.letterSpacing = `${2 * k}px`;
-    g.fillStyle = 'rgba(230,204,133,.62)';
-    g.textAlign = 'center';
-    for (const fg of m.figures) {
-      if (!fg.lab) continue;
-      const t = fg.n.toUpperCase(), tw = g.measureText(t).width + 6 * k, th = 15 * k;
-      for (const dy of [0, -24 * k, 24 * k]) {
-        const x = fg.lab[0] - tw / 2, y = fg.lab[1] + dy - th / 2;
-        if (!fits(x, y, tw, th)) continue;
-        g.fillText(t, fg.lab[0], fg.lab[1] + dy);
-        taken.push([x, y, x + tw, y + th]);
-        break;
-      }
-    }
-    if ('letterSpacing' in g) g.letterSpacing = '0px';
-    g.textAlign = 'start';
-  }
+  // Faint constellation names fill whatever room is left.
+  conNames((fg) => !MAJOR_CON.has(fg.n));
 
   if (mark) {
     const { bx, by, bw, bh, pad, gap, f1, f2, star, t1, t2, q } = mark, r = 7 * q;
@@ -900,10 +951,10 @@ document.getElementById('copy-vals').addEventListener('click', async (e) => {
 });
 el.lat.addEventListener('change', () => { savePrefs(); refresh(); });
 el.lon.addEventListener('change', () => { savePrefs(); refresh(); });
-el.when.addEventListener('change', refresh);
+el.when.addEventListener('change', () => { state.whenTrusted = true; refresh(); });
 
 function refresh() {
-  if (state.result && state.result.ok) renderText(state.result);
+  if (state.result && state.result.ok) { renderText(state.result); drawOverlay(el.view, state.result, state.show); }
 }
 
 el.locate.addEventListener('click', () => {

@@ -44,6 +44,9 @@ function rankObjects(list) {
  * Constellation figures that cross the frame, as pixel segments. Endpoints
  * more than 80 deg off-axis are skipped (gnomonic blows up); the canvas clips
  * the rest. The label sits at the mean of the figure's vertices in frame.
+ * Each segment also carries its endpoints' RA/Dec (deg), and `pts` lists the
+ * in-frame vertices as [x, y, ra, dec], so the page can drop whatever sits
+ * below the horizon for the photo's time and place.
  */
 function figuresInFrame(sol, cam) {
   const D2R = Math.PI / 180, lim = Math.cos(80 * D2R), b = sol.boresight, R = sol.R;
@@ -64,14 +67,16 @@ function figuresInFrame(sol, cam) {
       if (!p || !q) continue;
       if (Math.max(p[0], q[0]) < 0 || Math.min(p[0], q[0]) > W
         || Math.max(p[1], q[1]) < 0 || Math.min(p[1], q[1]) > H) continue;
-      segs.push([p[0], p[1], q[0], q[1]]);
+      segs.push([p[0], p[1], q[0], q[1], f.v[i][0], f.v[i][1], f.v[j][0], f.v[j][1]]);
     }
     if (!segs.length) continue;
-    const inside = pix.filter((p) => p && p[0] >= 0 && p[1] >= 0 && p[0] <= W && p[1] <= H);
+    const pts = [];
+    pix.forEach((p, i) => { if (p && p[0] >= 0 && p[1] >= 0 && p[0] <= W && p[1] <= H) pts.push([p[0], p[1], f.v[i][0], f.v[i][1]]); });
+    const inside = pts;
     const lab = inside.length >= 2
       ? [inside.reduce((s, p) => s + p[0], 0) / inside.length, inside.reduce((s, p) => s + p[1], 0) / inside.length]
       : null;
-    out.push({ n: f.n, segs, lab });
+    out.push({ n: f.n, segs, lab, pts });
   }
   return out;
 }

@@ -56,6 +56,8 @@ An offline blind plate solver that runs in a phone browser. Load a photo, and it
   - Image scale, image size, field of view, rotation, flipped, stars matched, accuracy.
 - **Overlay:**
   - Toggles: Stars, Objects, Names, Constellations (30% opacity lines), Center (off by default), Detected.
+  - Constellation names: about 30 well-known constellations (`MAJOR_CON` in `app.js`) claim label space before stars and objects; the rest are placed last, where room is left.
+  - Horizon: with a location set, figure lines and names below the horizon are dropped (`skyFigures`). The photo's EXIF time, or one typed in, gives the true horizon. If the frame centre would be below the horizon at that time, the time is treated as wrong and only sky that never rises at that latitude is dropped. No location: nothing is dropped.
   - Magnitude slider (default about mag 3, slides both ways) and an object-count slider.
   - The Dark Sky Almanac credit plate is **always** drawn, including in exports (up to 4096 px). Desktop does a plain download; phones use the share sheet.
 - **Objects:** `rankObjects` puts Messier objects first; named Messiers get −1.5. Objects closer than 0.25° are de-duplicated. Labels use the `M8` form. Bare NGC/IC objects are renamed to their common names in `dso.json` (`n` = name, `d` = catalog ID).

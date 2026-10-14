@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.78 / zion-sky-v345 — 2026-10-14
+- Star ID: well-known constellation names (Sagittarius, Scorpius, Orion and
+  about 30 others) now claim their label space before star and object
+  labels, so a busy Milky Way frame still names them. With a location set,
+  constellation lines and names below the horizon are no longer drawn: the
+  photo's time gives the true horizon, and without a usable time only sky
+  that never rises at that latitude is dropped. Why: names were placed last
+  and got crowded out, and the overlay drew figures in the ground.
+
 ## v3.77 / zion-sky-v344 — 2026-10-13
 - Sky Finder: the menu button is now the one control for the bottom box.
   Open shows the time slider, status and buttons; hidden leaves a small
