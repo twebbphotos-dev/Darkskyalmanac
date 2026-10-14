@@ -48,11 +48,11 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 .zcl-card{background:#0d0a18;border:1px solid rgba(203,168,90,.30);border-radius:10px;padding:16px 16px 15px;margin-bottom:16px}
 .zcl-cardtit{font-size:10px;font-weight:600;letter-spacing:.18em;text-transform:uppercase;color:#9A875C;margin-bottom:10px;text-align:center}
 .zcl-sat{position:relative;width:100%;aspect-ratio:1/1;max-width:520px;margin:0 auto;overflow:hidden;border-radius:8px;background:#06050c;border:1px solid rgba(203,168,90,.22)}
-.zcl-sat-stage{position:absolute;left:0;top:0;width:768px;height:768px;transform-origin:0 0}
-.zcl-sat-stage img{position:absolute;width:256px;height:256px;user-select:none;-webkit-user-select:none;pointer-events:none}
-.zcl-sat-frame{position:absolute;inset:0;visibility:hidden}
+.zcl-sat-stage{position:absolute;inset:0}
+.zcl-sat-stage img{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-select:none;pointer-events:none}
+.zcl-sat-frame{visibility:hidden}
 .zcl-sat-frame.on{visibility:visible}
-.zcl-sat-ref{position:absolute;inset:0;opacity:.55}
+.zcl-sat-ref{opacity:.55}
 .zcl-sat-pin{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #E6CC85;box-shadow:0 0 0 2px rgba(13,10,24,.7)}
 .zcl-sat-bar{display:flex;align-items:center;gap:10px;max-width:520px;margin:10px auto 0}
 .zcl-sat-play{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.45);background:rgba(203,168,90,.08);color:#E6CC85;font-size:13px;cursor:pointer;font-family:inherit}
@@ -153,78 +153,63 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 </div>
 
 <script>
-// Live satellite loop: GOES Band 13 (10.3 um "clean" infrared) tiles from NASA
-// GIBS, 10-minute steps, the last two hours, centred on the saved location.
-// Covers the Americas only (GOES-West / GOES-East); elsewhere the card stays
-// hidden. Needs a connection; if no frame loads, the card stays hidden too.
+// Live satellite loop: GOES Band 13 (10.3 um "clean" infrared) from NASA GIBS,
+// one WMS picture per 10-minute slot, the last two hours, centred on the saved
+// location. GIBS runs 40-60 min behind real time, and a slot it hasn't drawn
+// yet comes back as a small all-black JPEG, so frames that small are skipped.
+// Americas only (GOES-West / GOES-East). Needs a connection; with no imagery
+// the card stays hidden.
 (function(){
   const $=id=>document.getElementById(id);
   let lat=37.1986,lng=-112.9869;
   try{const s=JSON.parse(localStorage.getItem('dsa-location')||'null');if(s&&isFinite(+s.lat)&&isFinite(+s.lng)){lat=+s.lat;lng=+s.lng}}catch(e){}
   if(!(lng<=-30&&lng>=-180&&Math.abs(lat)<=70)||!navigator.onLine) return;
   const west=lng<-100, SAT=west?'GOES-West':'GOES-East';
-  $('zcl-sat-name').textContent=west?'GOES-West':'GOES-East';
-  const BASE='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';
-  // Zoom 7 tiles over a 1024 px window: about 1.5x closer than a 768 px window
-  // of zoom 6, roughly 900 km across at mid-latitudes.
-  const Z=7, S=1024, N=12, STEP=10*60000;
-  const W=256*Math.pow(2,Z);
-  const px=(lng+180)/360*W, la=lat*Math.PI/180;
-  const py=(1-Math.log(Math.tan(la)+1/Math.cos(la))/Math.PI)/2*W;
-  const x0=px-S/2, y0=py-S/2;
-  const tiles=[];
-  for(let ty=Math.floor(y0/256);ty<=Math.floor((y0+S-1)/256);ty++)
-    for(let tx=Math.floor(x0/256);tx<=Math.floor((x0+S-1)/256);tx++) tiles.push([tx,ty]);
+  $('zcl-sat-name').textContent=SAT;
+  // About 900 km square: 4 degrees of latitude either side, longitude widened
+  // by 1/cos(lat) so the plate-carree picture isn't squashed.
+  const HL=4, HW=HL/Math.cos(lat*Math.PI/180), PX=1024, N=12, STEP=10*60000, BLANK=30000;
+  const BBOX=[(lat-HL).toFixed(3),(lng-HW).toFixed(3),(lat+HL).toFixed(3),(lng+HW).toFixed(3)].join(',');
+  const WMS='https://gibs.earthdata.nasa.gov/wms/epsg4326/best/wms.cgi?SERVICE=WMS&REQUEST=GetMap&VERSION=1.3.0&STYLES=&CRS=EPSG:4326&BBOX='+BBOX+'&WIDTH='+PX+'&HEIGHT='+PX;
   const iso=d=>d.toISOString().slice(0,16)+':00Z';
-  // GIBS has published this product under a few names and tile levels; the
-  // first variant that returns imagery is used.
-  const VARIANTS=[
-    ['best/'+SAT+'_ABI_Band13_Clean_Infrared','GoogleMapsCompatible_Level7','png'],
-    ['nrt/'+SAT+'_ABI_Band13_Clean_Infrared_v0_NRT_ZENJPEG','GoogleMapsCompatible_Level7','jpg'],
-    ['nrt/'+SAT+'_ABI_Band13_Clean_Infrared_v0_NRT_ZENJPEG','GoogleMapsCompatible_Level7','png'],
-  ];
-  let V=VARIANTS[0];
-  const wrap=tx=>((tx%(1<<Z))+(1<<Z))%(1<<Z);
-  const tileUrl=(t,tx,ty)=>BASE.replace('best/','')+V[0]+'/default/'+t+'/'+V[1]+'/'+Z+'/'+ty+'/'+wrap(tx)+'.'+V[2];
-  const stage=$('zcl-sat-stage'), box=$('zcl-sat');
-  stage.style.width=stage.style.height=S+'px';
-  function fit(){ stage.style.transform='scale('+(box.clientWidth/S)+')' }
-  // Newest frame with imagery: GIBS lags real time, so step back 10 minutes
-  // at a time from "now" until the tile under the location loads.
-  const ct=[Math.floor(px/256),Math.floor(py/256)];
-  function probe(t){ return new Promise(res=>{ const im=new Image(); const k=setTimeout(()=>res(false),8000);
-    im.onload=()=>{clearTimeout(k);res(im.naturalWidth>0)}; im.onerror=()=>{clearTimeout(k);res(false)}; im.src=tileUrl(t,ct[0],ct[1]) }) }
+  const irUrl=d=>WMS+'&LAYERS='+SAT+'_ABI_Band13_Clean_Infrared&FORMAT=image/jpeg&TIME='+iso(d);
+  // A real frame as an object URL, or null for a blank or failed slot.
+  // If the browser can't read the response (no CORS), fall back to a plain
+  // image load: blanks can't be told apart then, but the loop still plays.
+  let plain=false;
+  const asImage=d=>new Promise(res=>{ const im=new Image(); const k=setTimeout(()=>res(null),15000);
+    im.onload=()=>{clearTimeout(k);res(im.naturalWidth?irUrl(d):null)}; im.onerror=()=>{clearTimeout(k);res(null)}; im.src=irUrl(d) });
+  const grab=d=>plain?asImage(d):fetch(irUrl(d))
+    .then(r=>r.ok?r.blob():null)
+    .then(b=>(b&&b.size>BLANK&&/image/.test(b.type))?URL.createObjectURL(b):null)
+    .catch(()=>{ plain=true; return asImage(d) });
+  const stage=$('zcl-sat-stage');
   (async function(){
-    const start=Math.floor(Date.now()/STEP)*STEP-STEP;
-    let end=null;
-    for(const v of VARIANTS){ V=v;
-      for(let i=0;i<12;i++){ const d=new Date(start-i*STEP); if(await probe(iso(d))){ end=d; break } }
-      if(end) break;
-    }
+    const start=Math.floor(Date.now()/STEP)*STEP-3*STEP;
+    let end=null, first=null;
+    for(let i=0;i<15&&!end;i++){ const d=new Date(start-i*STEP); const u=await grab(d); if(u){ end=d; first=u } }
     if(!end) return;
-    const times=[]; for(let i=N-1;i>=0;i--) times.push(new Date(end-i*STEP));
-    const frames=times.map(()=>{const f=document.createElement('div');f.className='zcl-sat-frame';stage.appendChild(f);return f});
-    times.forEach((d,i)=>tiles.forEach(([tx,ty])=>{
-      const im=new Image(); im.alt=''; im.decoding='async';
-      im.style.left=(tx*256-x0)+'px'; im.style.top=(ty*256-y0)+'px';
-      im.onerror=()=>{im.style.visibility='hidden'};
-      im.src=tileUrl(iso(d),tx,ty); frames[i].appendChild(im);
-    }));
+    const times=[]; for(let i=N-1;i>=1;i--) times.push(new Date(end-i*STEP));
+    const urls=await Promise.all(times.map(grab));
+    const frames=[];
+    times.forEach((d,i)=>{ if(urls[i]) frames.push({d,u:urls[i]}) });
+    frames.push({d:end,u:first});
+    frames.forEach(f=>{ const im=new Image(); im.alt=''; im.className='zcl-sat-frame'; im.src=f.u; f.el=im; stage.appendChild(im) });
     // Coastlines and borders on top, so the clouds have a place to sit.
-    const ref=document.createElement('div'); ref.className='zcl-sat-ref'; stage.appendChild(ref);
-    tiles.forEach(([tx,ty])=>{const im=new Image(); im.alt='';
-      im.style.left=(tx*256-x0)+'px'; im.style.top=(ty*256-y0)+'px';
-      im.onerror=()=>{im.remove()};
-      im.src=BASE+'Reference_Features_15m/default/GoogleMapsCompatible_Level13/'+Z+'/'+ty+'/'+wrap(tx)+'.png'; ref.appendChild(im)});
-    $('zcl-sat-card').hidden=false; fit(); window.addEventListener('resize',fit);
-    let cur=N-1, playing=true, timer=null;
-    const range=$('zcl-sat-range'), btn=$('zcl-sat-play'), lab=$('zcl-sat-time');
-    function show(i){ frames[cur].classList.remove('on'); cur=i; frames[cur].classList.add('on'); range.value=cur;
-      lab.textContent=(window.ZCLTZ&&ZCLTZ.fmtTime)?ZCLTZ.fmtTime(times[cur]):times[cur].toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) }
-    function tick(){ show((cur+1)%N); timer=setTimeout(tick, cur===N-1?1600:450) }
-    function setPlay(p){ playing=p; btn.innerHTML=p?'&#10074;&#10074;':'&#9654;'; btn.setAttribute('aria-label',p?'Pause':'Play');
-      clearTimeout(timer); if(p) timer=setTimeout(tick,450) }
-    show(N-1); setTimeout(()=>setPlay(true),1200);
+    const ref=new Image(); ref.alt=''; ref.className='zcl-sat-ref';
+    ref.onerror=()=>ref.remove();
+    ref.src=WMS+'&LAYERS=Reference_Features_15m&FORMAT=image/png&TRANSPARENT=TRUE';
+    stage.appendChild(ref);
+    $('zcl-sat-card').hidden=false;
+    const n=frames.length, range=$('zcl-sat-range'), btn=$('zcl-sat-play'), lab=$('zcl-sat-time');
+    range.max=n-1;
+    let cur=n-1, playing=n>1, timer=null;
+    function show(i){ frames[cur].el.classList.remove('on'); cur=i; frames[cur].el.classList.add('on'); range.value=cur;
+      lab.textContent=(window.ZCLTZ&&ZCLTZ.fmtTime)?ZCLTZ.fmtTime(frames[cur].d):frames[cur].d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'}) }
+    function tick(){ show((cur+1)%n); timer=setTimeout(tick, cur===n-1?1600:450) }
+    function setPlay(p){ playing=p&&n>1; btn.innerHTML=playing?'&#10074;&#10074;':'&#9654;'; btn.setAttribute('aria-label',playing?'Pause':'Play');
+      clearTimeout(timer); if(playing) timer=setTimeout(tick,450) }
+    frames[cur].el.classList.add('on'); show(n-1); setPlay(n>1);
     btn.addEventListener('click',()=>setPlay(!playing));
     range.addEventListener('input',()=>{ setPlay(false); show(+range.value) });
     document.addEventListener('visibilitychange',()=>{ if(document.hidden) clearTimeout(timer); else if(playing) setPlay(true) });

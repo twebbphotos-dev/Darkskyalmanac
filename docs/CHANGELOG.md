@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.81 / zion-sky-v349 — 2026-10-14
+- Cloud Coverage: the satellite loop now actually loads. It asks NASA GIBS
+  for one infrared picture per 10-minute slot through its WMS service, skips
+  the black placeholder GIBS returns for slots it hasn't drawn yet, and
+  starts from 30 minutes back because GIBS runs 40-60 minutes behind.
+  Why: v3.80 requested map tiles under paths that don't exist, so every
+  frame failed and the card stayed hidden.
+
 ## v3.80 / zion-sky-v348 — 2026-10-14
 - Cloud Coverage: a live satellite loop. The last two hours of GOES-West or
   GOES-East infrared imagery (NASA GIBS), in 10-minute frames centred on the

@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v3.80, service-worker cache `zion-sky-v348`.**
-Next release: v3.81, cache `zion-sky-v349`.
+**Current release: v3.81, service-worker cache `zion-sky-v349`.**
+Next release: v3.82, cache `zion-sky-v350`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -138,4 +138,5 @@ node tests/solver/regress.mjs                     # compare with tests/solver/ba
 - **JSDOM harness settings** (older tests): `TZ='America/Denver'`, `runScripts:'dangerously'`, `pretendToBeVisual:true`.
 - **Never spread a big array into a call**: `push(...arr)`, `Math.max(...arr)`. Over ~100k items it throws "Maximum call stack size exceeded" (the v3.51 Star ID crash).
 - **Don't `pkill -f` a pattern that matches your own shell's command line.**
+- **Satellite loop (`clouds.html`)** uses NASA GIBS **WMS** (`wms/epsg4326/best/wms.cgi`, layer `GOES-West|East_ABI_Band13_Clean_Infrared`, `TIME` in 10-min slots). GIBS runs 40–60 min behind and returns a small all-black JPEG for slots not drawn yet; frames under 30 KB are skipped. The v3.80 WMTS tile paths were guesses and never loaded. This sandbox can't reach GIBS, so check it on the phone.
 - **St. George map is parked** in `src/st-george-map/`. The source is only 924 × 1316 px and pixelates; bring it back only with a higher-resolution basemap.
