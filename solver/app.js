@@ -102,7 +102,8 @@ worker.onmessage = (ev) => {
   }
   if (m.type === 'error') { showFail('Something broke', m.message); return; }
   if (m.type === 'trying') {
-    el.busyLabel.textContent = m.pass ? 'Second pass \u00b7 filtering clouds and foreground'
+    el.busyLabel.textContent = state.hard ? `Trying harder \u00b7 ${Math.round(m.f)} mm \u00b7 ${m.i} of ${m.n}`
+      : m.pass ? 'Second pass \u00b7 filtering clouds and foreground'
       : m.near ? `Trying nearby focal lengths \u00b7 ${Math.round(m.f)} mm`
       : `Trying ${Math.round(m.f)} mm \u00b7 ${m.i} of ${m.n}`;
     el.busyBar.style.width = `${55 + 40 * (m.i / m.n)}%`;
@@ -277,6 +278,7 @@ async function loadFrame(file, forceFocal = false) {
   }
   state.sensorMm = sensorMm;
   state.fellBack = false;
+  state.hard = false;
   const job = { rgba: rgba.data.buffer, width: w, height: h,
     focalMm: focal, sensorWidthMm: sensorMm, focalList };
 
@@ -343,6 +345,13 @@ function handleResult(m) {
           ? 'Usually too few stars. Expose longer, raise ISO, or try a frame with more sky and less foreground.'
           : 'Stars were found but nothing matched. Check the focal length above and the sensor width under Camera & Location — a wrong value is the usual cause.'));
     }
+    // Offer the slower, wider search once, when stars were found but nothing matched.
+    const canHarder = !state.hard && m.reason !== 'too-few-stars' && (m.snrP90 || 0) >= 10;
+    $('harder').hidden = !canHarder;
+    if (state.hard) {
+      showFail('Still no match', smallAdvice() ||
+        'Every retry ran: the lens treated as unknown from 12 to 1000 mm on a full-frame sensor, the centre of the frame alone, 2\u00d72 binning and a darker curve. This frame may be a panorama, heavily retouched, or have too few clear stars.');
+    }
     drawOverlay(el.failview, m, { labels: false, stars: false, found: true, grid: false });
     return;
   }
@@ -352,6 +361,10 @@ function handleResult(m) {
   show('out');
   drawOverlay(el.view, m, state.show);
   renderText(m);
+  if (state.hard && focalSub) {
+    focalSub.textContent = `Solved on a harder try: about ${Math.round(m.focalMm)} mm on a full-frame sensor, with the lens treated as unknown.`;
+    return;
+  }
   if (state.fellBack && focalSub) {
     focalSub.textContent = `Solved as a full-frame camera at ${Math.round(m.focalMm)} mm. The sensor width under Camera & Location did not fit this photo.`;
     return;
@@ -930,6 +943,20 @@ $('viewer-img').addEventListener('click', (e) => {
 $('viewer-save').addEventListener('click', saveImage);
 document.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !$('viewer').hidden) closeViewer(); });
 $('retry').addEventListener('click', () => el.file.click());
+// Try harder: the same frame again, lens unknown on a full-frame sensor, with
+// the extra star-finding strategies in the worker (centre, binned, darker curve).
+$('harder').addEventListener('click', () => {
+  if (!state.bitmap) return;
+  state.hard = true; state.fellBack = true;
+  $('harder').hidden = true;
+  show('busy');
+  el.busyLabel.textContent = 'Trying harder';
+  el.busyBar.style.width = '50%';
+  const ctx = state.bitmap.getContext('2d', { willReadFrequently: true });
+  const rgba = ctx.getImageData(0, 0, state.width, state.height);
+  const fl = LADDER.slice();
+  runSolve({ rgba: rgba.data.buffer, width: state.width, height: state.height, focalMm: fl[0], sensorWidthMm: 35.9, focalList: fl, hard: true });
+});
 
 if (el.mode) el.mode.addEventListener('click', () => {
   const r = document.documentElement;

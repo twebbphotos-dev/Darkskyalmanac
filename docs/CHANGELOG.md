@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.79 / zion-sky-v346 — 2026-10-14
+- Star ID: a "Try harder" button on the failure screen re-runs the photo with
+  the lens unknown on a full-frame sensor across 12–1000 mm, and four more
+  ways of finding stars: the centre of the frame alone, 2x2 binning, a
+  darker curve, and the cloud/foreground filter. The accuracy check is
+  unchanged. Why: a wrong lens setting limited the search to ±44% of it, and
+  wide nightscapes with people or haze ranked the wrong stars first.
+
 ## v3.78 / zion-sky-v345 — 2026-10-14
 - Star ID: well-known constellation names (Sagittarius, Scorpius, Orion and
   about 30 others) now claim their label space before star and object

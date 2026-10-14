@@ -184,6 +184,35 @@ self.onmessage = async (ev) => {
       // against the sky), ranks by sharpness instead of total glow, and takes
       // the best stars from every part of the frame so patterns span it.
       const PASSES = [null, { shape: true, rank: 'snr', spread: 4 }];
+      // "Try harder" (msg.hard): the lens is treated as unknown and four more
+      // ways of finding the stars are tried, each across the whole focal
+      // ladder. The accuracy gate is unchanged, so none of them can turn a
+      // chance alignment into a solve; they only give real stars a better shot.
+      //  - centre: only stars in the middle 60% of the frame, clear of the
+      //    edge distortion of wide-angle lenses.
+      //  - bin2: 2x2 pixels averaged, which lifts faint stars out of noise.
+      //  - curve: a darkening curve, which restores the brightness order of
+      //    stars that heavy editing has clipped to the same white.
+      if (msg.hard) {
+        const cx = width / 2, cy = height / 2;
+        PASSES.splice(0, PASSES.length,
+          null,
+          { make: () => det1.filter((st) => Math.abs(st.x - cx) < width * 0.3 && Math.abs(st.y - cy) < height * 0.3) },
+          { make: () => {
+            const w2 = width >> 1, h2 = height >> 1, b = new Float32Array(w2 * h2);
+            for (let y = 0; y < h2; y++) for (let x = 0; x < w2; x++) {
+              const i = 2 * y * width + 2 * x;
+              b[y * w2 + x] = (gray[i] + gray[i + 1] + gray[i + width] + gray[i + width + 1]) / 4;
+            }
+            return detectStars(b, w2, h2, msg.detect || {}).map((st) => ({ ...st, x: st.x * 2 + 0.5, y: st.y * 2 + 0.5 }));
+          } },
+          { make: () => {
+            const g2 = new Float32Array(gray.length);
+            for (let i = 0; i < gray.length; i++) g2[i] = 255 * Math.pow(gray[i] / 255, 2.2);
+            return detectStars(g2, width, height, msg.detect || {});
+          } },
+          { shape: true, rank: 'snr', spread: 4 });
+      }
       let sol = null, tried = 0;
       const det1 = detected;
       const unknown = !!(msg.focalList && msg.focalList.length);
@@ -194,7 +223,7 @@ self.onmessage = async (ev) => {
       const nTry = unknown ? msg.focalList.length * PASSES.length : PASSES.length + NEAR.length;
       for (const pass of PASSES) {
         if (pass) {
-          const d2 = detectStars(gray, width, height, { ...(msg.detect || {}), ...pass });
+          const d2 = pass.make ? pass.make() : detectStars(gray, width, height, { ...(msg.detect || {}), ...pass });
           if (d2.length < 8) continue;
           detected = d2;
         }

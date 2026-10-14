@@ -36,7 +36,8 @@ An offline blind plate solver that runs in a phone browser. Load a photo, and it
    - **Known:** the entered focal, then ×1.2, ÷1.2, ×1.44 and ÷1.44 retries.
    - **Unknown:** a ladder of `12 × 1.2^i` with 25 steps (12–954 mm, about 1000 mm with ±12% tolerance).
 4. **Portrait images:** the sensor's long side spans the image's **long** edge, so `worker.js` passes `sensorWidthMm × width / max(width, height)`.
-5. **`solve.js`:**
+5. **Try harder** (button on the failure screen, `msg.hard` in `worker.js`): the same frame with the lens unknown on a full-frame sensor, across the whole ladder, with four ways of finding stars: the plain detection, the middle 60% of the frame only (wide-angle edge distortion), 2x2 binning (noise), a 2.2 darkening curve (clipped, heavily edited frames), then the shape/SNR/spread pass. The accuracy gate is unchanged. First rescues: a Cygnus frame that failed only because a wrong lens was set, and a 19.5 mm group nightscape (44 stars, 2.65 px).
+6. **`solve.js`:**
    - `pickLayers` uses quad layers that fit 40% of the short field side. If none fits, it falls back to layers whose `dmin` fits.
    - Image quads are matched by hash code, then verified with a chance-match budget. Focal length is refined from the matched pairs, then a harvest pass runs at a tighter radius.
    - **Accuracy gate:** rms ≤ 2.2 px with ≥ 20 matches, or rms ≤ 3.2 px with ≥ 40 matches. Real solves sit at 0.2–1.7 px. Chance alignments sat at 1.6–5.3 px with 8–27 matches.
