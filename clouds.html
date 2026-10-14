@@ -165,20 +165,21 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
   const west=lng<-100, SAT=west?'GOES-West':'GOES-East';
   $('zcl-sat-name').textContent=west?'GOES-West':'GOES-East';
   const BASE='https://gibs.earthdata.nasa.gov/wmts/epsg3857/best/';
-  const Z=6, N=12, STEP=10*60000;
+  // Zoom 7 tiles over a 1024 px window: about 1.5x closer than a 768 px window
+  // of zoom 6, roughly 900 km across at mid-latitudes.
+  const Z=7, S=1024, N=12, STEP=10*60000;
   const W=256*Math.pow(2,Z);
   const px=(lng+180)/360*W, la=lat*Math.PI/180;
   const py=(1-Math.log(Math.tan(la)+1/Math.cos(la))/Math.PI)/2*W;
-  const x0=px-384, y0=py-384;
+  const x0=px-S/2, y0=py-S/2;
   const tiles=[];
-  for(let ty=Math.floor(y0/256);ty<=Math.floor((y0+767)/256);ty++)
-    for(let tx=Math.floor(x0/256);tx<=Math.floor((x0+767)/256);tx++) tiles.push([tx,ty]);
+  for(let ty=Math.floor(y0/256);ty<=Math.floor((y0+S-1)/256);ty++)
+    for(let tx=Math.floor(x0/256);tx<=Math.floor((x0+S-1)/256);tx++) tiles.push([tx,ty]);
   const iso=d=>d.toISOString().slice(0,16)+':00Z';
   // GIBS has published this product under a few names and tile levels; the
   // first variant that returns imagery is used.
   const VARIANTS=[
     ['best/'+SAT+'_ABI_Band13_Clean_Infrared','GoogleMapsCompatible_Level7','png'],
-    ['best/'+SAT+'_ABI_Band13_Clean_Infrared','GoogleMapsCompatible_Level6','png'],
     ['nrt/'+SAT+'_ABI_Band13_Clean_Infrared_v0_NRT_ZENJPEG','GoogleMapsCompatible_Level7','jpg'],
     ['nrt/'+SAT+'_ABI_Band13_Clean_Infrared_v0_NRT_ZENJPEG','GoogleMapsCompatible_Level7','png'],
   ];
@@ -186,7 +187,8 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
   const wrap=tx=>((tx%(1<<Z))+(1<<Z))%(1<<Z);
   const tileUrl=(t,tx,ty)=>BASE.replace('best/','')+V[0]+'/default/'+t+'/'+V[1]+'/'+Z+'/'+ty+'/'+wrap(tx)+'.'+V[2];
   const stage=$('zcl-sat-stage'), box=$('zcl-sat');
-  function fit(){ stage.style.transform='scale('+(box.clientWidth/768)+')' }
+  stage.style.width=stage.style.height=S+'px';
+  function fit(){ stage.style.transform='scale('+(box.clientWidth/S)+')' }
   // Newest frame with imagery: GIBS lags real time, so step back 10 minutes
   // at a time from "now" until the tile under the location loads.
   const ct=[Math.floor(px/256),Math.floor(py/256)];

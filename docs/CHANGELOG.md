@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.80 / zion-sky-v348 — 2026-10-14
+- Cloud Coverage: a live satellite loop. The last two hours of GOES-West or
+  GOES-East infrared imagery (NASA GIBS), in 10-minute frames centred on the
+  saved location, with play/pause and a time scrubber. Infrared shows cloud
+  day and night. Americas only; the card stays hidden offline or if no
+  imagery loads, and the tiles are never stored in the offline cache.
+  Why: the model forecast says what clouds are expected; the satellite
+  shows what is actually overhead and coming in.
+
 ## v3.79 / zion-sky-v346 — 2026-10-14
 - Star ID: a "Try harder" button on the failure screen re-runs the photo with
   the lens unknown on a full-frame sensor across 12–1000 mm, and four more
