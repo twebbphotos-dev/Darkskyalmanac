@@ -29,7 +29,7 @@ const CRAFT = {
       mast: { label: 'Rover’s eye', pos: [-0.55, 1.98, 0.93], tgt: [-2.5, 0.25, 2.7], look: true, deploy: true },
       above: { label: 'From above', short: 'Above', pos: [14000, 76000, 30000], tgt: [14000, 0, 5800], abs: true },
     },
-    dist: [.8, 90000],
+    dist: [.8, 110000],
     parts: [
       // positions are given with the mast and arm deployed; a part with `node` rides along with that piece of the model
       { node: 'Cylinder002', p: [-0.52, 2.06, 0.87], name: 'Mast cameras', txt: 'The head stands 2 m above the ground. The large round window is SuperCam, which fires a laser at rocks up to 7 m away and reads the flash to tell what they’re made of — its microphone records each snap. Below it are Mastcam-Z, a pair of zoom cameras that see in 3D, with a navigation camera on either side.' },
@@ -531,10 +531,10 @@ function tuneLander(root) {      // NASA's lander is flat yellow and grey plasti
     else weather(m, .12, .1, .05, 3); }); });
 }
 /* Jezero Crater from above. The ground is real: a mosaic of elevation models the USGS made from stereo pairs taken by
-   the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to a 120 km square, north up (models/jezero.bin:
+   the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to an 81 km square, north up (models/jezero.bin:
    heights in quarter-metres relative to the landing site). Over it lies the same camera's orthorectified photography
    (models/jezero.jpg), black and white, given the tones of a true-colour orbital view. +x is east, +z is south. */
-const JZ = { W: 120000, C: [14018, 3835], R: 40500, RM: 3389500 };      // the square's centre (the crater's, near enough), in metres east and south of the landing site
+const JZ = { W: 81016, C: [14018, 3835], R: 40500, RM: 3389500 };      // the square's centre (the crater's, near enough), in metres east and south of the landing site
 function marsCrater(dem, map) {
   const M = Math.round(Math.sqrt(dem.length)), S = matchMedia('(max-width:600px)').matches ? Math.min(M, 384) : M, pos = [], uv = [], idx = [];
   const hAt = (x, z) => { const u = Math.max(0, Math.min(M - 1.001, ((x - JZ.C[0]) / JZ.W + .5) * M - .5)), v = Math.max(0, Math.min(M - 1.001, ((z - JZ.C[1]) / JZ.W + .5) * M - .5)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
@@ -1333,7 +1333,7 @@ function moonCam() {      // one Moon scene runs from the driver's seat to 25 km
   if (u && u.trail) u.trail.opacity = .34 * Math.max(0, Math.min(1, (camera.position.y - 12) / 50));
   if (u && u.stars) u.stars.position.copy(camera.position);  // the stars are infinitely far away, wherever the camera goes
 }
-function marsCam() {      // the Mars scene runs from beside the rover to 70 km up: thin the haze, move the near plane and swap the ground with the height
+function marsCam() {      // after the controls move the camera, so the sky is never left behind; the Mars scene runs from beside the rover to 70 km up: thin the haze, move the near plane and swap the ground with the height
   const cc = CRAFT[craftKey], u = world && world.userData; if (!cc || cc.env !== 'mars' || !camera || !u || !u.sky) return;
   const y = Math.max(0, camera.position.y); u.sky.position.copy(camera.position);
   if (!lookView) { const nr = Math.min(150, Math.max(.03, camera.position.distanceTo(controls.target) * .003)); if (Math.abs(nr - camera.near) > camera.near * .2) { camera.near = nr; camera.updateProjectionMatrix(); } }
@@ -1355,8 +1355,8 @@ function loop() {
   if (!controls.autoRotate && !tween && lastInteract && performance.now() - lastInteract > 12000 && $('sc-views').querySelector('.on')?.dataset.v === 'overview') controls.autoRotate = true;
   const now = performance.now(), dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   advance(dt);
-  moonCam(); marsCam();
-  controls.update(); renderer.render(scene, camera); place();
+  moonCam();
+  controls.update(); marsCam(); renderer.render(scene, camera); place();
 }
 
 /* ───────────── Page wiring ───────────── */
@@ -1368,6 +1368,6 @@ $('sc-drive').addEventListener('click', startDrive);
 $('sc-info').addEventListener('click', () => { $('sc-info').classList.remove('open'); hotEls.forEach(b => b.classList.remove('on')); });
 const first = new URLSearchParams(location.search).get('m') || 'mars2020';
 window.__sc = () => ({ camera, controls, setView, setCraft, pick: (nx, ny) => { const rc = new THREE.Raycaster(); rc.setFromCamera({ x: nx, y: ny }, camera); const h = rc.intersectObjects(pickables, true)[0]; if (!h) return null; const g = h.object.geometry, P = g.attributes.position, f = h.face, w = new THREE.Vector3(); h.object.updateMatrixWorld(true);
-      return [h.point.toArray().map(v => +v.toFixed(2)), [f.a, f.b, f.c].map(i => w.fromBufferAttribute(P, i).applyMatrix4(h.object.matrixWorld).toArray().map(v => +v.toFixed(2)))]; }, world: () => world, renderer: () => renderer, pose: t => { dep.t = dep.to = t; pose(t); renderer.shadowMap.needsUpdate = true; }, ready: () => pickables.length, dep: () => dep.t, run: secs => { for (let t = 0; t < secs; t += .05) advance(.05); return { dep: dep.t, phase: drive ? drive.phase : null, s: drive ? drive.s : null, armCap }; }, driveTo: t => { if (!drive) return null; armCap = drive.armT[0]; pose(dep.t); const n = 60; for (let i = 1; i <= n; i++) { drive.s = driveAt(drive, t * i / n); drive.solve(); } return { s: drive.s, p: drive.p.slice(), wheels: drive.wheels.map((w, i) => { const v = w.getWorldPosition(new THREE.Vector3()); return +(v.y - drive.h(i, v.z)).toFixed(5); }) }; }, still: k => { frozen = true; running = false; frame = 0; if (k != null && tween) { tween.t0 = performance.now() - k * tween.dur; stepTween(); } moonCam(); marsCam(); controls.update(); renderer.render(scene, camera); place(); } });
+      return [h.point.toArray().map(v => +v.toFixed(2)), [f.a, f.b, f.c].map(i => w.fromBufferAttribute(P, i).applyMatrix4(h.object.matrixWorld).toArray().map(v => +v.toFixed(2)))]; }, world: () => world, renderer: () => renderer, pose: t => { dep.t = dep.to = t; pose(t); renderer.shadowMap.needsUpdate = true; }, ready: () => pickables.length, dep: () => dep.t, run: secs => { for (let t = 0; t < secs; t += .05) advance(.05); return { dep: dep.t, phase: drive ? drive.phase : null, s: drive ? drive.s : null, armCap }; }, driveTo: t => { if (!drive) return null; armCap = drive.armT[0]; pose(dep.t); const n = 60; for (let i = 1; i <= n; i++) { drive.s = driveAt(drive, t * i / n); drive.solve(); } return { s: drive.s, p: drive.p.slice(), wheels: drive.wheels.map((w, i) => { const v = w.getWorldPosition(new THREE.Vector3()); return +(v.y - drive.h(i, v.z)).toFixed(5); }) }; }, still: k => { frozen = true; running = false; frame = 0; if (k != null && tween) { tween.t0 = performance.now() - k * tween.dur; stepTween(); } moonCam(); controls.update(); marsCam(); renderer.render(scene, camera); place(); } });
 try { init(); } catch (e) { $('sc-loading').textContent = '3D view needs WebGL, which this browser has turned off.'; }
 setCraft(first, false);
