@@ -42,7 +42,7 @@ const CRAFT = {
       { p: [-2.5, 0.5, 2.7], name: 'Ingenuity', txt: 'A 1.8 kg helicopter with two 1.2 m rotors that spun in opposite directions at about 2,400 rpm to bite the thin air. It flew 72 times between April 2021 and January 2024 — planned for five. A scrap of fabric from the Wright brothers’ Flyer rides under its solar panel.' },
     ],
     cards: [['Rover mass', '1,025 kg', 'About as heavy as a small car'], ['Landed', '18 Feb 2021', 'Jezero Crater'], ['Cameras', '23', 'Counting the landing cameras'], ['Ingenuity flights', '72', 'First on 19 April 2021']],
-    story: '<p>Jezero Crater held a lake about 3.5 billion years ago, fed by a river that left a delta of layered mud and sand. On Earth, that kind of place preserves traces of life well — which is why Perseverance was sent to drive up the delta and drill.</p><p>Ingenuity rode to Mars bolted under the rover’s belly. Its first hover lasted 39 seconds; by its last flight it had covered about 17 km and scouted routes ahead of the rover. A broken rotor blade ended its flying in January 2024, and it now sits where it last landed.</p><p>From above you can see the whole crater, 45 km across, much as an orbiting camera sees it: the delta fanning out where the river broke through the western rim, and the landing site at its foot. The ground is built from elevation maps measured from pairs of Mars Reconnaissance Orbiter photographs, at true height.</p>',
+    story: '<p>Jezero Crater held a lake about 3.5 billion years ago, fed by a river that left a delta of layered mud and sand. On Earth, that kind of place preserves traces of life well — which is why Perseverance was sent to drive up the delta and drill.</p><p>Ingenuity rode to Mars bolted under the rover’s belly. Its first hover lasted 39 seconds; by its last flight it had covered about 17 km and scouted routes ahead of the rover. A broken rotor blade ended its flying in January 2024, and it now sits where it last landed.</p><p>From above you can see the whole crater, 45 km across, much as an orbiting camera sees it: the delta fanning out where the river broke through the western rim, and the landing site at its foot. The ground is built from elevation maps measured from pairs of Mars Reconnaissance Orbiter photographs, at true height. The colored line is every drive NASA has published, one color per year: across the crater floor, up the delta and out over the western rim.</p>',
     link: { href: 'mars', txt: 'Explore Mars' }, get extra() { return ROVERS; },
   },
   curiosity: {
@@ -490,6 +490,17 @@ const DRIVES = [
   ['Drive 2', '#F0A23C', [[0, 0], [-386, 57], [-1350, 400], [-2500, 760], [-3900, 1250], [-5050, 1750], [-6000, 2500], STN[2], [-6500, 1700], STN[3], [-5100, -200], STN[4], [-2945, -766], [-2100, -330], STN[5], [-275, 72], [0, 0]]],
   ['Drive 3', '#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700], STN[6], STN[7], [2200, -2950], STN[8], [2500, -1900], STN[9], [900, -600], [145, -39]]],
 ];
+function screenLine(pts, col, U, order = 3) {      // a line laid over the ground ([x, y, z] points) that keeps the same width on screen at any distance
+  const pos = [], perp = [], side = [], idx = [];
+  pts.forEach((q, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b[0] - a[0], dz = b[2] - a[2], l = Math.hypot(dx, dz) || 1;
+    [-1, 1].forEach(sd => { pos.push(q[0], q[1], q[2]); perp.push(-dz / l, dx / l); side.push(sd); });
+    if (i) { const o = i * 2; idx.push(o - 2, o - 1, o, o, o - 1, o + 1); } });
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('perp', new THREE.Float32BufferAttribute(perp, 2)); g.setAttribute('side', new THREE.Float32BufferAttribute(side, 1)); g.setIndex(idx);
+  const m = new THREE.Mesh(g, new THREE.ShaderMaterial({ uniforms: { px: U.px, op: U.op, col: { value: new THREE.Color(col) } }, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide,
+    vertexShader: 'attribute vec2 perp; attribute float side; uniform float px; varying float vS; void main() { vec4 mv = modelViewMatrix * vec4( position, 1.0 ); float w = max( 1.2, -mv.z * px ); gl_Position = projectionMatrix * modelViewMatrix * vec4( position + vec3( perp.x, 0.0, perp.y ) * side * w * .5, 1.0 ); vS = side; }',
+    fragmentShader: 'uniform vec3 col; uniform float op; varying float vS; void main() { gl_FragColor = vec4( col, op * smoothstep( 1.0, .5, abs( vS ) ) ); }' }));
+  m.frustumCulled = false; m.renderOrder = order; return m;
+}
 function traverse(T, labels) {
   const grp = new THREE.Group(), U = { px: { value: .001 }, op: { value: 0 } };
   const cr = (a, b, c, d, t) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
@@ -497,15 +508,7 @@ function traverse(T, labels) {
     for (let i = 0; i < C.length - 1; i++) { const n = Math.max(2, Math.ceil(Math.hypot(C[i + 1][0] - C[i][0], C[i + 1][1] - C[i][1]) / 35));
       for (let k = 0; k < n; k++) { const t = k / n; pts.push([cr(P(i - 1)[0], P(i)[0], P(i + 1)[0], P(i + 2)[0], t), cr(P(i - 1)[1], P(i)[1], P(i + 1)[1], P(i + 2)[1], t)]); } }
     pts.push(C[C.length - 1]);
-    const pos = [], perp = [], side = [], idx = [];
-    pts.forEach((q, i) => { const a = pts[Math.max(0, i - 1)], b = pts[Math.min(pts.length - 1, i + 1)], dx = b[0] - a[0], dz = b[1] - a[1], l = Math.hypot(dx, dz) || 1, y = T.surf(q[0], q[1]) + 2;
-      [-1, 1].forEach(sd => { pos.push(q[0], y, q[1]); perp.push(-dz / l, dx / l); side.push(sd); });
-      if (i) { const o = i * 2; idx.push(o - 2, o - 1, o, o, o - 1, o + 1); } });
-    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('perp', new THREE.Float32BufferAttribute(perp, 2)); g.setAttribute('side', new THREE.Float32BufferAttribute(side, 1)); g.setIndex(idx);
-    const m = new THREE.Mesh(g, new THREE.ShaderMaterial({ uniforms: { px: U.px, op: U.op, col: { value: new THREE.Color(dr[1]) } }, transparent: true, depthTest: false, depthWrite: false, side: THREE.DoubleSide,
-      vertexShader: 'attribute vec2 perp; attribute float side; uniform float px; varying float vS; void main() { vec4 mv = modelViewMatrix * vec4( position, 1.0 ); float w = max( 1.2, -mv.z * px ); gl_Position = projectionMatrix * modelViewMatrix * vec4( position + vec3( perp.x, 0.0, perp.y ) * side * w * .5, 1.0 ); vS = side; }',
-      fragmentShader: 'uniform vec3 col; uniform float op; varying float vS; void main() { gl_FragColor = vec4( col, op * smoothstep( 1.0, .5, abs( vS ) ) ); }' }));
-    m.frustumCulled = false; m.renderOrder = 3; grp.add(m); });
+    grp.add(screenLine(pts.map(q => [q[0], T.surf(q[0], q[1]) + 2, q[1]]), dr[1], U)); });
   const dot = noiseTex(64, (x, S) => { x.clearRect(0, 0, S, S); x.beginPath(); x.arc(S / 2, S / 2, S * .36, 0, 6.2832); x.fillStyle = '#F6EED8'; x.fill(); x.lineWidth = S * .1; x.strokeStyle = '#15131A'; x.stroke(); });
   const dp = []; Object.keys(STN).forEach(k => { const x = LM[0] + STN[k][0], z = LM[1] + STN[k][1]; dp.push(x, T.surf(x, z) + 3, z); });
   const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(dp, 3));
@@ -548,6 +551,21 @@ function marsCrater(dem, map) {
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map }));      // the photograph already holds the light and shade of the real Sun
   m.visible = false; return { mesh: m, at: (x, z, up = 0) => new THREE.Vector3(x, hAt(x, z) - (x * x + z * z) / (2 * JZ.RM) + up, z) };
+}
+/* Perseverance's drives, from NASA's published traverse (models/jezero-route.json, made by src/jezero-crater/route.py:
+   one line per calendar year, in metres east and south of the landing site), drawn like the Apollo 17 drives. */
+const YEARS = ['#F3E9CC', '#F0A23C', '#7CC7F2', '#E36F5A', '#9BD88A', '#C9A4F0'];      // 2021 onwards
+function roverRoute(J, R, labels) {
+  const grp = new THREE.Group(), U = { px: { value: .001 }, op: { value: 0 } }, n = R.drives.length;
+  R.drives.forEach((d, i) => { const p = d[1], pts = []; for (let k = 0; k < p.length; k += 2) pts.push(J.at(p[k], p[k + 1], 6).toArray()); grp.add(screenLine(pts, YEARS[i % YEARS.length], U, 3 + n - i)); });      // earlier years drawn on top: later drives often retrace them
+  const p = R.drives[n - 1][1], now = J.at(p[p.length - 2], p[p.length - 1], 8), when = new Date(Date.UTC(2021, 1, 18) + R.sols[1] * 1.02749125 * 864e5);      // the latest position; a sol is 1.0275 days, counted from landing
+  const dot = noiseTex(64, (x, S) => { x.clearRect(0, 0, S, S); x.beginPath(); x.arc(S / 2, S / 2, S * .36, 0, 6.2832); x.fillStyle = '#F6EED8'; x.fill(); x.lineWidth = S * .1; x.strokeStyle = '#15131A'; x.stroke(); });
+  const dg = new THREE.BufferGeometry(); dg.setAttribute('position', new THREE.Float32BufferAttribute(now.toArray(), 3));
+  const dm = new THREE.PointsMaterial({ map: dot, size: 11, sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false, toneMapped: false, opacity: 0 });
+  const pt = new THREE.Points(dg, dm); pt.frustumCulled = false; pt.renderOrder = 4 + n; grp.add(pt);
+  const mo = when.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }), tall = camera.aspect < 1.1;      // on a phone the rover sits near the left edge: two short lines below it instead of one long one to its left
+  labels.push([tall ? 'Perseverance<br>' + mo : 'Perseverance · ' + mo, now, 0, 0, 1500, tall ? 'B' : 'L']);
+  grp.userData = { U, dm, legend: R.drives.map((d, i) => '<span><i style="background:' + YEARS[i % YEARS.length] + '"></i>' + d[0] + '</span>').join('') }; return grp;
 }
 /* A repeating texture shows its repeat from a distance. Mix three copies at
    unrelated scales and rotations (and normalise by the texture's average) so
@@ -956,7 +974,8 @@ function buildSetting(c) {
     const ground = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ map: tex, bumpMap: detail, bumpScale: 1.2, roughness: .96 }));
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; g.add(ground); g.userData.near = [ground];
     if (c.views.above) { const T = new THREE.TextureLoader(); let dem = null, map = null; const done = () => { if (!dem || !map || !g.parent) return; const J = marsCrater(dem, map); g.add(J.mesh); g.userData.crater = J.mesh;
-        labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels(); };      // the old river's valley, which fed the delta
+        labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels();      // the old river's valley, which fed the delta
+        fetch('models/jezero-route.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(R => { if (!g.parent) return; const rt = roverRoute(J, R, labels); g.add(rt); g.userData.route = rt.userData; const lg = $('sc-legend'); if (lg) lg.innerHTML = rt.userData.legend; drawLabels(); }).catch(() => {}); };
       fetch('models/jezero.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => { dem = new Int16Array(b); done(); }).catch(() => {});
       T.load('models/jezero.jpg', t => { map = t; done(); }); }
     g.add(g.userData.rocks = rocks(matchMedia('(max-width:600px)').matches ? 450 : 750, 3.5, 70, 0x3d2519, 5, (x, z) => Math.hypot(x, z) < 3.8 || Math.hypot(x + 2.5, z - 2.7) < 1.5 || (x > -1.8 && x < 7 && z > -2 && z < 9.5), .22));      // nothing near the rover, the helicopter, the lane the rover drives down, or right in front of the camera that follows it
@@ -1319,7 +1338,7 @@ function place() {
   $('sc-labels').querySelectorAll('.vg-lab').forEach(el => { const l = skyLabels[+el.dataset.i]; _v.copy(l[1]).project(camera);
     if (check && CRAFT[craftKey].env === 'moon') { _d.copy(l[1]).sub(camera.position); ray.far = _d.length(); ray.set(camera.position, _d.normalize()); el.dataset.hid = ray.intersectObjects(pickables, true).length ? '1' : ''; }      // a label behind the vehicle is hidden by it
     const far = camera.position.distanceTo(l[1]), on = !el.dataset.hid && _v.z < 1 && Math.abs(_v.x) < .93 && Math.abs(_v.y) < .93 && (camera.fov > 22 || l[3]) && !(l[2] && far < l[2]) && !(l[3] && far > l[3]) && !(l[4] && camera.position.y < l[4]); el.style.opacity = on ? 1 : 0;
-    el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (l[5] === 'L' ? ' translate(-100%,0) translateX(-22px)' : l[5] === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : ''); });
+    el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (l[5] === 'L' ? ' translate(-100%,0) translateX(-22px)' : l[5] === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : l[5] === 'B' ? ' translate(-20px,12px)' : ''); });
 }
 function moonCam() {      // one Moon scene runs from the driver's seat to 25 km up: keep the near plane and the exposure in step with the height
   const cc = CRAFT[craftKey]; if (!cc || cc.env !== 'moon' || !camera) return;
@@ -1338,6 +1357,8 @@ function marsCam() {      // after the controls move the camera, so the sky is n
   const y = Math.max(0, camera.position.y); u.sky.position.copy(camera.position);
   if (!lookView) { const nr = Math.min(150, Math.max(.03, camera.position.distanceTo(controls.target) * .003)); if (Math.abs(nr - camera.near) > camera.near * .2) { camera.near = nr; camera.updateProjectionMatrix(); } }
   if (scene.fog) { scene.fog.near = 25 + y * 2.5; scene.fog.far = 220 + y * 9; }
+  if (u.route) { const o = Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+    const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   const high = y > 1200; if (u.crater) u.crater.visible = y > 30; u.near.forEach(o => { o.visible = !high; }); if (u.rocks) u.rocks.visible = !high;
 }
 function stepTween() { if (!tween) return; const k = Math.min(1, (performance.now() - tween.t0) / tween.dur), R = 300; let e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
