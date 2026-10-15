@@ -30,10 +30,17 @@ for l in L:
   okk = ndimage.map_coordinates(ok.astype(np.float32), [row, col], order=1, mode='constant', cval=0) > .999
   ww = np.where(okk, ww, 0)
   if (ww > 0).sum() < 2000: continue
+  if mode == 'ortho':      # keep each strip's fine detail relative to its own local brightness, so haze and Sun angle don't leave seams
+    msk = (ww > 0).astype(np.float32); sg = 2500. / (S / N)
+    lm = ndimage.gaussian_filter(h * msk, sg) / np.maximum(ndimage.gaussian_filter(msk, sg), 1e-6); det = np.where(msk > 0, h / np.maximum(lm, 1e-4), 1.)
+    sd = np.std(det[msk > 0]); det = 1 + (det - 1) * (.16 / max(sd, 1e-3))
+    stack.append((l['id'], h.astype(np.float32), ww.astype(np.float16), det.astype(np.float16))); print(l['id'][:30], 'cover %.1f%% detail sd %.3f' % (100 * (ww > 0).mean(), sd), flush=True); continue
   stack.append((l['id'], h.astype(np.float32), ww.astype(np.float32)))
   print(l['id'][:30], 'cover %.1f%%' % (100 * (ww > 0).mean()), flush=True)
-acc = np.zeros((N, N)); wsum = np.zeros((N, N))
-for nm, h, ww in sorted(stack, key=lambda s: -(s[2] > 0).sum()):
+acc = np.zeros((N, N)); wsum = np.zeros((N, N)); dacc = np.zeros((N, N))
+for st in sorted(stack, key=lambda s: -(s[2] > 0).sum()):
+  nm, h, ww = st[0], st[1], st[2].astype(np.float32)
+  if mode == 'ortho': dacc += st[3].astype(np.float32) * ww
   both = (ww > 0) & (wsum > 0)
   if mode == 'dtm':
     g, off = 1., (np.median((acc[both] / wsum[both]) - h[both]) if both.sum() > 5000 else 0.)
@@ -43,5 +50,9 @@ for nm, h, ww in sorted(stack, key=lambda s: -(s[2] > 0).sum()):
   print(nm[:30], 'gain %.3f offset %.3f' % (g, off))
   acc += (g * h + off) * ww; wsum += ww
 m = np.where(wsum > 0, acc / np.maximum(wsum, 1e-9), np.nan)
+if mode == 'ortho':      # broad brightness from the blended mosaic, smoothed past the strip edges, times the fine detail
+  ok = (wsum > 0).astype(np.float32); sg = 2500. / (S / N)
+  low = ndimage.gaussian_filter(np.nan_to_num(m) * ok, sg) / np.maximum(ndimage.gaussian_filter(ok, sg), 1e-6)
+  m = np.where(wsum > 0, low * dacc / np.maximum(wsum, 1e-9), np.nan)
 print('coverage %.2f%%' % (100 * np.isfinite(m).mean()))
 np.save(OUT, m.astype(np.float32))

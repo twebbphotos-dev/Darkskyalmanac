@@ -25,9 +25,9 @@ const CRAFT = {
     views: {
       overview: { label: 'Overview', pos: [5.2, 2.6, 5.6], tgt: [-0.5, 0.7, 0.6] },
       heli: { label: 'Ingenuity', pos: [-1.3, 0.55, 4.6], tgt: [-2.5, 0.3, 2.6] },
-      drive: { label: 'Suspension', short: 'Susp.', pos: [4.6, 0.8, 2.3], tgt: [0.9, 0.5, 0.15] },
+      drive: { label: 'Suspension', pos: [4.6, 0.8, 2.3], tgt: [0.9, 0.5, 0.15], hide: true },      // no button: the camera the Drive button moves to
       mast: { label: 'Rover’s eye', pos: [-0.55, 1.98, 0.93], tgt: [-2.5, 0.25, 2.7], look: true, deploy: true },
-      above: { label: 'From above', short: 'Above', pos: [14000, 76000, 30000], tgt: [14000, 0, 5800], abs: true },
+      above: { label: 'From above', short: 'Above', pos: [-6200, 58000, 17500], tgt: [-6200, 0, -900], abs: true },      // centred on the rover's drives, so turning and zooming keep them in the middle
     },
     dist: [.8, 110000],
     parts: [
@@ -53,7 +53,7 @@ const CRAFT = {
     views: {
       overview: { label: 'Overview', pos: [4.5, 2.3, 5.1], tgt: [0, 0.95, 0.6] },
       wheel: { label: 'Wheels', pos: [3.2, 0.95, 3.0], tgt: [1.0, 0.35, 0.8] },
-      drive: { label: 'Suspension', short: 'Susp.', pos: [4.6, 0.8, 2.3], tgt: [0.9, 0.5, 0.15] },
+      drive: { label: 'Suspension', pos: [4.6, 0.8, 2.3], tgt: [0.9, 0.5, 0.15], hide: true },      // no button: the camera the Drive button moves to
       mast: { label: 'Rover’s eye', pos: [-0.52, 1.97, 0.93], tgt: [0.1, 1.25, 6], look: true, deploy: true },
     },
     parts: [
@@ -129,7 +129,7 @@ const CRAFT = {
       overview: { label: 'Overview', pos: [5.4, 2.1, -2.6], tgt: [0.1, 0.75, 0] },
       seat: { label: 'Driver’s seat', short: 'Seat', pos: [-0.62, 1.72, -0.32], tgt: [2.0, 1.25, -1.5], look: true },
       lander: { label: 'Lander', pos: [-3.2, 1.7, 1.4], tgt: [-145, 5.2, 39], look: true, fov: 9 },
-      sky: { label: 'Earth overhead', short: 'Earth', pos: [2.3, 0.3, -1.2], tgt: [2.05, 0.7, -1.05], look: true, fov: 56 },
+      sky: { label: 'Earth overhead', short: 'Earth', pos: [0.9, 0.22, -1.45], tgt: [0.69, 0.396, -1.33], look: true, fov: 56 },      // from the ground by the driver’s side, looking up past the chassis to Earth
       above: { label: 'From above', short: 'Above', pos: [-1500, 27000, 2900], tgt: [-1500, 0, 200] },
     },
     parts: [
@@ -534,10 +534,10 @@ function tuneLander(root) {      // NASA's lander is flat yellow and grey plasti
     else weather(m, .12, .1, .05, 3); }); });
 }
 /* Jezero Crater from above. The ground is real: a mosaic of elevation models the USGS made from stereo pairs taken by
-   the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to an 81 km square, north up (models/jezero.bin:
+   the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to a 90 km square, north up (models/jezero.bin:
    heights in quarter-metres relative to the landing site). Over it lies the same camera's orthorectified photography
    (models/jezero.jpg), black and white, given the tones of a true-colour orbital view. +x is east, +z is south. */
-const JZ = { W: 81016, C: [14018, 3835], R: 40500, RM: 3389500 };      // the square's centre (the crater's, near enough), in metres east and south of the landing site
+const JZ = { W: 90000, C: [-982, 3835], RM: 3389500 };      // the square's centre (18.38° N 77.433° E), in metres east and south of the landing site: the whole crater, the rover's drives and the country west of the rim
 function marsCrater(dem, map) {
   const M = Math.round(Math.sqrt(dem.length)), S = matchMedia('(max-width:600px)').matches ? Math.min(M, 384) : M, pos = [], uv = [], idx = [];
   const hAt = (x, z) => { const u = Math.max(0, Math.min(M - 1.001, ((x - JZ.C[0]) / JZ.W + .5) * M - .5)), v = Math.max(0, Math.min(M - 1.001, ((z - JZ.C[1]) / JZ.W + .5) * M - .5)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
@@ -546,7 +546,7 @@ function marsCrater(dem, map) {
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
     const a = i * (M - 1) / (S - 1), b = j * (M - 1) / (S - 1), x = JZ.C[0] + ((a + .5) / M - .5) * JZ.W, z = JZ.C[1] + ((b + .5) / M - .5) * JZ.W, r = Math.hypot(x, z), k = ss(450, 900, r);
     pos.push(x, hAt(x, z) * k - .4 * (1 - k) - r * r / (2 * JZ.RM), z); uv.push((a + .5) / M, 1 - (b + .5) / M); }      // tucked just under the rover's own patch of ground, and falling away with the curve of Mars
-  for (let j = 0; j < S - 1; j++) for (let i = 0; i < S - 1; i++) { const o = j * S + i; if (Math.hypot(i + .5 - (S - 1) / 2, j + .5 - (S - 1) / 2) * JZ.W / (S - 1) < JZ.R) idx.push(o, o + S, o + 1, o + 1, o + S, o + S + 1); }      // a disc: past it the photograph has already faded into haze
+  for (let j = 0; j < S - 1; j++) for (let i = 0; i < S - 1; i++) { const o = j * S + i; idx.push(o, o + S, o + 1, o + 1, o + S, o + S + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map }));      // the photograph already holds the light and shade of the real Sun
@@ -1159,7 +1159,7 @@ function setCraft(key, push) {
   $('sc-tabs').innerHTML = grp.items.map(k => k === 'voyager' ? '<a class="zcl-vbtn" href="voyager">Voyager 1</a>' : '<button class="zcl-vbtn' + (k === key ? ' on' : '') + '" data-c="' + k + '">' + CRAFT[k].tab + '</button>').join('');
   $('sc-tabs').querySelectorAll('[data-c]').forEach(b => b.addEventListener('click', () => { if (b.dataset.c !== craftKey) setCraft(b.dataset.c, true); }));
   $('sc-kicker').textContent = c.kicker; $('sc-title').textContent = c.title; $('sc-lede').textContent = c.lede;
-  $('sc-views').innerHTML = Object.entries(c.views).map(([k, v], i) => '<button class="zcl-vbtn' + (i ? '' : ' on') + '" data-v="' + k + '"><span class="l">' + v.label + '</span><span class="s">' + (v.short || v.label) + '</span></button>').join('');
+  $('sc-views').innerHTML = Object.entries(c.views).filter(e => !e[1].hide).map(([k, v], i) => '<button class="zcl-vbtn' + (i ? '' : ' on') + '" data-v="' + k + '"><span class="l">' + v.label + '</span><span class="s">' + (v.short || v.label) + '</span></button>').join('');
   $('sc-views').querySelectorAll('[data-v]').forEach(b => b.addEventListener('click', () => setView(b.dataset.v)));
   $('sc-cards').innerHTML = c.cards.map(k => '<div class="zcl-pcard"><div class="zcl-pclabel">' + k[0] + '</div><div class="zcl-pcval">' + k[1] + '</div><div class="zcl-pcsub">' + k[2] + '</div></div>').join('');
   $('sc-story').innerHTML = c.story; $('sc-extra').hidden = !c.extra; if (c.extra) { $('sc-extrat').textContent = c.extra.title; $('sc-extrab').innerHTML = c.extra.html; c.extra.draw($('sc-dia')); } $('sc-credit').innerHTML = (c.credit || '3D models: NASA 3D Resources (NASA/JPL-Caltech, NASA/GSFC).') + ' The 3D views need an internet connection.'; $('sc-link').href = c.link.href; $('sc-link').textContent = c.link.txt + ' ›';
@@ -1338,6 +1338,7 @@ function place() {
   $('sc-labels').querySelectorAll('.vg-lab').forEach(el => { const l = skyLabels[+el.dataset.i]; _v.copy(l[1]).project(camera);
     if (check && CRAFT[craftKey].env === 'moon') { _d.copy(l[1]).sub(camera.position); ray.far = _d.length(); ray.set(camera.position, _d.normalize()); el.dataset.hid = ray.intersectObjects(pickables, true).length ? '1' : ''; }      // a label behind the vehicle is hidden by it
     const far = camera.position.distanceTo(l[1]), on = !el.dataset.hid && _v.z < 1 && Math.abs(_v.x) < .93 && Math.abs(_v.y) < .93 && (camera.fov > 22 || l[3]) && !(l[2] && far < l[2]) && !(l[3] && far > l[3]) && !(l[4] && camera.position.y < l[4]); el.style.opacity = on ? 1 : 0;
+    if (on && !l[5]) { const x = (_v.x + 1) / 2 * w; if (x + 16 + el.offsetWidth > w - 4) el.style.opacity = 0; }      // a label that would run off the right edge is hidden, not cut
     el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (l[5] === 'L' ? ' translate(-100%,0) translateX(-22px)' : l[5] === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : l[5] === 'B' ? ' translate(-20px,12px)' : ''); });
 }
 function moonCam() {      // one Moon scene runs from the driver's seat to 25 km up: keep the near plane and the exposure in step with the height
@@ -1359,7 +1360,10 @@ function marsCam() {      // after the controls move the camera, so the sky is n
   if (scene.fog) { scene.fog.near = 25 + y * 2.5; scene.fog.far = 220 + y * 9; }
   if (u.route) { const o = Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
-  const high = y > 1200; if (u.crater) u.crater.visible = y > 30; u.near.forEach(o => { o.visible = !high; }); if (u.rocks) u.rocks.visible = !high;
+  if (u.crater) {      // the rover's patch of close-up ground (a repeating texture) fades out as the camera climbs, leaving the real crater
+    u.crater.visible = y > 20; const f = Math.max(0, Math.min(1, (y - 40) / 80));
+    u.near.forEach(o => { const m = o.material; o.visible = f < 1; if (m.transparent !== f > 0) { m.transparent = f > 0; m.depthWrite = !m.transparent; m.needsUpdate = true; } m.opacity = 1 - f; });
+    if (u.rocks) u.rocks.visible = f < .5; }
 }
 function stepTween() { if (!tween) return; const k = Math.min(1, (performance.now() - tween.t0) / tween.dur), R = 300; let e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     if (tween.zoom > 0) e = (Math.pow(R, e) - 1) / (R - 1); else if (tween.zoom < 0) e = 1 - (Math.pow(R, 1 - e) - 1) / (R - 1);
