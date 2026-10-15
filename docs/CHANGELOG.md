@@ -3,6 +3,22 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.89 / zion-sky-v357 — 2026-10-15
+- Perseverance "From above": all of Jezero Crater as real 3D terrain. USGS
+  CTX stereo elevation models (20 m) and their orthophotos, mosaicked into a
+  90 km square at true height, colored with the tones of a true-color orbital
+  photo; haze only where no stereo pair reaches. NASA's published traverse
+  drawn on it (558 drives, 46 km, 2021 to Oct 2026), one color per year, with
+  the latest position. The view pivots on the middle of the drives. Why: shows
+  where the rover is and where it has been, with real ground.
+- The close-up ground patch fades out as the camera climbs, so the real
+  crater takes over. Labels that would run off the edge hide.
+- Suspension button removed on Perseverance and Curiosity (Drive still uses
+  that camera). Why: not needed.
+- Lunar Rover "Earth overhead": now from the ground by the driver's side,
+  looking up past the chassis, clear of the antenna. Why: the antennas nearly
+  hid Earth.
+
 ## v3.88 / zion-sky-v356 — 2026-10-15
 - Mars Rover Simulator links: a card on the Objects page, and a "Drive on
   Mars" card on the Perseverance and Curiosity pages of NASA Spacecraft
