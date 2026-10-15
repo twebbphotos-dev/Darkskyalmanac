@@ -60,6 +60,8 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 .zcl-sat-town{fill:#F2E4BE;stroke:rgba(13,10,24,.85);stroke-width:3}
 .zcl-sat-lbl{font-family:Montserrat,sans-serif;font-size:34px;font-weight:600;fill:#F2E4BE;stroke:rgba(13,10,24,.85);stroke-width:7px;paint-order:stroke;letter-spacing:.5px}
 .zcl-sat-bar100{fill:none;stroke:#F2E4BE;stroke-width:3.5}
+.zcl-sat-now{max-width:520px;margin:0 auto 10px;text-align:center;font-size:13px;line-height:1.5;color:#C9BD97}
+.zcl-sat-now b{color:#F2E4BE;font-weight:600}
 .zcl-sat-gw{fill:#E6CC85}
 .zcl-sat-park{font-size:26px;font-weight:500;fill:#CBA85A}
 .zcl-sat-gwdot{fill:#E6CC85;stroke:rgba(13,10,24,.85);stroke-width:3}
@@ -145,6 +147,7 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 
   <div class="zcl-card" id="zcl-sat-card" hidden>
     <div class="zcl-cardtit">Satellite &middot; Clouds Right Now</div>
+    <div class="zcl-sat-now" id="zcl-sat-now" hidden></div>
     <div class="zcl-sat" id="zcl-sat"><div class="zcl-sat-stage" id="zcl-sat-stage"></div><div class="zcl-sat-pin"></div></div>
     <div class="zcl-sat-bar">
       <button class="zcl-sat-play" id="zcl-sat-play" type="button" aria-label="Pause">&#10074;&#10074;</button>
@@ -152,7 +155,7 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
       <span class="zcl-sat-time" id="zcl-sat-time"></span>
       <button class="zcl-sat-play zcl-sat-zoom" id="zcl-sat-zoom" type="button" aria-label="Zoom in">2&times;</button>
     </div>
-    <div class="zcl-note" style="margin-top:10px;text-align:center">Last three hours of infrared imagery from the <span id="zcl-sat-name">GOES</span> weather satellite, via NASA GIBS. Brighter means colder, higher cloud tops; it works day and night. Dashed lines are state and province borders; the gold ring is your location.</div>
+    <div class="zcl-note" style="margin-top:10px;text-align:center">Last three hours of infrared imagery from the <span id="zcl-sat-name">GOES</span> weather satellite, via NASA GIBS. Brighter means colder, higher cloud tops; it works day and night. Dashed lines are state and province borders; the gold ring is your location. The summary above the map is an estimate from the pictures; infrared can miss low fog and thin haze at night.</div>
   </div>
 
   <div class="zcl-cardtit" style="margin:2px 0 6px">By Model &middot; Unblended</div>
@@ -261,6 +264,86 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
     try{ localStorage.setItem('dsa-sat-zoom',String(z)) }catch(e){}
     drawMap();
   }
+  // Nowcast from the frames themselves (needs readable pixels, so not in the
+  // plain-image fallback). At the 1x view each of 128 analysis pixels is about
+  // 7 km. Cloud: tinted (GIBS colors only very cold tops) or clearly brighter
+  // than the scene's clear background (its 15th percentile). Motion: the shift
+  // that best lines up frames an hour apart, after taking out what stays put
+  // (terrain), averaged over the loop. Arrival: the first cloud pixel whose
+  // drift brings it within about 10 miles of the ring.
+  function nowcast(frames){
+    const SZ=128, KM=(2*HL*111.32)/SZ, MI=0.621371, n=frames.length;
+    if(n<7) return;
+    const cv=document.createElement('canvas'); cv.width=cv.height=SZ;
+    const cx=cv.getContext('2d',{willReadFrequently:true});
+    Promise.all(frames.map(f=>f.el.decode().catch(()=>{}))).then(()=>{
+      const G=[], C=[];
+      for(const f of frames){
+        cx.clearRect(0,0,SZ,SZ); cx.drawImage(f.el,0,0,SZ,SZ);
+        let px; try{ px=cx.getImageData(0,0,SZ,SZ).data }catch(e){ return }
+        const g=new Float32Array(SZ*SZ), c=new Uint8Array(SZ*SZ);
+        for(let i=0;i<SZ*SZ;i++){ const r=px[4*i],gg=px[4*i+1],b=px[4*i+2];
+          g[i]=0.299*r+0.587*gg+0.114*b; c[i]=(Math.max(r,gg,b)-Math.min(r,gg,b))>48?1:0 }
+        G.push(g); C.push(c);
+      }
+      const mask=k=>{ const s=Array.from(G[k]).sort((a,b)=>a-b), bg=s[Math.floor(s.length*0.15)];
+        const m=new Uint8Array(SZ*SZ); for(let i=0;i<SZ*SZ;i++) m[i]=(C[k][i]||G[k][i]>bg+40)?1:0; return m };
+      const c0=SZ/2, R25=40/KM;
+      const frac=m=>{ let a=0,t=0; for(let y=0;y<SZ;y++)for(let x=0;x<SZ;x++){ if(Math.hypot(x-c0,y-c0)<=R25){ t++; a+=m[y*SZ+x] } } return a/t };
+      const last=n-1, mNow=mask(last);
+      const kPast=frames.findIndex(f=>(frames[last].d-f.d)<=2*3600e3+60e3);
+      const fNow=frac(mNow), fPast=frac(mask(Math.max(0,kPast)));
+      let over=0; for(let y=-1;y<=1;y++)for(let x=-1;x<=1;x++) over+=mNow[(c0+y)*SZ+c0+x];
+      const overhead=over>=5;
+      // Motion
+      const base=new Float32Array(SZ*SZ).fill(1e9);
+      for(const g of G) for(let i=0;i<SZ*SZ;i++) if(g[i]<base[i]) base[i]=g[i];
+      const A=G.map(g=>{ const a=new Float32Array(SZ*SZ); for(let i=0;i<SZ*SZ;i++) a[i]=g[i]-base[i]; return a });
+      const vs=[];
+      for(let i=0;i+1<n;i++){
+        let j=i+1; while(j<n&&(frames[j].d-frames[i].d)<50*60e3) j++;
+        if(j>=n||(frames[j].d-frames[i].d)>70*60e3) continue;
+        const a=A[i], b=A[j], M=16, D=16; let best=-1, bx=0, by=0, e0=0;
+        for(let y=M;y<SZ-M;y++)for(let x=M;x<SZ-M;x++) e0+=a[y*SZ+x]*a[y*SZ+x];
+        if(e0<SZ*SZ*4) continue;                       // nothing moving to track
+        // Normalized correlation, so a cloud half out of the window doesn't
+        // drag the answer toward zero.
+        for(let dy=-D;dy<=D;dy++)for(let dx=-D;dx<=D;dx++){ let sab=0,saa=0,sbb=0;
+          for(let y=M;y<SZ-M;y+=2)for(let x=M;x<SZ-M;x+=2){ const p=a[y*SZ+x], q=b[(y+dy)*SZ+x+dx]; sab+=p*q; saa+=p*p; sbb+=q*q }
+          const sc=sab/Math.sqrt(saa*sbb+1e-9); if(sc>best){ best=sc; bx=dx; by=dy } }
+        const h=(frames[j].d-frames[i].d)/3600e3; vs.push([bx/h,by/h,e0*Math.max(best,0)]);
+        i=j-1;
+      }
+      // Weighted by how much cloud each hour tracked and how well it matched.
+      let vx=0, vy=0, wt=0; vs.forEach(v=>{vx+=v[0]*v[2];vy+=v[1]*v[2];wt+=v[2]}); if(wt>0){ vx/=wt; vy/=wt }
+      const kmh=Math.hypot(vx,vy)*KM, moving=vs.length>=2&&kmh>=8;
+      const dir=(dxp,dyp)=>['north','northeast','east','southeast','south','southwest','west','northwest'][Math.round(((Math.atan2(dxp,-dyp)*180/Math.PI)+360)%360/45)%8];
+      // Nearest cloud and arrival
+      let near=null, arr=null;
+      for(let y=0;y<SZ;y++)for(let x=0;x<SZ;x++){ if(!mNow[y*SZ+x]) continue;
+        const rx=x-c0, ry=y-c0, d=Math.hypot(rx,ry);
+        if(d>2&&(!near||d<near.d)) near={d,rx,ry};
+        if(moving&&!overhead){ const vv=vx*vx+vy*vy, t=-(rx*vx+ry*vy)/vv, rp=16/KM;
+          if(t>0){ const cxp=rx+vx*t, cyp=ry+vy*t, dd=Math.hypot(cxp,cyp);
+            if(dd<rp){ const ta=t-Math.sqrt(rp*rp-dd*dd)/Math.sqrt(vv); if(ta>0&&ta<4&&(arr===null||ta<arr)) arr=ta } } } }
+      const tf=d=>(window.ZCLTZ&&ZCLTZ.fmtTime)?ZCLTZ.fmtTime(d):d.toLocaleTimeString([], {hour:'numeric',minute:'2-digit'});
+      const pct=v=>Math.round(v*100/5)*5+'%';
+      const trend=fNow-fPast>0.15?'rising':fPast-fNow>0.15?'falling':'steady';
+      let t1='<b>'+(overhead?'Cloud overhead':'Clear overhead')+'</b> at '+tf(frames[last].d)+'. Cloud within 25 mi: '+pct(fNow)+', '+trend+(trend==='steady'?'':' from '+pct(fPast))+' over two hours.';
+      let t2='';
+      if(moving){
+        const mph=Math.round(kmh*MI/5)*5||5, to=dir(vx,vy);
+        if(!overhead&&near){ const mi=Math.round(near.d*KM*MI/5)*5||5;
+          t2='Nearest cloud about '+mi+' mi '+dir(near.rx,near.ry)+', drifting '+to+' at about '+mph+' mph';
+          if(arr!==null){ const at=new Date(frames[last].d.getTime()+arr*3600e3);
+            t2+=at<new Date()?'; it may already be reaching you.':'; it could reach you around <b>'+tf(at)+'</b>.' }
+          else t2+='; on this track it misses you.';
+        } else t2='Clouds are drifting '+to+' at about '+mph+' mph.';
+      } else if(!overhead&&near&&fNow<0.05){ t2='Little cloud in the area.' }
+      const el=$('zcl-sat-now'); el.innerHTML=t1+(t2?'<br>'+t2:''); el.hidden=false;
+    });
+  }
+
   (async function(){
     const start=Math.floor(Date.now()/STEP)*STEP-3*STEP;
     let end=null, first=null;
@@ -275,6 +358,7 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
     setZoom(ZOOM);
     $('zcl-sat-zoom').addEventListener('click',()=>setZoom(ZOOM===1?2:ZOOM===2?4:1));
     $('zcl-sat-card').hidden=false;
+    if(!plain) setTimeout(()=>nowcast(frames),300);
     const n=frames.length, range=$('zcl-sat-range'), btn=$('zcl-sat-play'), lab=$('zcl-sat-time');
     range.max=n-1;
     let cur=n-1, playing=n>1, timer=null;

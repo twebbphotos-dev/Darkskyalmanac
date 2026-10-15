@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.85 / zion-sky-v353 — 2026-10-15
+- Satellite loop: a two-line summary above the map, estimated from the
+  pictures. Whether there is cloud overhead, how much cloud is within 25
+  miles and whether it is rising or falling over two hours, and, when the
+  clouds are moving, the nearest cloud's distance and direction, its drift
+  speed, and when it could reach you (or that it will miss). The note says
+  infrared can miss low fog at night. Why: the loop shows what is coming,
+  but reading speed and timing off an animation is hard on a phone.
+
 ## v3.84 / zion-sky-v352 — 2026-10-15
 - Satellite loop: a 4x zoom step (the button cycles 1x, 2x, 4x), and a
   longer, calmer loop: three hours in 18 frames, 0.65 s each, with a 2.4 s
