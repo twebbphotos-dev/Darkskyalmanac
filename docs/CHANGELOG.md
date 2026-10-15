@@ -3,6 +3,17 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.90 / zion-sky-v358 — 2026-10-15
+- Jezero "From above": zoomed out, the map no longer ends at a square. Its
+  edges fade into the ground's broad colors, which a low-detail skirt carries
+  out to the horizon, curving with the planet; from the air the distance fades
+  into the dusty sky. Why: the edge showed as a different-colored band.
+- Four milestone pins at the rover's position on the day (from NASA's drive
+  file): Ingenuity's first flight, first rock core (Rochette), the sample
+  depot (Three Forks) and Cheyava Falls. Named when zoomed in. Why: shows
+  the mission's most newsworthy moments on the route.
+- Labels that would run off the left edge move to the right of their point.
+
 ## v3.89 / zion-sky-v357 — 2026-10-15
 - Perseverance "From above": all of Jezero Crater as real 3D terrain. USGS
   CTX stereo elevation models (20 m) and their orthophotos, mosaicked into a
