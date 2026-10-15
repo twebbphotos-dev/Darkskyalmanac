@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.86 / zion-sky-v354 — 2026-10-15
+- Jezero Traverse, the Mars rover game, at rover/: land Perseverance, drive
+  it over HiRISE terrain of Jezero Crater, fly Ingenuity, aim Mastcam-Z.
+  Launched from a "Drive on Mars" card on the Mars page, with a back link.
+  Not precached: the service worker treats it like the 3D models, and
+  Settings > Download everything saves it for offline play. Shares the
+  app's Ingenuity model; unused textures dropped. Sources page credits
+  HiRISE, NASA/JPL-Caltech, Poly Haven and three.js. Why: a hands-on way
+  into Mars without adding a byte for visitors who never open it.
+
 ## v3.85 / zion-sky-v353 — 2026-10-15
 - Satellite loop: a two-line summary above the map, estimated from the
   pictures. Whether there is cloud overhead, how much cloud is within 25
