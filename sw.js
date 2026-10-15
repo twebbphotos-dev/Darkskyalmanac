@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v353';
+const CACHE = 'zion-sky-v354';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -82,7 +82,21 @@ const OFFLINE3D = [
   'img/cmp/carina-hubble.jpg', 'img/cmp/carina-webb.jpg', 'img/cmp/deep-field-hubble.jpg',
   'img/cmp/deep-field-webb.jpg', 'img/cmp/pillars-hubble.jpg', 'img/cmp/pillars-webb.jpg',
   'img/cmp/southern-ring-hubble.jpg', 'img/cmp/southern-ring-webb.jpg',
-  'img/a17-flag.jpg'
+  'img/a17-flag.jpg',
+  // Mars rover game (rover/), opened from the Mars page: page, code, models,
+  // terrain, textures and photos (about 19 MB). Same rules as the 3D models.
+  'rover/',
+  'rover/dtm/area_4m.png', 'rover/dtm/site_1m.png', 'rover/img/jezero-region.jpg',
+  'rover/img/mars-globe.jpg', 'rover/models/perseverance.glb', 'rover/models/rocks/boulder_01.glb',
+  'rover/models/rocks/boulder_namaqua_03.glb', 'rover/models/rocks/boulder_namaqua_03_low.glb', 'rover/models/rocks/boulder_namaqua_06.glb',
+  'rover/models/rocks/rock_moon_04_low.glb', 'rover/models/rocks/stone_01_low.glb', 'rover/models/rocks/stones_namaqua_01_low.glb',
+  'rover/photos/PIA17062.jpg', 'rover/photos/PIA19075.jpg', 'rover/photos/PIA19076.jpg',
+  'rover/photos/PIA19161.jpg', 'rover/photos/PIA24485.jpg', 'rover/photos/PIA24684.jpg',
+  'rover/rover.bundle.js', 'rover/tex/pebbles_diff.jpg', 'rover/tex/pebbles_nor.jpg',
+  'rover/tex/regolith_diff.jpg', 'rover/tex/regolith_disp.jpg',
+  'rover/tex/regolith_nor.jpg', 'rover/tex/sand_diff.jpg',
+  'rover/tex/sand_disp.jpg', 'rover/tex/sand_nor.jpg',
+  'rover/tex/slab_diff.jpg', 'rover/tex/slab_disp.jpg', 'rover/tex/slab_nor.jpg'
 ];
 // ── Star ID (solver/) ────────────────────────────────────
 // The plate solver and its star catalog (about 6.5 MB). Saved the first time
@@ -272,12 +286,13 @@ self.addEventListener('fetch', function(e){
   // Live satellite tiles (NASA GIBS): straight to the network, never stored.
   // A two-hour loop is a few hundred tiles that are stale within the hour.
   if(url.indexOf('earthdata.nasa.gov') !== -1) return;
-  // The 3D spacecraft viewers: models and three.js bundles (about 20 MB) are
+  // The 3D spacecraft viewers and the Mars rover game: models, three.js bundles,
+  // terrain and textures (about 40 MB) are
   // only kept if the user chose "Download everything". If they did: offline
   // we serve the saved copy; online we take the network (so an updated model
   // is never mixed with an old one), refresh the saved copy, and fall back
   // to it on a weak signal. If they didn't: plain network, nothing stored.
-  if(/\/models\/|\.bundle\.js/.test(url)){
+  if(/\/models\/|\.bundle\.js|\/rover\//.test(url)){
     e.respondWith(caches.has(C3D).then(function(has){
       if(!has) return fetch(req);
       return caches.open(C3D).then(function(c){

@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<title>Jezero Traverse · Perseverance &amp; Ingenuity</title>
+<meta name="description" content="Drive Perseverance across Martian topography and read the layers in the rock with Mastcam-Z.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#141319; --panel:rgba(13,10,24,.9); --line:rgba(203,168,90,.3);
+    --gold:#CBA85A; --hi:#F2E4BE; --dim:#9A8A66; --mute:#7A6E55;
+    --green:#6FCF7F; --cyan:#7FD4E0;
+    --ui:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  }
+  *{box-sizing:border-box}
+  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);
+    font-family:var(--ui);color:var(--hi);
+    -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
+  #scene{position:fixed;inset:0;display:block;width:100%;height:100%}
+
+  /* ── top bar ─────────────────────────────────────── */
+  #top{position:fixed;top:0;left:0;right:0;z-index:20;display:flex;align-items:center;gap:10px;
+    padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;
+    background:linear-gradient(180deg,rgba(13,10,24,.85),rgba(13,10,24,0));pointer-events:none}
+  #back{pointer-events:auto;display:flex;align-items:center;justify-content:center;width:34px;height:34px;border-radius:50%;
+    border:1px solid var(--line);background:var(--panel);color:var(--gold);font-size:22px;line-height:1;text-decoration:none;backdrop-filter:blur(10px)}
+  #title{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  #title small{display:block;font-size:8.5px;letter-spacing:.1em;color:var(--mute);font-weight:400;margin-top:2px}
+  .stats{margin-left:auto;display:flex;gap:7px}
+  .stat{background:var(--panel);border:1px solid var(--line);border-radius:7px;
+    padding:6px 11px;text-align:center;min-width:66px;backdrop-filter:blur(10px)}
+  .stat b{display:block;font-size:15px;line-height:1.15;font-weight:600;font-variant-numeric:tabular-nums}
+  .stat span{font-size:7.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+
+  /* ── bottom bar ──────────────────────────────────── */
+  #bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;
+    padding:12px 14px calc(env(safe-area-inset-bottom,0px) + 12px);
+    display:flex;align-items:flex-end;gap:11px;
+    background:linear-gradient(0deg,rgba(13,10,24,.78),rgba(13,10,24,0))}
+  .btn{font-family:inherit;font-size:9.5px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+    border-radius:7px;padding:11px 14px;cursor:pointer;border:1px solid var(--line);
+    background:var(--panel);color:var(--gold);backdrop-filter:blur(10px);transition:all .15s;white-space:nowrap}
+  .btn:hover{border-color:var(--gold);color:var(--hi)}
+  .btn.primary{background:var(--gold);color:#0d0a18;border-color:var(--gold);padding:13px 26px;font-size:10.5px}
+  #acts{display:flex;flex-direction:column;gap:7px}
+  #hint{font-size:8.5px;letter-spacing:.07em;color:var(--mute);line-height:1.65;max-width:290px}
+  #hint b{color:var(--dim);font-weight:600}
+
+  #pad{margin-left:auto}
+  /* analogue thumbstick */
+  .stick{position:relative;width:132px;height:132px;border-radius:50%;touch-action:none;pointer-events:auto;
+    background:radial-gradient(circle,rgba(203,168,90,.10) 0 30%,rgba(13,10,24,.62) 31%);border:1px solid var(--line);
+    box-shadow:inset 0 0 0 1px rgba(0,0,0,.4);-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+  .stick::before{content:'';position:absolute;inset:18px;border-radius:50%;border:1px dashed rgba(203,168,90,.22)}
+  .stick i{position:absolute;left:50%;top:50%;width:56px;height:56px;margin:-28px 0 0 -28px;border-radius:50%;
+    background:radial-gradient(circle at 40% 35%,#f2e4be,#cba85a 60%,#8f733a);box-shadow:0 4px 14px rgba(0,0,0,.55);
+    will-change:transform}
+  .stick.on{border-color:var(--gold)} .stick.on i{box-shadow:0 0 0 6px rgba(203,168,90,.18),0 4px 14px rgba(0,0,0,.55)}
+  .p-up{grid-area:1/2}.p-left{grid-area:2/1}.p-down{grid-area:2/2}.p-right{grid-area:2/3}
+
+  /* ── contextual prompt ───────────────────────────── */
+  #prompt{position:fixed;left:50%;bottom:112px;transform:translateX(-50%) translateY(6px);z-index:25;
+    background:rgba(203,168,90,.95);color:#0d0a18;border-radius:7px;padding:9px 16px;
+    font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;white-space:nowrap;
+    opacity:0;transition:opacity .2s,transform .2s;pointer-events:none}
+  #prompt.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── outcrop screen markers ──────────────────────── */
+  #marks{position:fixed;inset:0;z-index:15;pointer-events:none}
+  .mark{position:absolute;top:0;left:0;margin:-30px 0 0 -24px;display:none;
+    width:48px;text-align:center}
+  .mark i{display:block;width:13px;height:13px;margin:0 auto 3px;border-radius:50%;
+    border:1.5px solid var(--gold);background:rgba(203,168,90,.2);
+    box-shadow:0 0 8px rgba(203,168,90,.5)}
+  .mark b{font-size:8px;font-weight:600;letter-spacing:.07em;color:var(--gold);
+    text-shadow:0 1px 3px rgba(0,0,0,.9)}
+  .mark.heli{width:120px;margin-left:-60px}
+  .mark.heli i{border-color:var(--cyan);background:rgba(127,212,224,.2);box-shadow:0 0 8px rgba(127,212,224,.5)}
+  .mark.heli b{color:var(--cyan);white-space:nowrap}
+
+  /* ── Mastcam overlay ─────────────────────────────── */
+  #camhud{position:fixed;inset:0;z-index:18;display:none;pointer-events:none}
+  body.camview #camhud{display:block}
+  body.camview #hint,body.camview #prompt{}
+  #camhud::after{content:'';position:absolute;inset:0;
+    background:radial-gradient(ellipse at center,transparent 56%,rgba(0,0,0,.42) 100%)}
+  .corner{position:absolute;width:30px;height:30px;border:1.5px solid rgba(203,168,90,.75)}
+  .c-tl{top:62px;left:52px;border-right:0;border-bottom:0}
+  .c-tr{top:62px;right:52px;border-left:0;border-bottom:0}
+  .c-bl{bottom:112px;left:52px;border-right:0;border-top:0}
+  .c-br{bottom:112px;right:52px;border-left:0;border-top:0}
+  #cross{position:absolute;left:50%;top:50%;width:46px;height:46px;margin:-23px 0 0 -23px}
+  #cross:before,#cross:after{content:'';position:absolute;background:rgba(203,168,90,.8)}
+  #cross:before{left:50%;top:0;bottom:0;width:1px;margin-left:-.5px}
+  #cross:after{top:50%;left:0;right:0;height:1px;margin-top:-.5px}
+  #camlabel{position:absolute;top:66px;left:92px;font-size:9px;letter-spacing:.17em;
+    text-transform:uppercase;color:rgba(203,168,90,.9);font-weight:600}
+  #camlabel span{color:var(--mute);letter-spacing:.1em}
+  #reticle{position:absolute;left:50%;top:50%;margin:-56px 0 0 -56px;width:112px;height:112px;
+    border:1.5px solid var(--green);border-radius:5px;opacity:0;transition:opacity .18s}
+  #reticle.on{opacity:1}
+  #reticle b{position:absolute;top:-19px;left:0;font-size:8px;letter-spacing:.13em;color:var(--green);font-weight:600}
+  #reticle i{position:absolute;bottom:-19px;right:0;font-size:8px;letter-spacing:.1em;
+    color:var(--green);font-style:normal;font-weight:600}
+
+  /* ── sheets ──────────────────────────────────────── */
+  .sheet{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
+    padding:22px;background:rgba(8,6,14,.86);backdrop-filter:blur(7px)}
+  .sheet.on{display:flex}
+  .card{max-width:470px;width:100%;background:rgba(18,14,28,.97);border:1px solid var(--line);
+    border-radius:13px;padding:24px;max-height:88vh;overflow-y:auto}
+  .card h1{margin:0 0 3px;font-size:17px;letter-spacing:.03em;font-weight:600}
+  .card h2{margin:0 0 16px;font-size:9px;letter-spacing:.17em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  .card p{margin:0 0 11px;font-size:12.5px;line-height:1.62;color:#C9BD97;font-weight:300}
+  .card p b{color:var(--hi);font-weight:600}
+  .keys{display:grid;grid-template-columns:auto 1fr;gap:5px 11px;margin:14px 0 18px;
+    font-size:11px;color:#C9BD97;align-items:center}
+  .keys kbd{font-family:inherit;font-size:9px;font-weight:600;letter-spacing:.06em;
+    background:rgba(203,168,90,.14);border:1px solid var(--line);border-radius:4px;
+    padding:4px 7px;color:var(--gold);text-align:center;white-space:nowrap}
+  .row{margin:0 0 13px;padding-left:11px;border-left:2px solid rgba(203,168,90,.4)}
+  .row span{display:block;font-size:8px;letter-spacing:.15em;text-transform:uppercase;
+    color:var(--mute);margin-bottom:3px}
+  .row p{margin:0;font-size:12.5px;line-height:1.6}
+  #card-n{font-size:8.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--mute);margin-bottom:7px}
+  .card.wide{max-width:560px}
+  #real{margin:18px 0 18px;padding-top:16px;border-top:1px solid rgba(203,168,90,.2)}
+  #real h2{margin-bottom:11px}
+  #real-link{display:block;text-decoration:none;color:inherit;border-radius:8px}
+  #real-link:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  #real-fig{position:relative;margin:0 0 11px;aspect-ratio:16/10;border-radius:8px;overflow:hidden;
+    background:#0c0913;border:1px solid var(--line)}
+  #real-img{width:100%;height:100%;object-fit:cover;display:block}
+  #real-fig figcaption{position:absolute;inset:0;display:none;align-items:center;justify-content:center;
+    text-align:center;padding:18px;font-size:10.5px;line-height:1.7;letter-spacing:.05em;color:var(--mute)}
+  #real-fig figcaption b{color:var(--gold);font-weight:600}
+  #real-fig.wait #real-wait{display:flex}
+  #real-fig.wait #real-img,#real-fig.none #real-img{visibility:hidden}
+  #real-fig.none{aspect-ratio:auto;min-height:92px}
+  #real-fig.none #real-none{display:flex;position:static;min-height:92px}
+  #real-place{font-size:13px;font-weight:600;color:var(--hi);letter-spacing:.01em}
+  #real-by{font-size:9px;letter-spacing:.11em;text-transform:uppercase;color:var(--gold);margin:3px 0 9px}
+  #real-note{margin:0 0 8px;font-size:12px;line-height:1.6;color:#C9BD97;font-weight:300}
+  #real-credit{font-size:8.5px;letter-spacing:.05em;color:var(--mute)}
+
+  #minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 66px);right:14px;z-index:21;width:150px;height:150px;
+    border-radius:50%;border:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.45);cursor:pointer;background:#0c0913}
+  body.edl #minimap,body.camview #minimap{display:none}
+  #attitude{position:fixed;top:calc(env(safe-area-inset-top,0px) + 224px);right:9px;z-index:21;width:160px;height:92px;
+    border-radius:10px;background:rgba(13,10,24,.72);border:1px solid var(--line);backdrop-filter:blur(8px);pointer-events:none}
+  body.edl #attitude,body.camview #attitude,body.brief #attitude{display:none}
+  #mapsheet .mapcard{max-width:620px}
+  #bigmap{display:block;width:min(100%,62vh);margin-left:auto !important;margin-right:auto !important;aspect-ratio:1;border-radius:8px;border:1px solid var(--line);margin:0 0 10px}
+  .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:9.5px;letter-spacing:.05em;color:var(--dim);margin-bottom:8px}
+  .legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
+  .lg-you{background:#F2E4BE;clip-path:polygon(50% 0,100% 100%,50% 70%,0 100%)} .lg-heli{border:2px solid #7FD4E0;border-radius:50%}
+  .lg-found{background:#CBA85A;transform:rotate(45deg) scale(.8)} .lg-logged{background:#6FCF7F;transform:rotate(45deg) scale(.8)}
+  .lg-clue{border:1.5px dashed #7FD4E0;border-radius:50%} .lg-fog{background:#2a2230}
+  canvas{touch-action:none}
+  #flash{position:fixed;inset:0;z-index:19;background:#fff;opacity:0;pointer-events:none}
+  /* the Mastcam sequence: letterbox, a step caption, an iris and a shutter */
+  #letterbox i{position:fixed;left:0;right:0;height:0;background:#000;z-index:18;transition:height .6s cubic-bezier(.2,.7,.2,1);pointer-events:none}
+  #letterbox i:first-child{top:0} #letterbox i:last-child{bottom:0}
+  body.cinema #letterbox i{height:9vh}
+  body.cinema #top,body.cinema #bottom,body.cinema #minimap,body.cinema #attitude,body.cinema #prompt,body.cinema #toast{opacity:0;pointer-events:none}
+  #top,#bottom,#minimap,#attitude{transition:opacity .4s}
+  #beat{position:fixed;left:calc(env(safe-area-inset-left,0px) + 5vw);bottom:calc(9vh + 22px);z-index:26;max-width:min(560px,86vw);
+    pointer-events:none;opacity:0;transform:translateY(8px);transition:opacity .45s,transform .45s;
+    border-left:2px solid var(--gold);padding:4px 0 4px 14px;text-shadow:0 1px 8px rgba(0,0,0,.75)}
+  #beat.on{opacity:1;transform:none}
+  #beat b{display:block;font-size:9px;letter-spacing:.2em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:4px}
+  #beat span{display:block;font-size:19px;font-weight:600;color:#F7EBCB;letter-spacing:.01em;margin-bottom:5px}
+  #beat small{display:block;font-size:12px;line-height:1.5;color:#E6D7B2;font-weight:400}
+  body.camview #beat{bottom:auto;top:calc(env(safe-area-inset-top,0px) + 112px)}
+  #iris{position:fixed;inset:0;z-index:27;background:#000;opacity:0;pointer-events:none}
+  #shutter{position:fixed;inset:0;z-index:28;pointer-events:none;transform:scaleY(0);
+    background:linear-gradient(#000 0 50%,#000 50% 100%);transform-origin:50% 50%}
+  #stamp{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:29;opacity:0;pointer-events:none;
+    border:1.5px solid #F7EBCB;padding:10px 18px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#F7EBCB;font-weight:600;
+    background:rgba(13,10,24,.45);backdrop-filter:blur(3px);white-space:nowrap}
+  @media(max-width:720px){ #beat span{font-size:16px} #beat small{font-size:11px} body.cinema #letterbox i{height:7vh} #beat{bottom:calc(7vh + 14px)} }
+  #toast{position:fixed;left:50%;top:76px;transform:translateX(-50%) translateY(-5px);z-index:30;
+    background:rgba(13,10,24,.95);border:1px solid var(--line);border-radius:8px;
+    padding:10px 18px;font-size:11px;letter-spacing:.02em;color:var(--hi);
+    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
+    text-align:center;max-width:78vw;backdrop-filter:blur(10px)}
+  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  #loading{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
+    background:var(--bg);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
+  #loading.on{display:flex}
+
+  @media(max-width:720px){
+    #minimap{width:104px;height:104px;top:calc(env(safe-area-inset-top,0px) + 62px);right:10px}
+    #attitude{width:112px;height:64px;top:calc(env(safe-area-inset-top,0px) + 172px);right:6px}
+    #hint{display:none} #title small{display:none}
+    .stat{min-width:54px;padding:5px 8px} .stat b{font-size:13px}
+    #bottom{gap:8px;padding:10px 10px calc(env(safe-area-inset-bottom,0px) + 10px)}
+    .c-tl,.c-tr{top:58px}.c-bl,.c-br{bottom:106px}
+    .c-tl,.c-bl{left:20px}.c-tr,.c-br{right:20px}
+    #camlabel{left:58px;top:62px}
+  }
+  @media(min-width:721px){ #pad{display:none} }
+
+  /* ── level 1: the landing ────────────────────────── */
+  .two{display:flex;gap:9px;flex-wrap:wrap}
+  .fine{font-size:11px !important;color:var(--mute) !important}
+  .res{display:grid;grid-template-columns:repeat(3,1fr);gap:7px;margin:4px 0 15px}
+  .res div{background:rgba(203,168,90,.07);border:1px solid var(--line);border-radius:7px;padding:10px 4px;text-align:center}
+  .res b{display:block;font-size:17px;font-weight:600;color:var(--hi);font-variant-numeric:tabular-nums}
+  .res span{font-size:7.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--mute)}
+  .card.brief{max-width:760px}
+  .keys.tc,.tci{display:none}
+  .spec{display:grid;grid-template-columns:auto 1fr;gap:4px 14px;margin:2px 0 14px;padding:10px 12px;border-radius:7px;
+    background:rgba(203,168,90,.06);border:1px solid rgba(203,168,90,.18);font-size:11px;line-height:1.4}
+  .spec span{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);padding-top:2px}
+  .spec b{color:var(--hi);font-weight:500;font-variant-numeric:tabular-nums}
+  @media (pointer:coarse){ .keys.kb,.kbi{display:none} .keys.tc{display:grid} .tci{display:inline} }
+  .maps{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 16px}
+  .maps figure{margin:0;min-width:0}
+  .maps canvas,.maps img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0c0913}
+  .maps [hidden]{display:none}
+  .maps figcaption{margin-top:8px;font-size:10.5px;line-height:1.55;color:#C9BD97;font-weight:300}
+  .maps figcaption b{display:block;font-size:8.5px;letter-spacing:.15em;text-transform:uppercase;color:var(--gold);font-weight:600;margin-bottom:2px}
+  .maps figcaption i{display:block;font-style:normal;font-size:8.5px;color:var(--mute);margin-top:3px}
+  .maps figcaption u{display:inline-block;width:8px;height:8px;border-radius:2px;margin:0 4px 0 7px;text-decoration:none;vertical-align:baseline}
+  .maps figcaption u:first-of-type{margin-left:0}
+  .k-safe{background:#8FB98A}.k-haz{background:#C4604A}.k-out{background:var(--hi);transform:rotate(45deg) scale(.8)}
+  .plan{list-style:none;margin:0 0 18px;padding:0;display:grid;grid-template-columns:auto auto 1fr;gap:7px 12px;align-items:baseline}
+  .plan li{display:contents}
+  .plan em{font-style:normal;font-size:10px;font-weight:600;color:var(--gold);text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .plan b{font-size:11.5px;font-weight:600;color:var(--hi);white-space:nowrap}
+  .plan span{font-size:11.5px;line-height:1.5;color:#C9BD97;font-weight:300}
+  .plan kbd{font-family:inherit;font-size:8.5px;font-weight:600;letter-spacing:.05em;background:rgba(203,168,90,.14);
+    border:1px solid var(--line);border-radius:4px;padding:1px 5px;color:var(--gold);white-space:nowrap}
+  @media(max-width:620px){
+    .maps{gap:9px} .maps figcaption{font-size:9.5px} .maps figcaption i{display:none}
+    .plan{grid-template-columns:auto 1fr} .plan span{grid-column:1/-1;margin:-4px 0 4px}
+  }
+  body.edl #top,body.edl #bottom,body.edl #marks,body.edl #prompt,body.edl #camhud{display:none !important}
+  #edl{position:fixed;inset:0;z-index:22;display:none;pointer-events:none}
+  #edl.on{display:block}
+  #edl-glow{position:absolute;inset:0;opacity:0;
+    background:radial-gradient(ellipse at 50% 55%,transparent 30%,rgba(255,120,30,.55) 78%,rgba(255,200,120,.8) 100%)}
+  #edl-flash{position:absolute;inset:0;opacity:0;background:#fff}
+  #edl-steps{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:14px;display:flex;gap:5px;flex-wrap:wrap;max-width:46vw}
+  #edl-steps i{font-style:normal;font-size:8px;letter-spacing:.12em;text-transform:uppercase;font-weight:600;
+    padding:5px 8px;border-radius:5px;border:1px solid rgba(203,168,90,.22);color:var(--mute);background:rgba(13,10,24,.6)}
+  #edl-steps i.done{color:var(--dim);border-color:rgba(203,168,90,.4)}
+  #edl-steps i.on{color:#0d0a18;background:var(--gold);border-color:var(--gold)}
+  #edl-tele{position:absolute;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end;max-width:52vw}
+  #edl-tele .stat{min-width:76px}
+  #edl-tele .stat b{font-size:13px;white-space:nowrap}
+  #edl-fuel u{display:none;height:3px;margin-top:5px;border-radius:2px;background:rgba(203,168,90,.2);overflow:hidden;text-decoration:none}
+  #edl-fuel s{display:block;height:100%;width:100%;background:var(--gold);text-decoration:none}
+  body[data-edl=powered] #edl-fuel u,body[data-edl=crane] #edl-fuel u{display:block}
+  #edl-fuel.low b{color:#E0685A} #edl-fuel.low s{background:#E0685A}
+  #edl-guide{position:absolute;left:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);width:262px;
+    background:var(--panel);border:1px solid var(--line);border-radius:9px;padding:10px 12px 11px;backdrop-filter:blur(10px)}
+  #edl-guide h3{margin:0 0 6px;font-size:8.5px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
+  #edl-scope{display:block;width:116px;height:116px;flex:none;border-radius:6px;background:rgba(203,168,90,.05)}
+  #edl-maprow{display:flex;gap:10px;align-items:center}
+  #edl-mapside{min-width:0}
+  #edl-guide h3 span{float:right;color:var(--mute);letter-spacing:.06em;text-transform:none;font-weight:400}
+  #edl-guide h3 span b{color:var(--hi);font-weight:600}
+  #edl-tip{margin-top:6px;font-size:11px;line-height:1.4;color:#C9BD97}
+  #edl-tip b{color:var(--cyan);font-weight:600}
+  #edl-tip:empty{display:none}
+  body[data-edl=descent] #edl-key,body[data-edl=powered] #edl-key,body[data-edl=crane] #edl-key,body[data-edl=down] #edl-key{display:none}
+  body[data-edl=chute] #edl-bankval,body[data-edl=open] #edl-bankval,body[data-edl=chute] #edl-scope,body[data-edl=chute] #edl-key{display:none}
+  #edl-key{margin-top:7px;font-size:8px;letter-spacing:.08em;text-transform:uppercase;color:var(--mute)}
+  #edl-key i{display:inline-block;width:7px;height:7px;margin:0 4px 0 0;vertical-align:-1px}
+  #edl-key .k1{border-radius:50%;background:var(--cyan)} #edl-key .k2{border:1.5px solid var(--gold);border-radius:50%;width:9px;height:6px;margin-left:8px}
+  #edl-miss-now{margin-top:7px;font-size:11px;font-weight:600;color:var(--hi);font-variant-numeric:tabular-nums}
+  #edl-bankrow{margin-top:3px;font-size:8.5px;line-height:1.5;color:var(--mute)}
+  #edl-bankrow b{color:var(--dim)}
+  #edl-trigger{display:none;margin-top:8px}
+  #edl-trigger label{display:block;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:7px 0 3px}
+  #edl-trigger em{font-style:normal;color:var(--mute);letter-spacing:.03em;text-transform:none;float:right}
+  .bar{position:relative;height:13px;border-radius:4px;background:rgba(224,104,90,.3);overflow:hidden}
+  .bar u{position:absolute;top:0;bottom:0;background:rgba(111,207,127,.45)}
+  .bar s{position:absolute;top:-2px;bottom:-2px;width:3px;margin-left:-1.5px;background:var(--hi);border-radius:2px}
+  #edl-speed u{left:37.3%;width:57.2%}
+  #edl-speed.ok{box-shadow:0 0 0 1.5px var(--green)}
+  #edl-range{background:rgba(203,168,90,.16)} #edl-range u{left:calc(50% - 1px);width:2px;background:var(--gold)}
+  body[data-edl=chute] #edl-trigger{display:block} body[data-edl=chute] #edl-bankrow{display:none} body[data-edl=open] #edl-bankrow{display:none}
+  body[data-edl=descent] #edl-scope,body[data-edl=powered] #edl-scope,body[data-edl=crane] #edl-scope,body[data-edl=down] #edl-scope,
+  body[data-edl=descent] #edl-bankrow,body[data-edl=powered] #edl-bankrow,body[data-edl=crane] #edl-bankrow,body[data-edl=down] #edl-bankrow{display:none}
+  body[data-edl=descent] #edl-guide h3,body[data-edl=powered] #edl-guide h3,body[data-edl=crane] #edl-guide h3,body[data-edl=down] #edl-guide h3{display:none}
+  body[data-edl=descent] #edl-miss-now,body[data-edl=powered] #edl-miss-now,body[data-edl=crane] #edl-miss-now,body[data-edl=down] #edl-miss-now{margin-top:0}
+  #edl-call{position:absolute;left:50%;top:92px;transform:translateX(-50%) translateY(-5px);max-width:min(560px,78vw);
+    background:rgba(13,10,24,.93);border:1px solid var(--line);border-radius:8px;padding:10px 18px;
+    font-size:11.5px;line-height:1.5;color:var(--hi);text-align:center;opacity:0;transition:opacity .25s,transform .25s}
+  #edl-call.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #edl-prompt{position:absolute;left:262px;right:14px;margin:0 auto;width:fit-content;bottom:calc(env(safe-area-inset-bottom,0px) + 22px);
+    max-width:520px;background:rgba(203,168,90,.95);color:#0d0a18;border-radius:7px;padding:9px 16px;
+    font-size:10.5px;font-weight:500;line-height:1.45;text-align:center}
+  #edl-prompt:empty{display:none}
+  #edl-prompt b{font-weight:700;letter-spacing:.06em}
+  #edl-pad{position:absolute;right:14px;bottom:calc(env(safe-area-inset-bottom,0px) + 16px);display:none;pointer-events:none;
+    flex-direction:column;align-items:center;gap:12px}
+  #edl-pad .p-go{pointer-events:auto;width:76px;height:76px;border-radius:50%;display:flex;align-items:center;justify-content:center;
+    font-size:10px;font-weight:700;letter-spacing:.12em;color:#0d0a18;background:var(--gold);box-shadow:0 4px 14px rgba(0,0,0,.5);
+    touch-action:none;-webkit-user-select:none;user-select:none}
+  #edl-pad .p-go:active{transform:scale(.94);background:#F2E4BE}
+  body[data-edl=entry] .p-go,body[data-edl=powered] .p-go{opacity:.55;width:58px;height:58px}
+    grid-template-columns:repeat(3,46px);grid-template-rows:repeat(3,46px);gap:5px}
+    border:1px solid var(--line);color:var(--gold);font-size:17px;touch-action:none}
+  /* flight-path marker and target cue */
+  #edl-fpm,#edl-tgt{position:absolute;left:0;top:0;display:none;pointer-events:none;will-change:transform}
+  #edl-fpm i{position:absolute;left:-9px;top:-9px;width:18px;height:18px;border:2px solid #F2E4BE;border-radius:50%;box-shadow:0 0 6px rgba(0,0,0,.6)}
+  #edl-fpm b{position:absolute;top:-1px;width:18px;height:2px;background:#F2E4BE;box-shadow:0 0 6px rgba(0,0,0,.6)}
+  #edl-fpm b:nth-of-type(1){left:-28px} #edl-fpm b:nth-of-type(2){left:10px}
+  #edl-tgt i{position:absolute;left:-11px;top:-11px;width:22px;height:22px;border:2px solid var(--gold);transform:rotate(45deg);box-shadow:0 0 8px rgba(0,0,0,.6)}
+  #edl-tgt span{position:absolute;left:18px;top:-7px;white-space:nowrap;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);text-shadow:0 1px 4px rgba(0,0,0,.9)}
+  #edl-tgt.lock i{border-color:var(--green);background:rgba(111,207,127,.18)} #edl-tgt.lock span{color:var(--green)}
+  /* attitude strip */
+  #edl-attbox{display:none;margin-top:9px}
+  body[data-edl=entry] #edl-attbox,body[data-edl=chute] #edl-attbox{display:block}
+  #edl-attbox label{display:block;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);margin:0 0 4px}
+  #edl-attbox label b{color:var(--gold);font-weight:600}
+  #edl-attbox em{font-style:normal;float:right;color:var(--mute);letter-spacing:.04em;text-transform:none}
+  #edl-attbox em.low{color:#E0685A}
+  #edl-att{display:block;width:100%;height:40px;border-radius:4px}
+  #edl-burnrow{display:none;margin-top:6px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#E0685A}
+  #edl-burnrow.on{display:block}
+  #edl-burnrow u{display:block;height:4px;margin-top:3px;border-radius:2px;background:rgba(224,104,90,.2);overflow:hidden;text-decoration:none}
+  #edl-burnrow s{display:block;height:100%;width:0;background:#E0685A;text-decoration:none}
+  .stat.warn b{color:#E0685A}
+  #edl-glow.hot{background:radial-gradient(ellipse at 50% 55%,transparent 22%,rgba(255,70,20,.6) 70%,rgba(255,170,90,.9) 100%)}
+  /* the approach: letterbox, captions, a way out */
+  #edl-bars i{position:absolute;left:0;right:0;height:0;background:#000}
+  #edl-bars i:first-child{top:0} #edl-bars i:last-child{bottom:0}
+  body[data-edl=intro] #edl-bars i{height:11vh;transition:height .8s ease}
+  #edl-cap{position:absolute;left:50%;bottom:calc(11vh + 22px);transform:translateX(-50%) translateY(6px);width:min(640px,86vw);
+    text-align:center;font-size:clamp(13px,1.9vw,17px);font-weight:300;line-height:1.55;letter-spacing:.02em;color:#F2E4BE;
+    text-shadow:0 1px 12px rgba(0,0,0,.85);opacity:0;transition:opacity .7s ease,transform .7s ease}
+  #edl-cap.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #edl-skipintro{position:absolute;right:16px;top:calc(11vh + 14px);display:none;pointer-events:auto;font-size:9px;padding:8px 14px;opacity:.75}
+  body[data-edl=intro] #edl-skipintro{display:block}
+  #edl-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
+  body[data-edl=intro] #edl-steps,body[data-edl=intro] #edl-tele,body[data-edl=intro] #edl-guide,
+  body[data-edl=intro] #edl-prompt,body[data-edl=intro] #edl-call,body[data-edl=intro] #edl-pad{display:none !important}
+  @media(max-width:720px){
+    #edl-att{height:34px}
+    #edl-pad{display:flex}
+    #edl-steps i:not(.on){display:none}
+    #edl-tele{max-width:70vw} #edl-tele .stat{min-width:66px;padding:5px 6px} #edl-tele .stat b{font-size:11px}
+    #edl-guide{width:196px;padding:8px 9px} #edl-scope,#edl-key{display:none !important} #edl-tip{font-size:10.5px}
+    #edl-prompt{left:10px;right:10px;bottom:auto;top:150px;max-width:86vw} #edl-call{top:98px}
+  }
+</style>
+</head>
+<body>
+
+<canvas id="scene"></canvas>
+<div id="marks"></div>
+
+<div id="camhud">
+  <div class="corner c-tl"></div><div class="corner c-tr"></div>
+  <div class="corner c-bl"></div><div class="corner c-br"></div>
+  <div id="camlabel">Mastcam-Z <span>· 110 mm</span></div>
+  <div id="cross"></div>
+  <div id="reticle"><b id="ret-name">LAYERED TARGET</b><i id="ret-dist"></i></div>
+</div>
+
+<div id="top">
+  <a id="back" href="../mars.html" aria-label="Back to the Mars page">&#8249;</a>
+  <div id="title">Jezero Traverse<small>Perseverance · Ingenuity</small></div>
+  <div class="stats">
+    <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span>Outcrops</span></div>
+    <div class="stat"><b id="flights">6</b><span>Flights</span></div>
+  </div>
+</div>
+
+<canvas id="minimap" width="170" height="170" title="Map"></canvas>
+<canvas id="attitude" width="320" height="184" title="Tilt: roll and pitch against the tip-over limits"></canvas>
+<div id="flash"></div>
+<div id="letterbox"><i></i><i></i></div>
+<div id="beat"><b id="beat-step"></b><span id="beat-title"></span><small id="beat-sub"></small></div>
+<div id="iris"></div>
+<div id="shutter"></div>
+<div id="stamp"></div>
+<div id="prompt"></div>
+<div id="toast"></div>
+
+<div id="bottom">
+  <div id="acts">
+    <button class="btn" id="btn-heli">Scout ahead · F</button>
+    <button class="btn" id="btn-cam">Mastcam-Z · C</button>
+    <button class="btn" id="btn-map">Map · M</button>
+  </div>
+  <div id="hint">
+    <b>WASD</b> or arrows to drive. Drag to look around, scroll to zoom. <b>M</b> for the map.
+    Pull up to an outcrop and open <b>Mastcam-Z</b> to read its layers.
+  </div>
+  <div id="pad"><div class="stick" id="stick-rover"><i></i></div></div>
+</div>
+
+<div class="sheet" id="brief">
+  <div class="card">
+    <h1>Mars 2020 · Entry, Descent &amp; Landing</h1>
+    <h2>Level 1 · Mission briefing</h2>
+    <p>Atmospheric entry to touchdown takes about seven minutes. One-way light time to Earth is
+      <b>11 min 22 s</b>: by the time mission control hears the capsule hit the atmosphere, it has
+      already landed or crashed. Everything in between runs on board. Today, that's you.</p>
+    <div class="spec">
+      <span>Entry speed</span><b>5.3 km/s · 19,500 km/h</b>
+      <span>Entry mass</span><b>3,440 kg, rover 1,025 kg of it</b>
+      <span>Heat shield</span><b>4.5 m PICA tiles, ~1,300 °C peak</b>
+      <span>Peak load</span><b>~10 g</b>
+      <span>Target</span><b>7.7 × 6.6 km ellipse, Jezero crater</b>
+    </div>
+    <div class="keys kb">
+      <kbd>A D</kbd><span>Bank the lift vector to steer toward the ◇</span>
+      <kbd>W S</kbd><span>Pitch thrusters: hold the 16° trim angle or burn through</span>
+      <kbd>Space</kbd><span>Parachute · backshell separation · sky crane</span>
+      <kbd>W A S D</kbd><span>Powered divert to safe ground</span>
+    </div>
+    <div class="keys tc">
+      <kbd>Stick ◀ ▶</kbd><span>Bank the lift vector to steer toward the ◇</span>
+      <kbd>Stick ▲ ▼</kbd><span>Pitch thrusters: hold the 16° trim angle or burn through</span>
+      <kbd>Deploy</kbd><span>Parachute · backshell separation · sky crane</span>
+    </div>
+    <div class="two">
+      <button class="btn primary" id="btn-start">Fly the landing</button>
+      <button class="btn" id="btn-skip">Skip to the surface</button>
+    </div>
+    <p class="fine" style="margin:14px 0 0">Proof of concept · v3.4</p>
+  </div>
+</div>
+
+<div class="sheet" id="rover-brief">
+  <div class="card">
+    <h1>Welcome to Jezero</h1>
+    <h2>Level 2 · Surface operations</h2>
+    <p>Jezero is a 45 km crater that held a lake about 3.5 billion years ago. A river cut through
+      its western rim and built a delta, now eroded into the cliffs on your horizon. Fine layered
+      sediment like this is where microbial life, if there ever was any, would most likely be preserved.</p>
+    <div class="spec">
+      <span>Rover</span><b>1,025 kg, six wheels, rocker-bogie suspension</b>
+      <span>Mobility</span><b>Wheels climb blocks up to ~50 cm. Tips over past ~48°; the software stops at 30°. Drift sand slips past ~25°</b>
+      <span>Mastcam-Z</span><b>Stereo zoom, 26–110 mm</b>
+      <span>Ingenuity</span><b>1.8 kg, 1.2 m rotors at ~2,500 rpm</b>
+      <span>Objective</span><b>Image six layered outcrops and read their history</b>
+    </div>
+    <div class="keys kb">
+      <kbd>W A S D</kbd><span>Drive</span>
+      <kbd>Drag</kbd><span>Swing the camera round the rover · scroll to zoom</span>
+      <kbd>C</kbd><span>Mastcam-Z, then <b>Space</b> to image the target</span>
+      <kbd>F</kbd><span>Send Ingenuity on a scouting flight</span>
+      <kbd>M</kbd><span>Traverse map: where you have been, and Ingenuity's leads</span>
+    </div>
+    <div class="keys tc">
+      <kbd>Stick</kbd><span>Drive: push further to go faster</span>
+      <kbd>Drag</kbd><span>Swing the camera round the rover</span>
+      <kbd>Mastcam-Z</kbd><span>Drag or use the stick to aim, then tap Capture</span>
+      <kbd>Scout</kbd><span>Send Ingenuity on a scouting flight</span>
+    </div>
+    <p class="fine">Driving is time-compressed. The real rover tops out at about 150 m an hour.</p>
+    <button class="btn primary" id="btn-drive">Start driving</button>
+  </div>
+</div>
+
+<div class="sheet" id="mapsheet">
+  <div class="card mapcard">
+    <h1>Traverse map</h1>
+    <h2>Jezero crater floor · north up</h2>
+    <canvas id="bigmap" width="560" height="560"></canvas>
+    <div class="legend"><span><i class="lg-you"></i>Perseverance</span><span><i class="lg-heli"></i>Ingenuity</span>
+      <span><i class="lg-found"></i>found</span><span><i class="lg-logged"></i>imaged</span><span><i class="lg-clue"></i>Ingenuity lead</span><span><i class="lg-fog"></i>unexplored</span></div>
+    <p id="map-note"></p>
+    <button class="btn primary" id="map-close">Back to driving</button>
+  </div>
+</div>
+
+<div class="sheet" id="card">
+  <div class="card wide">
+    <div id="card-n">—</div>
+    <h1 id="card-name">—</h1>
+    <h2>Mastcam-Z reading</h2>
+    <div class="row"><span>What the camera sees</span><p id="card-read"></p></div>
+    <div class="row"><span>What it means</span><p id="card-mean"></p></div>
+
+    <div id="real">
+      <h2>The real thing, on Mars</h2>
+      <a id="real-link" href="#" target="_blank" rel="noopener">
+        <figure id="real-fig">
+          <img id="real-img" alt="">
+          <figcaption id="real-wait">Fetching the photograph…</figcaption>
+          <figcaption id="real-none">This page cannot load outside images.<br><b>Open the photograph at NASA ↗</b></figcaption>
+        </figure>
+      </a>
+      <div id="real-place">—</div>
+      <div id="real-by">—</div>
+      <p id="real-note"></p>
+      <div id="real-credit"></div>
+    </div>
+    <button class="btn primary" id="card-ok">Log it</button>
+  </div>
+</div>
+
+<div class="sheet" id="done">
+  <div class="card">
+    <h1>Traverse complete</h1>
+    <h2>All outcrops logged</h2>
+    <p>You read <b id="done-n">6</b> outcrops: a current, a quiet lake floor, a stream, a
+      delta building into standing water, groundwater moving through cracks long after,
+      and floods strong enough to move boulders. Six different days in the life of a
+      wet planet.</p>
+    <p>Every one of them is something a rover has really found. The photographs came
+      from Curiosity in Gale crater and Perseverance in Jezero.</p>
+    <button class="btn primary" id="btn-again">Run it again</button>
+  </div>
+</div>
+
+<div id="edl">
+  <div id="edl-glow"></div><div id="edl-flash"></div>
+  <div id="edl-fpm"><i></i><b></b><b></b></div>
+  <div id="edl-tgt"><i></i><span id="edl-tgt-d">Jezero</span></div>
+  <div id="edl-steps">
+    <i data-s="entry">Entry</i><i data-s="chute">Parachute</i><i data-s="descent">Radar</i>
+    <i data-s="powered">Powered descent</i><i data-s="crane">Sky crane</i><i data-s="down">Touchdown</i>
+  </div>
+  <div id="edl-tele">
+    <div class="stat"><b id="edl-t">0:00</b><span>Since entry</span></div>
+    <div class="stat"><b id="edl-alt">—</b><span>Altitude</span></div>
+    <div class="stat"><b id="edl-vel">—</b><span id="edl-l-vel">Speed</span></div>
+    <div class="stat"><b id="edl-g">—</b><span id="edl-l-g">Load</span></div>
+    <div class="stat" id="edl-fuel"><b id="edl-heat">—</b><span id="edl-l-heat">Heat shield</span><u><s id="edl-fuel-bar"></s></u></div>
+  </div>
+  <div id="edl-guide">
+    <h3>Where you'll land <span id="edl-bankval">bank <b id="edl-bank">0°</b></span></h3>
+    <div id="edl-maprow">
+      <canvas id="edl-scope" width="116" height="116"></canvas>
+      <div id="edl-mapside">
+        <div id="edl-miss-now">—</div>
+        <div id="edl-tip"></div>
+        <div id="edl-key"><i class="k1"></i>you <i class="k2"></i>target</div>
+      </div>
+    </div>
+    <div id="edl-attbox">
+      <label>Attitude · <b class="kbi">W / S</b><b class="tci">stick ▲ ▼</b><em id="edl-rcs">thrusters 100%</em></label>
+      <canvas id="edl-att" width="200" height="50"></canvas>
+      <div id="edl-burnrow"><span>Backshell heating</span><u><s id="edl-burn"></s></u></div>
+    </div>
+    <div id="edl-trigger">
+      <label>Speed <em>too fast · safe to deploy · backup</em></label>
+      <div class="bar" id="edl-speed"><u></u><s id="edl-speed-pin"></s></div>
+      <label>Range <em>short · target · long</em></label>
+      <div class="bar" id="edl-range"><u></u><s id="edl-range-pin"></s></div>
+    </div>
+  </div>
+  <div id="edl-call"></div>
+  <div id="edl-bars"><i></i><i></i></div>
+  <div id="edl-cap"></div>
+  <button class="btn" id="edl-skipintro">Skip ›</button>
+  <div id="edl-fade"></div>
+  <div id="edl-prompt"></div>
+  <div id="edl-pad">
+    <div class="p-go" data-edl="go">DEPLOY</div>
+    <div class="stick" id="stick-edl"><i></i></div>
+  </div>
+</div>
+
+<div class="sheet" id="edl-brief">
+  <div class="card brief">
+    <h1>Landing briefing</h1>
+    <h2>Jezero crater · 18.44° N, 77.45° E</h2>
+    <div class="maps">
+      <figure>
+        <canvas id="brief-region" width="440" height="440"></canvas>
+        <figcaption id="brief-region-cap"><b>Approach</b> 60 km across, from the west. The ellipse is 7.7 × 6.6 km, beside the delta.</figcaption>
+      </figure>
+      <figure>
+        <canvas id="brief-site" width="440" height="440"></canvas>
+        <figcaption><b>Touchdown zone</b> 640 m, 3 m contours. <u class="k-safe"></u>safe <u class="k-haz"></u>slope · rock · sand · crater <u class="k-out"></u>outcrops</figcaption>
+      </figure>
+    </div>
+    <ol class="plan">
+      <li><em>125 km</em><b>Entry</b><span>About Mach 22. The capsule is trimmed 16° off-axis, so it flies with lift: bank it toward the ◇ <span class="kbi">with <kbd>A</kbd> <kbd>D</kbd></span><span class="tci">with the stick</span>, hold the trim <span class="kbi">with <kbd>W</kbd> <kbd>S</kbd></span><span class="tci">with ▲ ▼</span>. Heat shield peaks near 1,300 °C, load near 10 g.</span></li>
+      <li><em>11 km</em><b>Parachute</b><span>Six 25 kg balance masses are jettisoned, then the 21.5 m chute fires at about Mach 1.7. <kbd class="kbi">Space</kbd><kbd class="tci">Deploy</kbd> when both bars are green.</span></li>
+      <li><em>8 km</em><b>Radar &amp; TRN</b><span>Heat shield off. Terrain-Relative Navigation matches camera frames to an orbital map and builds the hazard grid on the right.</span></li>
+      <li><em>2.1 km</em><b>Powered descent</b><span><kbd class="kbi">Space</kbd><kbd class="tci">Deploy</kbd> drops free of the backshell. Eight throttleable engines, about 400 kg of hydrazine: divert onto green.</span></li>
+      <li><em>20 m</em><b>Sky crane</b><span><kbd class="kbi">Space</kbd><kbd class="tci">Deploy</kbd> lowers the rover on three 7.6 m nylon bridles. Touchdown at 0.75 m/s.</span></li>
+    </ol>
+    <div class="two">
+      <button class="btn primary" id="edl-begin">Begin entry</button>
+      <button class="btn" id="edl-back">Back</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="rollsheet">
+  <div class="card">
+    <h1>Rollover</h1>
+    <h2>Rover on its side</h2>
+    <p id="roll-why"></p>
+    <p class="fine">Perseverance was built not to tip over at 45° in any direction, and its flight software stops it at 30°. Blocks under one side add to the slope.</p>
+    <button class="btn primary" id="btn-recover">Recover to the last stable stop</button>
+  </div>
+</div>
+
+<div class="sheet" id="edl-fail">
+  <div class="card">
+    <h1 id="edl-fail-title">—</h1>
+    <h2>Landing lost</h2>
+    <p id="edl-fail-why"></p>
+    <div class="two">
+      <button class="btn primary" id="edl-retry">Try that again</button>
+      <button class="btn" id="edl-skip">Skip to the surface</button>
+    </div>
+  </div>
+</div>
+
+<div class="sheet" id="edl-done">
+  <div class="card">
+    <h1>Touchdown confirmed</h1>
+    <h2>Perseverance is safe on the surface of Mars</h2>
+    <div class="res">
+      <div><b id="edl-miss">—</b><span>From target</span></div>
+      <div><b id="edl-fuel-left">—</b><span>Fuel in hand</span></div>
+      <div><b id="edl-clock">—</b><span>Entry to wheels down</span></div>
+    </div>
+    <p id="edl-verdict"></p>
+    <p class="fine">The real landing, 18 February 2021: 410 seconds from entry, parachute at
+      about 11 km and 420 m/s, backshell away at 2.1 km, touchdown at 0.75 m/s.</p>
+    <button class="btn primary" id="edl-go">Begin the traverse</button>
+  </div>
+</div>
+
+<div id="loading" class="on"><span id="loadmsg">Loading rover…</span></div>
+
+<script type="module" src="rover.bundle.js"></script>
+</body>
+</html>

@@ -1,0 +1,17 @@
+{
+  "name": "mars-rover-poc",
+  "version": "3.4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "esbuild src/game.js --bundle --minify --format=esm --target=es2022 --outfile=rover.bundle.js",
+    "serve": "python3 -m http.server 8000",
+    "photos": "node tools/get-photos.mjs"
+  },
+  "dependencies": {
+    "three": "0.186.0"
+  },
+  "devDependencies": {
+    "esbuild": "^0.28.2"
+  }
+}

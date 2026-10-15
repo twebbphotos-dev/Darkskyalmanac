@@ -9,7 +9,7 @@ V="${1:?usage: tools/build.sh <version, e.g. 3.53>}"
 rm -rf dist && mkdir -p dist out
 # Root files. Images must be listed explicitly: *.html *.js alone silently drops them.
 cp *.html *.js *.json *.txt *.xml *.png *.jpg *.svg dist/ 2>/dev/null || true
-cp -r img models solver dist/
+cp -r img models solver rover dist/
 cp _headers .assetsignore dist/
 if [ "$V" = ci ]; then python3 verify-assets.py; exit 0; fi
 rm -f "out/dark-sky-almanac-v$V.zip"
