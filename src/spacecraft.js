@@ -1349,6 +1349,7 @@ function setView(k, instant) {
   // "Look around" views pivot about a point just in front of the lens, so dragging turns your head instead of swinging the camera around a far-off subject
   if (v.look) to.t.sub(to.p).setLength(.04).add(to.p);      // the pivot is the lens itself, so looking up never drags the camera down through the seat
   lookView = !!v.look; viewFov = v.fov || (v.look ? (camera.aspect < 1.1 ? 50 : 38) : 0); controls.enableZoom = !v.look; const env = CRAFT[craftKey].env; camera.near = (env === 'l2' || env === 'saturn') ? .4 : env === 'leo' ? .3 : env === 'moon' ? .06 : .03; camera.far = env === 'leo' ? 6500 : env === 'moon' ? 110000 : env === 'mars' ? 200000 : 1300; camera.updateProjectionMatrix();
+  $('sc-cv').parentElement.classList.toggle('sc-above', k === 'above');      // the vehicle's own buttons (Parts, Drive, Stow) step aside over the map
   mapMode = k === 'above' && env === 'mars'; const T = THREE;      // over Jezero the view handles like a map: drag to move across it, two fingers or right-drag to tilt and turn
   Object.assign(controls, { enablePan: mapMode, screenSpacePanning: !mapMode, zoomToCursor: mapMode, mouseButtons: mapMode ? { LEFT: T.MOUSE.PAN, MIDDLE: T.MOUSE.DOLLY, RIGHT: T.MOUSE.ROTATE } : { LEFT: T.MOUSE.ROTATE, MIDDLE: T.MOUSE.DOLLY, RIGHT: T.MOUSE.PAN },
     touches: mapMode ? { ONE: T.TOUCH.PAN, TWO: T.TOUCH.DOLLY_ROTATE } : { ONE: T.TOUCH.ROTATE, TWO: T.TOUCH.DOLLY_PAN } });
