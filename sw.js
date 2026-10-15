@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v356';
+const CACHE = 'zion-sky-v357';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -77,7 +77,7 @@ const OFFLINE3D = [
   'spacecraft.bundle.js','voyager.bundle.js',
   'models/apollo.glb', 'models/cassini.glb', 'models/curiosity.glb', 'models/earth-leo-clouds.jpg',
   'models/earth-leo.jpg', 'models/hubble.glb', 'models/ingenuity.glb', 'models/iss.glb',
-  'models/jwst.glb', 'models/lm.glb', 'models/lrv.glb', 'models/moon-a17.bin',
+  'models/jezero.bin', 'models/jezero.jpg', 'models/jwst.glb', 'models/lm.glb', 'models/lrv.glb', 'models/moon-a17.bin',
   'models/perseverance.glb', 'models/shuttle.glb', 'models/voyager1.glb',
   'img/cmp/carina-hubble.jpg', 'img/cmp/carina-webb.jpg', 'img/cmp/deep-field-hubble.jpg',
   'img/cmp/deep-field-webb.jpg', 'img/cmp/pillars-hubble.jpg', 'img/cmp/pillars-webb.jpg',

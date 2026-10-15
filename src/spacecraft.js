@@ -27,7 +27,9 @@ const CRAFT = {
       heli: { label: 'Ingenuity', pos: [-1.3, 0.55, 4.6], tgt: [-2.5, 0.3, 2.6] },
       drive: { label: 'Suspension', short: 'Susp.', pos: [4.6, 0.8, 2.3], tgt: [0.9, 0.5, 0.15] },
       mast: { label: 'Rover’s eye', pos: [-0.55, 1.98, 0.93], tgt: [-2.5, 0.25, 2.7], look: true, deploy: true },
+      above: { label: 'From above', short: 'Above', pos: [14000, 76000, 30000], tgt: [14000, 0, 5800], abs: true },
     },
+    dist: [.8, 90000],
     parts: [
       // positions are given with the mast and arm deployed; a part with `node` rides along with that piece of the model
       { node: 'Cylinder002', p: [-0.52, 2.06, 0.87], name: 'Mast cameras', txt: 'The head stands 2 m above the ground. The large round window is SuperCam, which fires a laser at rocks up to 7 m away and reads the flash to tell what they’re made of — its microphone records each snap. Below it are Mastcam-Z, a pair of zoom cameras that see in 3D, with a navigation camera on either side.' },
@@ -40,7 +42,7 @@ const CRAFT = {
       { p: [-2.5, 0.5, 2.7], name: 'Ingenuity', txt: 'A 1.8 kg helicopter with two 1.2 m rotors that spun in opposite directions at about 2,400 rpm to bite the thin air. It flew 72 times between April 2021 and January 2024 — planned for five. A scrap of fabric from the Wright brothers’ Flyer rides under its solar panel.' },
     ],
     cards: [['Rover mass', '1,025 kg', 'About as heavy as a small car'], ['Landed', '18 Feb 2021', 'Jezero Crater'], ['Cameras', '23', 'Counting the landing cameras'], ['Ingenuity flights', '72', 'First on 19 April 2021']],
-    story: '<p>Jezero Crater held a lake about 3.5 billion years ago, fed by a river that left a delta of layered mud and sand. On Earth, that kind of place preserves traces of life well — which is why Perseverance was sent to drive up the delta and drill.</p><p>Ingenuity rode to Mars bolted under the rover’s belly. Its first hover lasted 39 seconds; by its last flight it had covered about 17 km and scouted routes ahead of the rover. A broken rotor blade ended its flying in January 2024, and it now sits where it last landed.</p>',
+    story: '<p>Jezero Crater held a lake about 3.5 billion years ago, fed by a river that left a delta of layered mud and sand. On Earth, that kind of place preserves traces of life well — which is why Perseverance was sent to drive up the delta and drill.</p><p>Ingenuity rode to Mars bolted under the rover’s belly. Its first hover lasted 39 seconds; by its last flight it had covered about 17 km and scouted routes ahead of the rover. A broken rotor blade ended its flying in January 2024, and it now sits where it last landed.</p><p>From above you can see the whole crater, 45 km across, much as an orbiting camera sees it: the delta fanning out where the river broke through the western rim, and the landing site at its foot. The ground is built from elevation maps measured from pairs of Mars Reconnaissance Orbiter photographs, at true height.</p>',
     link: { href: 'mars', txt: 'Explore Mars' }, get extra() { return ROVERS; },
   },
   curiosity: {
@@ -528,6 +530,25 @@ function tuneLander(root) {      // NASA's lander is flat yellow and grey plasti
     else if (/blinn6SG|blinn2SG/.test(n)) { set(n.includes('blinn6') ? 0x18181a : 0x3c3634, .5, .55); }
     else weather(m, .12, .1, .05, 3); }); });
 }
+/* Jezero Crater from above. The ground is real: a mosaic of elevation models the USGS made from stereo pairs taken by
+   the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to a 120 km square, north up (models/jezero.bin:
+   heights in quarter-metres relative to the landing site). Over it lies the same camera's orthorectified photography
+   (models/jezero.jpg), black and white, given the tones of a true-colour orbital view. +x is east, +z is south. */
+const JZ = { W: 120000, C: [14018, 3835], R: 40500, RM: 3389500 };      // the square's centre (the crater's, near enough), in metres east and south of the landing site
+function marsCrater(dem, map) {
+  const M = Math.round(Math.sqrt(dem.length)), S = matchMedia('(max-width:600px)').matches ? Math.min(M, 384) : M, pos = [], uv = [], idx = [];
+  const hAt = (x, z) => { const u = Math.max(0, Math.min(M - 1.001, ((x - JZ.C[0]) / JZ.W + .5) * M - .5)), v = Math.max(0, Math.min(M - 1.001, ((z - JZ.C[1]) / JZ.W + .5) * M - .5)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
+    return ((dem[k] * (1 - fu) + dem[k + 1] * fu) * (1 - fv) + (dem[k + M] * (1 - fu) + dem[k + M + 1] * fu) * fv) / 4; };
+  const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    const a = i * (M - 1) / (S - 1), b = j * (M - 1) / (S - 1), x = JZ.C[0] + ((a + .5) / M - .5) * JZ.W, z = JZ.C[1] + ((b + .5) / M - .5) * JZ.W, r = Math.hypot(x, z), k = ss(450, 900, r);
+    pos.push(x, hAt(x, z) * k - .4 * (1 - k) - r * r / (2 * JZ.RM), z); uv.push((a + .5) / M, 1 - (b + .5) / M); }      // tucked just under the rover's own patch of ground, and falling away with the curve of Mars
+  for (let j = 0; j < S - 1; j++) for (let i = 0; i < S - 1; i++) { const o = j * S + i; if (Math.hypot(i + .5 - (S - 1) / 2, j + .5 - (S - 1) / 2) * JZ.W / (S - 1) < JZ.R) idx.push(o, o + S, o + 1, o + 1, o + S, o + S + 1); }      // a disc: past it the photograph has already faded into haze
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
+  map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
+  const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map }));      // the photograph already holds the light and shade of the real Sun
+  m.visible = false; return { mesh: m, at: (x, z, up = 0) => new THREE.Vector3(x, hAt(x, z) - (x * x + z * z) / (2 * JZ.RM) + up, z) };
+}
 /* A repeating texture shows its repeat from a distance. Mix three copies at
    unrelated scales and rotations (and normalise by the texture's average) so
    the pattern never lines up with itself. */
@@ -928,15 +949,20 @@ function buildSetting(c) {
     labels.push(['Earth', edir.clone().multiplyScalar(90000)]);
     renderer.toneMappingExposure = 1.08; scene.environmentIntensity = .22;
   } else if (c.env === 'mars') {
-    g.add(skyDome(0x5a4436, 0xa88466)); scene.fog = new THREE.Fog(0x9c7b5f, 25, 220);
+    const sky = new THREE.Group(), dome = skyDome(0x5a4436, 0xa88466); dome.renderOrder = -2; dome.material.depthTest = false; sky.add(dome); g.add(sky); g.userData.sky = sky;      // the sky goes wherever the camera goes, so it still surrounds it high above the crater
+    scene.fog = new THREE.Fog(0x9c7b5f, 25, 220);
     const tex = fbmTex(1024, 8, ['#3f261a', '#5a3524', '#6e4330', '#7f5139', '#8e5f44'], 11, .05); tex.repeat.set(22, 22);
     const detail = fbmTex(512, 16, ['#6a6a6a', '#8a8a8a', '#a0a0a0'], 17, 0); detail.colorSpace = THREE.NoColorSpace; detail.repeat.set(90, 90);
     const ground = new THREE.Mesh(new THREE.CircleGeometry(400, 64), new THREE.MeshStandardMaterial({ map: tex, bumpMap: detail, bumpScale: 1.2, roughness: .96 }));
-    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; g.add(ground);
-    g.add(rocks(matchMedia('(max-width:600px)').matches ? 450 : 750, 3.5, 70, 0x3d2519, 5, (x, z) => Math.hypot(x, z) < 3.8 || Math.hypot(x + 2.5, z - 2.7) < 1.5 || (x > -1.8 && x < 7 && z > -2 && z < 9.5), .22));      // nothing near the rover, the helicopter, the lane the rover drives down, or right in front of the camera that follows it
+    ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; g.add(ground); g.userData.near = [ground];
+    if (c.views.above) { const T = new THREE.TextureLoader(); let dem = null, map = null; const done = () => { if (!dem || !map || !g.parent) return; const J = marsCrater(dem, map); g.add(J.mesh); g.userData.crater = J.mesh;
+        labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels(); };      // the old river's valley, which fed the delta
+      fetch('models/jezero.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => { dem = new Int16Array(b); done(); }).catch(() => {});
+      T.load('models/jezero.jpg', t => { map = t; done(); }); }
+    g.add(g.userData.rocks = rocks(matchMedia('(max-width:600px)').matches ? 450 : 750, 3.5, 70, 0x3d2519, 5, (x, z) => Math.hypot(x, z) < 3.8 || Math.hypot(x + 2.5, z - 2.7) < 1.5 || (x > -1.8 && x < 7 && z > -2 && z < 9.5), .22));      // nothing near the rover, the helicopter, the lane the rover drives down, or right in front of the camera that follows it
     g.add(new THREE.HemisphereLight(0xb89272, 0x3a2418, .55)); scene.environmentIntensity = .35;
     renderer.toneMappingExposure = .92;
-    g.add(sprite(glow('255,236,215'), sun, 900, 45));
+    sky.add(sprite(glow('255,236,215'), sun, 900, 45));
   } else if (c.env === 'leo') {
     const stars = starfield(3200, .8); stars.scale.setScalar(5); g.add(stars);
     g.add(sprite(glow('255,240,214', true), sun, 5000, 420)); labels.push(['The Sun', sun.clone().multiplyScalar(5000)]);
@@ -1267,10 +1293,10 @@ function setView(k, instant) {
   $('sc-info').classList.remove('open'); hotEls.forEach(b => b.classList.remove('on'));
   const v = CRAFT[craftKey].views[k]; if (v.deploy && mixer) setDeploy(true); $('sc-views').querySelectorAll('[data-v]').forEach(b => b.classList.toggle('on', b.dataset.v === k));
   const to = { p: new THREE.Vector3(...v.pos), t: new THREE.Vector3(...v.tgt) }; if (!v.abs) { to.p.add(viewOff); if (!v.tabs) to.t.add(viewOff); }
-  if (camera.aspect < 1.1 && (k === 'overview' || k === 'above' || k === 'drive')) to.p.sub(to.t).multiplyScalar(k === 'above' ? 1.12 : k === 'drive' ? 1.45 : 1.2).add(to.t);      // step back on a tall, narrow screen
+  if (camera.aspect < 1.1 && (k === 'overview' || k === 'above' || k === 'drive')) to.p.sub(to.t).multiplyScalar(k === 'above' ? (CRAFT[craftKey].env === 'mars' ? 1.3 : 1.12) : k === 'drive' ? 1.45 : 1.2).add(to.t);      // step back on a tall, narrow screen
   // "Look around" views pivot about a point just in front of the lens, so dragging turns your head instead of swinging the camera around a far-off subject
   if (v.look) to.t.sub(to.p).setLength(.04).add(to.p);      // the pivot is the lens itself, so looking up never drags the camera down through the seat
-  lookView = !!v.look; viewFov = v.fov || (v.look ? (camera.aspect < 1.1 ? 50 : 38) : 0); controls.enableZoom = !v.look; const env = CRAFT[craftKey].env; camera.near = (env === 'l2' || env === 'saturn') ? .4 : env === 'leo' ? .3 : env === 'moon' ? .06 : .03; camera.far = env === 'leo' ? 6500 : env === 'moon' ? 110000 : 1300; camera.updateProjectionMatrix();
+  lookView = !!v.look; viewFov = v.fov || (v.look ? (camera.aspect < 1.1 ? 50 : 38) : 0); controls.enableZoom = !v.look; const env = CRAFT[craftKey].env; camera.near = (env === 'l2' || env === 'saturn') ? .4 : env === 'leo' ? .3 : env === 'moon' ? .06 : .03; camera.far = env === 'leo' ? 6500 : env === 'moon' ? 110000 : env === 'mars' ? 200000 : 1300; camera.updateProjectionMatrix();
   controls.autoRotate = k === 'overview'; controls.maxPolarAngle = (env === 'l2' || env === 'leo' || env === 'saturn') ? Math.PI : v.look ? Math.PI * .92 : Math.PI / 2 - .04;
   const sz = CRAFT[craftKey].dist || ((env === 'l2' || env === 'saturn') ? [6, 70] : env === 'leo' ? [5, 60] : (env === 'mars' || craftKey === 'lrv') ? [.8, 22] : [2, 40]); controls.minDistance = v.look ? .02 : sz[0]; controls.maxDistance = sz[1]; controls.rotateSpeed = v.look ? .5 * viewFov / 50 : 1;
   if (instant) { camera.position.copy(to.p); controls.target.copy(to.t); camera.fov = baseFov(); camera.updateProjectionMatrix(); controls.update(); return; }
@@ -1307,6 +1333,13 @@ function moonCam() {      // one Moon scene runs from the driver's seat to 25 km
   if (u && u.trail) u.trail.opacity = .34 * Math.max(0, Math.min(1, (camera.position.y - 12) / 50));
   if (u && u.stars) u.stars.position.copy(camera.position);  // the stars are infinitely far away, wherever the camera goes
 }
+function marsCam() {      // the Mars scene runs from beside the rover to 70 km up: thin the haze, move the near plane and swap the ground with the height
+  const cc = CRAFT[craftKey], u = world && world.userData; if (!cc || cc.env !== 'mars' || !camera || !u || !u.sky) return;
+  const y = Math.max(0, camera.position.y); u.sky.position.copy(camera.position);
+  if (!lookView) { const nr = Math.min(150, Math.max(.03, camera.position.distanceTo(controls.target) * .003)); if (Math.abs(nr - camera.near) > camera.near * .2) { camera.near = nr; camera.updateProjectionMatrix(); } }
+  if (scene.fog) { scene.fog.near = 25 + y * 2.5; scene.fog.far = 220 + y * 9; }
+  const high = y > 1200; if (u.crater) u.crater.visible = y > 30; u.near.forEach(o => { o.visible = !high; }); if (u.rocks) u.rocks.visible = !high;
+}
 function stepTween() { if (!tween) return; const k = Math.min(1, (performance.now() - tween.t0) / tween.dur), R = 300; let e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
     if (tween.zoom > 0) e = (Math.pow(R, e) - 1) / (R - 1); else if (tween.zoom < 0) e = 1 - (Math.pow(R, 1 - e) - 1) / (R - 1);
     camera.position.lerpVectors(tween.from.p, tween.to.p, e); controls.target.lerpVectors(tween.from.t, tween.to.t, e); camera.fov = tween.from.f + (tween.f - tween.from.f) * e; camera.updateProjectionMatrix(); if (k >= 1) tween = null; }
@@ -1322,7 +1355,7 @@ function loop() {
   if (!controls.autoRotate && !tween && lastInteract && performance.now() - lastInteract > 12000 && $('sc-views').querySelector('.on')?.dataset.v === 'overview') controls.autoRotate = true;
   const now = performance.now(), dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   advance(dt);
-  moonCam();
+  moonCam(); marsCam();
   controls.update(); renderer.render(scene, camera); place();
 }
 
@@ -1335,6 +1368,6 @@ $('sc-drive').addEventListener('click', startDrive);
 $('sc-info').addEventListener('click', () => { $('sc-info').classList.remove('open'); hotEls.forEach(b => b.classList.remove('on')); });
 const first = new URLSearchParams(location.search).get('m') || 'mars2020';
 window.__sc = () => ({ camera, controls, setView, setCraft, pick: (nx, ny) => { const rc = new THREE.Raycaster(); rc.setFromCamera({ x: nx, y: ny }, camera); const h = rc.intersectObjects(pickables, true)[0]; if (!h) return null; const g = h.object.geometry, P = g.attributes.position, f = h.face, w = new THREE.Vector3(); h.object.updateMatrixWorld(true);
-      return [h.point.toArray().map(v => +v.toFixed(2)), [f.a, f.b, f.c].map(i => w.fromBufferAttribute(P, i).applyMatrix4(h.object.matrixWorld).toArray().map(v => +v.toFixed(2)))]; }, world: () => world, renderer: () => renderer, pose: t => { dep.t = dep.to = t; pose(t); renderer.shadowMap.needsUpdate = true; }, ready: () => pickables.length, dep: () => dep.t, run: secs => { for (let t = 0; t < secs; t += .05) advance(.05); return { dep: dep.t, phase: drive ? drive.phase : null, s: drive ? drive.s : null, armCap }; }, driveTo: t => { if (!drive) return null; armCap = drive.armT[0]; pose(dep.t); const n = 60; for (let i = 1; i <= n; i++) { drive.s = driveAt(drive, t * i / n); drive.solve(); } return { s: drive.s, p: drive.p.slice(), wheels: drive.wheels.map((w, i) => { const v = w.getWorldPosition(new THREE.Vector3()); return +(v.y - drive.h(i, v.z)).toFixed(5); }) }; }, still: k => { frozen = true; running = false; frame = 0; if (k != null && tween) { tween.t0 = performance.now() - k * tween.dur; stepTween(); } moonCam(); controls.update(); renderer.render(scene, camera); place(); } });
+      return [h.point.toArray().map(v => +v.toFixed(2)), [f.a, f.b, f.c].map(i => w.fromBufferAttribute(P, i).applyMatrix4(h.object.matrixWorld).toArray().map(v => +v.toFixed(2)))]; }, world: () => world, renderer: () => renderer, pose: t => { dep.t = dep.to = t; pose(t); renderer.shadowMap.needsUpdate = true; }, ready: () => pickables.length, dep: () => dep.t, run: secs => { for (let t = 0; t < secs; t += .05) advance(.05); return { dep: dep.t, phase: drive ? drive.phase : null, s: drive ? drive.s : null, armCap }; }, driveTo: t => { if (!drive) return null; armCap = drive.armT[0]; pose(dep.t); const n = 60; for (let i = 1; i <= n; i++) { drive.s = driveAt(drive, t * i / n); drive.solve(); } return { s: drive.s, p: drive.p.slice(), wheels: drive.wheels.map((w, i) => { const v = w.getWorldPosition(new THREE.Vector3()); return +(v.y - drive.h(i, v.z)).toFixed(5); }) }; }, still: k => { frozen = true; running = false; frame = 0; if (k != null && tween) { tween.t0 = performance.now() - k * tween.dur; stepTween(); } moonCam(); marsCam(); controls.update(); renderer.render(scene, camera); place(); } });
 try { init(); } catch (e) { $('sc-loading').textContent = '3D view needs WebGL, which this browser has turned off.'; }
 setCraft(first, false);
