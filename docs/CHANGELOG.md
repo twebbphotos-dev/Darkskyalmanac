@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.88 / zion-sky-v356 — 2026-10-15
+- Mars Rover Simulator links: a card on the Objects page, and a "Drive on
+  Mars" card on the Perseverance and Curiosity pages of NASA Spacecraft
+  (shown only for the Mars rovers). Why: people looking at the rovers are
+  the ones most likely to want to drive one.
+
 ## v3.87 / zion-sky-v355 — 2026-10-15
 - Mars page: the rover game's card is titled "Mars Rover Simulator". Why:
   says plainly what it is.

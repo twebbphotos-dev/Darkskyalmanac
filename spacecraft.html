@@ -333,6 +333,10 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 @media(max-width:700px){.sc-why{grid-template-columns:1fr}}
 .sc-why .zcl-pcval{font-size:14.5px}.sc-why .zcl-pcsub{font-size:12.5px;line-height:1.55;color:#A89878}
 .sc-story p{font-size:13.5px;line-height:1.65;color:#C9BD97;margin:0 0 10px}
+.sc-rover{display:block;text-decoration:none;background:#0d0a18;border:1px solid rgba(203,168,90,.3);border-radius:10px;padding:14px 16px;transition:border-color .15s}
+.sc-rover:hover{border-color:#CBA85A}
+.sc-rover-name{display:block;font-size:16px;font-weight:600;color:#F2E4BE;margin-bottom:5px}
+.sc-rover-txt{display:block;font-size:13px;line-height:1.55;color:#C9BD97;margin-bottom:8px}
 .sc-link{display:inline-block;margin-top:4px;font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;text-decoration:none}
 .zcl-pcards.cols4{grid-template-columns:repeat(4,1fr)}
 @media(max-width:700px){.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
@@ -393,6 +397,10 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
     <div class="zcl-body">
       <div class="zcl-psec"><div class="zcl-psec-label">At a Glance</div><div class="zcl-pcards cols4" id="sc-cards"></div></div>
       <div class="zcl-psec" id="sc-extra" hidden><div class="zcl-psec-label" id="sc-extrat"></div><div id="sc-extrab"></div></div>
+      <div class="zcl-psec" id="sc-rover" hidden><div class="zcl-psec-label">Drive on Mars</div>
+        <a class="sc-rover" href="rover/"><span class="sc-rover-name">Mars Rover Simulator</span>
+          <span class="sc-rover-txt">Land Perseverance in Jezero Crater and drive it over real HiRISE terrain. Fly Ingenuity ahead, aim Mastcam-Z, and read the layers in the rock.</span>
+          <span class="sc-link">Play &#8250;</span></a></div>
       <div class="zcl-psec"><div class="zcl-psec-label">The Story</div><div class="sc-story" id="sc-story"></div><a class="sc-link" id="sc-link" href="#"></a></div>
       <div class="zcl-note" id="sc-credit"></div>
     </div>
@@ -408,6 +416,14 @@ var fl='<svg viewBox="0 0 40 40" fill="none" stroke="#CBA85A" stroke-width="1" s
   +'<circle cx="17" cy="17" r="1.5" fill="#E6CC85" stroke="none"/><circle cx="2.5" cy="2.5" r="1" fill="#E6CC85" stroke="none"/></svg>';
 var els=document.querySelectorAll('.zcl-fl');for(var i=0;i<els.length;i++)els[i].innerHTML=fl})();</script>
 <script type="module" src="spacecraft.bundle.js"></script>
+<script>
+// The rover simulator card shows on the Mars rover pages (Perseverance,
+// Curiosity), whose kicker names Mars. The viewer fills the kicker itself,
+// so watch it rather than touching the bundle.
+(function(){var k=document.getElementById('sc-kicker'),c=document.getElementById('sc-rover');if(!k||!c)return;
+function sync(){c.hidden=!/Mars/.test(k.textContent||'')}
+new MutationObserver(sync).observe(k,{childList:true,characterData:true,subtree:true});sync()})();
+</script>
 <nav class="pwa-nav">
 <a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
 <a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
