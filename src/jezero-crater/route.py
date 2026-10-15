@@ -19,7 +19,7 @@ for f in d:
   if seq and math.hypot(seq[-1][0] - pts[0][0], seq[-1][1] - pts[0][1]) > 50: print('gap', y, s)
   seq.extend(pts); last = (s, pts[-1])
 # Pins: where the rover stood on the sol of a well-documented event (end of its last drive on or before that sol)
-PINS = [('Ingenuity’s first flight', 58), ('First rock core', 190), ('Sample depot', 653), ('Cheyava Falls', 1215)]
+PINS = [('Ingenuity’s first flight', 58), ('First rock core', 190), ('Wildcat Ridge', 503), ('Sample depot', 653), ('Belva Crater', 772), ('Cheyava Falls', 1215), ('Lookout Hill', 1354), ('Silver Mountain', 1401)]      # the distance record (sol 2006) is the latest position, labelled by the viewer itself
 pins = []
 for name, sol in PINS:
   f = [f for f in d if f['properties']['sol'] <= sol][-1]; x, z = xy(*f['geometry']['coordinates'][-1][:2])
