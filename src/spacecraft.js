@@ -536,8 +536,8 @@ function tuneLander(root) {      // NASA's lander is flat yellow and grey plasti
 /* Jezero Crater from above. The ground is real: a mosaic of elevation models the USGS made from stereo pairs taken by
    the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to a 90 km square, north up (models/jezero.bin:
    heights in quarter-metres relative to the landing site). Over it lies the same camera's orthorectified photography
-   (models/jezero.jpg), black and white, given the tones of a true-colour orbital view; its edges fade to the average colour, JZ.ground. +x is east, +z is south. */
-const JZ = { W: 90000, C: [-982, 3835], RM: 3389500, ground: '#675b51' };      // the square's centre (18.38° N 77.433° E), in metres east and south of the landing site: the whole crater, the rover's drives and the country west of the rim
+   (models/jezero.jpg), black and white, given the tones of a true-colour orbital view; its edges fade to the ground's broad colour, which a low-detail skirt (models/jezero-wide.jpg, 360 km) carries out to the horizon. +x is east, +z is south. */
+const JZ = { W: 90000, C: [-982, 3835], RM: 3389500, ground: '#66584d', WIDE: 360000 };      // the square's centre (18.38° N 77.433° E), in metres east and south of the landing site: the whole crater, the rover's drives and the country west of the rim
 function marsCrater(dem, map) {
   const M = Math.round(Math.sqrt(dem.length)), S = matchMedia('(max-width:600px)').matches ? Math.min(M, 384) : M, pos = [], uv = [], idx = [];
   const hAt = (x, z) => { const u = Math.max(0, Math.min(M - 1.001, ((x - JZ.C[0]) / JZ.W + .5) * M - .5)), v = Math.max(0, Math.min(M - 1.001, ((z - JZ.C[1]) / JZ.W + .5) * M - .5)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
@@ -553,11 +553,12 @@ function marsCrater(dem, map) {
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map }));      // the photograph already holds the light and shade of the real Sun
   // beyond the square: plain ground of the photograph's average colour, out past the horizon, curving away with the planet
-  const X = [], sp = [], si = [], hw = JZ.W / 2 - 60; for (let k = 0; k <= 20; k++) X.push(hw * Math.pow(700000 / hw, k / 20)); const I = []; for (let k = 1; k < 8; k++) I.push(hw * (k / 4 - 1)); const L = [...X.map(v => -v).reverse(), ...I, ...X];      // spans across the square are split so they curve with the planet
-  L.forEach(zv => L.forEach(xv => { const x = JZ.C[0] + xv, z = JZ.C[1] + zv; sp.push(x, H0 - 20 * ss(0, 3000, Math.max(Math.abs(xv), Math.abs(zv)) - hw) - (x * x + z * z) / (2 * JZ.RM), z); }));
+  const X = [], sp = [], su = [], si = [], hw = JZ.W / 2 - 200; for (let k = 0; k <= 20; k++) X.push(hw * Math.pow(700000 / hw, k / 20)); const I = []; for (let k = 1; k < 8; k++) I.push(hw * (k / 4 - 1)); const L = [...X.map(v => -v).reverse(), ...I, ...X];      // spans across the square are split so they curve with the planet
+  L.forEach(zv => L.forEach(xv => { const x = JZ.C[0] + xv, z = JZ.C[1] + zv; sp.push(x, H0 - 3 - 20 * ss(0, 3000, Math.max(Math.abs(xv), Math.abs(zv)) - hw) - (x * x + z * z) / (2 * JZ.RM), z); su.push(xv / JZ.WIDE + .5, .5 - zv / JZ.WIDE); }));
   const n = L.length, a0 = X.length - 1, a1 = a0 + I.length + 1, inner = i => i >= a0 && i < a1; for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) { if (inner(i) && inner(j)) continue; const o = j * n + i; si.push(o, o + n, o + 1, o + 1, o + n, o + n + 1); }      // the cells inside are the square itself
-  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); sg.setIndex(si);
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); sg.setAttribute('uv', new THREE.Float32BufferAttribute(su, 2)); sg.setIndex(si);
   const skirt = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ color: JZ.ground })); m.add(skirt);
+  new THREE.TextureLoader().load('models/jezero-wide.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; skirt.material.map = t; skirt.material.color.set(0xffffff); skirt.material.needsUpdate = true; });      // the surrounding ground's broad colours, fading to the average far out
   m.visible = false; return { mesh: m, at: (x, z, up = 0) => new THREE.Vector3(x, hAt(x, z) - (x * x + z * z) / (2 * JZ.RM) + up, z) };
 }
 /* Perseverance's drives, from NASA's published traverse (models/jezero-route.json, made by src/jezero-crater/route.py:
@@ -1350,8 +1351,8 @@ function place() {
   $('sc-labels').querySelectorAll('.vg-lab').forEach(el => { const l = skyLabels[+el.dataset.i]; _v.copy(l[1]).project(camera);
     if (check && CRAFT[craftKey].env === 'moon') { _d.copy(l[1]).sub(camera.position); ray.far = _d.length(); ray.set(camera.position, _d.normalize()); el.dataset.hid = ray.intersectObjects(pickables, true).length ? '1' : ''; }      // a label behind the vehicle is hidden by it
     const far = camera.position.distanceTo(l[1]), on = !el.dataset.hid && _v.z < 1 && Math.abs(_v.x) < .93 && Math.abs(_v.y) < .93 && (camera.fov > 22 || l[3]) && !(l[2] && far < l[2]) && !(l[3] && far > l[3]) && !(l[4] && camera.position.y < l[4]); el.style.opacity = on ? 1 : 0;
-    if (on && !l[5]) { const x = (_v.x + 1) / 2 * w; if (x + 16 + el.offsetWidth > w - 4) el.style.opacity = 0; }      // a label that would run off the right edge is hidden, not cut
-    el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (l[5] === 'L' ? ' translate(-100%,0) translateX(-22px)' : l[5] === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : l[5] === 'B' ? ' translate(-20px,12px)' : ''); });
+    let side = l[5]; if (on) { const x = (_v.x + 1) / 2 * w; if (side === 'L' && x - 38 - el.offsetWidth < 4) side = 0; if (!side && x + 16 + el.offsetWidth > w - 4) el.style.opacity = 0; }      // a label that would run off the left edge moves to the right of its point; off the right edge, it is hidden rather than cut
+    el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (side === 'L' ? ' translate(-100%,0) translateX(-22px)' : side === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : side === 'B' ? ' translate(-20px,12px)' : ''); });
 }
 function moonCam() {      // one Moon scene runs from the driver's seat to 25 km up: keep the near plane and the exposure in step with the height
   const cc = CRAFT[craftKey]; if (!cc || cc.env !== 'moon' || !camera) return;

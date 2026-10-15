@@ -28,21 +28,30 @@ print('landing site elevation %.1f m' % site)
 hs = ndimage.zoom(ndimage.gaussian_filter(h, N / M * .5), M / N, order=1) - site
 print('relative range %.0f .. %.0f m' % (hs.min(), hs.max()))
 q = np.clip(np.round(hs * 4), -32767, 32767).astype('<i2'); q.tofile(OUTB)
-oraw = np.load(D + '/' + (sys.argv[10] if len(sys.argv) > 10 else 'ortho.npy')); o = crop(fill(oraw))
+oraw = np.load(D + '/' + (sys.argv[10] if len(sys.argv) > 10 else 'ortho.npy')); of = fill(oraw); n0 = of.shape[0]
 valid = ndimage.binary_closing(crop(np.isfinite(oraw)), iterations=20)      # photographed ground, ignoring pinholes
-o = ndimage.zoom(o, TEXN / o.shape[0], order=1) if TEXN != o.shape[0] else o
-lo, hi = np.percentile(o, [.3, 99.7]); L = np.clip((o - lo) / (hi - lo), 0, 1)
-# colour by brightness rank, using the photo's own palette (average colour at each brightness)
+lo, hi = np.percentile(of, [.3, 99.7]); Lf = np.clip((of - lo) / (hi - lo), 0, 1)
+# colour by brightness rank, using the photo's own palette (average colour at each brightness); done over the whole mosaic
 ph = np.asarray(Image.open(PHOTO).convert('RGB'), dtype=np.float32); pl = ph.mean(2)
 qs = np.percentile(pl, np.linspace(0, 100, 65)); bins = np.clip(np.searchsorted(qs, pl) - 1, 0, 63)
 pal = np.array([ph[bins == b].mean(0) if (bins == b).any() else [0, 0, 0] for b in range(64)])
-ranks = np.argsort(np.argsort(L.ravel())).reshape(L.shape) / L.size        # histogram-match to the photo
-idx = ranks * 63; i0 = np.floor(idx).astype(int); f = (idx - i0)[..., None]; i1 = np.minimum(i0 + 1, 63)
-rgb = pal[i0] * (1 - f) + pal[i1] * f
-T = rgb.shape[0]; cell = S / N      # where no stereo pair reaches, and at the square's edge, fade into the ground's average colour
+ranks = np.argsort(np.argsort(Lf.ravel())).reshape(Lf.shape) / Lf.size        # histogram-match to the photo
+idx = ranks * 63; i0 = np.floor(idx).astype(int); fr = (idx - i0)[..., None]; i1 = np.minimum(i0 + 1, 63)
+rgbF = (pal[i0] * (1 - fr) + pal[i1] * fr).astype(np.float32); del ranks, idx, i0, i1, fr
+lowF = np.stack([ndimage.gaussian_filter(rgbF[..., c], 2500. / (S0 / n0)) for c in range(3)], -1)      # the ground's colour at a few km scale
+rgb = crop(rgbF); low = crop(lowF)
+if TEXN != rgb.shape[0]: z = TEXN / rgb.shape[0]; rgb = ndimage.zoom(rgb, (z, z, 1), order=1); low = ndimage.zoom(low, (z, z, 1), order=1)
+T = rgb.shape[0]; cell = S / N      # where no stereo pair reaches, and at the square's edge, fade into that broad colour, which the viewer's skirt continues
 dd = ndimage.distance_transform_edt(np.pad(valid, 1))[1:-1, 1:-1] * cell; dd = ndimage.zoom(ndimage.gaussian_filter(dd, 6), T / N, order=1)
 f = 1 - np.clip(dd / 4000., 0, 1); f = (f * f * (3 - 2 * f))[..., None]
-mean = rgb[f[..., 0] < .01].mean(0); print('mean ground colour #%02x%02x%02x' % tuple(int(round(v)) for v in mean))      # the viewer's skirt of ground beyond the square uses this
-rgb = rgb * (1 - f) + mean * f
+mean = rgbF.reshape(-1, 3).mean(0); print('mean ground colour #%02x%02x%02x' % tuple(int(round(v)) for v in mean))
+rgb = rgb * (1 - f) + low * f
 Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)).save(OUTJ, quality=90, optimize=True, progressive=True)
+# the skirt: WIDE metres square, centred on the square, at low resolution; the mosaic's broad colour fading to the mean beyond it
+WIDE, WN = 360000., 512; OUTW = OUTJ.replace('.jpg', '-wide.jpg')
+c = (np.arange(WN) + .5) / WN * WIDE - WIDE / 2; XX, ZZ = np.meshgrid(c + OX, c + OZ)      # in the mosaic's own frame
+u = (XX / S0 + .5) * n0 - .5; v = (ZZ / S0 + .5) * n0 - .5
+out = np.clip(np.maximum(np.abs(XX), np.abs(ZZ)) - (S0 / 2 - 15000), 0, None); w = np.clip(1 - out / 60000., 0, 1); w = (w * w * (3 - 2 * w))[..., None]
+sm = np.stack([ndimage.map_coordinates(ndimage.gaussian_filter(lowF[..., k], 8), [v, u], order=1, mode='nearest') for k in range(3)], -1)
+Image.fromarray(np.clip(sm * w + mean * (1 - w), 0, 255).astype(np.uint8)).save(OUTW, quality=88)
 print('palette dark', pal[2].round(), 'mid', pal[32].round(), 'bright', pal[61].round())
