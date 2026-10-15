@@ -3,6 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.92 / zion-sky-v360 — 2026-10-15
+- Parts, Drive and Stow buttons hide in the From above views. Why: they
+  cluttered the map and covered the pins.
+
 ## v3.91 / zion-sky-v359 — 2026-10-15
 - Jezero "From above" handles like a map: drag to move, two fingers (or
   right-drag) to tilt and turn, zoom toward the cursor; the view stays over
