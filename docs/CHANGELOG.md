@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.84 / zion-sky-v352 — 2026-10-15
+- Satellite loop: a 4x zoom step (the button cycles 1x, 2x, 4x), and a
+  longer, calmer loop: three hours in 18 frames, 0.65 s each, with a 2.4 s
+  hold on the newest. Why: two hours at 0.45 s per frame was too quick to
+  read cloud motion.
+
 ## v3.83 / zion-sky-v351 — 2026-10-15
 - Satellite loop: a 2x zoom button (remembered), which redraws the map
   layer for the closer view so labels keep their size. The nearest one or
