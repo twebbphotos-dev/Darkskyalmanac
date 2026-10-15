@@ -3,6 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.87 / zion-sky-v355 — 2026-10-15
+- Mars page: the rover game's card is titled "Mars Rover Simulator". Why:
+  says plainly what it is.
+
 ## v3.86 / zion-sky-v354 — 2026-10-15
 - Jezero Traverse, the Mars rover game, at rover/: land Perseverance, drive
   it over HiRISE terrain of Jezero Crater, fly Ingenuity, aim Mastcam-Z.
