@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.83 / zion-sky-v351 — 2026-10-15
+- Satellite loop: a 2x zoom button (remembered), which redraws the map
+  layer for the closer view so labels keep their size. The nearest one or
+  two national park gateway towns in view are labeled first, with the park
+  beneath (Springdale / Zion NP, Estes Park / Rocky Mountain NP, Moab /
+  Arches & Canyonlands NP). Why: Natural Earth leaves out small towns, and
+  the gateways are the places people using this app actually go.
+
 ## v3.82 / zion-sky-v350 — 2026-10-15
 - Cloud Coverage satellite loop: a map layer for scale and context. State,
   province and country borders, coastlines, big lakes, up to eight of the
