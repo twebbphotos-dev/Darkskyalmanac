@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.91 / zion-sky-v359 — 2026-10-15
+- Jezero "From above" handles like a map: drag to move, two fingers (or
+  right-drag) to tilt and turn, zoom toward the cursor; the view stays over
+  the map. Why: explore the route the way Google Earth does.
+- Tappable place names open a card with date, facts and a NASA photo:
+  landing site (Kodiak), the delta, Ingenuity's first flight, the Rochette
+  core holes, the sample depot selfie and Cheyava Falls' leopard spots.
+  Photos in img/m20/ (downloaded with the 3D models). Why: puts the mission's
+  best-known pictures where they were taken.
+
 ## v3.90 / zion-sky-v358 — 2026-10-15
 - Jezero "From above": zoomed out, the map no longer ends at a square. Its
   edges fade into the ground's broad colors, which a low-detail skirt carries
