@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.82 / zion-sky-v350 — 2026-10-15
+- Cloud Coverage satellite loop: a map layer for scale and context. State,
+  province and country borders, coastlines, big lakes, up to eight of the
+  largest towns in view (labels never overlap), and a 100-mile scale bar,
+  from Natural Earth (public domain). Sources page credits NASA GIBS and
+  Natural Earth. Why: bare cloud imagery gave no sense of where or how far.
+
 ## v3.81 / zion-sky-v349 — 2026-10-14
 - Cloud Coverage: the satellite loop now actually loads. It asks NASA GIBS
   for one infrared picture per 10-minute slot through its WMS service, skips

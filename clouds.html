@@ -52,7 +52,14 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 .zcl-sat-stage img{position:absolute;inset:0;width:100%;height:100%;user-select:none;-webkit-user-select:none;pointer-events:none}
 .zcl-sat-frame{visibility:hidden}
 .zcl-sat-frame.on{visibility:visible}
-.zcl-sat-ref{opacity:.55}
+.zcl-sat-map{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.zcl-sat-map path{fill:none;stroke-linejoin:round;stroke-linecap:round}
+.zcl-sat-coast{stroke:rgba(242,228,190,.55);stroke-width:2}
+.zcl-sat-state{stroke:rgba(230,204,133,.7);stroke-width:2.2;stroke-dasharray:10 7}
+.zcl-sat-nation{stroke:rgba(230,204,133,.9);stroke-width:3}
+.zcl-sat-town{fill:#F2E4BE;stroke:rgba(13,10,24,.85);stroke-width:3}
+.zcl-sat-lbl{font-family:Montserrat,sans-serif;font-size:34px;font-weight:600;fill:#F2E4BE;stroke:rgba(13,10,24,.85);stroke-width:7px;paint-order:stroke;letter-spacing:.5px}
+.zcl-sat-bar100{fill:none;stroke:#F2E4BE;stroke-width:3.5}
 .zcl-sat-pin{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px 0 0 -5px;border-radius:50%;border:2px solid #E6CC85;box-shadow:0 0 0 2px rgba(13,10,24,.7)}
 .zcl-sat-bar{display:flex;align-items:center;gap:10px;max-width:520px;margin:10px auto 0}
 .zcl-sat-play{flex:0 0 auto;width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.45);background:rgba(203,168,90,.08);color:#E6CC85;font-size:13px;cursor:pointer;font-family:inherit}
@@ -137,7 +144,7 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
       <input class="zcl-sat-range" id="zcl-sat-range" type="range" min="0" max="11" value="11" aria-label="Frame time">
       <span class="zcl-sat-time" id="zcl-sat-time"></span>
     </div>
-    <div class="zcl-note" style="margin-top:10px;text-align:center">Last two hours of infrared imagery from the <span id="zcl-sat-name">GOES</span> weather satellite, via NASA GIBS. Brighter means colder, higher cloud tops; it works day and night. The gold ring is your location.</div>
+    <div class="zcl-note" style="margin-top:10px;text-align:center">Last two hours of infrared imagery from the <span id="zcl-sat-name">GOES</span> weather satellite, via NASA GIBS. Brighter means colder, higher cloud tops; it works day and night. Dashed lines are state and province borders; the gold ring is your location.</div>
   </div>
 
   <div class="zcl-cardtit" style="margin:2px 0 6px">By Model &middot; Unblended</div>
@@ -184,6 +191,49 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
     .then(b=>(b&&b.size>BLANK&&/image/.test(b.type))?URL.createObjectURL(b):null)
     .catch(()=>{ plain=true; return asImage(d) });
   const stage=$('zcl-sat-stage');
+  // Map overlay for scale and context: state, province and country lines,
+  // coastlines, big lakes, the largest towns in view and a 100-mile bar.
+  // The WMS picture is plate carree over BBOX, so the mapping is linear.
+  const LON0=lng-HW, LAT1=lat+HL;
+  const X=lo=>(lo-LON0)/(2*HW)*PX, Y=la=>(LAT1-la)/(2*HL)*PX;
+  function drawMap(){
+    fetch('zcl-geo.json').then(r=>r.ok?r.json():null).then(g=>{
+      if(!g) return;
+      const NS='http://www.w3.org/2000/svg';
+      const svg=document.createElementNS(NS,'svg');
+      svg.setAttribute('viewBox','0 0 '+PX+' '+PX); svg.setAttribute('class','zcl-sat-map');
+      const inView=a=>{ for(let i=0;i<a.length;i+=2){ if(Math.abs(a[i]-lng)<HW*1.3&&Math.abs(a[i+1]-lat)<HL*1.3) return true } return false };
+      const path=(sets,cls)=>{ let d='';
+        for(const set of sets) for(const a of set){ if(!inView(a)) continue;
+          d+='M'+X(a[0]).toFixed(1)+' '+Y(a[1]).toFixed(1);
+          for(let i=2;i<a.length;i+=2) d+='L'+X(a[i]).toFixed(1)+' '+Y(a[i+1]).toFixed(1) }
+        if(!d) return; const el=document.createElementNS(NS,'path'); el.setAttribute('d',d); el.setAttribute('class',cls); svg.appendChild(el) };
+      path([g.c,g.l],'zcl-sat-coast'); path([g.s],'zcl-sat-state'); path([g.b],'zcl-sat-nation');
+      // Towns, biggest first, only where the label fits clear of others and the pin.
+      // Keep clear of the location ring and the scale bar (bottom left).
+      const taken=[[PX/2-24,PX/2-24,PX/2+24,PX/2+24],[20,PX-100,250,PX-20]], FS=34, placed=[];
+      let n=0;
+      for(const [name,la,lo] of g.p){
+        if(n>=8) break;
+        const x=X(lo), y=Y(la); if(x<20||y<40||x>PX-20||y>PX-20) continue;
+        if(placed.some(q=>Math.hypot(q[0]-x,q[1]-y)<60)) continue;   // a suburb of a town already shown
+        const w=name.length*FS*0.56+16;
+        const hit=b=>b[0]<0||b[2]>PX||taken.some(r=>b[0]<r[2]&&b[2]>r[0]&&b[1]<r[3]&&b[3]>r[1]);
+        const near=Math.hypot(x-PX/2,y-PX/2)<24, o=near?30:18;   // a town under the ring starts clear of it
+        const R=[x+o,y-FS*0.7,x+o+w,y+FS*0.5], L=[x-o-w,y-FS*0.7,x-o,y+FS*0.5];
+        const left=!hit(R); if(!left&&hit(L)) continue;
+        taken.push(left?R:L,[x-10,y-10,x+10,y+10]); placed.push([x,y]); n++;
+        const dot=document.createElementNS(NS,'circle'); dot.setAttribute('cx',x.toFixed(1)); dot.setAttribute('cy',y.toFixed(1)); dot.setAttribute('r','6'); dot.setAttribute('class','zcl-sat-town'); svg.appendChild(dot);
+        const t=document.createElementNS(NS,'text'); t.setAttribute('x',(left?x+o+4:x-o-4).toFixed(1)); t.setAttribute('y',(y+FS*0.34).toFixed(1));
+        t.setAttribute('text-anchor',left?'start':'end'); t.setAttribute('class','zcl-sat-lbl'); t.textContent=name; svg.appendChild(t);
+      }
+      // 100-mile scale bar, bottom left.
+      const mi=100*1.609344/111.32/(2*HL)*PX, bx=34, by=PX-40;
+      const bar=document.createElementNS(NS,'path'); bar.setAttribute('d','M'+bx+' '+(by-12)+'V'+by+'H'+(bx+mi).toFixed(1)+'V'+(by-12)); bar.setAttribute('class','zcl-sat-bar100'); svg.appendChild(bar);
+      const bt=document.createElementNS(NS,'text'); bt.setAttribute('x',(bx+mi/2).toFixed(1)); bt.setAttribute('y',String(by-20)); bt.setAttribute('text-anchor','middle'); bt.setAttribute('class','zcl-sat-lbl'); bt.textContent='100 mi'; svg.appendChild(bt);
+      stage.appendChild(svg);
+    }).catch(()=>{});
+  }
   (async function(){
     const start=Math.floor(Date.now()/STEP)*STEP-3*STEP;
     let end=null, first=null;
@@ -195,11 +245,7 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
     times.forEach((d,i)=>{ if(urls[i]) frames.push({d,u:urls[i]}) });
     frames.push({d:end,u:first});
     frames.forEach(f=>{ const im=new Image(); im.alt=''; im.className='zcl-sat-frame'; im.src=f.u; f.el=im; stage.appendChild(im) });
-    // Coastlines and borders on top, so the clouds have a place to sit.
-    const ref=new Image(); ref.alt=''; ref.className='zcl-sat-ref';
-    ref.onerror=()=>ref.remove();
-    ref.src=WMS+'&LAYERS=Reference_Features_15m&FORMAT=image/png&TRANSPARENT=TRUE';
-    stage.appendChild(ref);
+    drawMap();
     $('zcl-sat-card').hidden=false;
     const n=frames.length, range=$('zcl-sat-range'), btn=$('zcl-sat-play'), lab=$('zcl-sat-time');
     range.max=n-1;
