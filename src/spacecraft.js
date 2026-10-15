@@ -42,7 +42,7 @@ const CRAFT = {
       { p: [-2.5, 0.5, 2.7], name: 'Ingenuity', txt: 'A 1.8 kg helicopter with two 1.2 m rotors that spun in opposite directions at about 2,400 rpm to bite the thin air. It flew 72 times between April 2021 and January 2024 — planned for five. A scrap of fabric from the Wright brothers’ Flyer rides under its solar panel.' },
     ],
     cards: [['Rover mass', '1,025 kg', 'About as heavy as a small car'], ['Landed', '18 Feb 2021', 'Jezero Crater'], ['Cameras', '23', 'Counting the landing cameras'], ['Ingenuity flights', '72', 'First on 19 April 2021']],
-    story: '<p>Jezero Crater held a lake about 3.5 billion years ago, fed by a river that left a delta of layered mud and sand. On Earth, that kind of place preserves traces of life well — which is why Perseverance was sent to drive up the delta and drill.</p><p>Ingenuity rode to Mars bolted under the rover’s belly. Its first hover lasted 39 seconds; by its last flight it had covered about 17 km and scouted routes ahead of the rover. A broken rotor blade ended its flying in January 2024, and it now sits where it last landed.</p><p>From above you can see the whole crater, 45 km across, much as an orbiting camera sees it: the delta fanning out where the river broke through the western rim, and the landing site at its foot. The ground is built from elevation maps measured from pairs of Mars Reconnaissance Orbiter photographs, at true height. The colored line is every drive NASA has published, one color per year: across the crater floor, up the delta and out over the western rim.</p>',
+    story: '<p>Jezero Crater held a lake about 3.5 billion years ago, fed by a river that left a delta of layered mud and sand. On Earth, that kind of place preserves traces of life well — which is why Perseverance was sent to drive up the delta and drill.</p><p>Ingenuity rode to Mars bolted under the rover’s belly. Its first hover lasted 39 seconds; by its last flight it had covered about 17 km and scouted routes ahead of the rover. A broken rotor blade ended its flying in January 2024, and it now sits where it last landed.</p><p>From above you can see the whole crater, 45 km across, much as an orbiting camera sees it: the delta fanning out where the river broke through the western rim, and the landing site at its foot. The ground is built from elevation maps measured from pairs of Mars Reconnaissance Orbiter photographs, at true height. The colored line is every drive NASA has published, one color per year: across the crater floor, up the delta and out over the western rim. Zoom in to find four milestones: Ingenuity’s first flight (April 2021); the first rock core, “Rochette” (September 2021); the depot where ten sample tubes were left on the ground as a backup (December 2022 to January 2023); and “Cheyava Falls,” a rock with “leopard spots” that NASA calls its best candidate yet for a sign of ancient life (July 2024), though only a lab on Earth could settle it.</p>',
     link: { href: 'mars', txt: 'Explore Mars' }, get extra() { return ROVERS; },
   },
   curiosity: {
@@ -536,20 +536,28 @@ function tuneLander(root) {      // NASA's lander is flat yellow and grey plasti
 /* Jezero Crater from above. The ground is real: a mosaic of elevation models the USGS made from stereo pairs taken by
    the CTX camera on Mars Reconnaissance Orbiter (20 m detail), resampled to a 90 km square, north up (models/jezero.bin:
    heights in quarter-metres relative to the landing site). Over it lies the same camera's orthorectified photography
-   (models/jezero.jpg), black and white, given the tones of a true-colour orbital view. +x is east, +z is south. */
-const JZ = { W: 90000, C: [-982, 3835], RM: 3389500 };      // the square's centre (18.38° N 77.433° E), in metres east and south of the landing site: the whole crater, the rover's drives and the country west of the rim
+   (models/jezero.jpg), black and white, given the tones of a true-colour orbital view; its edges fade to the average colour, JZ.ground. +x is east, +z is south. */
+const JZ = { W: 90000, C: [-982, 3835], RM: 3389500, ground: '#675b51' };      // the square's centre (18.38° N 77.433° E), in metres east and south of the landing site: the whole crater, the rover's drives and the country west of the rim
 function marsCrater(dem, map) {
   const M = Math.round(Math.sqrt(dem.length)), S = matchMedia('(max-width:600px)').matches ? Math.min(M, 384) : M, pos = [], uv = [], idx = [];
   const hAt = (x, z) => { const u = Math.max(0, Math.min(M - 1.001, ((x - JZ.C[0]) / JZ.W + .5) * M - .5)), v = Math.max(0, Math.min(M - 1.001, ((z - JZ.C[1]) / JZ.W + .5) * M - .5)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
     return ((dem[k] * (1 - fu) + dem[k + 1] * fu) * (1 - fv) + (dem[k + M] * (1 - fu) + dem[k + M + 1] * fu) * fv) / 4; };
   const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
+  const edge = []; for (let i = 0; i < M; i++) edge.push(dem[i], dem[(M - 1) * M + i], dem[i * M], dem[i * M + M - 1]); edge.sort((p, q) => p - q); const H0 = edge[edge.length >> 1] / 4;      // the typical height round the square's edge
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
     const a = i * (M - 1) / (S - 1), b = j * (M - 1) / (S - 1), x = JZ.C[0] + ((a + .5) / M - .5) * JZ.W, z = JZ.C[1] + ((b + .5) / M - .5) * JZ.W, r = Math.hypot(x, z), k = ss(450, 900, r);
-    pos.push(x, hAt(x, z) * k - .4 * (1 - k) - r * r / (2 * JZ.RM), z); uv.push((a + .5) / M, 1 - (b + .5) / M); }      // tucked just under the rover's own patch of ground, and falling away with the curve of Mars
+    const e = ss(0, 6000, JZ.W / 2 - Math.max(Math.abs(x - JZ.C[0]), Math.abs(z - JZ.C[1]))), h = H0 + (hAt(x, z) - H0) * e;      // the last few km settle onto the level of the ground beyond
+    pos.push(x, h * k - .4 * (1 - k) - r * r / (2 * JZ.RM), z); uv.push((a + .5) / M, 1 - (b + .5) / M); }      // tucked just under the rover's own patch of ground, and falling away with the curve of Mars
   for (let j = 0; j < S - 1; j++) for (let i = 0; i < S - 1; i++) { const o = j * S + i; idx.push(o, o + S, o + 1, o + 1, o + S, o + S + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map }));      // the photograph already holds the light and shade of the real Sun
+  // beyond the square: plain ground of the photograph's average colour, out past the horizon, curving away with the planet
+  const X = [], sp = [], si = [], hw = JZ.W / 2 - 60; for (let k = 0; k <= 20; k++) X.push(hw * Math.pow(700000 / hw, k / 20)); const I = []; for (let k = 1; k < 8; k++) I.push(hw * (k / 4 - 1)); const L = [...X.map(v => -v).reverse(), ...I, ...X];      // spans across the square are split so they curve with the planet
+  L.forEach(zv => L.forEach(xv => { const x = JZ.C[0] + xv, z = JZ.C[1] + zv; sp.push(x, H0 - 20 * ss(0, 3000, Math.max(Math.abs(xv), Math.abs(zv)) - hw) - (x * x + z * z) / (2 * JZ.RM), z); }));
+  const n = L.length, a0 = X.length - 1, a1 = a0 + I.length + 1, inner = i => i >= a0 && i < a1; for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) { if (inner(i) && inner(j)) continue; const o = j * n + i; si.push(o, o + n, o + 1, o + 1, o + n, o + n + 1); }      // the cells inside are the square itself
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(sp, 3)); sg.setIndex(si);
+  const skirt = new THREE.Mesh(sg, new THREE.MeshBasicMaterial({ color: JZ.ground })); m.add(skirt);
   m.visible = false; return { mesh: m, at: (x, z, up = 0) => new THREE.Vector3(x, hAt(x, z) - (x * x + z * z) / (2 * JZ.RM) + up, z) };
 }
 /* Perseverance's drives, from NASA's published traverse (models/jezero-route.json, made by src/jezero-crater/route.py:
@@ -565,7 +573,11 @@ function roverRoute(J, R, labels) {
   const pt = new THREE.Points(dg, dm); pt.frustumCulled = false; pt.renderOrder = 4 + n; grp.add(pt);
   const mo = when.toLocaleDateString('en-US', { month: 'short', year: 'numeric', timeZone: 'UTC' }), tall = camera.aspect < 1.1;      // on a phone the rover sits near the left edge: two short lines below it instead of one long one to its left
   labels.push([tall ? 'Perseverance<br>' + mo : 'Perseverance · ' + mo, now, 0, 0, 1500, tall ? 'B' : 'L']);
-  grp.userData = { U, dm, legend: R.drives.map((d, i) => '<span><i style="background:' + YEARS[i % YEARS.length] + '"></i>' + d[0] + '</span>').join('') }; return grp;
+  // pins: where the rover stood on the day of a milestone (positions from the traverse; see route.py)
+  const pins = R.pins || [], pp = [], dp = new THREE.PointsMaterial({ map: dot, color: 0xE6CC85, size: 8, sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false, toneMapped: false, opacity: 0 });
+  pins.forEach(q => { const v = J.at(q[1], q[2], 8); pp.push(v.x, v.y, v.z); labels.push([q[0], v, 0, 30000, 1500, q[0].startsWith('Ingenuity') ? 'L' : undefined]); });      // named only once zoomed in; the first flight sits beside the landing site, so its name goes to the left
+  if (pp.length) { const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3)); const pts = new THREE.Points(g2, dp); pts.frustumCulled = false; pts.renderOrder = 4 + n; grp.add(pts); }
+  grp.userData = { U, dm, dp, legend: R.drives.map((d, i) => '<span><i style="background:' + YEARS[i % YEARS.length] + '"></i>' + d[0] + '</span>').join('') }; return grp;
 }
 /* A repeating texture shows its repeat from a distance. Mix three copies at
    unrelated scales and rotations (and normalise by the texture's average) so
@@ -1347,18 +1359,19 @@ function moonCam() {      // one Moon scene runs from the driver's seat to 25 km
   const t = Math.max(0, Math.min(1, (camera.position.y - 150) / 2500)), up = t * t * (3 - 2 * t), u = world && world.userData, t2 = Math.max(0, Math.min(1, (camera.position.y - 4) / 50));
   renderer.toneMappingExposure = 1.08 * (1 + 1.4 * t2 * t2 * (3 - 2 * t2));      // seen from straight above, sunlit ground under a low Sun is dim: open up the exposure as the camera climbs…
   if (u && u.fill) u.fill.intensity = .62 - .37 * up;        // …and let the shadows deepen, so the mountains stand out
-  if (u && u.route) { const o = Math.max(0, Math.min(1, (camera.position.y - 700) / 1500)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+  if (u && u.route) { const o = Math.max(0, Math.min(1, (camera.position.y - 700) / 1500)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.dp.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   if (u && u.soil) u.soil.bumpScale = .9 * (1 - .75 * Math.max(0, Math.min(1, (camera.position.y - 6) / 60)));      // the grain of the soil turns to noise seen from the air
   if (u && u.trail) u.trail.opacity = .34 * Math.max(0, Math.min(1, (camera.position.y - 12) / 50));
   if (u && u.stars) u.stars.position.copy(camera.position);  // the stars are infinitely far away, wherever the camera goes
 }
+const FOG_LOW = new THREE.Color(0x9c7b5f), FOG_HIGH = new THREE.Color(0xa88466);      // the ground-level haze, and the sky dome's horizon
 function marsCam() {      // after the controls move the camera, so the sky is never left behind; the Mars scene runs from beside the rover to 70 km up: thin the haze, move the near plane and swap the ground with the height
   const cc = CRAFT[craftKey], u = world && world.userData; if (!cc || cc.env !== 'mars' || !camera || !u || !u.sky) return;
   const y = Math.max(0, camera.position.y); u.sky.position.copy(camera.position);
   if (!lookView) { const nr = Math.min(150, Math.max(.03, camera.position.distanceTo(controls.target) * .003)); if (Math.abs(nr - camera.near) > camera.near * .2) { camera.near = nr; camera.updateProjectionMatrix(); } }
-  if (scene.fog) { scene.fog.near = 25 + y * 2.5; scene.fog.far = 220 + y * 9; }
-  if (u.route) { const o = Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+  if (scene.fog) { scene.fog.near = 25 + y * 1.2; scene.fog.far = 220 + y * 6; const t = Math.max(0, Math.min(1, (y - 50) / 2000)); scene.fog.color.lerpColors(FOG_LOW, FOG_HIGH, t * t * (3 - 2 * t)); }      // from the air the distance fades into the dusty horizon of the sky dome
+  if (u.route) { const o = Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.dp.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   if (u.crater) {      // the rover's patch of close-up ground (a repeating texture) fades out as the camera climbs, leaving the real crater
     u.crater.visible = y > 20; const f = Math.max(0, Math.min(1, (y - 40) / 80));

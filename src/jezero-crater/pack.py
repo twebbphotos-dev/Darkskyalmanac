@@ -39,8 +39,10 @@ pal = np.array([ph[bins == b].mean(0) if (bins == b).any() else [0, 0, 0] for b 
 ranks = np.argsort(np.argsort(L.ravel())).reshape(L.shape) / L.size        # histogram-match to the photo
 idx = ranks * 63; i0 = np.floor(idx).astype(int); f = (idx - i0)[..., None]; i1 = np.minimum(i0 + 1, 63)
 rgb = pal[i0] * (1 - f) + pal[i1] * f
-T = rgb.shape[0]; cell = S / N      # where no stereo pair reaches, and at the square's edge, fade into the haze colour of the viewer's sky
+T = rgb.shape[0]; cell = S / N      # where no stereo pair reaches, and at the square's edge, fade into the ground's average colour
 dd = ndimage.distance_transform_edt(np.pad(valid, 1))[1:-1, 1:-1] * cell; dd = ndimage.zoom(ndimage.gaussian_filter(dd, 6), T / N, order=1)
-f = 1 - np.clip(dd / 4000., 0, 1); f = (f * f * (3 - 2 * f))[..., None]; rgb = rgb * (1 - f) + np.array([168, 132, 102]) * f
+f = 1 - np.clip(dd / 4000., 0, 1); f = (f * f * (3 - 2 * f))[..., None]
+mean = rgb[f[..., 0] < .01].mean(0); print('mean ground colour #%02x%02x%02x' % tuple(int(round(v)) for v in mean))      # the viewer's skirt of ground beyond the square uses this
+rgb = rgb * (1 - f) + mean * f
 Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)).save(OUTJ, quality=90, optimize=True, progressive=True)
 print('palette dark', pal[2].round(), 'mid', pal[32].round(), 'bright', pal[61].round())
