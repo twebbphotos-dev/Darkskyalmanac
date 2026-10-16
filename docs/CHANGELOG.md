@@ -3,6 +3,20 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.97 / zion-sky-v366 — 2026-10-16
+- Jezero "From above": "Fly the route" button. The camera follows a dot
+  along every drive, about 11 s per year, with the current year lit in the
+  legend. Any drag, scroll, pinch or pin tap pauses it; the button resumes.
+- Desktop: middle-drag tilts and turns the map, like right-drag.
+- Zooming out from the rover views past ~1.2 km switches to the map controls
+  automatically, from where the camera is.
+- Rover views at Jezero: the ground under the rover is the real HiRISE
+  picture of the landing site (1 km round) instead of a repeating texture;
+  the 4 m HiRISE layer and the real crater terrain run out to the horizon,
+  and the haze is thinner, so the delta scarp to the west shows from the
+  ground. Rocks recolored to match.
+  Why: the old 220 m haze and made-up soil hid the real landscape.
+
 ## v3.96 / zion-sky-v365 — 2026-10-16
 - Jezero "From above": a 4 m HiRISE overview layer covers the whole drive
   area (13 tiles, 2.4 MB), so the map stays sharp when zoomed out to

@@ -300,6 +300,9 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 #sc-drive{top:50px;right:12px;background:rgba(8,7,13,.66);min-width:76px;color:#E4D9B8;border-color:rgba(203,168,90,.55)}
 #sc-drive[hidden]{display:none}
 .sc-above #sc-parts,.sc-above #sc-deploy,.sc-above #sc-drive{display:none}
+#sc-tour{top:12px;right:12px;background:rgba(8,7,13,.66);min-width:76px;color:#E4D9B8;border-color:rgba(203,168,90,.55);display:none}
+.sc-above #sc-tour:not([hidden]){display:inline-flex}
+#sc-legend span{transition:opacity .4s}#sc-legend span.dim{opacity:.35}
 #sc-drive:disabled,#sc-deploy:disabled{opacity:.55}
 #sc-parts.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#E4D9B8}
 #sc-info{touch-action:none;left:12px;bottom:12px;max-width:360px;background:rgba(8,7,13,.88);border:1px solid rgba(203,168,90,.3);border-radius:10px;
@@ -406,6 +409,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <button class="zcl-vbtn vg-ovl on" id="sc-parts">Parts</button>
         <button class="zcl-vbtn vg-ovl" id="sc-deploy" hidden>Deploy</button>
         <button class="zcl-vbtn vg-ovl" id="sc-drive" hidden>Drive</button>
+        <button class="zcl-vbtn vg-ovl" id="sc-tour" hidden>Fly the route</button>
         <div class="vg-ovl" id="sc-info"></div>
       </div>
       <div class="zcl-ctlrow"><div class="zcl-seg" id="sc-views" role="group" aria-label="View"></div></div>
