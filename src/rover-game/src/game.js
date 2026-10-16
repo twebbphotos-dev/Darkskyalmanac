@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { buildMars } from './mars.js';
 import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks, prepScan, findLanding, colliders,
-         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround } from './terrain.js';
+         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT } from './terrain.js';
 import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
 import { createEDL } from './edl.js';
@@ -1682,7 +1682,7 @@ $('btn-map').addEventListener('click', () => toggleMap());
   const regionImg = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 'img/jezero-region.jpg'; });
   edl = createEDL({
     renderer, scene, camera, height, sunDir, groundMap: map, buildHazardGrid, puff,
-    target: START, playR: PLAY_R, regionImg, outcrops: OUTCROP_SITES, sandMask, onBack: () => $('brief').classList.add('on'), floor: terrainFloor(), plainY: DTM.on ? DTM.plain : undefined, fog: { near: scene.fog.near, far: scene.fog.far },
+    target: START, playR: PLAY_R, regionImg, outcrops: OUTCROP_SITES, sandMask, onBack: () => $('brief').classList.add('on'), floor: terrainFloor(), plainY: DTM.on ? DTM.plain : undefined, ext: DTM.on ? EXT : 0, fog: { near: scene.fog.near, far: scene.fog.far },
     rover: () => rover, roverYaw: () => S.rover.yaw,
     setHeliVisible: v => { heli.visible = v; },
     afterCamera: (x, y, z) => {                    // keep the sky and the shadow light with the lander

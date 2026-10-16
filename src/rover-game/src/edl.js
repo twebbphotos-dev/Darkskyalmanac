@@ -119,9 +119,9 @@ function mottleTexture(seed) {
 const REGION = 60000;
 const SITE_TONE = [146, 72, 45];             // what the ground round the terrain mesh is drawn as, to meet it without a line
 
-/* The real thing, when it is there: Mars Express' view of Jezero (NASA PIA24350),
-   with its caption and ellipse taken out, cropped to the same 60 km square with the
-   landing point at the foot of the delta front. Its colours are true; here they are
+/* The real thing, when it is there: Mars Reconnaissance Orbiter's CTX photographs of
+   Jezero (USGS orthoimage mosaic, coloured from Mars Express' true-colour view), cut to
+   the same 60 km square, north up, centred on the landing point (src/jezero-crater/region.py). Its colours are true; here they are
    re-expressed relative to the crater floor beside the site, in the tones the rest
    of this sheet is drawn in, so the plain still meets the terrain mesh. */
 function realRegion(img, cv, c, S, px, len) {
@@ -416,7 +416,9 @@ export function createEDL(ctx) {
           float d2 = dot( texture2D( detail, vWP.xz / 51.0 + 0.31 ).rgb, vec3( 0.3, 0.5, 0.2 ) ) / 0.085;
           float d3 = texture2D( mott, vWP.xz / 900.0 ).r * 2.0;
           float d4 = texture2D( mott, vWP.xz / 5200.0 + 0.4 ).r * 2.0;
-          diffuseColor.rgb *= clamp( mix( 1.0, d1, 0.5 ) * mix( 1.0, d2, 0.35 ) * mix( 1.0, d3, 0.26 ) * mix( 1.0, d4, 0.24 ), 0.45, 1.7 );`);
+          diffuseColor.rgb *= clamp( mix( 1.0, d1, 0.5 ) * mix( 1.0, d2, 0.35 ) * mix( 1.0, d3, 0.26 ) * mix( 1.0, d4, 0.24 ), 0.45, 1.7 );
+          float inMap = smoothstep( 0.5, 0.42, max( abs( vMapUv.x - 0.5 ), abs( vMapUv.y - 0.5 ) ) );      // past the edge of the map: its average colour, not its edge pixels smeared outward
+          diffuseColor.rgb = mix( texture2D( map, vec2( 0.5 ), 12.0 ).rgb * diffuse, diffuseColor.rgb, inMap );`);
     };
     applyGrade(mat, true);
     const m = new THREE.Mesh(geo, mat);
@@ -424,8 +426,32 @@ export function createEDL(ctx) {
     mat.depthWrite = false;
     m.position.y = ctx.plainY ?? ctx.floor - 6; m.frustumCulled = false; m.renderOrder = -0.5;
     scene.add(m);
+    if (ctx.ext) fetch('../models/jezero.bin').then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b) relief(m, new Int16Array(b)); }).catch(() => {});
     return m;
   })();
+
+  /* The plain in 3D: the real crater from the Dark Sky Almanac's elevation mosaic (models/jezero.bin: USGS CTX
+     stereo models, heights in quarter-metres relative to the landing site, a 90 km square centred 982 m west and
+     3835 m south of it), in true metres like the map laid on it, heights doubled so the rim reads from the air.
+     Under the drivable terrain it stays flat and a little low; it rises into the real ground beyond it. */
+  function relief(m, dem) {
+    const M = Math.round(Math.sqrt(dem.length)), W = 90000, CX = -982, CZ = 3835, EX = 2, R = 64000, E0 = ctx.ext, base = m.position.y;
+    const hAt = (x, z) => {
+      const u = clamp(((x - CX) / W + 0.5) * M - 0.5, 0, M - 1.001), v = clamp(((z - CZ) / W + 0.5) * M - 0.5, 0, M - 1.001), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
+      const h = ((dem[k] * (1 - fu) + dem[k + 1] * fu) * (1 - fv) + (dem[k + M] * (1 - fu) + dem[k + M + 1] * fu) * fv) / 4;
+      return h * smooth(0, 6000, W / 2 - Math.max(Math.abs(x - CX), Math.abs(z - CZ)));      // settles to the landing site's level past the edge of the data
+    };
+    const ax = [0, 600, 1200, E0 - 200, E0]; for (let x = E0, st = 110; x < R; ) { st = Math.min(1400, st * 1.07); x = Math.min(R, x + st); ax.push(x); }
+    const L = [...ax.slice(1).map(v => -v).reverse(), ...ax], n = L.length, pos = new Float32Array(n * n * 3), uv = new Float32Array(n * n * 2), idx = [];
+    for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
+      const x = L[i], z = L[j], o = j * n + i, w = smooth(E0 + 150, E0 + 2600, Math.max(Math.abs(x), Math.abs(z)));
+      pos[o * 3] = x; pos[o * 3 + 2] = z; pos[o * 3 + 1] = w * (hAt(x, z) * EX - base - (x * x + z * z) / (2 * R_MARS * 1000)) - 4 * (1 - w);
+      uv[o * 2] = x / REGION + 0.5; uv[o * 2 + 1] = z / REGION + 0.5;
+    }
+    for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) { const a = j * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
+    const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx);
+    m.geometry.dispose(); m.geometry = g; m.material.depthWrite = true;      // with hills of its own, it has to hide itself properly
+  }
 
   /* ── the globe world (kilometres) ───────────────────────────── */
   const space = new THREE.Scene();
@@ -835,17 +861,17 @@ export function createEDL(ctx) {
      parachutes. Gusts and hard rolls knock it off. W and S fire the pitch
      thrusters. Off by more than 10°, the backshell starts to take heat it was
      never built for; off by 24°, the heat shield no longer leads and it flips. */
-  const AOA_WARN = 10, AOA_LOST = 26;
+  const AOA_WARN = 12, AOA_LOST = 30;      // eased in 3.5: a little more room before the heat and the flip
   function attitude(dt) {
     const t = E.t, qbar = clamp(gAt(t) / 9.5, 0, 1), late = smooth(160, 228, t);
     const w = 0.9 + 2.6 * Math.sqrt(qbar);
     const c = 0.15 + 0.9 * Math.sqrt(qbar) - 0.95 * late;
     const u = E.rcs > 0 ? -axZ() : 0;                                  // W noses up, S noses down
-    if (u) { E.rcs = Math.max(0, E.rcs - 2.6 * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
-    if (Math.random() < dt * (0.25 + 0.9 * qbar + 0.7 * late))
-      E.q += (Math.random() < 0.5 ? -1 : 1) * (3 + Math.random() * 11) * (0.3 + 1.25 * qbar + 0.6 * late);
+    if (u) { E.rcs = Math.max(0, E.rcs - 1.8 * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
+    if (Math.random() < dt * 0.75 * (0.25 + 0.9 * qbar + 0.7 * late))      // gusts: fewer and gentler since 3.5
+      E.q += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 8) * (0.3 + 1.25 * qbar + 0.6 * late);
     for (const sh of E.shears) if (!sh.done && t >= sh.t) {
-      sh.done = true; E.q += (Math.random() < 0.5 ? -1 : 1) * (20 + Math.random() * 10); E.shake = 0.8; buzz([40, 30, 60]);
+      sh.done = true; E.q += (Math.random() < 0.5 ? -1 : 1) * (13 + Math.random() * 7); E.shake = 0.8; buzz([40, 30, 60]);
       say('Density shear! Catch the swing — W / S.', 2.6);
     }
     for (let i = 0, n = 4, h = dt / 4; i < n; i++) {
@@ -854,7 +880,7 @@ export function createEDL(ctx) {
     }
     E.att.push(E.aoa); if (E.att.length > 200) E.att.shift();
     const over = Math.max(0, Math.abs(E.aoa) - AOA_WARN);
-    E.burn = clamp(E.burn + (over / 8) * (0.2 + heatAt(t) * 1.3) * dt - 0.01 * dt, 0, 1);
+    E.burn = clamp(E.burn + (over / 12) * (0.2 + heatAt(t) * 1.3) * dt - 0.01 * dt, 0, 1);
     if (!E.saidWob && late > 0.35 && E.stage === 'entry') { E.saidWob = true; say('Slowing through Mach 3: the capsule is starting to wobble on its own. Damp it.', 4); }
     if (!E.saidRCS && E.rcs < 20) { E.saidRCS = true; say(`Thruster propellant at ${Math.round(E.rcs)}%. Short pulses.`, 3); }
     if (Math.abs(E.aoa) > AOA_LOST) die('tumble', 'Tumbled', `The capsule swung ${Math.round(Math.abs(E.aoa))}° off its trim and flipped: the heat shield no longer faced the flow. W and S fire the pitch thrusters — short pulses against the swing keep the nose in the green. The real capsule's eight thrusters fired again and again through entry for exactly this.`);
@@ -953,7 +979,7 @@ export function createEDL(ctx) {
       const b0 = E.bank;
       E.bank = E.rcs > 0 ? clamp(E.bank + axX() * 48 * dt, -85, 85) : E.bank;          // was 62°/s: slower, smoother banking
       const db = Math.abs(E.bank - b0);
-      if (db > 0) { E.rcs = Math.max(0, E.rcs - db * 0.022); fire(0.4); E.q += (E.bank - b0) * 0.14 * Math.sign(Math.sin(E.t * 0.7) + 0.3); }   // a hard roll knocks the pitch about
+      if (db > 0) { E.rcs = Math.max(0, E.rcs - db * 0.015); fire(0.4); E.q += (E.bank - b0) * 0.14 * Math.sign(Math.sin(E.t * 0.7) + 0.3); }   // a hard roll knocks the pitch about
       const dm = dt * E.warp, b = E.bank * DEG, lift = clamp(1 + E.aoa / 25, 0.6, 1.4), a = authAt(E.t) * lift;
       // unsteady air: the thing guidance exists to fight
       E.driftC += (Math.sin(E.t * 0.071 + 1.3) * 0.016 - E.driftC) * Math.min(1, dm * 0.2);
@@ -967,7 +993,7 @@ export function createEDL(ctx) {
       E.gEff = gEff;
       E.gOver = gEff > 15 ? E.gOver + dt : Math.max(0, E.gOver - dt);
       if (!E.saidLoad && gEff > 12.5) { E.saidLoad = true; say('Load climbing past 12 g — roll the lift back up!', 3); }
-      if (E.gOver > 1.3) die('load', 'Overloaded', 'With its lift pointed down for too long, the capsule dove into thick air too steeply and pulled more than 15 g, past what the rover and its structure are built for. Lift down shortens your range, but use it in short bursts.');
+      if (E.gOver > 2) die('load', 'Overloaded', 'With its lift pointed down for too long, the capsule dove into thick air too steeply and pulled more than 15 g, past what the rover and its structure are built for. Lift down shortens your range, but use it in short bursts.');
       if (!E.saidHeat && E.t > 62) { E.saidHeat = true; say('Peak heating. The shield is at 1,300 °C; behind it the rover sits at room temperature.', 4); }
       if (!E.saidG && E.t > 86) { E.saidG = true; say('Peak deceleration: ten times Earth gravity.', 3); }
       if (!E.saidSt && E.t > 150) { E.saidSt = true; say('Lift is fading with the speed. Last corrections now.', 3.5); }
@@ -988,8 +1014,8 @@ export function createEDL(ctx) {
         const v = velAt(E.t);
         if (!E.dying && (action || v < 352)) {
           action = false;
-          if (v > 478) return fail('Parachute lost', `It was fired at ${Math.round(v)} m/s, well over what the canopy is built to take. The real one was deployed at about 420 m/s and loaded to some 30 tonnes even so.`, 'entry');
-          if (Math.abs(E.aoa) > 15) return fail('Parachute fouled', `It went out with the capsule swinging ${Math.round(Math.abs(E.aoa))}° off line, and the lines wrapped the backshell. Damp the swing first, then fire.`, 'entry');
+          if (v > 500) return fail('Parachute lost', `It was fired at ${Math.round(v)} m/s, well over what the canopy is built to take. The real one was deployed at about 420 m/s and loaded to some 30 tonnes even so.`, 'entry');
+          if (Math.abs(E.aoa) > 18) return fail('Parachute fouled', `It went out with the capsule swinging ${Math.round(Math.abs(E.aoa))}° off line, and the lines wrapped the backshell. Damp the swing first, then fire.`, 'entry');
           E.down = downNow(); E.chuteT = E.t; E.chuteV = v; E.flash = 1; E.shake = 1.4; E.rt = 0; buzz([90, 40, 160]);
           chute.group.visible = true;
           say(v < 356 ? 'Fired late, on the backup trigger. You have flown long.' : `Parachute out at ${Math.round(v)} m/s. ${FACTS.chuteDia} m of canopy, open in under a second.`, 4);
@@ -1160,7 +1186,7 @@ export function createEDL(ctx) {
         scene.attach(shell.group); E.shellV = new THREE.Vector3(E.vel.x + 9, -58, E.vel.z + 5);
         stage.group.visible = true; rover.visible = true; bridles.visible = false;
         aimRing.visible = true;
-        if (late) E.fuel -= 70;
+        if (late) E.fuel -= 40;
         setStage('powered'); E.shake = 0.8; buzz(70);
         say(late ? 'Separated late on the backup trigger. That cost fuel.' : `Backshell separation at ${Math.round(a)} m. Eight engines lit.`, 3.5);
       }
@@ -1183,7 +1209,7 @@ export function createEDL(ctx) {
       const want = E.fuel > 0 ? -vTarget(a - E.drop) : E.vel.y - 3.71 * dm;
       E.vel.y += clamp(want - E.vel.y, -5 * dm, 16 * dm);
       E.pos.addScaledVector(E.vel, dm); E.t += dm;
-      E.fuel = Math.max(0, E.fuel - (4.3 + 3.2 * (Math.abs(ix) + Math.abs(iz)) * (s === 'crane' ? 0.3 : 1)) * dm);
+      E.fuel = Math.max(0, E.fuel - (3.4 + 2.4 * (Math.abs(ix) + Math.abs(iz)) * (s === 'crane' ? 0.3 : 1)) * dm);
 
       // the pieces left behind
       if (shell.group.parent === scene) { shell.group.position.addScaledVector(E.shellV, dm); if (shell.group.position.y < ground - 30) scene.remove(shell.group); }
@@ -1252,7 +1278,10 @@ export function createEDL(ctx) {
     const fy = s === 'descent' ? E.pos.y + 1 : s === 'down' ? ground + 1.2 : E.pos.y + 1.6;
     const low = s === 'descent' ? 0 : smooth(170, 35, a);            // swing from looking down to looking across
     let wantP, wantT;
-    if (s === 'descent') { wantP = tmp.set(-4, 15, 25); wantT = tmp2.set(1, -14, -9); }
+    if (s === 'descent') {      // under the parachute: a slow circle round the capsule, looking out across the crater to the horizon
+      const ang = 0.5 + E.st * 0.2, r = lerp(42, 30, smooth(2600, 1600, a));
+      wantP = tmp.set(Math.sin(ang) * r, 15, Math.cos(ang) * r); wantT = tmp2.set(0, -13, 0);      // the capsule and its canopy against the ground, then closing in as the drop nears
+    }
     else if (s === 'down') { wantP = tmp.set(9, 3.2, 14); wantT = tmp2.set(-2, 4.4, 0); }
     else { wantP = tmp.set(lerp(0, 9, low), lerp(44, 6.5, low), lerp(6, 24, low)); wantT = tmp2.set(0, lerp(-40, 0.5, low), lerp(-2, 0, low)); }
     if (!E.camInit) { E.camP.copy(wantP); E.camT.copy(wantT); E.camInit = true; }
@@ -1278,7 +1307,7 @@ export function createEDL(ctx) {
     const hs = Math.hypot(E.vel.x, E.vel.z), vs = Math.abs(E.vel.y);
     const hz = hazard.grid.hazardAt(E.pos.x, E.pos.z);
     if (hz) return fail('Down, but not safely', 'The wheels came down on ground the hazard map had marked red — rock, sand, a crater wall or a steep slope. Terrain-Relative Navigation exists to steer away from exactly this.', 'terminal');
-    if (hs > 1.3 || vs > 1.6) return fail('Too fast at touchdown', `The rover met the ground at ${vs.toFixed(1)} m/s down and ${hs.toFixed(1)} m/s sideways. The real touchdown was at 0.75 m/s, about walking pace.`, 'terminal');
+    if (hs > 1.8 || vs > 2.2) return fail('Too fast at touchdown', `The rover met the ground at ${vs.toFixed(1)} m/s down and ${hs.toFixed(1)} m/s sideways. The real touchdown was at 0.75 m/s, about walking pace.`, 'terminal');
     E.flyV = new THREE.Vector3(0, 0.5, 0);
     bridles.visible = false; aimRing.visible = goalRing.visible = false; hazard.mesh.visible = false;
     ctx.settleRover(E.pos.x, E.pos.z);
@@ -1340,7 +1369,7 @@ export function createEDL(ctx) {
       const sp = clamp((560 - v) / (560 - 340), 0, 1);
       $('edl-speed-pin').style.left = (sp * 100) + '%';
       $('edl-range-pin').style.left = clamp(50 + dn * 7, 2, 98) + '%';
-      $('edl-speed').classList.toggle('ok', v <= 478 && v >= 352);
+      $('edl-speed').classList.toggle('ok', v <= 500 && v >= 352);
     }
     if (E.flash > 0) { E.flash = Math.max(0, E.flash - 0.05); $('edl-flash').style.opacity = E.flash; }
 
@@ -1434,9 +1463,9 @@ export function createEDL(ctx) {
       label(c, 'Landing ellipse', px(ex), px(ez + 4800), 'center', 11.5, GOLDC);
       if (REAL) {
         label(c, 'Delta', px(-5200), px(-6300), 'center');
-        label(c, 'Neretva Vallis', px(-17500), px(-12300), 'center');
+        label(c, 'Neretva Vallis', px(-12000), px(-9500), 'center');
         label(c, 'Jezero crater floor', px(14500), px(11000), 'center');
-        label(c, 'Crater rim', px(-18500), px(11500), 'center');
+        label(c, 'Crater rim', px(-9000), px(14000), 'center');
         $('brief-region-cap').innerHTML = '<b>Approach</b> 60 km across, from the west. The ellipse is 7.7 × 6.6 km, beside the delta. <i>Image: ESA/DLR/FU-Berlin/NASA/JPL-Caltech</i>';
       } else {
         label(c, 'Delta', px(-3500), px(-2700), 'center');

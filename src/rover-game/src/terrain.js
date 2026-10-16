@@ -9,7 +9,7 @@
 import * as THREE from 'three';
 import { rng, MARS, GRADE_GLSL, gradeColor } from './mars.js';
 
-export const PLAY_R = 280;                 // you can roam this far from the origin (2.7: 2.5× wider)
+export const PLAY_R = 500;                 // you can roam this far from the origin (2.7: 2.5× wider; 3.5: 3.2× the area again, more of the real ground)
 export const TILE = 7;                     // metres per ground-texture tile
 export const START = { x: 0, z: 18 };
 export const OUTCROP_SITES = [            // drawn in closer in 2.4: a shorter drive between finds
@@ -27,7 +27,8 @@ export const MESAS = [
   { x:  215, z:  170, R: 19, H: 14, ramp: -2.4 },
 ];
 
-const FINE = 1.6;                         // grid spacing where you can drive
+const FINE = 1.6;                         // grid spacing where you can drive...
+const FINE_IN = 330, MID = 2.4;             // ...out to here, then a little coarser to the roaming edge
 const FINE_HALF = PLAY_R + 48;                  // ...out to here (just past the roaming edge), then the grid stretches
 const WIND = { x: 0.82, z: 0.57 };         // prevailing wind, sets the ripple grain
 const RIPPLE_L = 6.4;                      // large-ripple wavelength, metres
@@ -158,7 +159,7 @@ export const DTM = { site: null, area: null, edge: 0, on: false };
    squashed by SV rather than SQ, so slopes come out steeper (×SQ/SV) but nothing
    becomes a wall. */
 const SQ = 1.5, SV = 3.0;
-const EXT = 1995;                                  // the mesh, and the elevation, run out to here
+export const EXT = 1995;                           // the mesh, and the elevation, run out to here
 async function decode(url, n) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
   const c = document.createElement('canvas'); c.width = c.height = n;
@@ -314,8 +315,9 @@ export function normalAt(x, z, e = 1.2) {
    geometrically out to the rim hills. No seams, no second mesh. */
 export function buildTerrain(scene, map, bump) {
   const axis = [];
-  for (let v = -FINE_HALF; v <= FINE_HALF + 1e-6; v += FINE) axis.push(v);
-  let edge = FINE_HALF, step = FINE;
+  { const half = [0]; let v = 0; while (v < FINE_HALF - 1e-6) { v = Math.min(FINE_HALF, v + (v < FINE_IN ? FINE : Math.min(MID, FINE + (v - FINE_IN) * 0.03))); half.push(v); }
+    axis.push(...half.slice(1).map(q => -q).reverse(), ...half); }
+  let edge = FINE_HALF, step = MID;
   const outer = [];
   if (DTM.on) {   // grow to 30 m cells, then hold, out to the end of the elevation data
     while (edge < EXT) { step = Math.min(45, step * 1.16); edge = Math.min(EXT, edge + step); outer.push(edge); }
@@ -720,14 +722,14 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null }) {
   };
 
   // boulders and blocks: power-law sizes, a handful genuinely large
-  for (let i = 0, g = 0; i < 1100 && g < 60000; g++) {
+  for (let i = 0, g = 0; i < 2600 && g < 144000; g++) {      // counts scaled with the roaming area in 3.5
     const a = rand() * Math.PI * 2, r = 9 + Math.sqrt(rand()) * (PLAY_R + 40);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (rand() > density(x, z)) continue;
     place(x, z, Math.min(2.6, 0.36 * Math.pow(0.02 + rand() * 0.98, -0.55)), true); i++;
   }
   // cobbles: the ones the suspension has to walk over
-  for (let i = 0, g = 0; i < 9000 && g < 160000; g++) {
+  for (let i = 0, g = 0; i < 21000 && g < 380000; g++) {
     const a = rand() * Math.PI * 2, r = 4 + Math.sqrt(rand()) * (PLAY_R + 14);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (rand() > density(x, z)) continue;
@@ -735,7 +737,7 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null }) {
   }
   // rock gardens: patches strewn with blocks a wheel can just climb, 15–50 cm, the ground
   // the rover's drivers spent most of their time picking a way across
-  for (let i = 0, g = 0; i < 4200 && g < 120000; g++) {
+  for (let i = 0, g = 0; i < 10000 && g < 290000; g++) {
     const a = rand() * Math.PI * 2, r = 6 + Math.sqrt(rand()) * (PLAY_R - 4);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     const field = smooth(0.05, 0.45, nRock(x / 46, z / 46) + nRough(x / 17, z / 17) * 0.25) * (1 - sandMask(x, z));
@@ -810,7 +812,7 @@ export function terrainFloor() {
    everything a landing should avoid marked on it. Built from the same
    terrain the rover will drive on — slopes, boulders, sand, craters,
    outcrops — so the red on the map is really there when you arrive. */
-export function buildHazardGrid(half = PLAY_R + 20, cell = 2) {
+export function buildHazardGrid(half = PLAY_R + 20, cell = 3) {
   const n = Math.round((half * 2) / cell);
   const data = new Uint8Array(n * n);
   const at = (i, j) => [(i + 0.5) * cell - half, (j + 0.5) * cell - half];

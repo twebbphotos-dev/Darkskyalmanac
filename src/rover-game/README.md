@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.5 — an easier, more cinematic landing; a bigger crater floor
+- **Easier landing.** Gusts and density shears are gentler, the capsule can swing 30° (was 26°) before it flips and 12° (was 10°) before the backshell heats, and heating builds more slowly. Pitch thrusters and the descent stage use less propellant. The parachute accepts up to 500 m/s (was 478) and 18° of swing (was 15°). Touchdown allows 2.2 m/s down and 1.8 m/s sideways.
+- **Real Jezero under the parachute.** The country beyond the drivable terrain is now the real crater in 3D, from the Dark Sky Almanac's USGS CTX elevation mosaic (`../models/jezero.bin`, heights doubled), draped with a correctly registered 60 km CTX photo map (`img/jezero-region.jpg`, made by `src/jezero-crater/region.py`).
+- **Cinematic descent.** Under the parachute the camera circles the capsule, looking down across the crater.
+- **Bigger play area.** The roaming radius is 500 m (was 280), with 2.4 m mesh cells beyond 330 m and more rocks to fill it.
+
 ## What changed in 3.4 — smoother landing controls
 - **Ramped keys.** In the landing, keys no longer snap to full deflection; they ramp in and ease back out. Bank (A/D) takes about 0.6 s to reach full. Pitch (W/S) takes about 0.3 s, so you can still catch a density shear with a quick pulse.
 - **Expo curve,** like an RC transmitter, on the keys and the phone stick alike. Small inputs are gentle; full deflection still gives full authority.
