@@ -576,18 +576,38 @@ const M20_CARDS = {
     img: 'img/m20/rochette.jpg', cap: 'Rochette with the two holes left by its cores, drilled on 1 and 7 September 2021. Mastcam-Z. NASA/JPL-Caltech/ASU/MSSS' },
   'Sample depot': { t: 'The sample depot', d: '21 December 2022 to 28 January 2023', x: 'The rover set ten sealed sample tubes down on the ground here, 5 to 15 m apart: a backup set, in case it cannot deliver the samples it still carries. It is the first sample depot on another planet.',
     img: 'img/m20/depot.jpg', cap: 'The rover’s selfie at the depot on 22 January 2023, with a sample tube lying on the ground in front of it. WATSON camera. NASA/JPL-Caltech/MSSS' },
-  'Wildcat Ridge': { t: '“Wildcat Ridge”', d: 'July 2022', x: 'A mudstone laid down as an ancient salty lake dried out, about 3.5 billion years ago. When the rover scraped its surface on 20 July 2022, it found the strongest signs of organic molecules of the mission so far, alongside sulfate minerals. Organic molecules are building blocks of life, but geology can make them too. The rover kept two cores.' },
-  'Belva Crater': { t: 'Belva Crater', d: 'April 2023', x: 'A crater about 1 km wide punched into the top of the delta. From its rim on 22 April 2023, Mastcam-Z took 152 pictures of its walls, where the impact had cut through the delta’s layers like a road cut. Around the same time the rover lost its “pet rock,” a pebble that had ridden in one of its front wheels for more than a year.' },
-  'Lookout Hill': { t: 'Lookout Hill', d: '10 December 2024', x: 'After three and a half months climbing 500 m, up slopes as steep as 20 percent, the rover reached the top of Jezero’s rim. From here it could see 60 km across Mars. The rim marks where rocks that fell back into the crater after it formed, 3.9 billion years ago, meet rocks the impact threw outside.' },
+  'Wildcat Ridge': { t: '“Wildcat Ridge”', d: 'July 2022', x: 'A mudstone laid down as an ancient salty lake dried out, about 3.5 billion years ago. When the rover scraped its surface on 20 July 2022, it found the strongest signs of organic molecules of the mission so far, alongside sulfate minerals. Organic molecules are building blocks of life, but geology can make them too. The rover kept two cores.',
+    img: 'img/m20/wildcat-ridge.jpg', cap: 'The patch the rover ground into Wildcat Ridge (“Berry Hollow,” right) beside one from an earlier rock (“Thornton Gap,” left): the mudstone is far finer-grained. WATSON camera, 2022. NASA/JPL-Caltech/MSSS' },
+  'Belva Crater': { t: 'Belva Crater', d: 'April 2023', x: 'A crater about 1 km wide punched into the top of the delta. From its rim on 22 April 2023, Mastcam-Z took 152 pictures of its walls, where the impact had cut through the delta’s layers like a road cut. Around the same time the rover lost its “pet rock,” a pebble that had ridden in one of its front wheels for more than a year.',
+    img: 'img/m20/belva-crater.jpg', cap: 'Belva Crater from its western rim on 22 April 2023, stitched from 152 Mastcam-Z images. The far wall of Jezero rises beyond, about 40 km away. NASA/JPL-Caltech/ASU/MSSS' },
+  'Lookout Hill': { t: 'Lookout Hill', d: '10 December 2024', x: 'After three and a half months climbing 500 m, up slopes as steep as 20 percent, the rover reached the top of Jezero’s rim. From here it could see 60 km across Mars. The rim marks where rocks that fell back into the crater after it formed, 3.9 billion years ago, meet rocks the impact threw outside.',
+    img: 'img/m20/lookout-hill.jpg', cap: 'Mastcam-Z view at Lookout Hill on Jezero’s rim, December 2024. The rover’s tracks run up the slope at right. NASA/JPL-Caltech/ASU/MSSS' },
   'Silver Mountain': { t: '“Silver Mountain”', d: '28 January 2025', x: 'The first sample from the crater rim, cored from a rock that most likely formed at least 3.9 billion years ago, early in Mars’s history, and may have been shattered and recrystallized by an ancient impact. Its textures were unlike anything the rover had seen before.' },
   Perseverance: { t: 'Perseverance today', d: 'Distance record: 11 October 2026', x: 'With 45.22 km on its odometer, Perseverance passed Opportunity’s record for the farthest drive on another world, on a mission planned around far shorter drives. Most of its driving is done by its own self-driving software. It is now exploring the old rocks beyond the crater’s western rim.' },
   'Cheyava Falls': { t: '“Cheyava Falls”', d: 'July 2024', x: 'An arrowhead-shaped rock at the edge of an old river valley, dotted with millimeter-sized “leopard spots”: pale patches ringed with dark minerals, a pattern that on Earth can be linked to microbes feeding on rock. In 2025 scientists called its core, “Sapphire Canyon,” the mission’s best candidate yet for a sign of ancient life. Chemistry without life could also explain it; only a lab on Earth could tell.',
     img: 'img/m20/cheyava-falls.jpg', cap: 'Cheyava Falls up close: the leopard spots, and pale-green olivine crystals in the white vein beside them. WATSON camera, 18 July 2024. NASA/JPL-Caltech/MSSS' },
 };
 function showCard(c) {
-  $('sc-info').innerHTML = '<div class="vg-infon">' + c.t + '</div><div class="sc-cardd">' + c.d + '</div>' + (c.img ? '<img class="sc-cardimg" src="' + c.img + '" alt="">' : '') + '<div class="vg-infot">' + c.x + '</div>' + (c.cap ? '<div class="sc-cardcap">' + c.cap + '</div>' : '');
+  $('sc-info').innerHTML = '<div class="vg-infon">' + c.t + '</div><div class="sc-cardd">' + c.d + '</div>' + (c.img ? '<div class="sc-cardph"><img class="sc-cardimg" src="' + c.img + '" alt=""><span>Tap to enlarge</span></div>' : '') + '<div class="vg-infot">' + c.x + '</div>' + (c.cap ? '<div class="sc-cardcap">' + c.cap + '</div>' : '');
+  const im = $('sc-info').querySelector('.sc-cardimg');
+  if (im) { const wide = () => { if (im.naturalWidth > im.naturalHeight * 2.2) { im.parentElement.classList.add('pano'); im.nextElementSibling.textContent = 'Tap to pan the panorama'; } }; im.complete ? wide() : im.addEventListener('load', wide);
+    im.parentElement.addEventListener('click', e => { e.stopPropagation(); showPhoto(c.img, c.cap, im.parentElement.classList.contains('pano')); }); }
   $('sc-info').classList.add('open');
 }
+/* Full screen: a panorama fills the height and pans sideways (drag, swipe or scroll); anything else fits the screen. */
+function showPhoto(src, cap, pano) {
+  const lb = $('sc-light'); lb.classList.toggle('pano', pano);
+  lb.querySelector('.sc-lightpan').innerHTML = '<img src="' + src + '" alt="">'; lb.querySelector('.sc-lightcap').innerHTML = cap || '';
+  lb.classList.add('on'); document.body.style.overflow = 'hidden';
+  const pan = lb.querySelector('.sc-lightpan'), img = pan.firstChild, mid = () => { pan.scrollLeft = (pan.scrollWidth - pan.clientWidth) / 2; };
+  if (pano) { img.complete ? mid() : img.addEventListener('load', mid); }
+  let dragX = null, start = 0;      // a mouse can drag it too
+  pan.onpointerdown = e => { if (e.pointerType !== 'mouse') return; dragX = e.clientX; start = pan.scrollLeft; pan.setPointerCapture(e.pointerId); };
+  pan.onpointermove = e => { if (dragX !== null) pan.scrollLeft = start - (e.clientX - dragX); };
+  pan.onpointerup = () => { dragX = null; };
+}
+$('sc-light').addEventListener('click', e => { if (e.target.closest('.sc-lightx') || !e.target.closest('.sc-lightpan img')) { $('sc-light').classList.remove('on'); document.body.style.overflow = ''; } });
+addEventListener('keydown', e => { if (e.key === 'Escape' && $('sc-light').classList.contains('on')) { $('sc-light').classList.remove('on'); document.body.style.overflow = ''; } });
 function roverRoute(J, R, labels) {
   const grp = new THREE.Group(), U = { px: { value: .001 }, op: { value: 0 } }, n = R.drives.length;
   R.drives.forEach((d, i) => { const p = d[1], pts = []; for (let k = 0; k < p.length; k += 2) pts.push(J.at(p[k], p[k + 1], 6).toArray()); grp.add(screenLine(pts, YEARS[i % YEARS.length], U, 3 + n - i)); });      // earlier years drawn on top: later drives often retrace them
