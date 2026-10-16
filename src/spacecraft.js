@@ -579,7 +579,7 @@ function marsCrater(dem, map, det) {      // det: the 20 m terrain of the drive 
     const i = Math.min(S - 2, Math.floor(fi)), j = Math.min(S - 2, Math.floor(fj)), u = fi - i, v = fj - j, o = (j * S + i) * 3, Y = q => pos[q + 1];
     return u + v <= 1 ? Y(o) + (Y(o + 3) - Y(o)) * u + (Y(o + S * 3) - Y(o)) * v : Y(o + S * 3 + 3) + (Y(o + S * 3) - Y(o + S * 3 + 3)) * (1 - u) + (Y(o + 3) - Y(o + S * 3 + 3)) * (1 - v);
   };
-  m.visible = false; return { mesh: m, surf, ground, at: (x, z, up = 0) => { const r = Math.hypot(x, z), q = dAt(x, z); let h = hAt(x, z); if (q && q[1] > 0) h += (q[0] - h) * q[1]; return new THREE.Vector3(x, h - r * r / (2 * JZ.RM) + up, z); } };
+  m.visible = false; return { mesh: m, surf, ground, at: (x, z, up = 0) => new THREE.Vector3(x, ground(x, z) + up, z) };      // on the drawn ground itself
 }
 /* Perseverance's drives, from NASA's published traverse (models/jezero-route.json, made by src/jezero-crater/route.py:
    one line per calendar year, in metres east and south of the landing site), drawn like the Apollo 17 drives. */
@@ -1500,11 +1500,14 @@ function place() {
     if (check) { _d.copy(_p).sub(camera.position).normalize(); ray.set(camera.position, _d); ray.far = dist - (CRAFT[craftKey].occl || .35); el.dataset.hid = ray.intersectObjects(pickables, true).length ? '1' : ''; }
     const vis = on && !el.dataset.hid && showParts && !(drive && drive.phase);      // the numbered dots stay put, so hide them while the rover is away from its spot
     el.style.opacity = vis ? 1 : 0; el.style.pointerEvents = vis ? 'auto' : 'none'; });
+  const boxes = [];
   $('sc-labels').querySelectorAll('.vg-lab').forEach(el => { const l = skyLabels[+el.dataset.i]; _v.copy(l[1]).project(camera);
     if (check && CRAFT[craftKey].env === 'moon') { _d.copy(l[1]).sub(camera.position); ray.far = _d.length(); ray.set(camera.position, _d.normalize()); el.dataset.hid = ray.intersectObjects(pickables, true).length ? '1' : ''; }      // a label behind the vehicle is hidden by it
     const far = camera.position.distanceTo(l[1]), on = !el.dataset.hid && _v.z < 1 && Math.abs(_v.x) < .93 && Math.abs(_v.y) < .93 && (camera.fov > 22 || l[3]) && !(l[2] && far < l[2]) && !(l[3] && far > l[3]) && !(l[4] && camera.position.y < (mapMode && l[4] <= 1500 ? 150 : l[4])); el.style.opacity = on ? 1 : 0; if (l[6]) el.style.pointerEvents = on ? 'auto' : 'none';
     let side = l[5]; if (on) { const x = (_v.x + 1) / 2 * w; if (side === 'L' && x - 38 - el.offsetWidth < 4) side = 0; if (!side && x + 16 + el.offsetWidth > w - 4) el.style.opacity = 0; }      // a label that would run off the left edge moves to the right of its point; off the right edge, it is hidden rather than cut
+    if (on && el.style.opacity !== '0') { const lx = (_v.x + 1) / 2 * w, ly = (1 - _v.y) / 2 * h, ew = el.offsetWidth, eh = el.offsetHeight, x0 = side === 'L' ? lx - 22 - ew : side === 'T' ? lx - 11 - ew / 2 : lx - 4; boxes.push({ el, l, x0, x1: x0 + ew + 22, y0: ly - eh, y1: ly + eh }); }
     el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (side === 'L' ? ' translate(-100%,0) translateX(-22px)' : side === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : side === 'B' ? ' translate(-20px,12px)' : ''); });
+  boxes.forEach(b => { if (!LABEL_LOW.has(b.l[0])) return; if (boxes.some(o => o !== b && o.x0 < b.x1 && b.x0 < o.x1 && o.y0 < b.y1 && b.y0 < o.y1)) { b.el.style.opacity = 0; b.el.style.pointerEvents = 'none'; } });      // a minor name gives way to any it would overlap
 }
 function moonCam() {      // one Moon scene runs from the driver's seat to 25 km up: keep the near plane and the exposure in step with the height
   const cc = CRAFT[craftKey]; if (!cc || cc.env !== 'moon' || !camera) return;
@@ -1526,6 +1529,7 @@ function pullOut() {
 }
 /* "Fly the route": the camera follows a dot along every drive, a few seconds for each year, swinging gently round it.
    Any touch on the view, or a tap on a name, pauses it; the button resumes. */
+const LABEL_LOW = new Set(['Silver Mountain']);
 let tour = null; const TOUR_YEAR = 11;      // seconds per year
 const _tp = new THREE.Vector3(), _ta = new THREE.Vector3(), _tb = new THREE.Vector3();
 function routeAt(r, L, out) { const c = r.cum; let lo = 0, hi = c.length - 1; L = Math.max(0, Math.min(c[hi], L)); while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= L) lo = m; else hi = m; } const f = (L - c[lo]) / ((c[hi] - c[lo]) || 1); return out.lerpVectors(r.path[lo], r.path[hi], f); }
@@ -1547,8 +1551,10 @@ function stepTour(dt) {
   routeAt(r, L, _tp); r.tdot.geometry.attributes.position.setXYZ(0, _tp.x, _tp.y, _tp.z); r.tdot.geometry.attributes.position.needsUpdate = true;
   r.tdot.material.color.set(YEARS[yi % YEARS.length]); if (tour.yi !== yi) { tour.yi = yi; tourYear(yi); }
   routeAt(r, L + 500, _tb).sub(routeAt(r, L - 500, _ta)); _tb.y = 0; if (_tb.lengthSq() < 1) _tb.set(0, 0, -1); _tb.normalize();      // the way the drive is heading, over a kilometre
-  if (!tour.hd) tour.hd = _tb.clone(); tour.hd.lerp(_tb, 1 - Math.exp(-dt * .7)).normalize(); tour.sw += dt; tour.low = (tour.low || 0) + ((tour.t < (tour.lowT || -1) ? 1 : 0) - (tour.low || 0)) * (1 - Math.exp(-dt * .6));      // at each named place the camera sweeps down low over the ground, then climbs again
-  const k = 1 - Math.exp(-dt * 2.2), sw = .55 * Math.sin(tour.sw * .21), lo = tour.low * tour.low * (3 - 2 * tour.low), dist = 2300 - 1450 * lo, pitch = (.5 + .12 * Math.sin(tour.sw * .13)) * (1 - lo) + .24 * lo;      // swing a little side to side and up and down for depth
+  if (tour.t < (tour.lookT || -1)) { _tb.set(14700 - _tp.x, 0, 4500 - _tp.z).normalize(); }      // at Lookout Hill: from up on the rim, looking down into the crater
+  if (!tour.hd) tour.hd = _tb.clone(); tour.hd.lerp(_tb, 1 - Math.exp(-dt * .7)).normalize(); tour.sw += dt; tour.age = (tour.age || 0) + dt; tour.low = (tour.low || 0) + ((tour.t < (tour.lowT || -1) ? 1 : 0) - (tour.low || 0)) * (1 - Math.exp(-dt * .6));      // at each named place the camera sweeps down low over the ground, then climbs again
+  const ph = Math.max(0, Math.min(1, (tour.t - 3.2) / .5)), k = (1 - Math.exp(-dt * 2.2)) * Math.min(1, .25 + tour.age / 4), sw = .55 * Math.sin(tour.sw * .21), lo = tour.low * tour.low * (3 - 2 * tour.low);      // from overhead for the first years; from Cheyava Falls on (mid 2024), lower and closer over the steep ground, and right down low at each named place; a gentle start
+  const dist = (2300 - 1000 * ph) * (1 - lo) + 650 * lo, pitch = ((.5 + .12 * Math.sin(tour.sw * .13)) * (1 - ph) + (.3 + .07 * Math.sin(tour.sw * .13)) * ph) * (1 - lo) + .17 * lo;      // swing a little side to side and up and down for depth
   const h = tour.hd, cx = h.x * Math.cos(sw) - h.z * Math.sin(sw), cz = h.x * Math.sin(sw) + h.z * Math.cos(sw);
   _ta.set(_tp.x - cx * dist * Math.cos(pitch), _tp.y + dist * Math.sin(pitch), _tp.z - cz * dist * Math.cos(pitch));
   const J = world.userData.J; if (J) { let lift = 0; for (let f = .25; f <= 1.001; f += .25) { const x = _tp.x + (_ta.x - _tp.x) * f, z = _tp.z + (_ta.z - _tp.z) * f, y = _tp.y + (_ta.y - _tp.y) * f; lift = Math.max(lift, (J.ground(x, z) + 60 * f - y) / f); } if (lift > 0) _ta.y += lift; }      // keep the camera, and its line of sight to the dot, clear of the hills
@@ -1556,7 +1562,7 @@ function stepTour(dt) {
   const now = tour.t;      // a small card for each named place as the dot passes it, for about three seconds of the flight
   if (tcard && now - tcard.t0 > 3.2 / TOUR_YEAR) hideTourCard();
   if (!tcard) { let best = null, bd = 320; skyLabels.forEach(l => { if (!l[6] || tour.seen.has(l[0])) return; const d = Math.hypot(l[1].x - _tp.x, l[1].z - _tp.z); if (d < bd) { bd = d; best = l; } });
-    if (best) { tour.seen.add(best[0]); tour.lowT = tour.t + 6 / TOUR_YEAR; const c = best[6], el = $('sc-tc'); tcard = { l: best, t0: now };
+    if (best) { tour.seen.add(best[0]); if (tour.t > 3.3) tour.lowT = tour.t + 6 / TOUR_YEAR; if (best[0] === 'Lookout Hill') tour.lookT = tour.t + 8 / TOUR_YEAR; const c = best[6], el = $('sc-tc'); tcard = { l: best, t0: now };
       el.innerHTML = (c.img ? '<img src="' + c.img + '" alt="">' : '') + '<div><b>' + c.t + '</b><span>' + c.d + '</span></div>'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); $('sc-tl').classList.add('on'); } }
 }
 let tcard = null;

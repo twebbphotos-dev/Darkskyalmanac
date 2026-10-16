@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.01 / zion-sky-v370 — 2026-10-16
+- Fly the route: overhead for 2021 to mid 2024, then lower and closer from
+  Cheyava Falls on over the steep ground, dropping right down at each named
+  place; at Lookout Hill the camera sits up on the rim looking down into the
+  crater. The flight eases in instead of lurching at the start.
+- The moving dot, pins and route now sit on the drawn ground. Why: they used
+  the raw terrain height, which floats above the rover's flattened patch
+  round the landing site, so the first dot looked like it hovered.
+- Silver Mountain's name now gives way when it would overlap another name.
+
 ## v4.00 / zion-sky-v369 — 2026-10-16
 - Fly the route back to 11 s a year. At each named place the camera sweeps
   down low over the ground for a few seconds, then climbs again.
