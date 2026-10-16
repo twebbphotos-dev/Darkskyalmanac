@@ -1098,7 +1098,18 @@ function buildSetting(c) {
         const cvs = document.createElement('canvas'); cvs.width = cvs.height = 2048; const x = cvs.getContext('2d'); ims.forEach(([im, tx, tz]) => x.drawImage(im, (tx + 1) * 1024, (tz + 1) * 1024));
         const t = new THREE.CanvasTexture(cvs); t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8;
         const P = ground.geometry.attributes.position, uv = ground.geometry.attributes.uv; for (let i = 0; i < P.count; i++) uv.setXY(i, (P.getX(i) + 1024) / 2048, (P.getY(i) + 1024) / 2048); uv.needsUpdate = true;      // 2048 m square centred on the landing site
-        detail.repeat.set(230, 230); ground.material.map = t; ground.material.needsUpdate = true; }).catch(() => {});      // offline without the 3D download: the made-up soil stays
+        const grit = noiseTex(512, (x, S) => {      // loose stones and grit, a few centimetres across, for the ground near the camera: the picture is 1 m a pixel
+          const R = rand(41); x.fillStyle = '#808080'; x.fillRect(0, 0, S, S);
+          for (let i = 0; i < 9000; i++) { const px = R() * S, py = R() * S, r = .5 + Math.pow(R(), 3) * 4.5, v = Math.round(70 + R() * 120);
+            for (const [ox, oy] of [[0, 0], [S, 0], [0, S], [S, S], [-S, 0], [0, -S]]) { x.fillStyle = 'rgba(40,40,40,.35)'; x.beginPath(); x.ellipse(px + ox + r * .35, py + oy + r * .35, r, r * .8, 0, 0, 6.2832); x.fill(); x.fillStyle = 'rgb(' + v + ',' + v + ',' + v + ')'; x.beginPath(); x.ellipse(px + ox, py + oy, r, r * .8, R() * 3, 0, 6.2832); x.fill(); } } });
+        grit.colorSpace = THREE.NoColorSpace; grit.repeat.set(2048 / 6, 2048 / 6);
+        const mat = ground.material; mat.map = t; mat.bumpMap = grit; mat.bumpScale = .9;
+        mat.onBeforeCompile = sh => { sh.uniforms.grit = { value: grit }; sh.uniforms.mottle = { value: detail };      // mix the real picture with stones close up and soft mottling a little further out, fading to the picture alone
+          sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D grit; uniform sampler2D mottle;').replace('#include <map_fragment>', `#include <map_fragment>
+            vec2 gw = vMapUv * 2048.0 - 1024.0; float gz = vViewPosition.z;
+            float g1 = texture2D( grit, gw / 6.0 ).r, g2 = texture2D( grit, mat2( .8, .6, -.6, .8 ) * gw / 1.7 + .3 ).r, m1 = texture2D( mottle, mat2( .6, -.8, .8, .6 ) * gw / 23.0 ).r / .53, g3 = texture2D( grit, mat2( -.6, .8, -.8, -.6 ) * gw / 37.0 + .7 ).r;      // and cobbles, tens of centimetres, out to a few hundred metres
+            diffuseColor.rgb *= 1.0 + smoothstep( 160.0, 8.0, gz ) * ( ( g1 - .5 ) * .6 + ( g2 - .5 ) * .35 ) + smoothstep( 500.0, 30.0, gz ) * ( m1 - 1.0 ) * .35 + smoothstep( 350.0, 25.0, gz ) * smoothstep( 2.0, 12.0, gz ) * ( g3 - .5 ) * .45;`); };
+        mat.customProgramCacheKey = () => 'jzground'; mat.needsUpdate = true; }).catch(() => {});      // offline without the 3D download: the made-up soil stays
     }
     if (c.views.above) { const T = new THREE.TextureLoader(); let dem = null, map = null; const done = () => { if (!dem || !map || !g.parent) return; const J = marsCrater(dem, map); g.add(J.mesh); g.userData.crater = J.mesh;
         labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels();      // the old river's valley, which fed the delta

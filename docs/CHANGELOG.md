@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.98 / zion-sky-v367 — 2026-10-16
+- Rover views at Jezero: procedural stones, grit and cobbles mixed into the
+  1 m HiRISE ground close to the camera, fading to the real picture with
+  distance. Why: at 1 m a pixel the ground looked blurry next to the rover.
+- Route: about 70 needle-thin spikes (sharp reversals on legs under 60 m,
+  mostly positioning jitter) removed and corners gently rounded
+  (src/jezero-crater/smooth.py). Endpoints, year joins and pins unchanged.
+  Why: some stretches read as noise rather than drives.
+
 ## v3.97 / zion-sky-v366 — 2026-10-16
 - Jezero "From above": "Fly the route" button. The camera follows a dot
   along every drive, about 11 s per year, with the current year lit in the
