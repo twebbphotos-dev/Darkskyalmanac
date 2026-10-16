@@ -302,6 +302,11 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .sc-above #sc-parts,.sc-above #sc-deploy,.sc-above #sc-drive{display:none}
 #sc-tour{top:12px;right:12px;background:rgba(8,7,13,.66);min-width:76px;color:#E4D9B8;border-color:rgba(203,168,90,.55);display:none}
 .sc-above #sc-tour:not([hidden]){display:inline-flex}
+#sc-tl{position:absolute;inset:0;width:100%;height:100%;pointer-events:none;opacity:0;transition:opacity .3s;z-index:2}#sc-tl.on{opacity:1}
+#sc-tl line{stroke:#E6CC85;stroke-width:1.2;stroke-opacity:.85}#sc-tl circle{fill:none;stroke:#E6CC85;stroke-width:1.5}
+#sc-tc{position:absolute;z-index:3;display:flex;gap:8px;align-items:center;max-width:230px;padding:6px 10px 6px 6px;border:1px solid rgba(203,168,90,.6);border-radius:8px;background:rgba(13,10,24,.86);box-shadow:0 10px 24px rgba(0,0,0,.55),0 2px 4px rgba(0,0,0,.5);font:11px/1.35 Montserrat,sans-serif;color:#F2E4BE;cursor:pointer;opacity:0;pointer-events:none;transform:perspective(500px) rotateY(-70deg) scale(.6);transition:opacity .35s,transform .5s cubic-bezier(.2,1.4,.4,1)}
+#sc-tc.on{opacity:1;pointer-events:auto;transform:perspective(500px) rotateY(-12deg) rotateX(6deg)}
+#sc-tc img{width:40px;height:40px;object-fit:cover;border-radius:5px;flex:none}#sc-tc b{display:block;font-weight:600;letter-spacing:.03em}#sc-tc span{display:block;font-size:10px;color:#CBA85A;margin-top:1px}
 #sc-legend span{transition:opacity .4s}#sc-legend span.dim{opacity:.35}
 #sc-drive:disabled,#sc-deploy:disabled{opacity:.55}
 #sc-parts.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#E4D9B8}
@@ -410,6 +415,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <button class="zcl-vbtn vg-ovl" id="sc-deploy" hidden>Deploy</button>
         <button class="zcl-vbtn vg-ovl" id="sc-drive" hidden>Drive</button>
         <button class="zcl-vbtn vg-ovl" id="sc-tour" hidden>Fly the route</button>
+        <svg id="sc-tl" aria-hidden="true"><line/><circle r="4"/></svg><div id="sc-tc" role="button" tabindex="0"></div>
         <div class="vg-ovl" id="sc-info"></div>
       </div>
       <div class="zcl-ctlrow"><div class="zcl-seg" id="sc-views" role="group" aria-label="View"></div></div>

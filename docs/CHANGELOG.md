@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.99 / zion-sky-v368 — 2026-10-16
+- Jezero ground no longer flashes red while loading: until the HiRISE
+  picture arrives (or offline without it) the ground is the picture's
+  average color instead of the old made-up red soil, which was the
+  placeholder texture.
+- Fly the route: faster (7 s a year), and a small tilted card pops up for
+  about 3 s as the dot passes each named place, with a line to its pin.
+  Clicking a card pauses the flight and opens the full card.
+
 ## v3.98 / zion-sky-v367 — 2026-10-16
 - Rover views at Jezero: procedural stones, grit and cobbles mixed into the
   1 m HiRISE ground close to the camera, fading to the real picture with

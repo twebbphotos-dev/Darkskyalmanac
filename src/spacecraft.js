@@ -1092,7 +1092,8 @@ function buildSetting(c) {
     const detail = fbmTex(512, 16, ['#6a6a6a', '#8a8a8a', '#a0a0a0'], 17, 0); detail.colorSpace = THREE.NoColorSpace; detail.repeat.set(90, 90);
     const jz = !!c.views.above, ground = new THREE.Mesh(new THREE.CircleGeometry(jz ? NEAR_R : 400, jz ? 128 : 64), new THREE.MeshStandardMaterial({ map: tex, bumpMap: detail, bumpScale: 1.2, roughness: .96 }));
     ground.rotation.x = -Math.PI / 2; ground.receiveShadow = true; g.add(ground); g.userData.near = [ground];
-    if (jz) {      // at Jezero the ground round the rover is the real ground: the four 1 m HiRISE tiles that meet at the landing site
+    if (jz) { ground.material.map = null; ground.material.color.set(0x5e554b);      // the ground's own colour until the picture arrives, not the made-up red soil
+      // at Jezero the ground round the rover is the real ground: the four 1 m HiRISE tiles that meet at the landing site
       const ims = [[-1, -1], [0, -1], [-1, 0], [0, 0]].map(([tx, tz]) => { const im = new Image(); im.src = 'models/m20hr/' + tx + '_' + tz + '.jpg'; return [im, tx, tz]; });
       Promise.all(ims.map(([im]) => im.decode())).then(() => { if (!g.parent) return;
         const cvs = document.createElement('canvas'); cvs.width = cvs.height = 2048; const x = cvs.getContext('2d'); ims.forEach(([im, tx, tz]) => x.drawImage(im, (tx + 1) * 1024, (tz + 1) * 1024));
@@ -1109,7 +1110,7 @@ function buildSetting(c) {
             vec2 gw = vMapUv * 2048.0 - 1024.0; float gz = vViewPosition.z;
             float g1 = texture2D( grit, gw / 6.0 ).r, g2 = texture2D( grit, mat2( .8, .6, -.6, .8 ) * gw / 1.7 + .3 ).r, m1 = texture2D( mottle, mat2( .6, -.8, .8, .6 ) * gw / 23.0 ).r / .53, g3 = texture2D( grit, mat2( -.6, .8, -.8, -.6 ) * gw / 37.0 + .7 ).r;      // and cobbles, tens of centimetres, out to a few hundred metres
             diffuseColor.rgb *= 1.0 + smoothstep( 160.0, 8.0, gz ) * ( ( g1 - .5 ) * .6 + ( g2 - .5 ) * .35 ) + smoothstep( 500.0, 30.0, gz ) * ( m1 - 1.0 ) * .35 + smoothstep( 350.0, 25.0, gz ) * smoothstep( 2.0, 12.0, gz ) * ( g3 - .5 ) * .45;`); };
-        mat.customProgramCacheKey = () => 'jzground'; mat.needsUpdate = true; }).catch(() => {});      // offline without the 3D download: the made-up soil stays
+        mat.color.set(0xffffff); mat.customProgramCacheKey = () => 'jzground'; mat.needsUpdate = true; }).catch(() => {});      // offline without the 3D download: plain ground of the picture's average colour
     }
     if (c.views.above) { const T = new THREE.TextureLoader(); let dem = null, map = null; const done = () => { if (!dem || !map || !g.parent) return; const J = marsCrater(dem, map); g.add(J.mesh); g.userData.crater = J.mesh;
         labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels();      // the old river's valley, which fed the delta
@@ -1509,7 +1510,7 @@ function pullOut() {
 }
 /* "Fly the route": the camera follows a dot along every drive, a few seconds for each year, swinging gently round it.
    Any touch on the view, or a tap on a name, pauses it; the button resumes. */
-let tour = null; const TOUR_YEAR = 11;      // seconds per year
+let tour = null; const TOUR_YEAR = 7;      // seconds per year
 const _tp = new THREE.Vector3(), _ta = new THREE.Vector3(), _tb = new THREE.Vector3();
 function routeAt(r, L, out) { const c = r.cum; let lo = 0, hi = c.length - 1; L = Math.max(0, Math.min(c[hi], L)); while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= L) lo = m; else hi = m; } const f = (L - c[lo]) / ((c[hi] - c[lo]) || 1); return out.lerpVectors(r.path[lo], r.path[hi], f); }
 function tourBtn() { const b = $('sc-tour'); if (b) b.textContent = !tour ? 'Fly the route' : tour.on ? 'Pause' : 'Resume'; }
@@ -1518,10 +1519,10 @@ function startTour() {
   const r = world && world.userData.route; if (!r || !r.path || !mapMode) return;
   if (tour) { tour.on = !tour.on; tourBtn(); return; }
   tween = null; controls.autoRotate = false; $('sc-info').classList.remove('open');
-  tour = { on: true, t: 0, hd: null, sw: 0 }; r.tdot.visible = true; tourBtn();
+  tour = { on: true, t: 0, hd: null, sw: 0, seen: new Set() }; r.tdot.visible = true; tourBtn();
 }
-function pauseTour() { if (tour && tour.on) { tour.on = false; tourBtn(); } }
-function stopTour() { const r = world && world.userData.route; if (r && r.tdot) r.tdot.visible = false; tour = null; tourYear(-1); tourBtn(); }
+function pauseTour() { hideTourCard(); if (tour && tour.on) { tour.on = false; tourBtn(); } }
+function stopTour() { hideTourCard(); const r = world && world.userData.route; if (r && r.tdot) r.tdot.visible = false; tour = null; tourYear(-1); tourBtn(); }
 function stepTour(dt) {
   if (!tour) return; const r = world && world.userData.route; if (!r || !r.path || !mapMode) { stopTour(); return; }
   if (!tour.on) return;
@@ -1535,6 +1536,22 @@ function stepTour(dt) {
   const h = tour.hd, cx = h.x * Math.cos(sw) - h.z * Math.sin(sw), cz = h.x * Math.sin(sw) + h.z * Math.cos(sw);
   _ta.set(_tp.x - cx * dist * Math.cos(pitch), _tp.y + dist * Math.sin(pitch), _tp.z - cz * dist * Math.cos(pitch));
   controls.target.lerp(_tp, k); camera.position.lerp(_ta, k);
+  const now = tour.t;      // a small card for each named place as the dot passes it, for about three seconds of the flight
+  if (tcard && now - tcard.t0 > 3.2 / TOUR_YEAR) hideTourCard();
+  if (!tcard) { let best = null, bd = 320; skyLabels.forEach(l => { if (!l[6] || tour.seen.has(l[0])) return; const d = Math.hypot(l[1].x - _tp.x, l[1].z - _tp.z); if (d < bd) { bd = d; best = l; } });
+    if (best) { tour.seen.add(best[0]); const c = best[6], el = $('sc-tc'); tcard = { l: best, t0: now };
+      el.innerHTML = (c.img ? '<img src="' + c.img + '" alt="">' : '') + '<div><b>' + c.t + '</b><span>' + c.d + '</span></div>'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); $('sc-tl').classList.add('on'); } }
+}
+let tcard = null;
+function hideTourCard() { tcard = null; const el = $('sc-tc'); if (el) el.classList.remove('on'); const ln = $('sc-tl'); if (ln) ln.classList.remove('on'); }
+function placeTourCard() {      // the card floats up and to the side of its place, with a line down to it
+  if (!tcard) return; const cv = renderer.domElement, w = cv.clientWidth, h = cv.clientHeight, el = $('sc-tc'); _v.copy(tcard.l[1]).project(camera);
+  if (_v.z > 1) { el.style.opacity = 0; return; } el.style.opacity = '';
+  const px = (_v.x + 1) / 2 * w, py = (1 - _v.y) / 2 * h, cw = el.offsetWidth, ch = el.offsetHeight, right = px + 40 + cw < w - 8;
+  const left = right ? px + 40 : px - 40 - cw, top = Math.max(8, py - 50 - ch), ax = right ? left : left + cw, ay = top + ch;
+  el.style.left = left + 'px'; el.style.top = top + 'px'; el.style.transformOrigin = (right ? 'left' : 'right') + ' bottom';
+  const ln = $('sc-tl'); ln.querySelector('line').setAttribute('x1', px); ln.querySelector('line').setAttribute('y1', py); ln.querySelector('line').setAttribute('x2', ax); ln.querySelector('line').setAttribute('y2', ay);
+  ln.querySelector('circle').setAttribute('cx', px); ln.querySelector('circle').setAttribute('cy', py);
 }
 const FOG_LOW = new THREE.Color(0x9c7b5f), FOG_HIGH = new THREE.Color(0xa88466);      // the ground-level haze, and the sky dome's horizon
 function marsCam() {      // after the controls move the camera, so the sky is never left behind; the Mars scene runs from beside the rover to 70 km up: thin the haze, move the near plane and swap the ground with the height
@@ -1569,7 +1586,7 @@ function loop() {
   const now = performance.now(), dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   advance(dt); stepTour(dt); pullOut();
   moonCam();
-  controls.update(); marsCam(); renderer.render(scene, camera); place();
+  controls.update(); marsCam(); renderer.render(scene, camera); place(); placeTourCard();
 }
 
 /* ───────────── Page wiring ───────────── */
@@ -1579,6 +1596,7 @@ $('sc-parts').addEventListener('click', function () { this.classList.toggle('on'
 $('sc-deploy').addEventListener('click', () => { if (mixer) setDeploy(dep.to === hold[0]); });
 $('sc-drive').addEventListener('click', startDrive);
 $('sc-tour').addEventListener('click', startTour);
+$('sc-tc').addEventListener('click', () => { const c = tcard && tcard.l[6]; if (!c) return; pauseTour(); showCard(c); });
 $('sc-labels').addEventListener('click', e => { const el = e.target.closest('.vg-lab.pin'), l = el && skyLabels[+el.dataset.i]; if (l && l[6]) { pauseTour(); hotEls.forEach(b => b.classList.remove('on')); showCard(l[6]); } });
 $('sc-info').addEventListener('click', () => { $('sc-info').classList.remove('open'); hotEls.forEach(b => b.classList.remove('on')); });
 const first = new URLSearchParams(location.search).get('m') || 'mars2020';
