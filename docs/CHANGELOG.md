@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.93 / zion-sky-v361 — 2026-10-16
+- Jezero view: a milestone card for every year. New: Wildcat Ridge (2022,
+  strongest organic signal), Belva Crater (2023), Lookout Hill (2024, top of
+  the rim), Silver Mountain (2025, first rim sample) and the distance record
+  (2026, on the Perseverance label). Pins sit at the rover's position on each
+  sol from NASA's traverse. Why: show what the rover achieved along the way.
+
 ## v3.92 / zion-sky-v360 — 2026-10-15
 - Parts, Drive and Stow buttons hide in the From above views. Why: they
   cluttered the map and covered the pins.
