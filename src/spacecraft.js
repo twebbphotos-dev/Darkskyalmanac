@@ -538,17 +538,30 @@ function tuneLander(root) {      // NASA's lander is flat yellow and grey plasti
    heights in quarter-metres relative to the landing site). Over it lies the same camera's orthorectified photography
    (models/jezero.jpg), black and white, given the tones of a true-colour orbital view; its edges fade to the ground's broad colour, which a low-detail skirt (models/jezero-wide.jpg, 360 km) carries out to the horizon. +x is east, +z is south. */
 const JZ = { W: 90000, C: [-982, 3835], RM: 3389500, ground: '#66584d', WIDE: 360000 };      // the square's centre (18.38° N 77.433° E), in metres east and south of the landing site: the whole crater, the rover's drives and the country west of the rim
-const NEAR_R = 1000;      // the rover's own patch of ground at Jezero: the real HiRISE picture of the landing site, a kilometre round
-function marsCrater(dem, map) {
+const NEAR_R = 1000, DM = { X0: -16384, Z0: -12288, D: 20 };      // models/m20dem.bin: 1024 x 1024 heights 20 m apart from that corner, the drive area from CTX and HiRISE stereo (src/jezero-crater/dem20.py)      // the rover's own patch of ground at Jezero: the real HiRISE picture of the landing site, a kilometre round
+function marsCrater(dem, map, det) {      // det: the 20 m terrain of the drive area and where the HiRISE overview covers it, or null
   const M = Math.round(Math.sqrt(dem.length)), S = matchMedia('(max-width:600px)').matches ? Math.min(M, 384) : M, pos = [], uv = [], idx = [];
   const hAt = (x, z) => { const u = Math.max(0, Math.min(M - 1.001, ((x - JZ.C[0]) / JZ.W + .5) * M - .5)), v = Math.max(0, Math.min(M - 1.001, ((z - JZ.C[1]) / JZ.W + .5) * M - .5)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
     return ((dem[k] * (1 - fu) + dem[k + 1] * fu) * (1 - fv) + (dem[k + M] * (1 - fu) + dem[k + M + 1] * fu) * fv) / 4; };
   const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a))); return t * t * (3 - 2 * t); };
-  const edge = []; for (let i = 0; i < M; i++) edge.push(dem[i], dem[(M - 1) * M + i], dem[i * M], dem[i * M + M - 1]); edge.sort((p, q) => p - q); const H0 = edge[edge.length >> 1] / 4;      // the typical height round the square's edge
+  let dmask = null; if (det) {      // where the overview tiles are, well inside their edge: blend in the finer terrain, and sink the coarse surface under it
+    const DN = 1024, inside = new Float32Array(DN * DN), P = new Float64Array((DN + 1) * (DN + 1)), T = det.size, RD = 70;      // 70 cells = 1.4 km in from the edge
+    for (let j = 0; j < DN; j++) for (let i = 0; i < DN; i++) { const x = DM.X0 + (i + .5) * DM.D, z = DM.Z0 + (j + .5) * DM.D; inside[j * DN + i] = det.tiles.has(Math.floor(x / T) + ',' + Math.floor(z / T)) ? 1 : 0; }
+    for (let j = 0; j < DN; j++) for (let i = 0; i < DN; i++) P[(j + 1) * (DN + 1) + i + 1] = inside[j * DN + i] + P[j * (DN + 1) + i + 1] + P[(j + 1) * (DN + 1) + i] - P[j * (DN + 1) + i];
+    dmask = new Float32Array(DN * DN); const box = (i0, j0, i1, j1) => P[j1 * (DN + 1) + i1] - P[j0 * (DN + 1) + i1] - P[j1 * (DN + 1) + i0] + P[j0 * (DN + 1) + i0];
+    for (let j = 0; j < DN; j++) for (let i = 0; i < DN; i++) { if (!inside[j * DN + i]) continue; const i0 = Math.max(0, i - RD), i1 = Math.min(DN, i + RD + 1), j0 = Math.max(0, j - RD), j1 = Math.min(DN, j + RD + 1), f = box(i0, j0, i1, j1) / ((2 * RD + 1) * (2 * RD + 1)); dmask[j * DN + i] = ss(.93, 1, f); }
+  }
+  const dAt = (x, z) => { const u = (x - DM.X0) / DM.D - .5, v = (z - DM.Z0) / DM.D - .5; if (!det || u < 0 || v < 0 || u >= 1023 || v >= 1023) return null; const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * 1024 + i, L = (a, b, c, d) => (a * (1 - fu) + b * fu) * (1 - fv) + (c * (1 - fu) + d * fu) * fv;
+    return [L(det.h[k], det.h[k + 1], det.h[k + 1024], det.h[k + 1025]) / 4, L(dmask[k], dmask[k + 1], dmask[k + 1024], dmask[k + 1025])]; };
+  let H0 = 0; const ground = (x, z) => {      // the ground: the crater's terrain, the finer one blended in over the drive, tucked just under the rover's own patch, falling away with the curve of Mars
+    const r = Math.hypot(x, z), k = ss(NEAR_R + 50, NEAR_R + 600, r), e = ss(0, 6000, JZ.W / 2 - Math.max(Math.abs(x - JZ.C[0]), Math.abs(z - JZ.C[1])));
+    let h = H0 + (hAt(x, z) - H0) * e; const q = dAt(x, z); if (q && q[1] > 0) h += (q[0] - h) * q[1];
+    return h * k - .4 * (1 - k) - r * r / (2 * JZ.RM); };
+  const edge = []; for (let i = 0; i < M; i++) edge.push(dem[i], dem[(M - 1) * M + i], dem[i * M], dem[i * M + M - 1]); edge.sort((p, q) => p - q); H0 = edge[edge.length >> 1] / 4;      // the typical height round the square's edge
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
     const a = i * (M - 1) / (S - 1), b = j * (M - 1) / (S - 1), x = JZ.C[0] + ((a + .5) / M - .5) * JZ.W, z = JZ.C[1] + ((b + .5) / M - .5) * JZ.W, r = Math.hypot(x, z), k = ss(NEAR_R + 50, NEAR_R + 600, r);
-    const e = ss(0, 6000, JZ.W / 2 - Math.max(Math.abs(x - JZ.C[0]), Math.abs(z - JZ.C[1]))), h = H0 + (hAt(x, z) - H0) * e;      // the last few km settle onto the level of the ground beyond
-    pos.push(x, h * k - .4 * (1 - k) - r * r / (2 * JZ.RM), z); uv.push((a + .5) / M, 1 - (b + .5) / M); }      // tucked just under the rover's own patch of ground, and falling away with the curve of Mars
+    const q = dAt(x, z), sink = q ? q[1] * 40 : 0;      // the last few km settle onto the level of the ground beyond (in ground())
+    pos.push(x, ground(x, z) - sink, z); uv.push((a + .5) / M, 1 - (b + .5) / M); }      // tucked just under the rover's own patch of ground, and falling away with the curve of Mars
   for (let j = 0; j < S - 1; j++) for (let i = 0; i < S - 1; i++) { const o = j * S + i; idx.push(o, o + S, o + 1, o + 1, o + S, o + S + 1); }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(idx);
   map.colorSpace = THREE.SRGBColorSpace; map.anisotropy = 8;
@@ -566,7 +579,7 @@ function marsCrater(dem, map) {
     const i = Math.min(S - 2, Math.floor(fi)), j = Math.min(S - 2, Math.floor(fj)), u = fi - i, v = fj - j, o = (j * S + i) * 3, Y = q => pos[q + 1];
     return u + v <= 1 ? Y(o) + (Y(o + 3) - Y(o)) * u + (Y(o + S * 3) - Y(o)) * v : Y(o + S * 3 + 3) + (Y(o + S * 3) - Y(o + S * 3 + 3)) * (1 - u) + (Y(o + 3) - Y(o + S * 3 + 3)) * (1 - v);
   };
-  m.visible = false; return { mesh: m, surf, at: (x, z, up = 0) => new THREE.Vector3(x, hAt(x, z) - (x * x + z * z) / (2 * JZ.RM) + up, z) };
+  m.visible = false; return { mesh: m, surf, ground, at: (x, z, up = 0) => { const r = Math.hypot(x, z), q = dAt(x, z); let h = hAt(x, z); if (q && q[1] > 0) h += (q[0] - h) * q[1]; return new THREE.Vector3(x, h - r * r / (2 * JZ.RM) + up, z); } };
 }
 /* Perseverance's drives, from NASA's published traverse (models/jezero-route.json, made by src/jezero-crater/route.py:
    one line per calendar year, in metres east and south of the landing site), drawn like the Apollo 17 drives. */
@@ -663,7 +676,7 @@ function detailTiles(J, idx, dir, L) {      // L: grid points across a tile, fad
   const have = new Set(idx.tiles.map(t => t[0] + ',' + t[1]));
   idx.tiles.forEach(([tx, tz]) => {
     const x0 = tx * T, z0 = tz * T, pos = [], uv = [], ix = [];
-    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x = x0 + i / (N - 1) * T, z = z0 + j / (N - 1) * T; pos.push(x, J.surf(x, z) + 3, z); uv.push(i / (N - 1), 1 - j / (N - 1)); }
+    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x = x0 + i / (N - 1) * T, z = z0 + j / (N - 1) * T; pos.push(x, J.ground(x, z) + 3, z); uv.push(i / (N - 1), 1 - j / (N - 1)); }
     for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) { const o = j * N + i; ix.push(o, o + N, o + 1, o + 1, o + N, o + N + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ix);
     const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
@@ -676,8 +689,9 @@ function detailTiles(J, idx, dir, L) {      // L: grid points across a tile, fad
     list.push({ m, cx: x0 + T / 2, cz: z0 + T / 2, url: dir + tx + '_' + tz + '.jpg', state: 0 });
   });
   grp.userData.update = cam => {      // show and fade tiles by distance; fetch the near ones, release the far ones
+    const hy = cam.y - J.ground(cam.x, cam.z);      // height above the ground below
     for (const t of list) {
-      const d = Math.hypot(cam.x - t.cx, cam.y, cam.z - t.cz), o = cam.y < L.top ? (1 - Math.max(0, Math.min(1, (d - L.far) / (L.far / 2)))) * (L.low ? 1 : Math.max(0, Math.min(1, (cam.y - 150) / 250))) : 0;      // none near the ground: the tiles sit 3 m up and would bury the rover
+      const d = Math.hypot(cam.x - t.cx, cam.y, cam.z - t.cz), o = cam.y < L.top ? (1 - Math.max(0, Math.min(1, (d - L.far) / (L.far / 2)))) * (L.low ? 1 : Math.max(0, Math.min(1, (hy - 20) / 40))) : 0;      // none near the ground: the tiles sit 3 m up and would bury the rover
       if (o > 0 && !t.state) { t.state = 1; loader.load(t.url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; t.m.material.map = tex; t.m.material.needsUpdate = true; t.state = 2; }, undefined, () => { t.state = 3; }); }
       if (d > L.far * 2 && t.state === 2) { t.m.material.map.dispose(); t.m.material.map = null; t.state = 0; }
       t.m.material.opacity = t.state === 2 ? o : 0; t.m.visible = t.state === 2 && o > 0;
@@ -1112,14 +1126,16 @@ function buildSetting(c) {
             diffuseColor.rgb *= 1.0 + smoothstep( 160.0, 8.0, gz ) * ( ( g1 - .5 ) * .6 + ( g2 - .5 ) * .35 ) + smoothstep( 500.0, 30.0, gz ) * ( m1 - 1.0 ) * .35 + smoothstep( 350.0, 25.0, gz ) * smoothstep( 2.0, 12.0, gz ) * ( g3 - .5 ) * .45;`); };
         mat.color.set(0xffffff); mat.customProgramCacheKey = () => 'jzground'; mat.needsUpdate = true; }).catch(() => {});      // offline without the 3D download: plain ground of the picture's average colour
     }
-    if (c.views.above) { const T = new THREE.TextureLoader(); let dem = null, map = null; const done = () => { if (!dem || !map || !g.parent) return; const J = marsCrater(dem, map); g.add(J.mesh); g.userData.crater = J.mesh;
+    if (c.views.above) { const T = new THREE.TextureLoader(); let dem = null, map = null, det; const done = () => { if (!dem || !map || det === undefined || !g.parent) return; const J = marsCrater(dem, map, det); g.add(J.mesh); g.userData.crater = J.mesh; g.userData.J = J;
         labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels();      // the old river's valley, which fed the delta
         // the drives, then a card for each named place, opened by a tap
         fetch('models/jezero-route.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(R => { if (!g.parent) return; const rt = roverRoute(J, R, labels); g.add(rt); g.userData.route = rt.userData; $('sc-tour').hidden = false; labels.forEach(l => { if (M20_CARDS[l[0]]) l[6] = M20_CARDS[l[0]]; }); const lg = $('sc-legend'); if (lg) lg.innerHTML = rt.userData.legend; drawLabels(); }).catch(() => {});
-        [['m20mid', { N: 65, far: 26000, top: 34000, edge: [150, 1100], order: 1, low: 1 }], ['m20hr', { N: 33, far: 5000, top: 9000, edge: [40, 300], order: 2 }]].forEach(([d, L]) =>      // HiRISE at 4 m over the whole drive, and 1 m along the route itself
+        [['m20mid', { N: 129, far: 26000, top: 34000, edge: [150, 1100], order: 1, low: 1 }], ['m20hr', { N: 65, far: 5000, top: 9000, edge: [40, 300], order: 2 }]].forEach(([d, L]) =>      // HiRISE at 4 m over the whole drive, and 1 m along the route itself
           fetch('models/' + d + '/index.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(ix => { if (!g.parent) return; const hr = detailTiles(J, ix, 'models/' + d + '/', L); g.add(hr); (g.userData.hr = g.userData.hr || []).push(hr); }).catch(() => {})); };
       fetch('models/jezero.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => { dem = new Int16Array(b); done(); }).catch(() => {});
-      T.load('models/jezero.jpg', t => { map = t; done(); }); }
+      T.load('models/jezero.jpg', t => { map = t; done(); });
+      Promise.all([fetch('models/m20dem.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }), fetch('models/m20mid/index.json').then(r => { if (!r.ok) throw 0; return r.json(); })])      // the finer terrain of the drive area, where the overview pictures cover it
+        .then(([b, ix]) => { det = { h: new Int16Array(b), size: ix.size, tiles: new Set(ix.tiles.map(t => t[0] + ',' + t[1])) }; done(); }).catch(() => { det = null; done(); }); }
     g.add(g.userData.rocks = rocks(matchMedia('(max-width:600px)').matches ? 450 : 750, 3.5, 70, 0x4a3b30, 5, (x, z) => Math.hypot(x, z) < 3.8 || Math.hypot(x + 2.5, z - 2.7) < 1.5 || (x > -1.8 && x < 7 && z > -2 && z < 9.5), .22));      // nothing near the rover, the helicopter, the lane the rover drives down, or right in front of the camera that follows it
     g.add(new THREE.HemisphereLight(0xb89272, 0x3a2418, .55)); scene.environmentIntensity = .35;
     renderer.toneMappingExposure = .92;
@@ -1510,7 +1526,7 @@ function pullOut() {
 }
 /* "Fly the route": the camera follows a dot along every drive, a few seconds for each year, swinging gently round it.
    Any touch on the view, or a tap on a name, pauses it; the button resumes. */
-let tour = null; const TOUR_YEAR = 7;      // seconds per year
+let tour = null; const TOUR_YEAR = 11;      // seconds per year
 const _tp = new THREE.Vector3(), _ta = new THREE.Vector3(), _tb = new THREE.Vector3();
 function routeAt(r, L, out) { const c = r.cum; let lo = 0, hi = c.length - 1; L = Math.max(0, Math.min(c[hi], L)); while (hi - lo > 1) { const m = (lo + hi) >> 1; if (c[m] <= L) lo = m; else hi = m; } const f = (L - c[lo]) / ((c[hi] - c[lo]) || 1); return out.lerpVectors(r.path[lo], r.path[hi], f); }
 function tourBtn() { const b = $('sc-tour'); if (b) b.textContent = !tour ? 'Fly the route' : tour.on ? 'Pause' : 'Resume'; }
@@ -1531,15 +1547,16 @@ function stepTour(dt) {
   routeAt(r, L, _tp); r.tdot.geometry.attributes.position.setXYZ(0, _tp.x, _tp.y, _tp.z); r.tdot.geometry.attributes.position.needsUpdate = true;
   r.tdot.material.color.set(YEARS[yi % YEARS.length]); if (tour.yi !== yi) { tour.yi = yi; tourYear(yi); }
   routeAt(r, L + 500, _tb).sub(routeAt(r, L - 500, _ta)); _tb.y = 0; if (_tb.lengthSq() < 1) _tb.set(0, 0, -1); _tb.normalize();      // the way the drive is heading, over a kilometre
-  if (!tour.hd) tour.hd = _tb.clone(); tour.hd.lerp(_tb, 1 - Math.exp(-dt * .7)).normalize(); tour.sw += dt;
-  const k = 1 - Math.exp(-dt * 2.2), sw = .55 * Math.sin(tour.sw * .21), dist = 2300, pitch = .5 + .12 * Math.sin(tour.sw * .13);      // swing a little side to side and up and down for depth
+  if (!tour.hd) tour.hd = _tb.clone(); tour.hd.lerp(_tb, 1 - Math.exp(-dt * .7)).normalize(); tour.sw += dt; tour.low = (tour.low || 0) + ((tour.t < (tour.lowT || -1) ? 1 : 0) - (tour.low || 0)) * (1 - Math.exp(-dt * .6));      // at each named place the camera sweeps down low over the ground, then climbs again
+  const k = 1 - Math.exp(-dt * 2.2), sw = .55 * Math.sin(tour.sw * .21), lo = tour.low * tour.low * (3 - 2 * tour.low), dist = 2300 - 1450 * lo, pitch = (.5 + .12 * Math.sin(tour.sw * .13)) * (1 - lo) + .24 * lo;      // swing a little side to side and up and down for depth
   const h = tour.hd, cx = h.x * Math.cos(sw) - h.z * Math.sin(sw), cz = h.x * Math.sin(sw) + h.z * Math.cos(sw);
   _ta.set(_tp.x - cx * dist * Math.cos(pitch), _tp.y + dist * Math.sin(pitch), _tp.z - cz * dist * Math.cos(pitch));
+  const J = world.userData.J; if (J) { let lift = 0; for (let f = .25; f <= 1.001; f += .25) { const x = _tp.x + (_ta.x - _tp.x) * f, z = _tp.z + (_ta.z - _tp.z) * f, y = _tp.y + (_ta.y - _tp.y) * f; lift = Math.max(lift, (J.ground(x, z) + 60 * f - y) / f); } if (lift > 0) _ta.y += lift; }      // keep the camera, and its line of sight to the dot, clear of the hills
   controls.target.lerp(_tp, k); camera.position.lerp(_ta, k);
   const now = tour.t;      // a small card for each named place as the dot passes it, for about three seconds of the flight
   if (tcard && now - tcard.t0 > 3.2 / TOUR_YEAR) hideTourCard();
   if (!tcard) { let best = null, bd = 320; skyLabels.forEach(l => { if (!l[6] || tour.seen.has(l[0])) return; const d = Math.hypot(l[1].x - _tp.x, l[1].z - _tp.z); if (d < bd) { bd = d; best = l; } });
-    if (best) { tour.seen.add(best[0]); const c = best[6], el = $('sc-tc'); tcard = { l: best, t0: now };
+    if (best) { tour.seen.add(best[0]); tour.lowT = tour.t + 6 / TOUR_YEAR; const c = best[6], el = $('sc-tc'); tcard = { l: best, t0: now };
       el.innerHTML = (c.img ? '<img src="' + c.img + '" alt="">' : '') + '<div><b>' + c.t + '</b><span>' + c.d + '</span></div>'; el.classList.remove('on'); void el.offsetWidth; el.classList.add('on'); $('sc-tl').classList.add('on'); } }
 }
 let tcard = null;
@@ -1558,6 +1575,7 @@ function marsCam() {      // after the controls move the camera, so the sky is n
   const cc = CRAFT[craftKey], u = world && world.userData; if (!cc || cc.env !== 'mars' || !camera || !u || !u.sky) return;
   if (mapMode && !tween) { const t = controls.target, lim = JZ.W / 2 - 4000, dx = Math.max(JZ.C[0] - lim, Math.min(JZ.C[0] + lim, t.x)) - t.x, dz = Math.max(JZ.C[1] - lim, Math.min(JZ.C[1] + lim, t.z)) - t.z; if (dx || dz) { t.x += dx; t.z += dz; camera.position.x += dx; camera.position.z += dz; } }      // keep the map under the view
   const y = Math.max(0, camera.position.y); u.sky.position.copy(camera.position);
+  if (mapMode && u.J) { const gy = u.J.ground(camera.position.x, camera.position.z) + 25; if (camera.position.y < gy) camera.position.y = gy; }      // never through the ground
   if (u.hr) u.hr.forEach(h => h.userData.update(camera.position));
   if (!lookView) { const nr = Math.min(150, Math.max(.03, camera.position.distanceTo(controls.target) * .003)); if (Math.abs(nr - camera.near) > camera.near * .2) { camera.near = nr; camera.updateProjectionMatrix(); } }
   // at Jezero the real ground reaches the horizon, so the haze can thin out to show it

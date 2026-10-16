@@ -3,6 +3,22 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.00 / zion-sky-v369 — 2026-10-16
+- Fly the route back to 11 s a year. At each named place the camera sweeps
+  down low over the ground for a few seconds, then climbs again.
+- No more flying through hills: the flight keeps the camera and its line of
+  sight to the dot at least 60 m clear of the ground, and the map view never
+  lets the camera below 25 m. Why: the camera height followed the dot, not
+  the terrain between them.
+- Finer terrain over the drive area: a 20 m height model built from the CTX
+  stereo DTMs with the five HiRISE stereo DTMs merged in where they reach
+  (models/m20dem.bin, 2 MB, src/jezero-crater/dem20.py). The HiRISE layers
+  are draped on it with denser meshes, so ridges, scarps and craters near
+  the path stand up instead of looking painted on. Why: the crater mesh is
+  140 m between points.
+- The 1 m tiles now fade by height above the ground, not absolute height,
+  so they stay sharp in low passes.
+
 ## v3.99 / zion-sky-v368 — 2026-10-16
 - Jezero ground no longer flashes red while loading: until the HiRISE
   picture arrives (or offline without it) the ground is the picture's

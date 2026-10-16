@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v368';
+const CACHE = 'zion-sky-v369';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -79,7 +79,7 @@ const OFFLINE3D = [
   'models/earth-leo.jpg', 'models/hubble.glb', 'models/ingenuity.glb', 'models/iss.glb',
   'models/jezero.bin', 'models/jezero.jpg', 'models/jezero-wide.jpg', 'models/jezero-route.json',
   // HiRISE detail tiles along Perseverance's route (src/jezero-crater/hirise.py), about 7 MB
-  'models/m20mid/index.json', 'models/m20mid/-4_-1.jpg', 'models/m20mid/-4_0.jpg', 'models/m20mid/-3_-2.jpg',
+  'models/m20dem.bin', 'models/m20mid/index.json', 'models/m20mid/-4_-1.jpg', 'models/m20mid/-4_0.jpg', 'models/m20mid/-3_-2.jpg',
   'models/m20mid/-3_-1.jpg', 'models/m20mid/-3_0.jpg', 'models/m20mid/-2_-2.jpg', 'models/m20mid/-2_-1.jpg',
   'models/m20mid/-2_0.jpg', 'models/m20mid/-1_-2.jpg', 'models/m20mid/-1_-1.jpg', 'models/m20mid/-1_0.jpg',
   'models/m20mid/0_-1.jpg', 'models/m20mid/0_0.jpg',
