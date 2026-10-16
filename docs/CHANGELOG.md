@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.02 / zion-sky-v371 — 2026-10-16
+- Mars Rover Simulator 3.7: Level 3 preview, Belva Crater (button on the
+  briefing, or rover/?level=3). Real ground from the HiRISE stereo DTM (1 m)
+  and the Almanac's CTX + HiRISE height model (4 m), coloured from the
+  HiRISE picture tiles; Belva's dune field and walls in 3D. The mission
+  follows Perseverance's 2023 route (gold dashes on the ground and map):
+  image one outcrop half way, then reach the beacon at the end of the drive,
+  the spawn point for the next level. Open world: roam anywhere.
+  Data built by src/jezero-crater/belva.py.
+
 ## v4.01 / zion-sky-v370 — 2026-10-16
 - Fly the route: overhead for 2021 to mid 2024, then lower and closer from
   Cheyava Falls on over the steep ground, dropping right down at each named

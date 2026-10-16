@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.7 — Level 3 preview: Belva Crater
+- **A third level**, opened from the briefing (or `?level=3`): the ground round Belva Crater, a crater about 0.9 km across in the top of the delta, 4 km west of the landing site.
+- **Real ground.** Heights from the HiRISE stereo DTM DTEEC_002387_1985_003798_1985_A01 at 1 m, and at 4 m out to 4 km from the Dark Sky Almanac's CTX + HiRISE height model; colour from the Almanac's HiRISE picture tiles, laid over the game's own grain as light and dark. Space is compressed 1.5× as before; heights are not exaggerated here, so slopes come out 1.5× real. Built by `src/jezero-crater/belva.py` (`dtm/belva_*.png`, `img/belva_*.jpg`; heights packed (h + 300) × 50 because the rim to the west tops 600 m).
+- **The mission follows Perseverance.** Its 2023 route through the area is a gold dashed line on the ground and the map. Image the one outcrop half way along it, then reach the beacon at the end of the drive, where the next level will start. You can roam anywhere on the way.
+- No invented mesas, sand sheets, paving or boundary cliffs at Belva: the rover is simply held inside the roaming circle.
+
 ## What changed in 3.6 — Easy and Realistic, mouse steering, a calmer screen
 - **Difficulty**, chosen on the briefing and remembered on the device. **Easy** (the default) keeps the 3.5 margins and flips pitch so it works the way it looks: push up and the capsule's nose, and its trace on the attitude strip, go up. **Realistic** restores the 3.4 margins and the flight-software sense of pitch (up raises the angle of attack).
 - **Mouse steering** on desktop: drag anywhere on the scene during the landing, like a thumbstick (110 px is full deflection).

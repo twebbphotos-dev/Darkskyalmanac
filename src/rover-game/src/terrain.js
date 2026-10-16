@@ -9,16 +9,30 @@
 import * as THREE from 'three';
 import { rng, MARS, GRADE_GLSL, gradeColor } from './mars.js';
 
+/* Level 3 (preview, ?level=3): the ground round Belva Crater, 4 km west of the landing site, from the same HiRISE
+   elevation and pictures as the Dark Sky Almanac's Perseverance map (src/jezero-crater/belva.py). Heights there are
+   true to scale against the compressed ground (SV 1, so slopes come out 1.5 times real): the crater is 70 m deep. */
+export const SITE = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('level') === '3') ? {
+  name: 'Belva Crater', files: ['belva_site_1m.png', 'belva_area_4m.png'], scale: 50, sv: 1,
+  origin: { x: -4050, z: -2290 },                    // metres east and south of the landing site
+  hi: 'img/belva_hr.jpg', hiArea: 'img/belva_area.jpg',
+  // Perseverance's drives here in 2023 (models/jezero-route.json, in game metres): in from the south-east, past the
+  // crater's west rim, out to the west. Start at one end, an outcrop half way, the next level from the other end.
+  path: [11.5, 431.6, 31.7, 391.7, 39.7, 382.9, 36.4, 395.4, 25.3, 414.7, 20.1, 417.1, 13.7, 414.4, -48.7, 380.1, -119.2, 353.1, -145.2, 334.6, -213.3, 296.0, -245.1, 268.7, -264.3, 259.4, -273.4, 251.1, -281.9, 247.2, -290.5, 237.5, -315.6, 221.1, -329.7, 206.3, -341.3, 188.9, -351.7, 161.9, -356.9, 137.3, -365.7, 129.9, -369.4, 120.4, -370.3, 101.7, -368.1, 82.6, -370.8, 33.0, -368.8, 18.1, -374.4, 18.9, -378.9, 15.7, -386.5, -5.3, -395.4, 2.1, -397.3, 8.9, -395.1, 12.4, -397.3, 13.5, -425.5, -7.5, -432.0, -4.1, -437.3, 4.5, -443.4, 4.8],
+} : null;
+if (SITE) { const p = SITE.path, n = p.length / 2; SITE.start = { x: p[0], z: p[1] }; SITE.end = { x: p[p.length - 2], z: p[p.length - 1] };
+  let L = 0; const cum = [0]; for (let i = 1; i < n; i++) cum.push(L += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]));
+  const k = cum.findIndex(c => c >= L / 2); SITE.mid = { x: p[k * 2] + 9, z: p[k * 2 + 1] + 9 }; }
 export const PLAY_R = 500;                 // you can roam this far from the origin (2.7: 2.5× wider; 3.5: 3.2× the area again, more of the real ground)
 export const TILE = 7;                     // metres per ground-texture tile
-export const START = { x: 0, z: 18 };
-export const OUTCROP_SITES = [            // drawn in closer in 2.4: a shorter drive between finds
+export const START = SITE ? SITE.start : { x: 0, z: 18 };
+export const OUTCROP_SITES = SITE ? [[SITE.mid.x, SITE.mid.z]] : [      // at Belva, one, half way along the route            // drawn in closer in 2.4: a shorter drive between finds
   [  52, -78], [-112,  -8], [ 128,  96],
   [ -58, 152], [ 196,-112], [-168,-150],
 ];
 /* Mesas: erosional remnants standing proud of the floor, cliffs of layered rock on
    every side but one, where a talus ramp lets you drive up to the top for the view. */
-export const MESAS = [
+export const MESAS = SITE ? [] : [
   { x:  -40, z:  -150, R: 26, H: 17, ramp:  2.2 },
   { x:  150, z:   10, R: 20, H: 13, ramp:  3.4 },
   { x:  -10, z:  205, R: 30, H: 21, ramp: -1.6 },
@@ -158,20 +172,21 @@ export const DTM = { site: null, area: null, edge: 0, on: false };
    buttes and the crater floor sit SQ times closer than they really are. Heights are
    squashed by SV rather than SQ, so slopes come out steeper (×SQ/SV) but nothing
    becomes a wall. */
-const SQ = 1.5, SV = 3.0;
+const SQ = 1.5, SV = SITE ? SITE.sv : 3.0;
 export const EXT = 1995;                           // the mesh, and the elevation, run out to here
-async function decode(url, n) {
+async function decode(url, n, scale = 100) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
   const c = document.createElement('canvas'); c.width = c.height = n;
   const g = c.getContext('2d', { willReadFrequently: true, colorSpace: 'srgb' });
   g.drawImage(img, 0, 0);
   const d = g.getImageData(0, 0, n, n).data, out = new Float32Array(n * n);
-  for (let i = 0; i < n * n; i++) out[i] = (d[i * 4] * 256 + d[i * 4 + 1]) / 100 - 300;
+  for (let i = 0; i < n * n; i++) out[i] = (d[i * 4] * 256 + d[i * 4 + 1]) / scale - 300;
   return out;
 }
 export async function loadDTM(base = 'dtm/') {
   try {
-    [DTM.site, DTM.area] = await Promise.all([decode(base + 'site_1m.png', 1200), decode(base + 'area_4m.png', 2000)]);
+    const f = SITE ? SITE.files : ['site_1m.png', 'area_4m.png'], sc = SITE ? SITE.scale : 100;
+    [DTM.site, DTM.area] = await Promise.all([decode(base + f[0], 1200, sc), decode(base + f[1], 2000, sc)]);
   } catch (e) { console.warn('elevation data unavailable — using the procedural ground', e); return false; }
   const a = DTM.area, edge = [];
   for (let i = 0; i < 2000; i += 8) edge.push(a[i], a[1999 * 2000 + i], a[i * 2000], a[i * 2000 + 1999]);
@@ -197,6 +212,7 @@ function dtmRaw(x, z) {
 /* the edge of the roaming area: a ragged wall of layered rock with notches you can see
    through, and a talus skirt at its foot. */
 function rimWall(x, z, d) {
+  if (SITE) return 0;                 // at Belva the real ground runs on; the rover is simply held inside the roaming circle
   const rr = d - PLAY_R;
   if (rr < -6) return 0;
   const H = 30 + 26 * (0.5 + 0.5 * nRim(x / 90, z / 90)) + nRough(x / 22, z / 22) * 7;
@@ -366,8 +382,8 @@ export function buildTerrain(scene, map, bump) {
       const ct = craterT(x, z);
       const rim = ct > 0.8 && ct < 1.4 ? 1 - Math.abs(ct - 1.05) / 0.35 : 0;
       const sm = sandMask(x, z) * (1 - smooth(PLAY_R - 10, PLAY_R + 20, Math.hypot(x, z)));
-      sand[k] = sm * (1 - smooth(0.06, 0.16, steep));          // sand will not lie on a steep face
-      ground[k * 2] = paverMask(x, z) * (1 - Math.min(1, steep * 14)) * (1 - smooth(PLAY_R - 20, PLAY_R + 10, Math.hypot(x, z)));
+      sand[k] = SITE ? 0 : sm * (1 - smooth(0.06, 0.16, steep));          // sand will not lie on a steep face (at Belva, the real dunes come from the pictures)
+      ground[k * 2] = SITE ? 0 : paverMask(x, z) * (1 - Math.min(1, steep * 14)) * (1 - smooth(PLAY_R - 20, PLAY_R + 10, Math.hypot(x, z)));
 
       const dust = Math.min(1, Math.max(0, hollow) * 1.9 + (ct < 0.6 ? 0.45 : 0));
       const bare = Math.min(1, steep * 11 + Math.max(0, -hollow) * 1.6 + Math.max(0, rim) * 0.7) * (1 - sm * 0.7);
@@ -406,6 +422,10 @@ export function buildTerrain(scene, map, bump) {
     tPeb: { value: tx('pebbles_diff', true) }, tPebN: { value: tx('pebbles_nor') },
     tSlab: { value: tx('slab_diff', true) }, tSlabN: { value: tx('slab_nor') },
   };
+  if (SITE) {      // level 3: the real ground's light and dark, from the HiRISE pictures, laid over the game's own colour and grain
+    const hi = t => { const x = TL.load(t); x.colorSpace = THREE.SRGBColorSpace; x.anisotropy = 8; return x; };
+    scan.tHi = { value: hi(SITE.hi) }; scan.tHiA = { value: hi(SITE.hiArea) };
+  }
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, scan);
     sh.vertexShader = sh.vertexShader
@@ -417,6 +437,7 @@ export function buildTerrain(scene, map, bump) {
       varying float vSand; varying vec2 vGround; varying vec3 vWPos;
       float vCrack;
       uniform sampler2D tReg, tRegN, tSand, tSandN, tPeb, tPebN, tSlab, tSlabN;
+${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
       vec3 detail( sampler2D t, vec2 uv, vec3 mean ) {
         vec3 c = texture2D( t, uv ).rgb / mean;
         float l = dot( c, vec3( 0.3, 0.55, 0.15 ) );
@@ -508,6 +529,14 @@ export function buildTerrain(scene, map, bump) {
           vec3 far = detail( tReg, vWPos.xz / 31.0, vec3( 0.2918, 0.1620, 0.0763 ) );   // the same grain, much larger, for mid distance
           sampledDiffuseColor.rgb *= mix( vec3( 1.0 ), dt, sDet * 0.9 ) * mix( vec3( 1.0 ), far, sMid * 0.35 );
         }
+        ${SITE ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
+          vec2 r = vWPos.xz * ${SQ.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
+          float l1 = dot( texture2D( tHi, vec2( u1.x, 1.0 - u1.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float l4 = dot( texture2D( tHiA, vec2( u4.x, 1.0 - u4.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
+          float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
+          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
+        }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)
       // vertex tint has been multiplied in by now: grade the finished albedo

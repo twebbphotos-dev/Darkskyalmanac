@@ -417,7 +417,8 @@ export function createEDL(ctx) {
   const plain = (() => {
     const geo = new THREE.CircleGeometry(64000, 96); geo.rotateX(-Math.PI / 2);
     const p = geo.attributes.position, uv = geo.attributes.uv;
-    for (let i = 0; i < p.count; i++) uv.setXY(i, p.getX(i) / REGION + 0.5, p.getZ(i) / REGION + 0.5);
+    const OX = ctx.origin ? ctx.origin.x : 0, OZ = ctx.origin ? ctx.origin.z : 0;      // level 3 is centred elsewhere in the crater
+    for (let i = 0; i < p.count; i++) uv.setXY(i, (p.getX(i) + OX) / REGION + 0.5, (p.getZ(i) + OZ) / REGION + 0.5);
     const mat = new THREE.MeshBasicMaterial({ map: regionTex, color: 0xb4c2bb });   // tuned so the plain meets the lit mesh without a line
     mat.onBeforeCompile = sh => {
       sh.uniforms.detail = { value: ctx.groundMap }; sh.uniforms.mott = { value: mottle };
@@ -448,7 +449,7 @@ export function createEDL(ctx) {
      3835 m south of it), in true metres like the map laid on it, heights doubled so the rim reads from the air.
      Under the drivable terrain it stays flat and a little low; it rises into the real ground beyond it. */
   function relief(m, dem) {
-    const M = Math.round(Math.sqrt(dem.length)), W = 90000, CX = -982, CZ = 3835, EX = 2, R = 64000, E0 = ctx.ext, base = m.position.y;
+    const OX = ctx.origin ? ctx.origin.x : 0, OZ = ctx.origin ? ctx.origin.z : 0, M = Math.round(Math.sqrt(dem.length)), W = 90000, CX = -982 - OX, CZ = 3835 - OZ, EX = 2, R = 64000, E0 = ctx.ext, base = m.position.y;
     const hAt = (x, z) => {
       const u = clamp(((x - CX) / W + 0.5) * M - 0.5, 0, M - 1.001), v = clamp(((z - CZ) / W + 0.5) * M - 0.5, 0, M - 1.001), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, k = j * M + i;
       const h = ((dem[k] * (1 - fu) + dem[k + 1] * fu) * (1 - fv) + (dem[k + M] * (1 - fu) + dem[k + M + 1] * fu) * fv) / 4;
@@ -459,7 +460,7 @@ export function createEDL(ctx) {
     for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
       const x = L[i], z = L[j], o = j * n + i, w = smooth(E0 + 150, E0 + 2600, Math.max(Math.abs(x), Math.abs(z)));
       pos[o * 3] = x; pos[o * 3 + 2] = z; pos[o * 3 + 1] = w * (hAt(x, z) * EX - base - (x * x + z * z) / (2 * R_MARS * 1000)) - 4 * (1 - w);
-      uv[o * 2] = x / REGION + 0.5; uv[o * 2 + 1] = z / REGION + 0.5;
+      uv[o * 2] = (x + OX) / REGION + 0.5; uv[o * 2 + 1] = (z + OZ) / REGION + 0.5;
     }
     for (let j = 0; j < n - 1; j++) for (let i = 0; i < n - 1; i++) { const a = j * n + i; idx.push(a, a + n, a + 1, a + 1, a + n, a + n + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setIndex(idx);

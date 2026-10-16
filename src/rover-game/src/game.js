@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { buildMars } from './mars.js';
 import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks, prepScan, findLanding, colliders,
-         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT } from './terrain.js';
+         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT, SITE } from './terrain.js';
 import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
 import { createEDL, difficulty, setDifficulty } from './edl.js';
@@ -168,6 +168,21 @@ OUTCROP_SITES.forEach(([x, z], i) => {
     ring, ringMat, found: false, logged: false, wid: wid, top,
   });
 });
+
+/* level 3: Perseverance's route as a faint dashed line on the ground, and a beacon at the end of it */
+const GOAL = SITE ? (() => {
+  const p = SITE.path, pts = [];
+  for (let i = 0; i + 2 < p.length; i += 2) { const x0 = p[i], z0 = p[i + 1], x1 = p[i + 2], z1 = p[i + 3], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 2));
+    for (let k = 0; k < n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; pts.push(new THREE.Vector3(x, height(x, z) + 0.35, z)); } }
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: GOLD, dashSize: 2.2, gapSize: 2.2, transparent: true, opacity: 0.55, depthWrite: false }));
+  line.computeLineDistances(); scene.add(line);
+  const { x, z } = SITE.end, y = height(x, z);
+  const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide, fog: false }));
+  beam.position.set(x, y + 30, z); scene.add(beam);
+  const ring = new THREE.Mesh(new THREE.RingGeometry(9, 10, 64), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(x, y + 0.3, z); scene.add(ring);
+  return { beam, told: false };
+})() : null;
 
 /* rocks, kept clear of the start pad and the outcrops — scattered once the scanned rocks have loaded */
 let rockCount = null;
@@ -488,6 +503,12 @@ function drawMap(cv, big) {
   if (MAP.track.length > 1) {
     c.strokeStyle = 'rgba(242,228,190,.8)'; c.lineWidth = big ? 2 : 1.2; c.beginPath();
     MAP.track.forEach(([x, z], i) => c[i ? 'lineTo' : 'moveTo'](...P(x, z))); c.stroke();
+  }
+  if (SITE) {      // level 3: Perseverance's route and the end of the drive
+    c.strokeStyle = 'rgba(203,168,90,.75)'; c.lineWidth = big ? 2 : 1.2; c.setLineDash([4, 3]); c.beginPath();
+    for (let i = 0; i < SITE.path.length; i += 2) c[i ? 'lineTo' : 'moveTo'](...P(SITE.path[i], SITE.path[i + 1])); c.stroke(); c.setLineDash([]);
+    const [gx, gy] = P(SITE.end.x, SITE.end.z); c.fillStyle = '#E6CC85'; c.beginPath(); c.arc(gx, gy, big ? 6 : 3.5, 0, 6.3); c.fill();
+    if (big) { c.font = '600 11px Montserrat, sans-serif'; c.textAlign = 'left'; c.fillText('End of the drive', gx + 10, gy + 4); }
   }
   // outcrops: found in gold, logged in green, numbered
   S.outcrops.forEach((o, i) => {
@@ -1333,11 +1354,14 @@ function showCard(o) {
 
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
-  if (S.logged >= S.outcrops.length) done();
+  if (SITE) { if (S.logged >= S.outcrops.length) toast('Outcrop logged. Carry on along the route to the end of the drive, the gold beacon.'); }
+  else if (S.logged >= S.outcrops.length) done();
 });
 
 function done() {
   S.phase = 'done';
+  if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = 'Level 3 · Belva Crater';
+    $('done-p').textContent = 'You followed Perseverance’s 2023 route past Belva Crater, read the rocks half way, and reached the end of the drive. The next level will start here.'; $('done-p2').style.display = 'none'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
   $('done').classList.add('on');
 }
@@ -1627,6 +1651,12 @@ function update(dt, now = performance.now()) {
   stepDust(dt);
   stepCamera(dt);
   stepMarks();
+  if (GOAL && S.phase === 'drive') {      // level 3: the end of the drive
+    GOAL.beam.material.opacity = 0.22 + Math.sin(now * 0.003) * 0.08;
+    const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
+    if (d < 14) { if (S.logged >= S.outcrops.length) done(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Image the outcrop half way along the route first.'); } }
+    else if (d > 30) GOAL.told = false;
+  }
 
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
   if ((frameN = (frameN + 1) % 10) === 0) hud();
@@ -1659,11 +1689,17 @@ $('btn-drive').addEventListener('click', () => {
   $('rover-brief').classList.remove('on');
   S.phase = 'drive'; hud();
   stepMap(1);
-  toast('Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
+  toast(SITE ? 'Follow the gold dashes: Perseverance’s real route. One outcrop half way, then the beacon. M opens the map.' : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
 $('btn-skip').addEventListener('click', () => { $('brief').classList.remove('on'); startSurface(null); });
+$('btn-l3').addEventListener('click', () => { location.search = '?level=3'; });
+if (SITE) {      // level 3: straight onto the ground at Belva
+  $('rb-h1').textContent = 'Belva Crater'; $('rb-h2').textContent = 'Level 3 · Preview';
+  document.querySelectorAll('#rover-brief .spec span').forEach(sp => { if (sp.textContent === 'Objective') sp.nextElementSibling.textContent = 'Follow Perseverance’s route (the gold dashes), image the outcrop half way, then reach the beacon at the end of the drive. Go anywhere you like on the way'; });
+  $('rb-p').textContent = 'You are on the delta top beside Belva, a crater about 0.9 km across punched into it. The impact cut down through the delta’s layers; dunes now fill its floor. Perseverance drove this way in 2023 and photographed the walls from the west rim on 22 April. The ground is the real one, from HiRISE elevation and images, drawn at two-thirds scale across, so slopes come out 1.5 times steeper.';
+}
 { const marks = () => document.querySelectorAll('#diff [data-d]').forEach(b => b.classList.toggle('on', b.dataset.d === difficulty()));      // Easy or Realistic, remembered on this device
   document.querySelectorAll('#diff [data-d]').forEach(b => b.addEventListener('click', () => { setDifficulty(b.dataset.d); marks(); })); marks(); }
 $('btn-again').addEventListener('click', () => location.reload());
@@ -1686,7 +1722,7 @@ $('btn-map').addEventListener('click', () => toggleMap());
   const regionImg = await new Promise(res => { const im = new Image(); im.onload = () => res(im); im.onerror = () => res(null); im.src = 'img/jezero-region.jpg'; });
   edl = createEDL({
     renderer, scene, camera, height, sunDir, groundMap: map, buildHazardGrid, puff,
-    target: START, playR: PLAY_R, regionImg, outcrops: OUTCROP_SITES, sandMask, onBack: () => $('brief').classList.add('on'), floor: terrainFloor(), plainY: DTM.on ? DTM.plain : undefined, ext: DTM.on ? EXT : 0, fog: { near: scene.fog.near, far: scene.fog.far },
+    target: START, playR: PLAY_R, regionImg, outcrops: OUTCROP_SITES, sandMask, onBack: () => $('brief').classList.add('on'), floor: terrainFloor(), plainY: DTM.on ? (SITE ? terrainFloor() - 2 : DTM.plain) : undefined, origin: SITE ? SITE.origin : null, ext: DTM.on ? EXT : 0, fog: { near: scene.fog.near, far: scene.fog.far },
     rover: () => rover, roverYaw: () => S.rover.yaw,
     setHeliVisible: v => { heli.visible = v; },
     afterCamera: (x, y, z) => {                    // keep the sky and the shadow light with the lander
@@ -1698,7 +1734,7 @@ $('btn-map').addEventListener('click', () => toggleMap());
   });
   hud();
   $('loading').classList.remove('on');
-  $('brief').classList.add('on');
+  if (SITE) startSurface(null); else $('brief').classList.add('on');
   requestAnimationFrame(frame);
 })();
 
