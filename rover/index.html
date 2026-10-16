@@ -17,7 +17,7 @@
     --ui:'Montserrat',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
   }
   *{box-sizing:border-box}
-  html,body{margin:0;height:100%;overflow:hidden;background:var(--bg);
+  html,body{margin:0;height:100%;overflow:hidden;overscroll-behavior:none;background:var(--bg);
     font-family:var(--ui);color:var(--hi);
     -webkit-user-select:none;user-select:none;-webkit-tap-highlight-color:transparent}
   #scene{position:fixed;inset:0;display:block;width:100%;height:100%}
@@ -45,6 +45,10 @@
     border-radius:7px;padding:11px 14px;cursor:pointer;border:1px solid var(--line);
     background:var(--panel);color:var(--gold);backdrop-filter:blur(10px);transition:all .15s;white-space:nowrap}
   .btn:hover{border-color:var(--gold);color:var(--hi)}
+  .diff{display:flex;align-items:center;gap:6px;margin:16px 0 0;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66}
+  .diff span{margin-right:4px}
+  .diff button{font:inherit;letter-spacing:inherit;text-transform:inherit;color:#C9BD97;background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:999px;padding:6px 12px;cursor:pointer}
+  .diff button.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#F2E4BE}
   .btn.primary{background:var(--gold);color:#0d0a18;border-color:var(--gold);padding:13px 26px;font-size:10.5px}
   #acts{display:flex;flex-direction:column;gap:7px}
   #hint{font-size:8.5px;letter-spacing:.07em;color:var(--mute);line-height:1.65;max-width:290px}
@@ -326,6 +330,14 @@
   #edl-attbox em{font-style:normal;float:right;color:var(--mute);letter-spacing:.04em;text-transform:none}
   #edl-attbox em.low{color:#E0685A}
   #edl-att{display:block;width:100%;height:40px;border-radius:4px}
+  /* 3.6: less on screen. Entry shows altitude and speed; load only when it is dangerous; the clock and the
+     heat-shield readout are gone. After the parachute: altitude, descent, drift and fuel. One stage chip,
+     no bank readout or legend, thruster level only when low, and the instruction fades after a few seconds. */
+  #edl-tele .stat:first-child,#edl-steps i:not(.on),#edl-bankval,#edl-key{display:none !important}
+  body[data-edl=entry] #edl-tele .stat:nth-child(4):not(.warn),body[data-edl=chute] #edl-tele .stat:nth-child(4):not(.warn),body[data-edl=open] #edl-tele .stat:nth-child(4):not(.warn),
+  body[data-edl=entry] #edl-fuel,body[data-edl=chute] #edl-fuel,body[data-edl=open] #edl-fuel{display:none}
+  #edl-rcs:not(.low){visibility:hidden}
+  #edl-prompt.gone{opacity:0;transition:opacity .8s}
   #edl-burnrow{display:none;margin-top:6px;font-size:8px;letter-spacing:.1em;text-transform:uppercase;color:#E0685A}
   #edl-burnrow.on{display:block}
   #edl-burnrow u{display:block;height:4px;margin-top:3px;border-radius:2px;background:rgba(224,104,90,.2);overflow:hidden;text-decoration:none}
@@ -417,20 +429,22 @@
     </div>
     <div class="keys kb">
       <kbd>A D</kbd><span>Bank the lift vector to steer toward the ◇</span>
-      <kbd>W S</kbd><span>Pitch thrusters: hold the 16° trim angle or burn through</span>
+      <kbd>W S</kbd><span>Pitch thrusters: keep the swing on the centre line</span>
       <kbd>Space</kbd><span>Parachute · backshell separation · sky crane</span>
       <kbd>W A S D</kbd><span>Powered divert to safe ground</span>
+      <kbd>Mouse</kbd><span>Or drag anywhere to steer, like a stick</span>
     </div>
     <div class="keys tc">
       <kbd>Stick ◀ ▶</kbd><span>Bank the lift vector to steer toward the ◇</span>
-      <kbd>Stick ▲ ▼</kbd><span>Pitch thrusters: hold the 16° trim angle or burn through</span>
+      <kbd>Stick ▲ ▼</kbd><span>Pitch thrusters: keep the swing on the centre line</span>
       <kbd>Deploy</kbd><span>Parachute · backshell separation · sky crane</span>
     </div>
     <div class="two">
       <button class="btn primary" id="btn-start">Fly the landing</button>
       <button class="btn" id="btn-skip">Skip to the surface</button>
     </div>
-    <p class="fine" style="margin:14px 0 0">Proof of concept · v3.5</p>
+    <div class="diff" id="diff"><span>Difficulty</span><button data-d="easy">Easy</button><button data-d="real">Realistic</button></div>
+    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.6</p>
   </div>
 </div>
 

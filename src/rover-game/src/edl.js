@@ -38,6 +38,19 @@ export const FACTS = {
   fuel: 400, ellipse: [7.7, 6.6],           // kg, km
 };
 
+/* Two ways to fly it. Easy (the default): gentler air, more margin everywhere, and the pitch control works
+   the way it looks — push up and the capsule's nose, and its trace on the attitude strip, go up. Realistic:
+   the 3.4 margins, and pitch as the flight software sees it, where up raises the angle of attack (the
+   capsule's back drops in the view). Chosen on the briefing; remembered on this device. */
+const DIFF = {
+  easy: { aoaWarn: 12, aoaLost: 30, rcs: 1.8, gust: 0.75, gustA: 2, gustB: 8, shearA: 13, shearB: 7, burn: 12, bankRcs: 0.015, gMax: 2, chuteV: 500, chuteAoa: 18, lateFuel: 40, fuelA: 3.4, fuelB: 2.4, hs: 1.8, vs: 2.2, pitch: -1 },
+  real: { aoaWarn: 10, aoaLost: 26, rcs: 2.6, gust: 1, gustA: 3, gustB: 11, shearA: 20, shearB: 10, burn: 8, bankRcs: 0.022, gMax: 1.3, chuteV: 478, chuteAoa: 15, lateFuel: 70, fuelA: 4.3, fuelB: 3.2, hs: 1.3, vs: 1.6, pitch: 1 },
+};
+let MODE = 'easy'; try { if (localStorage.getItem('jt-difficulty') === 'real') MODE = 'real'; } catch (e) { /* storage blocked */ }
+let D = DIFF[MODE];
+export const difficulty = () => MODE;
+export function setDifficulty(m) { MODE = m === 'real' ? 'real' : 'easy'; D = DIFF[MODE]; try { localStorage.setItem('jt-difficulty', MODE); } catch (e) { /* storage blocked */ } }
+
 const R_MARS = 3389.5;                       // km
 const JEZERO = { lat: 18.44, lon: 77.45 };
 const DEG = Math.PI / 180;
@@ -668,6 +681,11 @@ export function createEDL(ctx) {
     ['pointerup', 'pointerleave', 'pointercancel'].forEach(n => el.addEventListener(n, set(0)));
   });
   const stick = createStick($('stick-edl'));
+  // desktop: drag anywhere on the scene with the mouse to steer, the same as the thumbstick (110 px is full deflection)
+  const mouse = { x: 0, y: 0, id: null, x0: 0, y0: 0 }, cv = renderer.domElement;
+  cv.addEventListener('pointerdown', e => { if (!E.active || e.pointerType !== 'mouse' || e.button !== 0) return; e.preventDefault(); mouse.id = e.pointerId; mouse.x0 = e.clientX; mouse.y0 = e.clientY; try { cv.setPointerCapture(e.pointerId); } catch (_) { /* fine */ } });
+  cv.addEventListener('pointermove', e => { if (e.pointerId !== mouse.id) return; mouse.x = clamp((e.clientX - mouse.x0) / 110, -1, 1); mouse.y = clamp(-(e.clientY - mouse.y0) / 110, -1, 1); });
+  ['pointerup', 'pointercancel', 'lostpointercapture'].forEach(n => cv.addEventListener(n, e => { if (e.pointerId === mouse.id) { mouse.id = null; mouse.x = mouse.y = 0; } }));
   /* Smoothed, expo-curved control, as on a model-aircraft transmitter. A key doesn't snap to
      full deflection: it ramps in over about two-thirds of a second, so a tap is a small,
      gentle correction and only a long hold gives full authority. Letting go eases back to
@@ -685,8 +703,9 @@ export function createEDL(ctx) {
   function stepInput(dt) {
     const kx = (keys.d || keys.arrowright ? 1 : 0) - (keys.a || keys.arrowleft ? 1 : 0);
     const kz = (keys.s || keys.arrowdown ? 1 : 0) - (keys.w || keys.arrowup ? 1 : 0);
-    IN.x = kx ? easeAxis(IN.x, kx, dt, AX.x) : (stick.x ? stick.x : easeAxis(IN.x, 0, dt, AX.x));
-    IN.z = kz ? easeAxis(IN.z, kz, dt, AX.z) : (stick.y ? -stick.y : easeAxis(IN.z, 0, dt, AX.z));
+    const sx = stick.x || mouse.x, sy = stick.y || mouse.y;
+    IN.x = kx ? easeAxis(IN.x, kx, dt, AX.x) : (sx ? sx : easeAxis(IN.x, 0, dt, AX.x));
+    IN.z = kz ? easeAxis(IN.z, kz, dt, AX.z) : (sy ? -sy : easeAxis(IN.z, 0, dt, AX.z));
   }
   const axX = () => expo(IN.x, AX.x.expo);
   const axZ = () => expo(IN.z, AX.z.expo);
@@ -713,13 +732,19 @@ export function createEDL(ctx) {
     crane: '<b>SPACE</b> lowers the rover.',
     down: '',
   };
+  let promptT = 0;
+  function prompt(html) {      // an instruction shows for a few seconds, then fades out of the way
+    const p = $('edl-prompt'); p.innerHTML = html; p.classList.remove('gone'); clearTimeout(promptT);
+    if (html) promptT = setTimeout(() => p.classList.add('gone'), 7000);
+  }
   function setStage(s) {
     E.stage = s; E.st = 0; action = false;
+    if (s === 'chute') { const b = $('edl-speed').querySelector('u'), l = (560 - D.chuteV) / 2.2; b.style.left = l + '%'; b.style.width = ((560 - 352) / 2.2 - l) + '%'; }      // the green band follows the difficulty's limit
     document.querySelectorAll('#edl-steps i').forEach(el => {
       const i = ORDER.indexOf(el.dataset.s), j = ORDER.indexOf(s);
       el.classList.toggle('on', i === j); el.classList.toggle('done', i < j);
     });
-    $('edl-prompt').innerHTML = PROMPT[s] || '';
+    prompt(PROMPT[s] || '');
     const hi = s === 'entry' || s === 'chute';
     $('edl-l-vel').textContent = hi ? 'Speed' : 'Descent';
     $('edl-l-g').textContent = hi ? 'Load' : 'Drift';
@@ -730,7 +755,7 @@ export function createEDL(ctx) {
   function begin(from = 'entry') {
     ['edl-fpm', 'edl-tgt'].forEach(id => { $(id).style.display = 'none'; });
     E.active = true; E.result = null; E.camInit = false; E.shake = 0; E.flash = 0;
-    E.saidHeat = E.saidG = E.saidSt = E.saidTRN = E.saidDry = E.lower = false; E.engines = 0; E.drop = 0;
+    E.saidHeat = E.saidG = E.saidSt = E.saidTRN = E.saidDry = E.lower = E.saidSep = false; E.engines = 0; E.drop = 0;
     document.body.classList.add('edl');
     $('edl').classList.add('on');
     ['edl-fail', 'edl-done'].forEach(id => $(id).classList.remove('on'));
@@ -861,17 +886,17 @@ export function createEDL(ctx) {
      parachutes. Gusts and hard rolls knock it off. W and S fire the pitch
      thrusters. Off by more than 10°, the backshell starts to take heat it was
      never built for; off by 24°, the heat shield no longer leads and it flips. */
-  const AOA_WARN = 12, AOA_LOST = 30;      // eased in 3.5: a little more room before the heat and the flip
+  // the warning and loss angles come from the difficulty: D.aoaWarn, D.aoaLost
   function attitude(dt) {
     const t = E.t, qbar = clamp(gAt(t) / 9.5, 0, 1), late = smooth(160, 228, t);
     const w = 0.9 + 2.6 * Math.sqrt(qbar);
     const c = 0.15 + 0.9 * Math.sqrt(qbar) - 0.95 * late;
-    const u = E.rcs > 0 ? -axZ() : 0;                                  // W noses up, S noses down
-    if (u) { E.rcs = Math.max(0, E.rcs - 1.8 * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
-    if (Math.random() < dt * 0.75 * (0.25 + 0.9 * qbar + 0.7 * late))      // gusts: fewer and gentler since 3.5
-      E.q += (Math.random() < 0.5 ? -1 : 1) * (2 + Math.random() * 8) * (0.3 + 1.25 * qbar + 0.6 * late);
+    const u = E.rcs > 0 ? -axZ() * D.pitch : 0;                         // realistic: W raises the angle of attack; easy: W raises the nose as you see it
+    if (u) { E.rcs = Math.max(0, E.rcs - D.rcs * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
+    if (Math.random() < dt * D.gust * (0.25 + 0.9 * qbar + 0.7 * late))
+      E.q += (Math.random() < 0.5 ? -1 : 1) * (D.gustA + Math.random() * D.gustB) * (0.3 + 1.25 * qbar + 0.6 * late);
     for (const sh of E.shears) if (!sh.done && t >= sh.t) {
-      sh.done = true; E.q += (Math.random() < 0.5 ? -1 : 1) * (13 + Math.random() * 7); E.shake = 0.8; buzz([40, 30, 60]);
+      sh.done = true; E.q += (Math.random() < 0.5 ? -1 : 1) * (D.shearA + Math.random() * D.shearB); E.shake = 0.8; buzz([40, 30, 60]);
       say('Density shear! Catch the swing — W / S.', 2.6);
     }
     for (let i = 0, n = 4, h = dt / 4; i < n; i++) {
@@ -879,11 +904,11 @@ export function createEDL(ctx) {
       E.q += acc * h; E.aoa += E.q * h;
     }
     E.att.push(E.aoa); if (E.att.length > 200) E.att.shift();
-    const over = Math.max(0, Math.abs(E.aoa) - AOA_WARN);
-    E.burn = clamp(E.burn + (over / 12) * (0.2 + heatAt(t) * 1.3) * dt - 0.01 * dt, 0, 1);
+    const over = Math.max(0, Math.abs(E.aoa) - D.aoaWarn);
+    E.burn = clamp(E.burn + (over / D.burn) * (0.2 + heatAt(t) * 1.3) * dt - 0.01 * dt, 0, 1);
     if (!E.saidWob && late > 0.35 && E.stage === 'entry') { E.saidWob = true; say('Slowing through Mach 3: the capsule is starting to wobble on its own. Damp it.', 4); }
     if (!E.saidRCS && E.rcs < 20) { E.saidRCS = true; say(`Thruster propellant at ${Math.round(E.rcs)}%. Short pulses.`, 3); }
-    if (Math.abs(E.aoa) > AOA_LOST) die('tumble', 'Tumbled', `The capsule swung ${Math.round(Math.abs(E.aoa))}° off its trim and flipped: the heat shield no longer faced the flow. W and S fire the pitch thrusters — short pulses against the swing keep the nose in the green. The real capsule's eight thrusters fired again and again through entry for exactly this.`);
+    if (Math.abs(E.aoa) > D.aoaLost) die('tumble', 'Tumbled', `The capsule swung ${Math.round(Math.abs(E.aoa))}° off its trim and flipped: the heat shield no longer faced the flow. W and S fire the pitch thrusters — short pulses against the swing keep the nose in the green. The real capsule's eight thrusters fired again and again through entry for exactly this.`);
     else if (E.burn >= 1) die('burn', 'Burned through', 'Flown too far off its trim angle in the hottest part of entry, the capsule turned its backshell into the flow. The backshell is built for the wake, not for 1,300 °C plasma. Keep the nose in the green while the heat shield glows.');
   }
 
@@ -979,7 +1004,7 @@ export function createEDL(ctx) {
       const b0 = E.bank;
       E.bank = E.rcs > 0 ? clamp(E.bank + axX() * 48 * dt, -85, 85) : E.bank;          // was 62°/s: slower, smoother banking
       const db = Math.abs(E.bank - b0);
-      if (db > 0) { E.rcs = Math.max(0, E.rcs - db * 0.015); fire(0.4); E.q += (E.bank - b0) * 0.14 * Math.sign(Math.sin(E.t * 0.7) + 0.3); }   // a hard roll knocks the pitch about
+      if (db > 0) { E.rcs = Math.max(0, E.rcs - db * D.bankRcs); fire(0.4); E.q += (E.bank - b0) * 0.14 * Math.sign(Math.sin(E.t * 0.7) + 0.3); }   // a hard roll knocks the pitch about
       const dm = dt * E.warp, b = E.bank * DEG, lift = clamp(1 + E.aoa / 25, 0.6, 1.4), a = authAt(E.t) * lift;
       // unsteady air: the thing guidance exists to fight
       E.driftC += (Math.sin(E.t * 0.071 + 1.3) * 0.016 - E.driftC) * Math.min(1, dm * 0.2);
@@ -993,7 +1018,7 @@ export function createEDL(ctx) {
       E.gEff = gEff;
       E.gOver = gEff > 15 ? E.gOver + dt : Math.max(0, E.gOver - dt);
       if (!E.saidLoad && gEff > 12.5) { E.saidLoad = true; say('Load climbing past 12 g — roll the lift back up!', 3); }
-      if (E.gOver > 2) die('load', 'Overloaded', 'With its lift pointed down for too long, the capsule dove into thick air too steeply and pulled more than 15 g, past what the rover and its structure are built for. Lift down shortens your range, but use it in short bursts.');
+      if (E.gOver > D.gMax) die('load', 'Overloaded', 'With its lift pointed down for too long, the capsule dove into thick air too steeply and pulled more than 15 g, past what the rover and its structure are built for. Lift down shortens your range, but use it in short bursts.');
       if (!E.saidHeat && E.t > 62) { E.saidHeat = true; say('Peak heating. The shield is at 1,300 °C; behind it the rover sits at room temperature.', 4); }
       if (!E.saidG && E.t > 86) { E.saidG = true; say('Peak deceleration: ten times Earth gravity.', 3); }
       if (!E.saidSt && E.t > 150) { E.saidSt = true; say('Lift is fading with the speed. Last corrections now.', 3.5); }
@@ -1014,13 +1039,13 @@ export function createEDL(ctx) {
         const v = velAt(E.t);
         if (!E.dying && (action || v < 352)) {
           action = false;
-          if (v > 500) return fail('Parachute lost', `It was fired at ${Math.round(v)} m/s, well over what the canopy is built to take. The real one was deployed at about 420 m/s and loaded to some 30 tonnes even so.`, 'entry');
-          if (Math.abs(E.aoa) > 18) return fail('Parachute fouled', `It went out with the capsule swinging ${Math.round(Math.abs(E.aoa))}° off line, and the lines wrapped the backshell. Damp the swing first, then fire.`, 'entry');
+          if (v > D.chuteV) return fail('Parachute lost', `It was fired at ${Math.round(v)} m/s, well over what the canopy is built to take. The real one was deployed at about 420 m/s and loaded to some 30 tonnes even so.`, 'entry');
+          if (Math.abs(E.aoa) > D.chuteAoa) return fail('Parachute fouled', `It went out with the capsule swinging ${Math.round(Math.abs(E.aoa))}° off line, and the lines wrapped the backshell. Damp the swing first, then fire.`, 'entry');
           E.down = downNow(); E.chuteT = E.t; E.chuteV = v; E.flash = 1; E.shake = 1.4; E.rt = 0; buzz([90, 40, 160]);
           chute.group.visible = true;
           say(v < 356 ? 'Fired late, on the backup trigger. You have flown long.' : `Parachute out at ${Math.round(v)} m/s. ${FACTS.chuteDia} m of canopy, open in under a second.`, 4);
           document.body.dataset.edl = 'open';
-          $('edl-prompt').innerHTML = 'Parachute open. Slowing from supersonic to about 320 km/h.';
+          prompt('Parachute open. Slowing from supersonic to about 320 km/h.');
         }
       } else {
         E.rt += dt;
@@ -1178,7 +1203,7 @@ export function createEDL(ctx) {
       E.pos.addScaledVector(E.vel, dm); E.t += dm;
       hazard.mesh.material.opacity = Math.min(1, E.st / 2.5);
       if (!E.saidTRN && E.st > 4.2) { E.saidTRN = true; say('Red is rock, slope, sand or crater. Green is where a rover can stand.', 4); }
-      if (a < 2500) $('edl-prompt').innerHTML = TOUCH ? 'Tap <b>DEPLOY</b> to drop free of the backshell.' : '<b>SPACE</b> drops free of the backshell.';
+      if (a < 2500 && !E.saidSep) { E.saidSep = true; prompt(TOUCH ? 'Tap <b>DEPLOY</b> to drop free of the backshell.' : '<b>SPACE</b> drops free of the backshell.'); }
       if ((action && a < 2500) || a < 1500) {
         const late = a < 1500;
         action = false; E.sepAlt = a;
@@ -1186,7 +1211,7 @@ export function createEDL(ctx) {
         scene.attach(shell.group); E.shellV = new THREE.Vector3(E.vel.x + 9, -58, E.vel.z + 5);
         stage.group.visible = true; rover.visible = true; bridles.visible = false;
         aimRing.visible = true;
-        if (late) E.fuel -= 40;
+        if (late) E.fuel -= D.lateFuel;
         setStage('powered'); E.shake = 0.8; buzz(70);
         say(late ? 'Separated late on the backup trigger. That cost fuel.' : `Backshell separation at ${Math.round(a)} m. Eight engines lit.`, 3.5);
       }
@@ -1209,7 +1234,7 @@ export function createEDL(ctx) {
       const want = E.fuel > 0 ? -vTarget(a - E.drop) : E.vel.y - 3.71 * dm;
       E.vel.y += clamp(want - E.vel.y, -5 * dm, 16 * dm);
       E.pos.addScaledVector(E.vel, dm); E.t += dm;
-      E.fuel = Math.max(0, E.fuel - (3.4 + 2.4 * (Math.abs(ix) + Math.abs(iz)) * (s === 'crane' ? 0.3 : 1)) * dm);
+      E.fuel = Math.max(0, E.fuel - (D.fuelA + D.fuelB * (Math.abs(ix) + Math.abs(iz)) * (s === 'crane' ? 0.3 : 1)) * dm);
 
       // the pieces left behind
       if (shell.group.parent === scene) { shell.group.position.addScaledVector(E.shellV, dm); if (shell.group.position.y < ground - 30) scene.remove(shell.group); }
@@ -1307,7 +1332,7 @@ export function createEDL(ctx) {
     const hs = Math.hypot(E.vel.x, E.vel.z), vs = Math.abs(E.vel.y);
     const hz = hazard.grid.hazardAt(E.pos.x, E.pos.z);
     if (hz) return fail('Down, but not safely', 'The wheels came down on ground the hazard map had marked red — rock, sand, a crater wall or a steep slope. Terrain-Relative Navigation exists to steer away from exactly this.', 'terminal');
-    if (hs > 1.8 || vs > 2.2) return fail('Too fast at touchdown', `The rover met the ground at ${vs.toFixed(1)} m/s down and ${hs.toFixed(1)} m/s sideways. The real touchdown was at 0.75 m/s, about walking pace.`, 'terminal');
+    if (hs > D.hs || vs > D.vs) return fail('Too fast at touchdown', `The rover met the ground at ${vs.toFixed(1)} m/s down and ${hs.toFixed(1)} m/s sideways. The real touchdown was at 0.75 m/s, about walking pace.`, 'terminal');
     E.flyV = new THREE.Vector3(0, 0.5, 0);
     bridles.visible = false; aimRing.visible = goalRing.visible = false; hazard.mesh.visible = false;
     ctx.settleRover(E.pos.x, E.pos.z);
@@ -1369,24 +1394,24 @@ export function createEDL(ctx) {
       const sp = clamp((560 - v) / (560 - 340), 0, 1);
       $('edl-speed-pin').style.left = (sp * 100) + '%';
       $('edl-range-pin').style.left = clamp(50 + dn * 7, 2, 98) + '%';
-      $('edl-speed').classList.toggle('ok', v <= 500 && v >= 352);
+      $('edl-speed').classList.toggle('ok', v <= D.chuteV && v >= 352);
     }
     if (E.flash > 0) { E.flash = Math.max(0, E.flash - 0.05); $('edl-flash').style.opacity = E.flash; }
 
     // attitude: a running trace of the swing, against the bands that matter
     $('edl-g').parentElement.classList.toggle('warn', g > 12.5);
     if (E.stage === 'entry' || (E.stage === 'chute' && E.chuteT < 0)) {
-      const W2 = att.canvas.width, H2 = att.canvas.height, my = H2 / 2, K2 = (H2 / 2 - 3) / AOA_LOST;
+      const W2 = att.canvas.width, H2 = att.canvas.height, my = H2 / 2, K2 = (H2 / 2 - 3) / D.aoaLost, AOA_WARN = D.aoaWarn, AOA_LOST = D.aoaLost, PS = D.pitch;      // easy mode draws the swing the way the stick moves it
       att.clearRect(0, 0, W2, H2);
       att.fillStyle = 'rgba(224,104,90,.22)'; att.fillRect(0, 0, W2, H2);
       att.fillStyle = 'rgba(224,170,90,.22)'; att.fillRect(0, my - AOA_WARN * K2, W2, AOA_WARN * K2 * 2);
       att.fillStyle = 'rgba(111,207,127,.28)'; att.fillRect(0, my - 5 * K2, W2, 10 * K2);
       att.strokeStyle = 'rgba(242,228,190,.25)'; att.beginPath(); att.moveTo(0, my); att.lineTo(W2, my); att.stroke();
       att.strokeStyle = '#F2E4BE'; att.lineWidth = 1.6; att.beginPath();
-      const n = E.att.length; E.att.forEach((v, i) => att[i ? 'lineTo' : 'moveTo'](W2 - (n - 1 - i) * (W2 / 200), my - clamp(v, -AOA_LOST, AOA_LOST) * K2)); att.stroke();
+      const n = E.att.length; E.att.forEach((v, i) => att[i ? 'lineTo' : 'moveTo'](W2 - (n - 1 - i) * (W2 / 200), my - clamp(v * PS, -AOA_LOST, AOA_LOST) * K2)); att.stroke();
       const cur = Math.abs(E.aoa);
       att.fillStyle = cur < 5 ? '#6FCF7F' : cur < AOA_WARN ? '#E0AA5A' : '#E0685A';
-      att.beginPath(); att.arc(W2 - 3, my - clamp(E.aoa, -AOA_LOST, AOA_LOST) * K2, 3.5, 0, 6.3); att.fill();
+      att.beginPath(); att.arc(W2 - 3, my - clamp(E.aoa * PS, -AOA_LOST, AOA_LOST) * K2, 3.5, 0, 6.3); att.fill();
       $('edl-rcs').textContent = `thrusters ${Math.round(E.rcs)}%`;
       $('edl-rcs').classList.toggle('low', E.rcs < 20);
       $('edl-burn').style.width = (E.burn * 100).toFixed(1) + '%';

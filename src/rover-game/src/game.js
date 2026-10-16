@@ -16,7 +16,7 @@ import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks
          height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT } from './terrain.js';
 import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
-import { createEDL } from './edl.js';
+import { createEDL, difficulty, setDifficulty } from './edl.js';
 import { createStick, buzz } from './stick.js';
 
 /* ── tunables ─────────────────────────────────────────────────── */
@@ -562,6 +562,8 @@ const kb = (k, pre = ' ') => TOUCH ? '' : `${pre}(${k})`;
    While Mastcam-Z is open, the same drag aims the camera instead. Let go and start driving,
    and the view eases back behind the rover. */
 const ORB = { yaw: 0, pitch: 0, dist: 1, id: null, x: 0, y: 0, idle: 9 };
+// a drag that starts on the HUD must not scroll or bounce the page (iOS); briefing sheets can still scroll
+document.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
 addEventListener('pointerdown', e => {
   if (e.target !== renderer.domElement || ORB.id !== null) return;
   if (!['drive', 'fly', 'cam'].includes(S.phase)) return;
@@ -1662,6 +1664,8 @@ $('btn-drive').addEventListener('click', () => {
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
 $('btn-skip').addEventListener('click', () => { $('brief').classList.remove('on'); startSurface(null); });
+{ const marks = () => document.querySelectorAll('#diff [data-d]').forEach(b => b.classList.toggle('on', b.dataset.d === difficulty()));      // Easy or Realistic, remembered on this device
+  document.querySelectorAll('#diff [data-d]').forEach(b => b.addEventListener('click', () => { setDifficulty(b.dataset.d); marks(); })); marks(); }
 $('btn-again').addEventListener('click', () => location.reload());
 $('minimap').addEventListener('click', () => toggleMap(true));
 $('map-close').addEventListener('click', () => toggleMap(false));

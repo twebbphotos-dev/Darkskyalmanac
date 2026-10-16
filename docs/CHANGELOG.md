@@ -3,6 +3,20 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.95 / zion-sky-v364 — 2026-10-16
+- Jezero "From above": HiRISE 1 m detail strip along Perseverance's route
+  (51 one-km tiles, ~1 km wide corridor, 7 MB, offline via Download
+  everything). Fades in when zoomed below ~9 km. Each image is aligned to the
+  CTX map and keeps its color. Why: dunes, ripples and outcrops are visible
+  up close instead of a 39 m blur.
+- Viewer: the mouse wheel zooms the 3D view instead of scrolling the page;
+  dragging on pins and the info card no longer scrolls the page.
+- Mars Rover Simulator 3.6: Difficulty setting (Easy by default, Realistic).
+  Easy flips pitch so up means up; Realistic keeps true glider pitch and the
+  tighter 3.4 limits. Mouse drag steers on desktop. The page no longer
+  scrolls while flying. Decluttered HUD: only the current step, warnings when
+  they matter, instructions that fade. Why: easier to read and learn.
+
 ## v3.94 / zion-sky-v363 — 2026-10-16
 - Mars Rover Simulator 3.5: easier landing (gentler gusts and shears, wider
   trim, parachute and touchdown limits, less fuel use); under the parachute

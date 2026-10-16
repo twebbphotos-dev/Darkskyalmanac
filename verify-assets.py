@@ -25,7 +25,7 @@ m3 = re.search(r'const OFFLINE3D = \[(.*?)\];', src, re.S)
 if not m3: sys.exit('OFFLINE3D block not found in sw.js')
 extra = re.findall(r"'([^']+)'", re.sub(r'//[^\n]*', '', m3.group(1)))
 gone3 = [e for e in extra if not os.path.exists(os.path.join('dist', e))]
-want = [f for f in os.listdir('dist') if f.endswith('.bundle.js')] + ['models/' + f for f in os.listdir('dist/models')] + ['img/cmp/' + f for f in os.listdir('dist/img/cmp')]
+want = [f for f in os.listdir('dist') if f.endswith('.bundle.js')] + [os.path.relpath(os.path.join(r, f), 'dist').replace(os.sep, '/') for r, _, fs in os.walk('dist/models') for f in fs] + ['img/cmp/' + f for f in os.listdir('dist/img/cmp')]      # models/ includes subfolders (m20hr/ tiles)
 # The Mars rover game (rover/) rides on the same optional download.
 if os.path.isdir('dist/rover'):
     want += ['rover/'] + [os.path.relpath(os.path.join(r, f), 'dist').replace(os.sep, '/')

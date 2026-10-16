@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.6 — Easy and Realistic, mouse steering, a calmer screen
+- **Difficulty**, chosen on the briefing and remembered on the device. **Easy** (the default) keeps the 3.5 margins and flips pitch so it works the way it looks: push up and the capsule's nose, and its trace on the attitude strip, go up. **Realistic** restores the 3.4 margins and the flight-software sense of pitch (up raises the angle of attack).
+- **Mouse steering** on desktop: drag anywhere on the scene during the landing, like a thumbstick (110 px is full deflection).
+- **No accidental scrolling**: a drag that starts on the HUD no longer scrolls or bounces the page on phones.
+- **Less on screen**: entry shows altitude and speed (load only when dangerous); after the parachute, altitude, descent, drift and fuel. One stage chip; no bank readout or legend; thruster level only when low; instructions fade after 7 s.
+
 ## What changed in 3.5 — an easier, more cinematic landing; a bigger crater floor
 - **Easier landing.** Gusts and density shears are gentler, the capsule can swing 30° (was 26°) before it flips and 12° (was 10°) before the backshell heats, and heating builds more slowly. Pitch thrusters and the descent stage use less propellant. The parachute accepts up to 500 m/s (was 478) and 18° of swing (was 15°). Touchdown allows 2.2 m/s down and 1.8 m/s sideways.
 - **Real Jezero under the parachute.** The country beyond the drivable terrain is now the real crater in 3D, from the Dark Sky Almanac's USGS CTX elevation mosaic (`../models/jezero.bin`, heights doubled), draped with a correctly registered 60 km CTX photo map (`img/jezero-region.jpg`, made by `src/jezero-crater/region.py`).

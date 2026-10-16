@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v363';
+const CACHE = 'zion-sky-v364';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -77,7 +77,21 @@ const OFFLINE3D = [
   'spacecraft.bundle.js','voyager.bundle.js',
   'models/apollo.glb', 'models/cassini.glb', 'models/curiosity.glb', 'models/earth-leo-clouds.jpg',
   'models/earth-leo.jpg', 'models/hubble.glb', 'models/ingenuity.glb', 'models/iss.glb',
-  'models/jezero.bin', 'models/jezero.jpg', 'models/jezero-wide.jpg', 'models/jezero-route.json', 'models/jwst.glb', 'models/lm.glb', 'models/lrv.glb', 'models/moon-a17.bin',
+  'models/jezero.bin', 'models/jezero.jpg', 'models/jezero-wide.jpg', 'models/jezero-route.json',
+  // HiRISE detail tiles along Perseverance's route (src/jezero-crater/hirise.py), about 7 MB
+  'models/m20hr/index.json', 'models/m20hr/-14_0.jpg', 'models/m20hr/-14_1.jpg', 'models/m20hr/-13_-1.jpg',
+  'models/m20hr/-13_0.jpg', 'models/m20hr/-13_1.jpg', 'models/m20hr/-12_-2.jpg', 'models/m20hr/-12_-1.jpg',
+  'models/m20hr/-12_0.jpg', 'models/m20hr/-12_1.jpg', 'models/m20hr/-11_-2.jpg', 'models/m20hr/-11_-1.jpg',
+  'models/m20hr/-11_0.jpg', 'models/m20hr/-11_1.jpg', 'models/m20hr/-10_-2.jpg', 'models/m20hr/-10_-1.jpg',
+  'models/m20hr/-10_0.jpg', 'models/m20hr/-9_-4.jpg', 'models/m20hr/-9_-3.jpg', 'models/m20hr/-9_-2.jpg',
+  'models/m20hr/-9_-1.jpg', 'models/m20hr/-8_-4.jpg', 'models/m20hr/-8_-3.jpg', 'models/m20hr/-8_-2.jpg',
+  'models/m20hr/-7_-4.jpg', 'models/m20hr/-7_-3.jpg', 'models/m20hr/-6_-4.jpg', 'models/m20hr/-6_-3.jpg',
+  'models/m20hr/-6_-2.jpg', 'models/m20hr/-5_-4.jpg', 'models/m20hr/-5_-3.jpg', 'models/m20hr/-5_-2.jpg',
+  'models/m20hr/-4_-3.jpg', 'models/m20hr/-4_-2.jpg', 'models/m20hr/-4_-1.jpg', 'models/m20hr/-4_0.jpg',
+  'models/m20hr/-3_-3.jpg', 'models/m20hr/-3_-2.jpg', 'models/m20hr/-3_-1.jpg', 'models/m20hr/-3_0.jpg',
+  'models/m20hr/-2_-2.jpg', 'models/m20hr/-2_-1.jpg', 'models/m20hr/-1_-2.jpg', 'models/m20hr/-1_-1.jpg',
+  'models/m20hr/-1_0.jpg', 'models/m20hr/-1_1.jpg', 'models/m20hr/0_-2.jpg', 'models/m20hr/0_-1.jpg',
+  'models/m20hr/0_0.jpg', 'models/m20hr/0_1.jpg', 'models/m20hr/1_-2.jpg', 'models/m20hr/1_-1.jpg', 'models/jwst.glb', 'models/lm.glb', 'models/lrv.glb', 'models/moon-a17.bin',
   'models/perseverance.glb', 'models/shuttle.glb', 'models/voyager1.glb',
   'img/cmp/carina-hubble.jpg', 'img/cmp/carina-webb.jpg', 'img/cmp/deep-field-hubble.jpg',
   'img/cmp/deep-field-webb.jpg', 'img/cmp/pillars-hubble.jpg', 'img/cmp/pillars-webb.jpg',
