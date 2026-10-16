@@ -11,7 +11,9 @@ from scipy import ndimage
 from PIL import Image
 LIST, ROUTE, CTXO, JPG, OUT = sys.argv[1:6]
 R = 3396190.; LAT1, LON1 = 18.4447, 77.4508; k = R * math.pi / 180; CL = math.cos(math.radians(LAT1))
-T, PX, BUF = 1024, 1.0, 450.                     # tile metres, metres per pixel, corridor half-width
+T, PX, BUF = int(os.environ.get('HR_T', 1024)), float(os.environ.get('HR_PX', 1)), float(os.environ.get('HR_BUF', 450))      # tile metres, metres per pixel, corridor half-width
+NT = int(round(T / PX))                           # pixels across a tile
+# the overview level for the zoomed-out view: HR_T=4096 HR_PX=4 HR_BUF=2500 (models/m20mid/)
 os.makedirs(OUT, exist_ok=True)
 # landing-site frame (x east, z south, metres) <-> source projection (X = R*lon, Y = R*lat, Mars 2015 sphere, clon 0)
 toXY = lambda x, z: (R * math.radians(LON1) + x / CL, R * math.radians(LAT1) - z)
@@ -61,8 +63,8 @@ def align(o, d):                                   # metres to add to the image'
   shift[o['id']] = sh; print('align', o['id'], sh, 'peak %.2f' % pk); return sh
 index = []
 for tx, tz in mine:
-  x0, z0 = tx * T, tz * T; g = (np.arange(T) + .5) * PX; X, Z = np.meshgrid(x0 + g, z0 + g)
-  det = np.zeros((T, T), np.float32); wsum = np.zeros((T, T), np.float32)
+  x0, z0 = tx * T, tz * T; g = (np.arange(NT) + .5) * PX; X, Z = np.meshgrid(x0 + g, z0 + g)
+  det = np.zeros((NT, NT), np.float32); wsum = np.zeros((NT, NT), np.float32)
   for o in L:
     b = o['bbox']; lon0, lat0 = LON1 + x0 / (k * CL), LAT1 - (z0 + T) / k; lon1, lat1 = LON1 + (x0 + T) / (k * CL), LAT1 - z0 / k
     if b['xmax'] < lon0 or b['xmin'] > lon1 or b['ymax'] < lat0 or b['ymin'] > lat1: continue
@@ -74,9 +76,9 @@ for tx, tz in mine:
     a = d.read(1, window=win, out_shape=(nh, nw), resampling=Resampling.average, boundless=True, fill_value=0).astype(np.float32)
     ok = a > 0
     if ok.mean() < .02: continue
-    lp = ndimage.gaussian_filter(np.where(ok, a, 0), 40) / np.maximum(ndimage.gaussian_filter(ok * 1., 40), 1e-3)
+    lp = ndimage.gaussian_filter(np.where(ok, a, 0), 40 / PX) / np.maximum(ndimage.gaussian_filter(ok * 1., 40 / PX), 1e-3)
     dd = np.where(ok, a / np.maximum(lp, 1), 1.); dd = 1 + np.clip((dd - 1) / max(dd[ok].std(), 1e-3) * .14, -.6, .6)      # fine detail, contrast evened between images
-    w = np.clip(ndimage.distance_transform_edt(ok) / 60., 0, 1) ** 2
+    w = np.clip(ndimage.distance_transform_edt(ok) / (60. / PX), 0, 1) ** 2
     rr, cc = (Z - z0 + 20) / ((Ya - Yb) / nh) - .5, (X - x0 + 20) / ((Xb - Xa) * CL / nw) - .5      # the window was already read shifted by the alignment
     di = ndimage.map_coordinates(dd, [rr, cc], order=1, mode='constant', cval=1); wi = ndimage.map_coordinates(w, [rr, cc], order=1, mode='constant', cval=0)
     wi = wi * (1 - np.clip(wsum, 0, 1))           # earlier (better) images keep what they have
@@ -85,7 +87,7 @@ for tx, tz in mine:
   det = np.where(wsum > 0, det / np.maximum(wsum, 1e-6), 1.); cover = np.clip(wsum, 0, 1)
   base = col_at(X, Z)
   rgb = base * (1 + (det[..., None] - 1) * cover[..., None])
-  ts = set(tiles); f = np.ones(T, np.float32); ramp = np.clip(g / 80., 0, 1)      # where no tile follows, the detail fades out over 80 m instead of stopping at a straight edge
+  ts = set(tiles); f = np.ones(NT, np.float32); ramp = np.clip(g / 80., 0, 1)      # where no tile follows, the detail fades out over 80 m instead of stopping at a straight edge
   fx = (ramp if (tx - 1, tz) not in ts else f) * (ramp[::-1] if (tx + 1, tz) not in ts else f); fz = (ramp if (tx, tz - 1) not in ts else f) * (ramp[::-1] if (tx, tz + 1) not in ts else f)
   fade = (fz[:, None] * fx[None, :])[..., None]; rgb = base + (rgb - base) * fade
   Image.fromarray(np.clip(rgb, 0, 255).astype(np.uint8)).save(f'{OUT}/{tx}_{tz}.jpg', quality=82, optimize=True, progressive=True)

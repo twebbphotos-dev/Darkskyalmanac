@@ -607,10 +607,14 @@ function showPhoto(src, cap, pano) {
   lb.classList.add('on'); document.body.style.overflow = 'hidden';
   const pan = lb.querySelector('.sc-lightpan'), img = pan.firstChild, mid = () => { pan.scrollLeft = (pan.scrollWidth - pan.clientWidth) / 2; };
   if (pano) { img.complete ? mid() : img.addEventListener('load', mid); }
-  let dragX = null, start = 0;      // a mouse can drag it too
-  pan.onpointerdown = e => { if (e.pointerType !== 'mouse') return; dragX = e.clientX; start = pan.scrollLeft; pan.setPointerCapture(e.pointerId); };
-  pan.onpointermove = e => { if (dragX !== null) pan.scrollLeft = start - (e.clientX - dragX); };
-  pan.onpointerup = () => { dragX = null; };
+  img.draggable = false;      // otherwise the browser starts dragging the picture itself and the pan stalls
+  let dragX = null, lastX = 0, lastT = 0, vel = 0, coast = 0, moved = 0;      // a mouse drags it like a finger, and it coasts on when let go
+  pan.onpointerdown = e => { if (e.pointerType !== 'mouse' || e.button) return; e.preventDefault(); cancelAnimationFrame(coast); dragX = lastX = e.clientX; lastT = performance.now(); vel = 0; moved = 0; pan.setPointerCapture(e.pointerId); pan.classList.add('grab'); };
+  pan.onpointermove = e => { if (dragX === null) return; const t = performance.now(), dx = e.clientX - lastX; pan.scrollLeft -= dx; moved += Math.abs(dx); vel = .8 * (dx / Math.max(1, t - lastT)) + .2 * vel; lastX = e.clientX; lastT = t; };
+  pan.onpointerup = pan.onpointercancel = () => { if (dragX === null) return; pan.classList.remove('grab'); dragX = null; if (performance.now() - lastT > 80) vel = 0;
+    let v = vel * 16, prev = performance.now(); const step = now => { const k = Math.min(3, (now - prev) / 16); prev = now; pan.scrollLeft -= v * k; v *= Math.pow(.94, k); if (Math.abs(v) > .3) coast = requestAnimationFrame(step); }; coast = requestAnimationFrame(step); };
+  pan.onwheel = pano ? e => { if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) { e.preventDefault(); pan.scrollLeft += e.deltaY; } } : null;      // the scroll wheel pans a panorama sideways
+  pan.onclick = e => { if (moved > 4) e.stopPropagation(); };      // a drag that ends off the picture is not a tap to close
 }
 $('sc-light').addEventListener('click', e => { if (e.target.closest('.sc-lightx') || !e.target.closest('.sc-lightpan img')) { $('sc-light').classList.remove('on'); document.body.style.overflow = ''; } });
 addEventListener('keydown', e => { if (e.key === 'Escape' && $('sc-light').classList.contains('on')) { $('sc-light').classList.remove('on'); document.body.style.overflow = ''; } });
@@ -630,25 +634,45 @@ function roverRoute(J, R, labels) {
   if (pp.length) { const g2 = new THREE.BufferGeometry(); g2.setAttribute('position', new THREE.Float32BufferAttribute(pp, 3)); const pts = new THREE.Points(g2, dp); pts.frustumCulled = false; pts.renderOrder = 4 + n; grp.add(pts); }
   grp.userData = { U, dm, dp, legend: R.drives.map((d, i) => '<span><i style="background:' + YEARS[i % YEARS.length] + '"></i>' + d[0] + '</span>').join('') }; return grp;
 }
-/* HiRISE detail along the route (models/m20hr/, made by src/jezero-crater/hirise.py): 1 km tiles at 1 m a pixel,
+/* HiRISE detail (made by src/jezero-crater/hirise.py): models/m20mid/, 4 km tiles at 4 m a pixel over the whole drive, for the
+   zoomed-out view; models/m20hr/, 1 km tiles at 1 m a pixel along the route itself,
    the CTX map's colours with HiRISE's fine texture — dunes, ripples, boulder fields. Each tile is laid on the
    drawn surface and loads only when the camera comes within a few kilometres; far ones let their pictures go. */
-function detailTiles(J, idx) {
-  const grp = new THREE.Group(), T = idx.size, N = 33, list = [], loader = new THREE.TextureLoader();
+/* Where the strip ends, the detail frays out over a few hundred metres along a ragged, noisy line (continuous from tile to tile)
+   instead of stopping at a straight tile edge. */
+const HR_EDGE = `
+  float hrH( vec2 p ) { return fract( sin( dot( p, vec2( 127.1, 311.7 ) ) ) * 43758.5453 ); }
+  float hrN( vec2 p ) { vec2 i = floor( p ), f = fract( p ); f = f * f * ( 3.0 - 2.0 * f );
+    return mix( mix( hrH( i ), hrH( i + vec2( 1, 0 ) ), f.x ), mix( hrH( i + vec2( 0, 1 ) ), hrH( i + vec2( 1, 1 ) ), f.x ), f.y ); }
+  float hrEdge( vec2 uv, float T ) {
+    vec2 w = hrO + vec2( uv.x, 1.0 - uv.y ) * T;
+    float n = hrN( w / 260.0 ) * .55 + hrN( w / 90.0 + 17.0 ) * .3 + hrN( w / 30.0 + 41.0 ) * .15;
+    float d = 1e5;
+    if ( hrOpen.x > .5 ) d = min( d, uv.x * T ); if ( hrOpen.y > .5 ) d = min( d, ( 1.0 - uv.x ) * T );
+    if ( hrOpen.z > .5 ) d = min( d, ( 1.0 - uv.y ) * T ); if ( hrOpen.w > .5 ) d = min( d, uv.y * T );
+    return smoothstep( hrE.x, hrE.y, d + ( n - .5 ) * hrE.y ); }`;
+function detailTiles(J, idx, dir, L) {      // L: grid points across a tile, fade-out distance and height, ragged-edge width, draw order
+  const grp = new THREE.Group(), T = idx.size, N = L.N, list = [], loader = new THREE.TextureLoader();
+  const have = new Set(idx.tiles.map(t => t[0] + ',' + t[1]));
   idx.tiles.forEach(([tx, tz]) => {
     const x0 = tx * T, z0 = tz * T, pos = [], uv = [], ix = [];
     for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const x = x0 + i / (N - 1) * T, z = z0 + j / (N - 1) * T; pos.push(x, J.surf(x, z) + 3, z); uv.push(i / (N - 1), 1 - j / (N - 1)); }
     for (let j = 0; j < N - 1; j++) for (let i = 0; i < N - 1; i++) { const o = j * N + i; ix.push(o, o + N, o + 1, o + 1, o + N, o + N + 1); }
     const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); g.setIndex(ix);
-    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 }));
-    m.visible = false; m.renderOrder = 1; grp.add(m);
-    list.push({ m, cx: x0 + T / 2, cz: z0 + T / 2, url: 'models/m20hr/' + tx + '_' + tz + '.jpg', state: 0 });
+    const mat = new THREE.MeshBasicMaterial({ transparent: true, opacity: 0, depthWrite: false, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 });
+    const open = [[-1, 0], [1, 0], [0, -1], [0, 1]].map(([a, b]) => have.has((tx + a) + ',' + (tz + b)) ? 0 : 1);      // sides with no tile beyond them
+    mat.onBeforeCompile = sh => { sh.uniforms.hrOpen = { value: new THREE.Vector4(...open) }; sh.uniforms.hrO = { value: new THREE.Vector2(x0, z0) }; sh.uniforms.hrE = { value: new THREE.Vector2(...L.edge) };
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 hrOpen; uniform vec2 hrO; uniform vec2 hrE;' + HR_EDGE).replace('#include <map_fragment>', '#include <map_fragment>\n diffuseColor.a *= hrEdge( vMapUv, ' + T.toFixed(1) + ' );'); };
+    mat.customProgramCacheKey = () => 'hredge';
+    const m = new THREE.Mesh(g, mat);
+    m.visible = false; m.renderOrder = L.order; grp.add(m);
+    list.push({ m, cx: x0 + T / 2, cz: z0 + T / 2, url: dir + tx + '_' + tz + '.jpg', state: 0 });
   });
   grp.userData.update = cam => {      // show and fade tiles by distance; fetch the near ones, release the far ones
     for (const t of list) {
-      const d = Math.hypot(cam.x - t.cx, cam.y, cam.z - t.cz), o = cam.y < 9000 ? 1 - Math.max(0, Math.min(1, (d - 5000) / 2500)) : 0;
+      const d = Math.hypot(cam.x - t.cx, cam.y, cam.z - t.cz), o = cam.y < L.top ? (1 - Math.max(0, Math.min(1, (d - L.far) / (L.far / 2)))) * Math.max(0, Math.min(1, (cam.y - 150) / 250)) : 0;      // none near the ground: the tiles sit 3 m up and would bury the rover
       if (o > 0 && !t.state) { t.state = 1; loader.load(t.url, tex => { tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; t.m.material.map = tex; t.m.material.needsUpdate = true; t.state = 2; }, undefined, () => { t.state = 3; }); }
-      if (d > 14000 && t.state === 2) { t.m.material.map.dispose(); t.m.material.map = null; t.state = 0; }
+      if (d > L.far * 2 && t.state === 2) { t.m.material.map.dispose(); t.m.material.map = null; t.state = 0; }
       t.m.material.opacity = t.state === 2 ? o : 0; t.m.visible = t.state === 2 && o > 0;
     }
   };
@@ -1065,7 +1089,8 @@ function buildSetting(c) {
         labels.push(['Landing site', J.at(0, 0, 200), 2500, 0, 1500], ['Jezero Crater', J.at(14700, 4500, 300), 0, 0, 20000], ['River delta', J.at(-4200, -3600, 300), 0, 0, 9000], ['Neretva Vallis', J.at(-15100, -9200, 300), 0, 0, 20000]); drawLabels();      // the old river's valley, which fed the delta
         // the drives, then a card for each named place, opened by a tap
         fetch('models/jezero-route.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(R => { if (!g.parent) return; const rt = roverRoute(J, R, labels); g.add(rt); g.userData.route = rt.userData; labels.forEach(l => { if (M20_CARDS[l[0]]) l[6] = M20_CARDS[l[0]]; }); const lg = $('sc-legend'); if (lg) lg.innerHTML = rt.userData.legend; drawLabels(); }).catch(() => {});
-        fetch('models/m20hr/index.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(ix => { if (!g.parent) return; const hr = detailTiles(J, ix); g.add(hr); g.userData.hr = hr; }).catch(() => {}); };
+        [['m20mid', { N: 65, far: 26000, top: 34000, edge: [150, 1100], order: 1 }], ['m20hr', { N: 33, far: 5000, top: 9000, edge: [40, 300], order: 2 }]].forEach(([d, L]) =>      // HiRISE at 4 m over the whole drive, and 1 m along the route itself
+          fetch('models/' + d + '/index.json').then(r => { if (!r.ok) throw 0; return r.json(); }).then(ix => { if (!g.parent) return; const hr = detailTiles(J, ix, 'models/' + d + '/', L); g.add(hr); (g.userData.hr = g.userData.hr || []).push(hr); }).catch(() => {})); };
       fetch('models/jezero.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => { dem = new Int16Array(b); done(); }).catch(() => {});
       T.load('models/jezero.jpg', t => { map = t; done(); }); }
     g.add(g.userData.rocks = rocks(matchMedia('(max-width:600px)').matches ? 450 : 750, 3.5, 70, 0x3d2519, 5, (x, z) => Math.hypot(x, z) < 3.8 || Math.hypot(x + 2.5, z - 2.7) < 1.5 || (x > -1.8 && x < 7 && z > -2 && z < 9.5), .22));      // nothing near the rover, the helicopter, the lane the rover drives down, or right in front of the camera that follows it
@@ -1432,7 +1457,7 @@ function place() {
     el.style.opacity = vis ? 1 : 0; el.style.pointerEvents = vis ? 'auto' : 'none'; });
   $('sc-labels').querySelectorAll('.vg-lab').forEach(el => { const l = skyLabels[+el.dataset.i]; _v.copy(l[1]).project(camera);
     if (check && CRAFT[craftKey].env === 'moon') { _d.copy(l[1]).sub(camera.position); ray.far = _d.length(); ray.set(camera.position, _d.normalize()); el.dataset.hid = ray.intersectObjects(pickables, true).length ? '1' : ''; }      // a label behind the vehicle is hidden by it
-    const far = camera.position.distanceTo(l[1]), on = !el.dataset.hid && _v.z < 1 && Math.abs(_v.x) < .93 && Math.abs(_v.y) < .93 && (camera.fov > 22 || l[3]) && !(l[2] && far < l[2]) && !(l[3] && far > l[3]) && !(l[4] && camera.position.y < l[4]); el.style.opacity = on ? 1 : 0; if (l[6]) el.style.pointerEvents = on ? 'auto' : 'none';
+    const far = camera.position.distanceTo(l[1]), on = !el.dataset.hid && _v.z < 1 && Math.abs(_v.x) < .93 && Math.abs(_v.y) < .93 && (camera.fov > 22 || l[3]) && !(l[2] && far < l[2]) && !(l[3] && far > l[3]) && !(l[4] && camera.position.y < (mapMode && l[4] <= 1500 ? 150 : l[4])); el.style.opacity = on ? 1 : 0; if (l[6]) el.style.pointerEvents = on ? 'auto' : 'none';
     let side = l[5]; if (on) { const x = (_v.x + 1) / 2 * w; if (side === 'L' && x - 38 - el.offsetWidth < 4) side = 0; if (!side && x + 16 + el.offsetWidth > w - 4) el.style.opacity = 0; }      // a label that would run off the left edge moves to the right of its point; off the right edge, it is hidden rather than cut
     el.style.transform = 'translate(' + ((_v.x + 1) / 2 * w).toFixed(1) + 'px,' + ((1 - _v.y) / 2 * h).toFixed(1) + 'px)' + (side === 'L' ? ' translate(-100%,0) translateX(-22px)' : side === 'T' ? ' translate(-50%,-15px) translateX(-11px)' : side === 'B' ? ' translate(-20px,12px)' : ''); });
 }
@@ -1454,10 +1479,11 @@ function marsCam() {      // after the controls move the camera, so the sky is n
   const cc = CRAFT[craftKey], u = world && world.userData; if (!cc || cc.env !== 'mars' || !camera || !u || !u.sky) return;
   if (mapMode && !tween) { const t = controls.target, lim = JZ.W / 2 - 4000, dx = Math.max(JZ.C[0] - lim, Math.min(JZ.C[0] + lim, t.x)) - t.x, dz = Math.max(JZ.C[1] - lim, Math.min(JZ.C[1] + lim, t.z)) - t.z; if (dx || dz) { t.x += dx; t.z += dz; camera.position.x += dx; camera.position.z += dz; } }      // keep the map under the view
   const y = Math.max(0, camera.position.y); u.sky.position.copy(camera.position);
-  if (u.hr) u.hr.userData.update(camera.position);
+  if (u.hr) u.hr.forEach(h => h.userData.update(camera.position));
   if (!lookView) { const nr = Math.min(150, Math.max(.03, camera.position.distanceTo(controls.target) * .003)); if (Math.abs(nr - camera.near) > camera.near * .2) { camera.near = nr; camera.updateProjectionMatrix(); } }
   if (scene.fog) { scene.fog.near = 25 + y * 1.2; scene.fog.far = 220 + y * 6; const t = Math.max(0, Math.min(1, (y - 50) / 2000)); scene.fog.color.lerpColors(FOG_LOW, FOG_HIGH, t * t * (3 - 2 * t)); }      // from the air the distance fades into the dusty horizon of the sky dome
-  if (u.route) { const o = Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.dp.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+  // over the map the route stays on down to a few hundred metres
+  if (u.route) { const o = mapMode ? Math.max(0, Math.min(1, (y - 120) / 300)) : Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.dp.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   if (u.crater) {      // the rover's patch of close-up ground (a repeating texture) fades out as the camera climbs, leaving the real crater
     u.crater.visible = y > 20; const f = Math.max(0, Math.min(1, (y - 40) / 80));

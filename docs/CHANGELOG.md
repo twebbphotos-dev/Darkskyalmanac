@@ -3,6 +3,18 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.96 / zion-sky-v365 — 2026-10-16
+- Jezero "From above": a 4 m HiRISE overview layer covers the whole drive
+  area (13 tiles, 2.4 MB), so the map stays sharp when zoomed out to
+  ~30 km. Strip edges now fray out along a ragged line instead of a hard
+  rectangle. The route, pins and names stay on down to ~150 m.
+  Why: zoomed out it fell back to the 39 m CTX blur; tile edges looked boxy.
+- Fix: the 1 m tiles sat 3 m above the ground in every view and buried the
+  rover in Overview. They now show only from 150 m up.
+- Panorama viewer: mouse drag pans smoothly and coasts (the browser's own
+  image drag was hijacking it); the scroll wheel pans sideways; a drag no
+  longer closes the viewer.
+
 ## v3.95 / zion-sky-v364 — 2026-10-16
 - Jezero "From above": HiRISE 1 m detail strip along Perseverance's route
   (51 one-km tiles, ~1 km wide corridor, 7 MB, offline via Download

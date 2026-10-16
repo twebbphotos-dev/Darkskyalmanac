@@ -319,7 +319,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 #sc-light.on{display:flex}
 .sc-lightpan{overflow:auto;-webkit-overflow-scrolling:touch;text-align:center;max-height:82vh}
 .sc-lightpan img{max-width:100%;max-height:82vh;display:inline-block;vertical-align:middle}
-#sc-light.pano .sc-lightpan{overflow-x:auto;overflow-y:hidden;white-space:nowrap;cursor:grab}
+#sc-light.pano .sc-lightpan{overflow-x:auto;overflow-y:hidden;white-space:nowrap;cursor:grab;-webkit-user-select:none;user-select:none;touch-action:pan-x}
+#sc-light.pano .sc-lightpan.grab{cursor:grabbing}
 #sc-light.pano .sc-lightpan img{max-width:none;height:min(70vh,560px);max-height:none}
 .sc-lightcap{max-width:720px;margin:12px auto 0;padding:0 16px;font:12px Montserrat,sans-serif;line-height:1.5;color:#C9BD97;text-align:center}
 .sc-lightx{position:absolute;top:12px;right:12px;width:38px;height:38px;border-radius:50%;border:1px solid rgba(203,168,90,.5);background:rgba(8,7,13,.8);color:#F2E4BE;font-size:20px;line-height:1;cursor:pointer}
