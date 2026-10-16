@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v3.94 / zion-sky-v363 — 2026-10-16
+- Mars Rover Simulator 3.5: easier landing (gentler gusts and shears, wider
+  trim, parachute and touchdown limits, less fuel use); under the parachute
+  the camera circles the capsule over the real crater in 3D; correctly
+  registered CTX map of the landing country; roaming radius 280 -> 500 m.
+  Why: more forgiving, more cinematic, more of the real ground to drive.
+- Jezero cards: photos for Wildcat Ridge, Belva Crater and Lookout Hill. Card
+  photos open full screen; panoramas fill the height and pan sideways. Why:
+  panoramas were cropped to a sliver.
+
 ## v3.93 / zion-sky-v361 — 2026-10-16
 - Jezero view: a milestone card for every year. New: Wildcat Ridge (2022,
   strongest organic signal), Belva Crater (2023), Lookout Hill (2024, top of
