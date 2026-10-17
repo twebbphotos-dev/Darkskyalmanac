@@ -237,13 +237,14 @@ function routeClear(x, z, s) {
   const h = Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1;      // a steady random number for this spot
   if (SITE.clear && SITE.clear.some(c => Math.hypot(x - c.x, z - c.z) < c.r)) return s > 0.14 || h < 0.6;
   if (s <= 0.14) return false;
-  const d = routeDist(x, z);
-  return s > 0.36 ? d < (EASY ? 6.5 : 4.5) : d < (EASY ? 3.6 : 2.6) && h < (EASY ? 0.9 : 0.7);
+  const d = routeDist(x, z), wob = 0.6 + 0.8 * (0.5 + 0.5 * Math.sin(x * 0.11 + z * 0.07) * Math.cos(x * 0.05 - z * 0.13));      // a ragged edge, not a lane
+  return s > 0.36 ? d < (EASY ? 6.5 : 4.5) * wob : d < (EASY ? 3.6 : 2.6) * wob && h < (EASY ? 0.9 : 0.7);
 }
 function scatter(scans) {
   rockCount = scatterRocks(scene, {
     seed: 5150, scans,
-    boost: SITE ? (x, z) => { const d = routeDist(x, z); return d < 14 ? (EASY ? 0.25 : 0.45) : (EASY ? 1.1 : 1.7); } : null,      // block fields off the route: the real line is the good way through
+    boost: SITE ? (x, z) => { const d = routeDist(x, z), k = Math.min(1, Math.max(0, (d - 5) / 25)); return EASY ? 0.25 + k * 0.85 : 0.45 + k * 1.25; } : null,      // block fields off the route, thinning gradually toward it: the real line is the good way through
+    trail: SITE ? (() => { const p = SITE.path, out = []; for (let i = 0; i + 2 < p.length; i += 2) { const n = Math.max(1, Math.ceil(Math.hypot(p[i + 2] - p[i], p[i + 3] - p[i + 1]) / 4)); for (let k = 0; k < n; k++) out.push([p[i] + (p[i + 2] - p[i]) * k / n, p[i + 1] + (p[i + 3] - p[i + 1]) * k / n]); } return out; })() : null,
     exclude: (x, z, s) =>
       Math.hypot(x - START.x, z - START.z) < (s > 0.36 ? 9 : 3.2) ||
       S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5) || routeClear(x, z, s),
@@ -744,7 +745,7 @@ function stepRover(dt) {
   ATT.spinT = spinning ? (ATT.spinT || 0) + dt : 0;
   if (ATT.spinT > 0.8 && performance.now() - (ATT.slipToast || 0) > 8000) {
     ATT.slipToast = performance.now();
-    toast(`Wheels spinning: ${Math.round(Math.atan(Math.abs(along)) * 57.3)}° is past what they grip here. Back off, or angle across the slope.`);
+    toast(`Wheels spinning · ${Math.round(Math.atan(Math.abs(along)) * 57.3)}° is too steep. Angle across it.`, true);
   }
 
   // Past the grip limit the whole rover slides downhill; below it, any slide bleeds away.
@@ -759,7 +760,7 @@ function stepRover(dt) {
   }
   if (ATT.slipT > 0.6 && performance.now() - (ATT.slipToast || 0) > 8000) {
     ATT.slipToast = performance.now();
-    toast(sandMask(r.pos.x, r.pos.z) > 0.4 ? 'Wheels slipping in drift sand: the slope is past what they can grip.' : 'Sliding: this slope is steeper than the wheels can hold.');
+    toast(sandMask(r.pos.x, r.pos.z) > 0.4 ? 'Slipping · drift sand on a slope' : 'Sliding · too steep to hold', true);
   }
 
   const next = r.pos.clone().addScaledVector(fwdV, r.speed * dt);
@@ -768,7 +769,7 @@ function stepRover(dt) {
   const d = Math.hypot(next.x, next.z);
   if (d > PLAY_R - 8) {
     next.x *= (PLAY_R - 8) / d; next.z *= (PLAY_R - 8) / d; r.speed *= 0.4; slideV.set(0, 0);
-    if (performance.now() - edgeWarned > 9000) { edgeWarned = performance.now(); toast('The crater wall: too steep to climb. Turn back into the basin.'); }
+    if (performance.now() - edgeWarned > 9000) { edgeWarned = performance.now(); toast('Crater wall · too steep. Turn back.', true); }
   }
 
   /* Blocks too tall to climb stop the wheels; blocks taller than the belly also stop the body.
@@ -871,7 +872,7 @@ function stepRover(dt) {
   const tilt = Math.max(Math.abs(ATT.effRoll), Math.abs(ATT.effPitch));
   if (tilt > MOB.warn && performance.now() - ATT.warnT > 7000) {
     ATT.warnT = performance.now(); buzz(60);
-    toast(`Tilt ${Math.round(tilt * 57.3)}°: past the 30° the flight software allows. It would stop here.`);
+    toast(`Tilt ${Math.round(tilt * 57.3)}° · past the 30° safety limit`, true);
   }
   if (Math.min(sideM, pitchM) < 0) ATT.tipT += dt; else ATT.tipT = Math.max(0, ATT.tipT - dt * 2);
   if (ATT.tipT > 0.25 && driving) startRollover(sideM < pitchM ? 'side' : 'pitch');
@@ -953,7 +954,7 @@ function recoverRover() {
   r.pos.set(s.x, height(s.x, s.z), s.z); r.yaw = s.yaw; r.speed = 0; slideV.set(0, 0);
   ATT.tipT = 0; gReady = false; camInit = false; tracks.cut();
   S.phase = 'drive'; hud();
-  toast('Recovered to the last stable stop. In the real mission, that rollover would have ended it.');
+  toast('Recovered to the last safe stop. A real rollover would end the mission.', true);
 }
 
 /* ── tilt instrument ──────────────────────────────────────────── */
@@ -1011,7 +1012,7 @@ function reveal(o, self) {
   if (o.found) return;
   o.found = true;
   o.ring.visible = true;
-  if (self) toast(o.type === 'pano' ? `Panorama location in view: ${o.label}.` : o.type === 'sample' ? `Sample site in view: ${o.label}.` : o.site ? `${o.label} in view.` : `Outcrop in view — ${o.name.toLowerCase()} candidate.`);
+  if (self) toast(o.type === 'pano' ? `In view · panorama spot, ${o.label}` : o.type === 'sample' ? `In view · sample site, ${o.label}` : o.site ? `In view · ${o.label}` : `In view · outcrop, ${o.name.toLowerCase()}?`);
   hud();
 }
 
@@ -1036,9 +1037,9 @@ function setDown(x, z, yaw) {
 
 function launchHeli(target) {      // target {x,z}: a spot picked on the map; otherwise the ground ahead of the rover
   const h = S.heli;
-  if (NOHELI) { if (S.phase === 'drive') toast('Ingenuity is grounded: its last flight, in January 2024, damaged its rotor blades.'); return; }
-  if (S.phase !== 'drive' || h.phase !== 'landed') { if (target) toast('Ingenuity is busy. Try again once it has landed.'); return; }
-  if (S.flights <= 0) { toast('Ingenuity is out of charge for today.'); return; }
+  if (NOHELI) { if (S.phase === 'drive') toast('Ingenuity is grounded · blades broken in Jan 2024'); return; }
+  if (S.phase !== 'drive' || h.phase !== 'landed') { if (target) toast('Ingenuity is still flying'); return; }
+  if (S.flights <= 0) { toast('Ingenuity is out of charge today'); return; }
 
   S.phase = 'fly';
   S.flights--;
@@ -1064,7 +1065,7 @@ function launchHeli(target) {      // target {x,z}: a spot picked on the map; ot
   h.yaw = Math.atan2(h.to.x - h.from.x, h.to.z - h.from.z) + Math.PI;
   S.cam = 'heli';
   hud();
-  toast(h.crash ? 'Ingenuity spinning up for its 72nd flight, over the dunes at “Valinor Hills.”' : target ? 'Ingenuity spinning up — flying to the spot you picked.' : 'Ingenuity spinning up — imaging the ground ahead.');
+  toast(h.crash ? 'Ingenuity · flight 72, to “Valinor Hills”' : target ? 'Ingenuity · flying to your spot' : 'Ingenuity · scouting ahead');
 }
 
 /* A flight leg is one smooth curve: a quadratic arc in height over a straight ground track,
@@ -1201,7 +1202,7 @@ function stepHeli(dt) {
       S.phase = 'drive';
       S.cam = 'chase';
       const away = Math.round(Math.hypot(h.site.x - S.rover.pos.x, h.site.z - S.rover.pos.z));
-      toastSoon(`Ingenuity is down ${away} m out, waiting for the next recon.`);
+      toastSoon(`Ingenuity landed · ${away} m away`);
       hud();
     }
 
@@ -1228,9 +1229,9 @@ function afterCrash() {
   const h = S.heli;
   NOHELI = true; document.body.classList.add('noheli');
   S.phase = 'drive'; S.cam = 'chase';
-  toast('Hard landing. Ingenuity’s rotor blades are broken: it will never fly again.');
+  toast('Hard landing · Ingenuity will never fly again', true);
   addPhotoGoal(h.site.x, h.site.z, SITE.crash.real);
-  setTimeout(() => toast('New objective: photograph Ingenuity at Valinor Hills with Mastcam-Z. The real rover did, from about 415 m away.'), 3800);
+  setTimeout(() => toast('New objective · photograph Ingenuity (the real rover did, from 415 m)'), 3800);
   hud();
 }
 function addPhotoGoal(x, z, real) {
@@ -1263,9 +1264,9 @@ function doScan() {
       hints++;
     }
   }
-  scanNote = n ? `Ingenuity found ${n} outcrop${n > 1 ? 's' : ''} — marked on the ground.`
-               : hints ? `Nothing close, but Ingenuity glimpsed layering further out — ${hints} clue${hints > 1 ? 's' : ''} on the map${kb('M')}.`
-               : 'Nothing layered in frame. Try a different heading.';
+  scanNote = n ? `Ingenuity found ${n} outcrop${n > 1 ? 's' : ''} · marked on the ground`
+               : hints ? `Ingenuity glimpsed layers · ${hints} clue${hints > 1 ? 's' : ''} on the map${kb('M')}`
+               : 'Ingenuity saw nothing layered';
   if (!S.heli.crash) toast(scanNote);
 }
 
@@ -1275,7 +1276,7 @@ function openCam() {
   const pano = S.outcrops.find(o => o.type === 'pano' && !o.logged && Math.hypot(S.rover.pos.x - o.pos.x, S.rover.pos.z - o.pos.z) < 12);
   if (pano) { startPano(pano); return; }
   const near = S.outcrops.filter(o => o.type !== 'pano' && !o.logged && S.rover.pos.distanceTo(o.pos) < (o.range || CFG.camRange));
-  if (!near.length) { toast(S.outcrops.some(o => o.type === 'pano' && !o.logged) ? 'Nothing in Mastcam range. For a panorama, park inside the blue ring.' : 'Nothing in Mastcam range — drive closer to an outcrop.'); return; }
+  if (!near.length) { toast(S.outcrops.some(o => o.type === 'pano' && !o.logged) ? 'Nothing in range · park in the blue ring for a panorama' : 'Nothing in range · drive closer'); return; }
   S.phase = 'cam';
   S.rover.speed = 0;
 
@@ -1384,7 +1385,7 @@ function closeCam() {
 
 function capture() {
   if (S.phase !== 'cam') return;
-  if (!S.framed) { toast('Nothing centered in the frame.'); return; }
+  if (!S.framed) { toast('Nothing centered in the frame'); return; }
   const o = S.framed;
   o.logged = true;
   S.logged++;
@@ -1538,7 +1539,7 @@ $('real-link').addEventListener('click', e => { const h = $('real-link').getAttr
 
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
-  if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done. Carry on to the end of the rover’s path.' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left on the route.`); }
+  if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done · on to the end of the path' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left`); }
   else if (S.logged >= S.outcrops.length) done();
 });
 
@@ -1847,7 +1848,7 @@ function stepMarks() {
 
 /* ── HUD ──────────────────────────────────────────────────────── */
 let toastT = 0;
-function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.4; }
+function toast(m, warn) { const t = $('toast'); t.textContent = m; t.classList.toggle('warn', !!warn); t.classList.add('on'); toastT = 3.4; }      // a line in the top-left panel, above the objectives
 function toastSoon(m) { setTimeout(() => toast(m), 500); }
 
 function goalList() {      // the year level's to-do list, top left: tiny, ticked off as you go
@@ -1920,7 +1921,7 @@ function update(dt, now = performance.now()) {
   if (CRASH && !CRASH.done && S.phase === 'drive' && S.heli.phase === 'landed' && (CRASH.t += dt) > 45) launchHeli();      // flight 72 goes ahead whether you ask or not
   if (GOAL && S.phase === 'drive') {      // the end of the drive
     const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
-    if (d < 14) { if (S.logged >= S.outcrops.length) startSunset(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Finish the objectives on the route first: M shows them on the map.'); } }
+    if (d < 14) { if (S.logged >= S.outcrops.length) startSunset(); else if (!GOAL.told) { GOAL.told = true; toast(`End of the path · finish the objectives first${kb('M')}`); } }
     else if (d > 30) GOAL.told = false;
   }
 
@@ -1964,7 +1965,7 @@ $('btn-drive').addEventListener('click', () => {
   $('rover-brief').classList.remove('on');
   S.phase = 'drive'; hud();
   stepMap(1);
-  toast(SITE ? `${EASY ? 'Follow the gold dashes, Perseverance’s real route' : (NOHELI ? 'Perseverance’s real route shows in gold as you explore' : 'Perseverance’s real route shows in gold as you explore or fly Ingenuity')}: ${SITE.goalText}. Then reach the end of the rover’s path. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
+  toast(SITE ? `${EASY ? 'Follow the gold dashes, the real route' : 'The real route shows in gold as you explore'} · map${kb('M')}` : `Six outcrops to find · map${kb('M')}`);
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });

@@ -17,6 +17,11 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.20 — a natural route, quieter messages
+- **Route grading** keeps the ground's texture: the correction (graded minus raw height along the path) is smoothed over ±4 m and may hand back at most 40 cm of bump, then added to the raw height with a 2.5–10 m smoothstep shoulder. No flat bed.
+- **Rocks**: the block-free strip has a ragged, noise-modulated edge; the off-route block boost ramps from 5 to 30 m instead of stepping at 14 m; `scatterRocks({ trail })` adds 9,000 pebbles and cobbles (≤ 24 cm) in a ±4.5 m Gaussian band along the route.
+- **Messages**: `toast(m, warn)` writes one short line in `#tl`, the top-left column above `#goals`; `warn` gives it an orange edge. All messages rewritten short.
+
 ## What changed in 3.19 — flight 72
 - **2024 level re-centered** to (-8823, -2026), `playR` 900, `fine` 2.2: `site.py y2024 -8823 -2026`, `levelpath.py 2024 -8823 -2026 2.4 900`. Goals moved with it.
 - **`SITE.crash`** (Valinor Hills, game 685, -453): the level's first Ingenuity flight, or one forced after 45 s of driving, flies there and crashes (`crashDown`, phase `wreck`, 3 s hold, `afterCrash`). Ingenuity stays upright, blades scaled short; a blade fragment lies 6 m off. Then `NOHELI` turns on and `addPhotoGoal` adds a `photo` objective (range 200 m, no SuperCam laser, card with the Valinor Hills mosaic).

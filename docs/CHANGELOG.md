@@ -3,6 +3,17 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.16 / zion-sky-v385 — 2026-10-17
+- Simulator: the real route no longer looks like a graded road. Why: the
+  grading replaced the ground along it with one smooth profile and kept a
+  clean, straight-edged lane of rock-free ground. Now only the large-scale
+  correction is applied (the ground's own bumps up to 40 cm come back),
+  the shoulders fade out over 2.5–10 m, the rock-free edge is ragged, the
+  boulder fields thin gradually toward the route, and 9,000 extra pebbles
+  and small cobbles lie along it. Every route still peaks under 26°.
+- Messages ("Slipping · drift sand on a slope") are short lines in the
+  top-left panel, above the objectives; vehicle warnings get an orange edge.
+
 ## v4.15 / zion-sky-v384 — 2026-10-17
 - Fix: after a release, the phone could still run the previous version of
   the rover game (seen as v4.13's Ingenuity panel on the 2023 end card after

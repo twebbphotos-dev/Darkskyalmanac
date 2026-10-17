@@ -190,12 +190,11 @@
     border:1.5px solid #F7EBCB;padding:10px 18px;font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:#F7EBCB;font-weight:600;
     background:rgba(13,10,24,.45);backdrop-filter:blur(3px);white-space:nowrap}
   @media(max-width:720px){ #beat span{font-size:16px} #beat small{font-size:11px} body.cinema #letterbox i{height:7vh} #beat{bottom:calc(7vh + 14px)} }
-  #toast{position:fixed;left:50%;top:76px;transform:translateX(-50%) translateY(-5px);z-index:30;
-    background:rgba(13,10,24,.95);border:1px solid var(--line);border-radius:8px;
-    padding:10px 18px;font-size:11px;letter-spacing:.02em;color:var(--hi);
-    opacity:0;pointer-events:none;transition:opacity .25s,transform .25s;
-    text-align:center;max-width:78vw;backdrop-filter:blur(10px)}
-  #toast.on{opacity:1;transform:translateX(-50%) translateY(0)}
+  #tl{position:fixed;top:calc(env(safe-area-inset-top,0px) + 54px);left:12px;z-index:20;display:flex;flex-direction:column;align-items:flex-start;gap:5px;max-width:min(46vw,300px);pointer-events:none}
+  #toast{display:none;font-size:10px;line-height:1.45;color:#F2E4BE;padding:5px 9px 5px 8px;border-radius:7px;background:rgba(13,10,24,.78);border-left:2px solid var(--gold);text-shadow:0 1px 2px #000;backdrop-filter:blur(6px)}
+  #toast.warn{border-left-color:#E8955A}
+  #toast.on{display:block;animation:tlin .25s ease-out}
+  @keyframes tlin{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
 
   #loading{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;
     background:var(--bg);font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--mute)}
@@ -378,13 +377,13 @@
   #photo-img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;display:none}
   #photo-x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--hi);font-size:20px;cursor:pointer;z-index:2}
   #photo-tip{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);text-align:center;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);pointer-events:none}
-  #goals{position:fixed;top:calc(env(safe-area-inset-top,0px) + 54px);left:12px;z-index:20;font-size:10px;line-height:1.6;color:#EDE3C6;pointer-events:none;max-width:46vw;padding:5px 9px 5px 7px;border-radius:7px;background:rgba(13,10,24,.5);text-shadow:0 1px 2px #000}
+  #goals{font-size:10px;line-height:1.6;color:#EDE3C6;max-width:100%;padding:5px 9px 5px 7px;border-radius:7px;background:rgba(13,10,24,.5);text-shadow:0 1px 2px #000}
   #goals div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   #goals div::before{content:'○';display:inline-block;width:14px;color:var(--gold)}
   #goals div.ok{color:var(--mute);text-decoration:line-through}
   #goals div.ok::before{content:'●';color:#6FCF7F;text-decoration:none}
   body.cinema #goals,body.camview #goals,body.edl #goals{display:none}
-  @media(max-width:720px){ #goals{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;font-size:9px} }
+  @media(max-width:720px){ #tl{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;max-width:calc(100vw - 116px)} #goals,#toast{font-size:9px} }
   .levels{display:grid;grid-template-columns:1fr;gap:8px}
   .levels .btn{width:100%;padding:13px 14px;font-size:10px;text-align:center}
   #btn-pov{position:fixed;z-index:21;right:9px;top:calc(env(safe-area-inset-top,0px) + 324px);padding:6px 10px;font-size:8.5px;pointer-events:auto}
@@ -416,7 +415,7 @@
   </div>
 </div>
 
-<div id="goals" hidden></div>
+<div id="tl"><div id="toast"></div><div id="goals" hidden></div></div>
 <button class="btn" id="btn-pov" title="Camera: chase, wide, or from the rover">Chase</button>
 <div id="photo"><canvas id="photo-cv"></canvas><img id="photo-img" alt=""><button id="photo-x" aria-label="Close">&times;</button><div id="photo-tip">Drag to look around · pinch or scroll to zoom</div></div>
 <canvas id="minimap" width="170" height="170" title="Map"></canvas>
@@ -428,7 +427,6 @@
 <div id="shutter"></div>
 <div id="stamp"></div>
 <div id="prompt"></div>
-<div id="toast"></div>
 
 <div id="bottom">
   <div id="acts">

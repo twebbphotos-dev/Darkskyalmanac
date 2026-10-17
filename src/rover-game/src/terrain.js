@@ -331,7 +331,12 @@ function routeGrade() {
       for (let i = 1; i < n - 1; i++) if (Math.abs(hs[i + 1] - hs[i]) > lim || Math.abs(hs[i] - hs[i - 1]) > lim) { hs[i] = (hs[i - 1] + hs[i] + hs[i + 1]) / 3; steep = true; }
       if (!steep) break; }
   }
-  ROUTE = { xs, zs, hs, grid, C };
+  // Keep only the large-scale change: smoothing the correction over ±4 m hands back the ground's own small bumps,
+  // so the route stays drivable without looking like a graded road
+  const cr = new Float32Array(n), cs = new Float32Array(n);
+  for (let i = 0; i < n; i++) cr[i] = hs[i] - raw[i];
+  for (let i = 0; i < n; i++) { let t = 0, w = 0; for (let k = -4; k <= 4; k++) { const j = Math.min(n - 1, Math.max(0, i + k)), g = Math.exp(-(k * k) / 8); t += cr[j] * g; w += g; } cs[i] = cr[i] + Math.max(-0.4, Math.min(0.4, t / w - cr[i])); }      // at most 40 cm of bump handed back
+  ROUTE = { xs, zs, hs: cs, grid, C };
 }
 function heightReal(x, z) {
   const h = heightBase(x, z);
@@ -339,13 +344,12 @@ function heightReal(x, z) {
   if (!ROUTE) { ROUTE = { building: true }; routeGrade(); }
   if (ROUTE.building) return h;
   const { xs, zs, hs, grid, C } = ROUTE, cx = Math.floor(x / C), cz = Math.floor(z / C);
-  let best = 81, t = 0, tw = 0;                          // weighted over every sample within 9 m, so corners and doubled-back stretches have no step
+  let best = 100, t = 0, tw = 0;                         // the correction, weighted over every sample within 10 m, so corners and doubled-back stretches have no step
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = grid.get((cx + a) + ',' + (cz + b)); if (!l) continue;
-    for (const i of l) { const d = (xs[i] - x) * (xs[i] - x) + (zs[i] - z) * (zs[i] - z); if (d >= 81) continue;
-      const q = 1 - Math.sqrt(d) / 9; t += hs[i] * q * q; tw += q * q; if (d < best) best = d; } }
+    for (const i of l) { const d = (xs[i] - x) * (xs[i] - x) + (zs[i] - z) * (zs[i] - z); if (d >= 100) continue;
+      const q = 1 - Math.sqrt(d) / 10; t += hs[i] * q * q; tw += q * q; if (d < best) best = d; } }
   if (!tw) return h;
-  const w = smooth(9, 3.5, Math.sqrt(best));
-  return h + (t / tw - h) * w;
+  return h + (t / tw) * smooth(10, 2.5, Math.sqrt(best));      // soft shoulders, no flat bed
 }
 function heightBase(x, z) {
   const d = Math.sqrt(x * x + z * z);
@@ -803,7 +807,7 @@ export function prepScan(mesh) {
   return { geo: g, mat };
 }
 
-export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost = null }) {      // boost(x, z): more or fewer blocks here
+export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost = null, trail = null }) {      // boost(x, z): more or fewer blocks here
   const rand = rng(seed);
   const mat = rockMaterial();
 
@@ -858,6 +862,13 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (rand() > density(x, z)) continue;
     place(x, z, Math.min(0.34, 0.065 * Math.pow(0.035 + rand() * 0.965, -0.5)), false); i++;
+  }
+  // along a year level's route: pebbles and small cobbles, so the easy line looks like the ground round it
+  if (trail && trail.length) for (let i = 0; i < 9000; i++) {
+    const [px, pz] = trail[(rand() * trail.length) | 0], a = rand() * Math.PI * 2, r = Math.sqrt(-2 * Math.log(1 - rand() * 0.999)) * 4.5;
+    const x = px + Math.cos(a) * r, z = pz + Math.sin(a) * r;
+    if (rand() > 0.35 + 0.65 * density(x, z)) continue;
+    place(x, z, Math.min(0.24, 0.05 * Math.pow(0.03 + rand() * 0.97, -0.5)), false);
   }
   // rock gardens: patches strewn with blocks a wheel can just climb, 15–50 cm, the ground
   // the rover's drivers spent most of their time picking a way across
