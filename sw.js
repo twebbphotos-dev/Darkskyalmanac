@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v387';
+const CACHE = 'zion-sky-v388';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -45,7 +45,7 @@ const CRITICAL = [
   'zcl-season.js',
   // Planet & moon imagery
   'img/jupiter.jpg','img/io.jpg','img/europa.jpg','img/ganymede.jpg','img/callisto.jpg',
-  'img/mars.jpg','img/saturn.jpg','img/earth.jpg','img/moon.jpg',
+  'img/mars.jpg','img/m20/first-sunset.jpg','img/saturn.jpg','img/earth.jpg','img/moon.jpg',
   // PWA shell
   'manifest.json','icon-180.png','icon-192.png','icon-512.png','icon.svg','social.png',
   'robots.txt','sitemap.xml'
@@ -100,7 +100,7 @@ const OFFLINE3D = [
   'img/cmp/carina-hubble.jpg', 'img/cmp/carina-webb.jpg', 'img/cmp/deep-field-hubble.jpg',
   'img/cmp/deep-field-webb.jpg', 'img/cmp/pillars-hubble.jpg', 'img/cmp/pillars-webb.jpg',
   'img/cmp/southern-ring-hubble.jpg', 'img/cmp/southern-ring-webb.jpg',
-  'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg', 'img/m20/first-sunset.jpg',
+  'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg',
   // Mars rover game (rover/), opened from the Mars page: page, code, models,
   // terrain, textures and photos (about 19 MB). Same rules as the 3D models.
   'rover/',

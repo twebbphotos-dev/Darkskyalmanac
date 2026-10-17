@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.19 / zion-sky-v388 — 2026-10-17
+- Mars page: a "Blue Sunsets" card with Perseverance's first sunset photo
+  (9 November 2021) and why Martian sunsets are blue: fine dust scatters
+  blue light forward, near the Sun. The photo is now precached with the
+  pages so the card works offline.
+
 ## v4.18 / zion-sky-v387 — 2026-10-17
 - Simulator: the blue sunset is now a one-time event at the end of the 2024
   level only. Over the last minute (from about 300 m out) the sun sinks,
