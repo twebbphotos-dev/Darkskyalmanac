@@ -365,6 +365,7 @@
     #edl-guide{width:196px;padding:8px 9px} #edl-scope,#edl-key{display:none !important} #edl-tip{font-size:10.5px}
     #edl-prompt{left:10px;right:10px;bottom:auto;top:150px;max-width:86vw} #edl-call{top:98px}
   }
+#card.siteonly .row, #card.siteonly h2.rd { display: none; }
 </style>
 </head>
 <body>
@@ -384,7 +385,7 @@
   <a id="back" href="../mars.html" aria-label="Back to the Mars page">&#8249;</a>
   <div id="title">Jezero Traverse<small>Perseverance · Ingenuity</small></div>
   <div class="stats">
-    <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span>Outcrops</span></div>
+    <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span id="stat-label">Outcrops</span></div>
     <div class="stat"><b id="flights">6</b><span>Flights</span></div>
   </div>
 </div>
@@ -445,8 +446,9 @@
     </div>
     <div class="two" style="margin-top:8px"><button class="btn" data-level="1">Level 1 · 2022</button><button class="btn" data-level="2">Level 2 · 2023</button></div>
     <div class="two" style="margin-top:8px"><button class="btn" data-level="3">Level 3 · 2024</button><button class="btn" data-level="4">Level 4 · 2025</button></div>
+    <button class="btn" data-level="5" style="width:100%;margin-top:8px">Level 5 · 2026 · Beyond the rim</button>
     <div class="diff" id="diff"><span>Difficulty</span><button data-d="easy">Easy</button><button data-d="real">Realistic</button></div>
-    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.10</p>
+    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.11</p>
   </div>
 </div>
 
@@ -498,12 +500,12 @@
   <div class="card wide">
     <div id="card-n">—</div>
     <h1 id="card-name">—</h1>
-    <h2>Mastcam-Z reading</h2>
+    <h2 class="rd">Mastcam-Z reading</h2>
     <div class="row"><span>What the camera sees</span><p id="card-read"></p></div>
     <div class="row"><span>What it means</span><p id="card-mean"></p></div>
 
     <div id="real">
-      <h2>The real thing, on Mars</h2>
+      <h2 id="real-h">The real thing, on Mars</h2>
       <a id="real-link" href="#" target="_blank" rel="noopener">
         <figure id="real-fig">
           <img id="real-img" alt="">

@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.11 — objectives, and 2026
+- **Objectives, not just outcrops.** Each year level has a list of goals (`goals` in `SITES`, `terrain.js`): **analyze an outcrop** (Mastcam-Z and SuperCam, as before), **core a sample** (the same, then the coring drill seals a tube) or **take a panorama**: park inside a blue ring and the mast head turns a full circle, frame by frame. Real places get the rover's real story and NASA's photograph (the same cards as the Almanac's Perseverance map); where nothing in particular was found, the goal is one the rover really does every few days, a navigation panorama from high ground.
+  - 2022: core a sample at Wildcat Ridge. 2023: an outcrop, then the panorama from Belva's west rim. 2024: core Cheyava Falls, panorama at Lookout Hill. 2025: core Silver Mountain, navigation panorama. 2026: navigation panorama.
+- **Level 5 · 2026, beyond the rim.** 4.3 km of the year's drives west of the crater rim, on the standard scale.
+- The HUD counts objectives in the year levels.
+
 ## What changed in 3.10 — 2025: along the crater rim
 - **Level 4 · 2025.** All 6.5 km of the year's drives, starting at Silver Mountain (the rover's first core from the rim, January 2025), a few hundred metres from where 2024 ends. Same big-country settings as 2024 (750 m roaming radius, 2.4× across, 0.6× in height). Data: `site.py y2025 -11300 0`, `levelpath.py 2025 -11300 0 2.4 750`.
 

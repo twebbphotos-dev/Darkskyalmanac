@@ -3,6 +3,17 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.06 / zion-sky-v375 — 2026-10-17
+- Mars Rover Simulator 3.11: objectives. Each year level now asks for what
+  the rover really did there: core a sample (Wildcat Ridge, Cheyava Falls,
+  Silver Mountain), analyze an outcrop, or take a Mastcam-Z panorama from a
+  marked point (Belva's west rim, Lookout Hill), with NASA's photo and the
+  real story on the card. Where nothing was found, a navigation panorama
+  from high ground, which the rover really takes every few days. Why: the
+  generic outcrops didn't match the real discoveries, and the 2025 one was
+  a stand-in.
+- Level 5 · 2026, beyond the crater rim.
+
 ## v4.05 / zion-sky-v374 — 2026-10-17
 - Mars Rover Simulator 3.10: Level 4 · 2025, along the crater rim. All
   6.5 km of the year's real drives, starting at Silver Mountain beside the

@@ -137,8 +137,20 @@ addEventListener('resize', resize);
 resize();
 
 /* ── outcrops ─────────────────────────────────────────────────── */
-OUTCROP_SITES.forEach(([x, z], i) => {
-  const u = UNITS[SITE ? SITE.unit : i];
+/* In a year level the objectives are the level's goals: a rock to analyze (outcrop) or to core (sample), or a point of
+   interest for a Mastcam-Z panorama (pano), which has no rock, only a marker you can see from the start. */
+const GOALS = SITE ? SITE.goals : OUTCROP_SITES.map(([x, z], i) => ({ type: 'outcrop', x, z, unit: i }));
+const CYAN_RING = 0x7fd4e0;
+GOALS.filter(g => g.type === 'pano').forEach(g => {
+  const y = height(g.x, g.z);
+  const ringMat = new THREE.MeshBasicMaterial({ color: CYAN_RING, transparent: true, opacity: 0.8, side: THREE.DoubleSide, fog: false, depthWrite: false });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(7, 7.6, 64), ringMat);
+  ring.position.set(g.x, y + 0.2, g.z); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalAt(g.x, g.z, 5)); scene.add(ring);
+  S.outcrops.push({ type: 'pano', name: g.real.t, label: g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false });
+});
+GOALS.filter(q => q.type !== 'pano').forEach((goal, i) => {
+  const x = goal.x, z = goal.z;
+  const u = goal.unit != null ? UNITS[goal.unit] : { ...UNITS[5], name: goal.real.t };      // a real rock with no matching card: its look, its own name
   const g = makeOutcrop({
     feature: u.feature, seed: 400 + i * 131, x, z, ground: height,
     length: 4.4 + (i % 3) * 0.7, width: 2.3 + (i % 2) * 0.5,
@@ -166,8 +178,10 @@ OUTCROP_SITES.forEach(([x, z], i) => {
     pos: new THREE.Vector3(x, y, z),
     focus: new THREE.Vector3(x, y + top * 0.4, z),
     ring, ringMat, found: false, logged: false, wid: wid, top,
+    type: goal.type, label: goal.label, site: goal.real, plain: goal.unit == null,
   });
 });
+S.outcrops.sort((a, b) => GOALS.findIndex(g => g.x === a.pos.x && g.z === a.pos.z) - GOALS.findIndex(g => g.x === b.pos.x && g.z === b.pos.z));      // in route order
 
 /* level 3: Perseverance's route as a faint dashed line on the ground, and a beacon at the end of it */
 const GOAL = SITE ? (() => {
@@ -961,7 +975,7 @@ function reveal(o, self) {
   if (o.found) return;
   o.found = true;
   o.ring.visible = true;
-  if (self) toast(`Outcrop in view — ${o.name.toLowerCase()} candidate.`);
+  if (self) toast(o.site ? `${o.label} in view.` : `Outcrop in view — ${o.name.toLowerCase()} candidate.`);
   hud();
 }
 
@@ -1174,8 +1188,10 @@ function doScan() {
 /* ── Mastcam-Z ────────────────────────────────────────────────── */
 function openCam() {
   if (S.phase !== 'drive') return;
-  const near = S.outcrops.filter(o => !o.logged && S.rover.pos.distanceTo(o.pos) < CFG.camRange);
-  if (!near.length) { toast('Nothing in Mastcam range — drive closer to an outcrop.'); return; }
+  const pano = S.outcrops.find(o => o.type === 'pano' && !o.logged && Math.hypot(S.rover.pos.x - o.pos.x, S.rover.pos.z - o.pos.z) < 12);
+  if (pano) { startPano(pano); return; }
+  const near = S.outcrops.filter(o => o.type !== 'pano' && !o.logged && S.rover.pos.distanceTo(o.pos) < CFG.camRange);
+  if (!near.length) { toast(S.outcrops.some(o => o.type === 'pano' && !o.logged) ? 'Nothing in Mastcam range. For a panorama, park inside the blue ring.' : 'Nothing in Mastcam range — drive closer to an outcrop.'); return; }
   S.phase = 'cam';
   S.rover.speed = 0;
 
@@ -1209,6 +1225,28 @@ function openCam() {
   hud();
 }
 const CIN = { t: 0, dur: 2, target: null };
+/* A Mastcam-Z panorama: the mast head turns a full circle, a frame at a time, from the top of the mast. */
+const PANO = { t: 0, dur: 10, target: null, yaw0: 0, last: -1 };
+function startPano(o) {
+  S.phase = 'pano'; S.rover.speed = 0; PANO.t = 0; PANO.target = o; PANO.yaw0 = S.rover.yaw; PANO.last = -1;
+  if (!MAST.up) { MAST.raising = true; MAST.t = 0; }
+  if (roverModel) roverModel.visible = false;
+  cinema(true); hud();
+}
+function stepPano(dt) {
+  if (S.phase !== 'pano') return;
+  PANO.t += dt;
+  if (MAST.raising && PANO.t > 0.5) { MAST.raising = false; MAST.t = 1; setMast(1); MAST.up = true; }
+  const o = PANO.target, N = o.site.frames || 36, k = Math.min(N, Math.floor(PANO.t / PANO.dur * N) + 1);
+  beat('Mastcam-Z panorama', o.label[0].toUpperCase() + o.label.slice(1), `Frame ${k} of ${N} · the mast head turns a full circle, 2 m above the ground.`, true);
+  if (Math.floor(PANO.t * 3) !== PANO.last) { PANO.last = Math.floor(PANO.t * 3); $('flash').animate([{ opacity: 0.12 }, { opacity: 0 }], { duration: 160 }); }
+  if (PANO.t >= PANO.dur) {
+    o.logged = true; S.logged++; o.ringMat.color.setHex(GREEN);
+    if (roverModel) roverModel.visible = true;
+    S.phase = 'drive'; cinema(false); clearBeat(); irisIn(); hud();
+    showCard(o);
+  }
+}
 function endCine() {
   S.phase = 'cam';
   MAST.panWant = S.camYaw;
@@ -1229,7 +1267,7 @@ function beat(step, title, sub, stay = false) {
   const k = step + title + sub;
   if (k === beatKey) return; beatKey = k;
   const el = $('beat');
-  $('beat-step').textContent = `Step ${step} of 4`;
+  $('beat-step').textContent = typeof step === 'string' ? step : `Step ${step} of 4`;
   $('beat-title').textContent = title;
   $('beat-sub').textContent = sub;
   el.classList.toggle('stay', stay);
@@ -1307,6 +1345,7 @@ function stepLaser(dt) {
   if (LASER.t < 0) return;
   const dist = Math.round(S.rover.pos.distanceTo(LASER.target.focus));
   if (LASER.t < 3.0) beat(4, 'SuperCam fires', `Pulse ${Math.min(30, Math.max(0, Math.floor((LASER.t - 0.6) / 2.2 * 30)))} of 30 · infrared laser, ${dist} m. Each pulse turns a pinhead of rock into glowing plasma.`);
+  else if (LASER.target.type === 'sample' && LASER.t > 4.2) beat(4, 'Coring', 'The drill on the arm cuts a core about the width of a pencil and seals it in a titanium tube, for a return to Earth.');
   else beat(4, 'Reading the spark', 'A spectrometer splits the plasma\'s light. Its lines say which elements the rock is made of.');
   const o = LASER.target, from = MAST.head ? MAST.head.getWorldPosition(new THREE.Vector3()) : S.rover.pos.clone().add(new THREE.Vector3(0, 2.2, 0));
   const to = o.focus.clone();
@@ -1328,11 +1367,28 @@ function stepLaser(dt) {
    Image sources are tried in order — a local copy, NASA's copy — and if
    neither loads (some hosts block outside images) the link still stands. */
 function showCard(o) {
+  const done = S.outcrops.filter(q => q.logged).length, n = S.outcrops.length;
+  $('card').classList.toggle('siteonly', !!o.site && (o.type === 'pano' || o.plain));
+  if (o.site) {      // a real place: what the rover itself did here, with NASA's photograph
+    const st = o.site, img = $('real-img'), fig = $('real-fig');
+    $('card-name').textContent = o.type === 'pano' ? `Panorama · ${o.label}` : o.plain ? o.name : `${o.site.t} · ${o.name.toLowerCase()}`;
+    if (!o.plain) { $('card-read').textContent = o.read; $('card-mean').textContent = o.mean; }
+    $('card-n').textContent = `${o.type === 'sample' ? 'Sample cored' : o.type === 'pano' ? 'Panorama taken' : 'Outcrop analyzed'} · objective ${done} of ${n}`;
+    $('real-h').textContent = st.img ? 'What Perseverance did here' : (o.type === 'pano' ? 'Why panoramas matter' : 'What Perseverance did here');
+    $('real-place').textContent = `${st.t} · ${st.d}`; $('real-by').textContent = ''; $('real-note').textContent = st.x; $('real-credit').textContent = st.cap || '';
+    $('real-link').href = st.img ? '../' + st.img : '#';
+    fig.style.display = st.img ? '' : 'none'; fig.classList.remove('none', 'wait'); fig.style.aspectRatio = '';
+    if (st.img) { fig.classList.add('wait'); img.onload = () => { fig.classList.remove('wait'); fig.style.aspectRatio = String(Math.max(0.85, Math.min(3.2, img.naturalWidth / img.naturalHeight))); }; img.onerror = () => { fig.classList.remove('wait'); fig.classList.add('none'); }; img.alt = st.t; img.src = '../' + st.img; }
+    $('card-ok').textContent = o.type === 'sample' ? 'Seal the tube' : 'Log it';
+    $('card').classList.add('on'); $('card').querySelector('.card').scrollTop = 0;
+    return;
+  }
+  $('real-h').textContent = 'The real thing, on Mars'; $('real-fig').style.display = ''; $('card-ok').textContent = 'Log it';
   const r = o.real;
   $('card-name').textContent = o.name;
   $('card-read').textContent = o.read;
   $('card-mean').textContent = o.mean;
-  $('card-n').textContent = `Outcrop ${S.logged} of ${S.outcrops.length}`;
+  $('card-n').textContent = SITE ? `Outcrop analyzed · objective ${done} of ${n}` : `Outcrop ${S.logged} of ${S.outcrops.length}`;
   $('real-place').textContent = r.place;
   $('real-by').textContent = r.by;
   $('real-note').textContent = r.note;
@@ -1357,7 +1413,7 @@ function showCard(o) {
 
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
-  if (SITE) { if (S.logged >= S.outcrops.length) toast('Outcrop logged. Carry on along the route to the end of the drive, the gold beacon.'); }
+  if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done. Carry on along the route to the end of the drive, the gold beacon.' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left on the route.`); }
   else if (S.logged >= S.outcrops.length) done();
 });
 
@@ -1378,7 +1434,7 @@ function updateFraming() {
   camera.getWorldDirection(camFwd);
   let best = null, bestA = Infinity;
   for (const o of S.outcrops) {
-    if (o.logged) continue;
+    if (o.logged || o.type === 'pano') continue;      // a panorama is taken from inside its ring, not framed
     const dist = S.rover.pos.distanceTo(o.pos);
     if (dist > CFG.camRange + 8) continue;
     toT.subVectors(o.focus, camera.position).normalize();
@@ -1411,6 +1467,13 @@ function stepCamera(dt) {
     return;
   }
 
+  if (S.phase === 'pano') {      // from the mast head, turning a full circle
+    const u = Math.min(1, PANO.t / PANO.dur), a = PANO.yaw0 + Math.PI * 2 * (0.5 - 0.5 * Math.cos(Math.PI * u));      // eases in and out
+    camera.position.set(r.pos.x, r.pos.y + 2.2, r.pos.z);
+    camera.lookAt(r.pos.x - Math.sin(a) * 10, r.pos.y + 1.4, r.pos.z - Math.cos(a) * 10);
+    sky.position.copy(camera.position); aimSun(r);
+    return;
+  }
   if (S.phase === 'cine' || (S.phase === 'laser' && LASER.t >= 0)) {
     const side = new THREE.Vector3(Math.cos(r.yaw), 0, -Math.sin(r.yaw));
     const head = MAST.head ? MAST.head.getWorldPosition(new THREE.Vector3()) : r.pos.clone().add(new THREE.Vector3(0, 2.2, 0));
@@ -1644,6 +1707,7 @@ function update(dt, now = performance.now()) {
   if (heli) stepHeli(dt);
   if (MAST.mixer) stepMast(dt);
   stepLaser(dt);
+  stepPano(dt);
   stepMap(dt);
 
   // discovery rings breathe until they are logged, and stay out of the photo
@@ -1659,7 +1723,7 @@ function update(dt, now = performance.now()) {
   if (GOAL && S.phase === 'drive') {      // level 3: the end of the drive
     GOAL.beam.material.opacity = 0.22 + Math.sin(now * 0.003) * 0.08;
     const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
-    if (d < 14) { if (S.logged >= S.outcrops.length) done(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Image the outcrop half way along the route first.'); } }
+    if (d < 14) { if (S.logged >= S.outcrops.length) done(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Finish the objectives on the route first: M shows them on the map.'); } }
     else if (d > 30) GOAL.told = false;
   }
 
@@ -1694,7 +1758,7 @@ $('btn-drive').addEventListener('click', () => {
   $('rover-brief').classList.remove('on');
   S.phase = 'drive'; hud();
   stepMap(1);
-  toast(SITE ? 'Follow the gold dashes: Perseverance’s real route. One outcrop half way, then the beacon. M opens the map.' : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
+  toast(SITE ? `Follow the gold dashes, Perseverance’s real route: ${SITE.goalText}. Then the beacon. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
@@ -1702,7 +1766,11 @@ $('btn-skip').addEventListener('click', () => { $('brief').classList.remove('on'
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { location.search = '?level=' + b.dataset.level; }));
 if (SITE) {      // a year level: straight onto the ground
   $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
-  document.querySelectorAll('#rover-brief .spec span').forEach(sp => { if (sp.textContent === 'Objective') sp.nextElementSibling.textContent = 'Follow Perseverance’s route (the gold dashes), image the outcrop half way, then reach the beacon at the end of the drive. Go anywhere you like on the way'; });
+  const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
+  const list = SITE.goals.map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
+  SITE.goalText = goalText;
+  document.querySelectorAll('#rover-brief .spec span').forEach(sp => { if (sp.textContent === 'Objective') sp.nextElementSibling.textContent = `Follow Perseverance’s route (the gold dashes): ${goalText}, then reach the beacon at the end of the drive. Go anywhere you like on the way`; });
+  $('stat-label').textContent = 'Objectives';
   $('rb-p').textContent = `${SITE.text} The ground is the real one, from ${SITE.src}, ${SITE.scale}.`;
 }
 { const marks = () => document.querySelectorAll('#diff [data-d]').forEach(b => b.classList.toggle('on', b.dataset.d === difficulty()));      // Easy or Realistic, remembered on this device
