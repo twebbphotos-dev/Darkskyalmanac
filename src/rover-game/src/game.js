@@ -125,7 +125,7 @@ const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 6000);
 const { sun, sky, map, bump, sunDir } = buildMars(scene, renderer);
 document.getElementById('loadmsg').textContent = 'Loading Jezero elevation…';
 await loadDTM('dtm/');                               // the real ground, before anything is built on it
-if (DTM.on) { scene.fog.near = 60; scene.fog.far = 1900; }   // far enough to see the delta front, 2.5 km off
+if (DTM.on) { scene.fog.near = 60; scene.fog.far = SITE ? SITE.fog : 1900; }   // far enough to see the delta front, 2.5 km off
 buildTerrain(scene, map, bump);
 
 function resize() {
@@ -1283,10 +1283,13 @@ function capture() {
    into glowing plasma, and SuperCam reads the light to tell what it is made of. */
 const LASER = { t: 0, on: false, target: null };
 const beam = (() => {
-  const g = new THREE.CylinderGeometry(0.03, 0.03, 1, 8, 1, true);   // drawn far thicker than the real beam, so you can follow it g.translate(0, 0.5, 0); g.rotateX(Math.PI / 2);
+  const g = new THREE.CylinderGeometry(0.03, 0.03, 1, 8, 1, true);   // drawn far thicker than the real beam, so you can follow it
+  g.translate(0, 0.5, 0); g.rotateX(Math.PI / 2);                     // runs from its origin along +z, so lookAt and a z scale lay it from the mast to the rock
   const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ color: 0xff4a3a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   m.frustumCulled = false; m.visible = false; scene.add(m);
-  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ color: 0xffe2b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
+  const glow = (() => { const c = document.createElement('canvas'); c.width = c.height = 64; const x = c.getContext('2d'), gr = x.createRadialGradient(32, 32, 0, 32, 32, 32);      // a soft round spark, not a square
+    gr.addColorStop(0, 'rgba(255,255,255,1)'); gr.addColorStop(0.25, 'rgba(255,255,255,.6)'); gr.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = gr; x.fillRect(0, 0, 64, 64); return new THREE.CanvasTexture(c); })();
+  const sp = new THREE.Sprite(new THREE.SpriteMaterial({ map: glow, color: 0xffe2b0, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, depthWrite: false, fog: false }));
   sp.scale.setScalar(0.5); sp.visible = false; scene.add(sp);
   const lt = new THREE.PointLight(0xffc890, 0, 6); scene.add(lt);
   return { m, sp, lt };
@@ -1700,7 +1703,7 @@ document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click
 if (SITE) {      // a year level: straight onto the ground
   $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
   document.querySelectorAll('#rover-brief .spec span').forEach(sp => { if (sp.textContent === 'Objective') sp.nextElementSibling.textContent = 'Follow Perseverance’s route (the gold dashes), image the outcrop half way, then reach the beacon at the end of the drive. Go anywhere you like on the way'; });
-  $('rb-p').textContent = SITE.text + ' The ground is the real one, from HiRISE elevation and images, drawn at two-thirds scale across, so slopes come out 1.5 times steeper.';
+  $('rb-p').textContent = `${SITE.text} The ground is the real one, from ${SITE.src}, ${SITE.scale}.`;
 }
 { const marks = () => document.querySelectorAll('#diff [data-d]').forEach(b => b.classList.toggle('on', b.dataset.d === difficulty()));      // Easy or Realistic, remembered on this device
   document.querySelectorAll('#diff [data-d]').forEach(b => b.addEventListener('click', () => { setDifficulty(b.dataset.d); marks(); })); marks(); }

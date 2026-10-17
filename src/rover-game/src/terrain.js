@@ -22,13 +22,19 @@ const SITES = {
     origin: { x: -4050, z: -2290 }, unit: 0,
     text: 'On top of the delta now, beside Belva, a crater about 0.9 km across punched into it. The impact cut down through the delta’s layers; dunes now fill its floor. Perseverance drove this way in 2023 and photographed the walls from the west rim on 22 April.',
     path: [11.5, 431.6, 31.7, 391.7, 39.7, 382.9, 36.4, 395.4, 25.3, 414.7, 20.1, 417.1, 13.7, 414.4, -48.7, 380.1, -119.2, 353.1, -145.2, 334.6, -213.3, 296.0, -245.1, 268.7, -264.3, 259.4, -273.4, 251.1, -281.9, 247.2, -290.5, 237.5, -315.6, 221.1, -329.7, 206.3, -341.3, 188.9, -351.7, 161.9, -356.9, 137.3, -365.7, 129.9, -369.4, 120.4, -370.3, 101.7, -368.1, 82.6, -370.8, 33.0, -368.8, 18.1, -374.4, 18.9, -378.9, 15.7, -386.5, -5.3, -395.4, 2.1, -397.3, 8.9, -395.1, 12.4, -397.3, 13.5, -425.5, -7.5, -432.0, -4.1, -437.3, 4.5, -443.4, 4.8] },
+  3: { year: 2024, title: 'Cheyava Falls and the crater rim', files: ['y2024_site_1m.png', 'y2024_area_4m.png'], hi: 'img/y2024_hr.jpg', hiArea: 'img/y2024_area.jpg',
+    origin: { x: -9200, z: -1900 }, unit: 4, outcrop: { x: 427, z: -506 },      // “Cheyava Falls”, July 2024
+    sq: 2.4, sv: 0.6, playR: 750, fine: 2.0, mid: 3.0, fog: 4200,      // a bigger country, squeezed harder so the whole climb fits
+    scale: 'drawn at under half scale across and 60% in height, so slopes come out about 1.4 times steeper', src: 'CTX stereo elevation and HiRISE images',
+    text: 'In July 2024, in Neretva Vallis, the channel where the river once ran into the lake, Perseverance found “Cheyava Falls”: an arrowhead-shaped rock with white veins of calcium sulfate and tiny “leopard spots”, pale patches with dark rims. On Earth, marks like that can be left by microbes living on chemical energy in rock. The rover drilled a sample, and in 2025 NASA called it the clearest potential sign of ancient life yet found on Mars. Then came the climb: about 500 m up the crater rim to Lookout Hill, reached in December 2024, with Jezero spread out behind.',
+    path: [511.6,-457.9,428.1,-447.8,394.7,-455.0,389.0,-463.1,391.9,-483.7,403.5,-495.4,424.4,-505.1,419.0,-514.0,417.4,-503.8,387.4,-480.5,387.7,-430.0,383.0,-410.2,375.2,-403.6,349.9,-412.8,323.8,-408.0,326.9,-391.7,323.2,-364.7,319.1,-357.8,312.7,-357.9,314.7,-351.6,299.6,-347.3,267.0,-289.7,259.4,-259.8,289.3,-252.8,301.8,-240.0,312.4,-189.5,305.2,-130.2,311.2,-49.1,300.2,-37.7,292.5,-9.6,282.5,3.8,291.6,10.5,294.5,22.8,288.8,69.3,279.2,80.5,290.5,84.8,302.9,98.6,307.1,114.4,302.4,122.7,289.3,125.4,265.4,116.3,214.7,144.0,181.7,152.3,154.0,185.0,136.2,189.6,136.8,180.7,136.2,198.3,127.1,213.3,106.1,224.5,90.5,217.1,84.1,267.9,73.8,281.3,14.1,299.7,-7.5,303.1,-16.1,299.0,-34.5,321.9,-104.7,357.8,-200.5,365.2,-246.7,399.9,-349.9,430.2,-420.8,471.0,-439.3,471.6] },
 };
-const LV = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('level') : null;
-export const SITE = SITES[LV === '3' ? 2 : LV] ? { ...SITES[LV === '3' ? 2 : LV], level: +(LV === '3' ? 2 : LV), scale: 50, sv: 1, next: SITES[+(LV === '3' ? 2 : LV) + 1] ? +(LV === '3' ? 2 : LV) + 1 : 0 } : null;
+const LV = typeof location !== 'undefined' ? +new URLSearchParams(location.search).get('level') : 0;
+export const SITE = SITES[LV] ? { sq: 1.5, sv: 1, playR: 500, fine: 1.6, mid: 2.4, fog: 1900, src: 'HiRISE elevation and images', scale: 'drawn at two-thirds scale across, so slopes come out 1.5 times steeper', ...SITES[LV], level: LV, pack: 50, next: SITES[LV + 1] ? LV + 1 : 0 } : null;
 if (SITE) { const p = SITE.path, n = p.length / 2; SITE.start = { x: p[0], z: p[1] }; SITE.end = { x: p[p.length - 2], z: p[p.length - 1] };
   if (!SITE.outcrop) { let L = 0; const cum = [0]; for (let i = 1; i < n; i++) cum.push(L += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]));
     const k = cum.findIndex(c => c >= L / 2); SITE.outcrop = { x: p[k * 2] + 9, z: p[k * 2 + 1] + 9 }; } }
-export const PLAY_R = 500;                 // you can roam this far from the origin (2.7: 2.5× wider; 3.5: 3.2× the area again, more of the real ground)
+export const PLAY_R = SITE ? SITE.playR : 500;                 // you can roam this far from the origin (2.7: 2.5× wider; 3.5: 3.2× the area again, more of the real ground)
 export const TILE = 7;                     // metres per ground-texture tile
 export const START = SITE ? SITE.start : { x: 0, z: 18 };
 export const OUTCROP_SITES = SITE ? [[SITE.outcrop.x, SITE.outcrop.z]] : [      // in a year level, one, on the route            // drawn in closer in 2.4: a shorter drive between finds
@@ -46,8 +52,8 @@ export const MESAS = SITE ? [] : [
   { x:  215, z:  170, R: 19, H: 14, ramp: -2.4 },
 ];
 
-const FINE = 1.6;                         // grid spacing where you can drive...
-const FINE_IN = 330, MID = 2.4;             // ...out to here, then a little coarser to the roaming edge
+const FINE = SITE ? SITE.fine : 1.6;                         // grid spacing where you can drive...
+const FINE_IN = 330, MID = SITE ? SITE.mid : 2.4;             // ...out to here, then a little coarser to the roaming edge
 const FINE_HALF = PLAY_R + 48;                  // ...out to here (just past the roaming edge), then the grid stretches
 const WIND = { x: 0.82, z: 0.57 };         // prevailing wind, sets the ripple grain
 const RIPPLE_L = 6.4;                      // large-ripple wavelength, metres
@@ -177,7 +183,7 @@ export const DTM = { site: null, area: null, edge: 0, on: false };
    buttes and the crater floor sit SQ times closer than they really are. Heights are
    squashed by SV rather than SQ, so slopes come out steeper (×SQ/SV) but nothing
    becomes a wall. */
-const SQ = 1.5, SV = SITE ? SITE.sv : 3.0;
+const SQ = SITE ? SITE.sq : 1.5, SV = SITE ? SITE.sv : 3.0;
 export const EXT = 1995;                           // the mesh, and the elevation, run out to here
 async function decode(url, n, scale = 100) {
   const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = url; });
@@ -190,7 +196,7 @@ async function decode(url, n, scale = 100) {
 }
 export async function loadDTM(base = 'dtm/') {
   try {
-    const f = SITE ? SITE.files : ['site_1m.png', 'area_4m.png'], sc = SITE ? SITE.scale : 100;
+    const f = SITE ? SITE.files : ['site_1m.png', 'area_4m.png'], sc = SITE ? SITE.pack : 100;
     [DTM.site, DTM.area] = await Promise.all([decode(base + f[0], 1200, sc), decode(base + f[1], 2000, sc)]);
   } catch (e) { console.warn('elevation data unavailable — using the procedural ground', e); return false; }
   const a = DTM.area, edge = [];
@@ -779,7 +785,7 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null }) {
     place(x, z, 0.3 + Math.pow(rand(), 2.0) * 0.45, false); i++;
   }
   // talus: blocks fallen from the rim wall and the mesa cliffs, piled at their feet
-  for (let i = 0; i < 1400; i++) {
+  for (let i = 0; i < (SITE ? 0 : 1400); i++) {      // (no rim wall in a year level)
     const a = rand() * Math.PI * 2, r = PLAY_R - 4 + Math.pow(rand(), 1.5) * 22;
     place(Math.cos(a) * r, Math.sin(a) * r, Math.min(3.2, 0.45 * Math.pow(0.03 + rand() * 0.97, -0.6)), true);
   }

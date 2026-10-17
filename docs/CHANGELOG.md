@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.04 / zion-sky-v373 — 2026-10-17
+- Mars Rover Simulator 3.9: Level 3 · 2024, Cheyava Falls to the crater
+  rim. A bigger level: start at the falls (the outcrop), then about 500 m of
+  real climb to Lookout Hill, with the view back over Jezero.
+- Fix: SuperCam's laser showed as flat squares. Why: the line that aimed the
+  beam had been swallowed into a code comment since the game was added, and
+  the spark had no round texture.
+
 ## v4.03 / zion-sky-v372 — 2026-10-17
 - Mars Rover Simulator 3.8: a level for each year of Perseverance's route,
   after the landing and the 2021 traverse. Level 1 · 2022, the delta front
