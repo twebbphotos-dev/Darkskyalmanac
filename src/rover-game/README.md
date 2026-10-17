@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.12 — a bigger 2023, Ingenuity on film, a calmer phone screen
+- **2023 is bigger**: 6.9 km of the year's drives across the delta top, with Belva in the middle (`site.py y2023 -4500 -2200`, the big-country settings of 2024 and 2025). The old Belva-only files are gone.
+- **Ingenuity's flights are filmed**: letterboxed, a low shot beside it as the rotors spin up and it lifts off, a wide tracking shot as it scouts ahead, a slow circle while it images the ground, and a follow shot down to its new airfield, with captions. Drag at any time to take the camera.
+- **Back** goes to the Almanac's Objects page; it now answers taps on iPhone too (the game's own touch handling could swallow them).
+- **Phone layout**: no title, no bar backgrounds, a smaller map and a compact tilt gauge under it, smaller buttons and stick, and the Map button dropped (tap the minimap).
+
 ## What changed in 3.11 — objectives, and 2026
 - **Objectives, not just outcrops.** Each year level has a list of goals (`goals` in `SITES`, `terrain.js`): **analyze an outcrop** (Mastcam-Z and SuperCam, as before), **core a sample** (the same, then the coring drill seals a tube) or **take a panorama**: park inside a blue ring and the mast head turns a full circle, frame by frame. Real places get the rover's real story and NASA's photograph (the same cards as the Almanac's Perseverance map); where nothing in particular was found, the goal is one the rover really does every few days, a navigation panorama from high ground.
   - 2022: core a sample at Wildcat Ridge. 2023: an outcrop, then the panorama from Belva's west rim. 2024: core Cheyava Falls, panorama at Lookout Hill. 2025: core Silver Mountain, navigation panorama. 2026: navigation panorama.

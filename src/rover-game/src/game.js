@@ -1087,6 +1087,13 @@ function stepHeli(dt) {
             _ha.x * -fz + _ha.z * fx];
   };
 
+  if (HCAM.on && !HCAM.free) {
+    const cap = { spinup: ['Spinning up', 'Two rotors 1.2 m across turn in opposite directions at about 2,500 rpm: the air here is less than 1% as thick as Earth’s.'],
+      takeoff: ['Lift-off', 'Ingenuity weighs 1.8 kg. On its first flight, in April 2021, it rose 3 m and hovered for 39 seconds.'],
+      out: ['Scouting the route', 'Flying ahead of the rover to look at the ground it will have to cross.'], scan: ['Imaging the ground', 'A downward camera photographs the terrain for the drivers on Earth.'],
+      hop: ['A new airfield', 'It picks a flat, clear patch and heads for it.'], land: ['Touchdown', 'Feet down on the slope, rotors winding down.'] }[h.phase];
+    if (cap) beat('Ingenuity', cap[0], cap[1], true);
+  }
   if (h.phase === 'spinup') {
     wash(h.from.x, h.from.z, 0.25 * h.spin);
     h.head = heliYawNow();
@@ -1457,6 +1464,7 @@ const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3();
 let camInit = false;
 
 let dbgCam = null;
+const HCAM = { on: false, free: false, a: 0 };      // Ingenuity's flights, filmed
 function stepCamera(dt) {
   const r = S.rover;
   if (dbgCam) {
@@ -1564,15 +1572,33 @@ function stepCamera(dt) {
   }
 
   let wantP, wantT, k = 3.2, kT = 0;
+  if (!HCAM.on && S.cam === 'heli') { HCAM.on = true; HCAM.free = false; HCAM.a = 0; cinema(true); }
+  if (HCAM.on && S.cam !== 'heli') { HCAM.on = false; cinema(false); clearBeat(); }
   if (S.cam === 'map') {
     wantP = new THREE.Vector3(r.pos.x, height(r.pos.x, r.pos.z) + 86, r.pos.z + 34);
     wantT = new THREE.Vector3(r.pos.x, r.pos.y, r.pos.z);
     k = 2.2;
   } else if (S.cam === 'heli' && heli) {
-    const hp = heli.getWorldPosition(new THREE.Vector3());
-    wantP = hp.clone().add(new THREE.Vector3(4.6, 2.4 + ORB.pitch * 5, 6.4).applyAxisAngle(UP, ORB.yaw).multiplyScalar(ORB.dist));      // close: it is only 1.2 m across
+    const hp = heli.getWorldPosition(new THREE.Vector3()), h = S.heli;
     wantT = hp.clone().add(new THREE.Vector3(0, 0.25, 0));
-    k = 2.4; kT = 8;                       // keep the eye on it even when the camera body lags
+    kT = 8;                                // keep the eye on it even when the camera body lags
+    if (ORB.id !== null || HCAM.free) {    // a drag takes the camera over for the rest of the flight
+      HCAM.free = true;
+      wantP = hp.clone().add(new THREE.Vector3(4.6, 2.4 + ORB.pitch * 5, 6.4).applyAxisAngle(UP, ORB.yaw).multiplyScalar(ORB.dist));      // close: it is only 1.2 m across
+      k = 2.4;
+    } else {                               // the flight as a film: a shot for each part of it
+      HCAM.a += dt;
+      const fwd = new THREE.Vector3(-Math.sin(h.yaw), 0, -Math.cos(h.yaw)), side = new THREE.Vector3(fwd.z, 0, -fwd.x), gy = height(hp.x, hp.z);
+      if (h.phase === 'spinup' || h.phase === 'takeoff') {        // low on the ground beside it, looking up as it lifts
+        wantP = hp.clone().addScaledVector(side, 4.2).addScaledVector(fwd, 2.6); wantP.y = gy + 0.55; k = 1.6;
+      } else if (h.phase === 'out' || h.phase === 'hop') {        // a wide tracking shot from the side, the country running past behind it
+        wantP = hp.clone().addScaledVector(side, 14 + 4 * Math.sin(HCAM.a * 0.3)).addScaledVector(fwd, -5).add(new THREE.Vector3(0, 3.5, 0)); k = 1.3;
+      } else if (h.phase === 'scan') {                            // circling it while it holds station
+        const a = HCAM.a * 0.55; wantP = hp.clone().add(new THREE.Vector3(Math.cos(a) * 10, 2.5, Math.sin(a) * 10)); k = 1.8;
+      } else {                                                    // following it down to its new airfield
+        wantP = hp.clone().addScaledVector(fwd, -9).addScaledVector(side, 3).add(new THREE.Vector3(0, 4.5, 0)); k = 1.5;
+      }
+    }
   } else {
     // behind and above, swung round by any drag: a point on a sphere about the rover
     if (ORB.id === null) {
@@ -1733,6 +1759,8 @@ function update(dt, now = performance.now()) {
 let frameN = 0;
 
 /* ── wiring ───────────────────────────────────────────────────── */
+{ const go = e => { e.preventDefault(); e.stopPropagation(); location.href = '../objects.html'; };      // the game's own touch handling can swallow a plain link tap on iPhone
+  $('back').addEventListener('pointerup', go); $('back').addEventListener('click', go); }
 $('btn-cam').addEventListener('click', () => S.phase === 'cam' ? capture() : S.phase === 'cine' ? endCine() : openCam());
 $('btn-heli').addEventListener('click', () => S.phase === 'cam' ? closeCam() : launchHeli());
 $('btn-recover').addEventListener('click', recoverRover);

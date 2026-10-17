@@ -199,11 +199,14 @@
   #loading.on{display:flex}
 
   @media(max-width:720px){
-    #minimap{width:104px;height:104px;top:calc(env(safe-area-inset-top,0px) + 62px);right:10px}
-    #attitude{width:112px;height:64px;top:calc(env(safe-area-inset-top,0px) + 172px);right:6px}
-    #hint{display:none} #title small{display:none}
-    .stat{min-width:54px;padding:5px 8px} .stat b{font-size:13px}
-    #bottom{gap:8px;padding:10px 10px calc(env(safe-area-inset-bottom,0px) + 10px)}
+    #minimap{width:86px;height:86px;top:calc(env(safe-area-inset-top,0px) + 54px);right:8px}
+    #attitude{width:86px;height:49px;top:calc(env(safe-area-inset-top,0px) + 146px);right:8px;background:rgba(13,10,24,.42);border:0}
+    #hint{display:none} #title{display:none}
+    #top{padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px;background:none}
+    .stat{min-width:46px;padding:4px 7px} .stat b{font-size:12px}
+    #bottom{gap:8px;padding:8px 10px calc(env(safe-area-inset-bottom,0px) + 8px);background:none}
+    #acts{gap:5px} #acts .btn{padding:8px 10px;font-size:8.5px} #btn-map{display:none}
+    .stick{width:112px;height:112px}
     .c-tl,.c-tr{top:58px}.c-bl,.c-br{bottom:106px}
     .c-tl,.c-bl{left:20px}.c-tr,.c-br{right:20px}
     #camlabel{left:58px;top:62px}
@@ -382,7 +385,7 @@
 </div>
 
 <div id="top">
-  <a id="back" href="../mars.html" aria-label="Back to the Mars page">&#8249;</a>
+  <a id="back" href="../objects.html" aria-label="Back to Objects">&#8249;</a>
   <div id="title">Jezero Traverse<small>Perseverance · Ingenuity</small></div>
   <div class="stats">
     <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span id="stat-label">Outcrops</span></div>
@@ -448,7 +451,7 @@
     <div class="two" style="margin-top:8px"><button class="btn" data-level="3">Level 3 · 2024</button><button class="btn" data-level="4">Level 4 · 2025</button></div>
     <button class="btn" data-level="5" style="width:100%;margin-top:8px">Level 5 · 2026 · Beyond the rim</button>
     <div class="diff" id="diff"><span>Difficulty</span><button data-d="easy">Easy</button><button data-d="real">Realistic</button></div>
-    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.11</p>
+    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.12</p>
   </div>
 </div>
 

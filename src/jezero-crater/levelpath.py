@@ -1,6 +1,6 @@
 # The stretch of one year's drives that a rover-simulator level follows, in game metres (1.5 m of Mars each) about O.
 # usage: levelpath.py YEAR X Z [SQ PLAY_R]   -> prints the path for src/rover-game/src/terrain.js (SITES)
-#   2022: 2022 -2200 -550   2023: 2023 -4050 -2290   2024: 2024 -9200 -1900 2.4 750   2025: 2025 -11300 0 2.4 750   2026: 2026 -12650 950
+#   2022: 2022 -2200 -550   2023: 2023 -4500 -2200 2.4 750   2024: 2024 -9200 -1900 2.4 750   2025: 2025 -11300 0 2.4 750   2026: 2026 -12650 950
 import json, math, sys
 Y, O = int(sys.argv[1]), (float(sys.argv[2]), float(sys.argv[3]))
 SQ, PR = (float(sys.argv[4]), float(sys.argv[5])) if len(sys.argv) > 5 else (1.5, 500.)

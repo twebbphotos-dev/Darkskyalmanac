@@ -8,7 +8,7 @@
 # over models/m20dem.bin (dem20.py) where they do not reach.
 # Pictures: the viewer's HiRISE tiles, models/m20hr (1 m) and models/m20mid (4 m).
 # usage (from the repo root): python3 src/jezero-crater/site.py NAME X Z
-#   2022 (the delta front): y2022 -2200 -550        2023 (Belva Crater): belva -4050 -2290
+#   2022: y2022 -2200 -550   2023: y2023 -4500 -2200   2024: y2024 -9200 -1900   2025: y2025 -11300 0   2026: y2026 -12650 950
 import numpy as np, math, json, os, rasterio
 from rasterio.windows import from_bounds
 from rasterio.enums import Resampling

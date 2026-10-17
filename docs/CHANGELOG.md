@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.07 / zion-sky-v376 — 2026-10-17
+- Mars Rover Simulator 3.12: the 2023 level is bigger (6.9 km of real
+  drives across the delta top, Belva in the middle); Ingenuity's flights
+  play as a letterboxed film with captions; Back goes to Objects and now
+  works on iPhone (the game's touch handling swallowed the link tap); the
+  phone screen is calmer (smaller map and tilt gauge, no title or bar
+  shading, smaller buttons).
+
 ## v4.06 / zion-sky-v375 — 2026-10-17
 - Mars Rover Simulator 3.11: objectives. Each year level now asks for what
   the rover really did there: core a sample (Wildcat Ridge, Cheyava Falls,

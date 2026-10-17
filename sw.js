@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v375';
+const CACHE = 'zion-sky-v376';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -105,7 +105,7 @@ const OFFLINE3D = [
   // terrain, textures and photos (about 19 MB). Same rules as the 3D models.
   'rover/',
   'rover/dtm/area_4m.png', 'rover/dtm/site_1m.png', 'rover/img/jezero-region.jpg',
-  'rover/dtm/belva_site_1m.png', 'rover/dtm/belva_area_4m.png', 'rover/img/belva_hr.jpg', 'rover/img/belva_area.jpg',
+  'rover/dtm/y2023_site_1m.png', 'rover/dtm/y2023_area_4m.png', 'rover/img/y2023_hr.jpg', 'rover/img/y2023_area.jpg',
   'rover/dtm/y2022_site_1m.png', 'rover/dtm/y2022_area_4m.png', 'rover/img/y2022_hr.jpg', 'rover/img/y2022_area.jpg',
   'rover/dtm/y2024_site_1m.png', 'rover/dtm/y2024_area_4m.png', 'rover/img/y2024_hr.jpg', 'rover/img/y2024_area.jpg',
   'rover/dtm/y2025_site_1m.png', 'rover/dtm/y2025_area_4m.png', 'rover/img/y2025_hr.jpg', 'rover/img/y2025_area.jpg',
