@@ -204,7 +204,7 @@ let NOHELI = !!SITE && SITE.year >= 2024 && !SITE.crash;      // Ingenuity's fly
 if (NOHELI) document.body.classList.add('noheli');
 const CRASH = SITE && SITE.crash ? { ...SITE.crash, done: false, t: 0 } : null;      // ...on its 72nd flight, which the 2024 level plays out
 function seenAt(x, z) { const { n, cell, R } = MAP, i = Math.floor((x + R) / cell), j = Math.floor((z + R) / cell); return i >= 0 && j >= 0 && i < n && j < n && MAP.seen[j * n + i] === 1; }
-function revealRoute() { if (GOAL && S.phase !== 'sunset') GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
+function revealRoute() { if (GOAL) GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
 
 /* rocks, kept clear of the start pad and the outcrops — scattered once the scanned rocks have loaded */
 let rockCount = null;
@@ -1543,46 +1543,37 @@ $('card-ok').addEventListener('click', () => {
   else if (S.logged >= S.outcrops.length) done();
 });
 
-/* The end of the drive is the end of the sol: the sun goes down over the route and the
-   sky round it turns blue, as Mastcam-Z has seen it. About 12 s; a tap skips it. */
-const SUNSET = { t: 0, dur: 14 };
-function startSunset() {
-  S.phase = 'sunset'; S.rover.speed = 0; SUNSET.t = 0;
-  SUNSET.az = Math.atan2(sunDir.x, -sunDir.z); SUNSET.el0 = Math.asin(sunDir.y);
-  SUNSET.int0 = sun.intensity; SUNSET.hemi0 = hemi.intensity; SUNSET.fog0 = scene.fog.color.clone(); SUNSET.col0 = sun.color.clone();
-  document.body.classList.add('cinema'); $('prompt').classList.remove('on');
-  GOAL.ring.visible = false; GOAL.chunks.forEach(c => { c.line.visible = false; });
-}
+/* One level ends at sunset (SITE.dusk): over its last minute, from about 300 m out, the sun sinks toward the horizon,
+   the light dims and the shadows stretch, the sky goes gray and the glow round the sun turns blue, as Mastcam-Z has
+   seen it. Driving on brings it on as surely as waiting, so the last panorama is taken at dusk. It never runs backward. */
+const DUSK = SITE && SITE.dusk ? { on: false, t: 0, k: 0 } : null;
 const DUSK_FOG = new THREE.Color(0x3c393d), DUSK_SUN = new THREE.Color(0xdfe6ff);
-function stepSunset(dt) {
-  SUNSET.t = Math.min(SUNSET.dur, SUNSET.t + dt);
-  const u = SUNSET.t / SUNSET.dur, ez = x => x * x * (3 - 2 * x);
-  const el = SUNSET.el0 + (2.5 * Math.PI / 180 - SUNSET.el0) * ez(Math.min(1, u / 0.75)), k = ez(Math.min(1, Math.max(0, (u - 0.12) / 0.58)));
-  const dir = new THREE.Vector3(Math.sin(SUNSET.az) * Math.cos(el), Math.sin(el), -Math.cos(SUNSET.az) * Math.cos(el));
+function stepDusk(dt) {
+  if (!DUSK || S.phase === 'brief' || S.phase === 'done') return;
+  const dEnd = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
+  if (!DUSK.on) { if (dEnd > 300) return; DUSK.on = true;
+    DUSK.az = Math.atan2(sunDir.x, -sunDir.z); DUSK.el0 = Math.asin(sunDir.y);
+    DUSK.int0 = sun.intensity; DUSK.hemi0 = hemi.intensity; DUSK.fog0 = scene.fog.color.clone(); DUSK.col0 = sun.color.clone(); }
+  DUSK.t += dt;
+  const ez = x => x * x * (3 - 2 * x);
+  const want = Math.min(1, Math.max(DUSK.t / 60, (300 - dEnd) / 180));
+  if (want <= DUSK.k + 1e-4) return;
+  DUSK.k = Math.min(want, DUSK.k + dt / 6);      // eased in, never a jump
+  const u = DUSK.k, el = DUSK.el0 + (2.5 * Math.PI / 180 - DUSK.el0) * ez(u), k = ez(Math.min(1, Math.max(0, (u - 0.3) / 0.7)));
+  const dir = new THREE.Vector3(Math.sin(DUSK.az) * Math.cos(el), Math.sin(el), -Math.cos(DUSK.az) * Math.cos(el));
   sky.material.uniforms.sunDir.value.copy(dir); sky.material.uniforms.dusk.value = k;
-  sunOff.copy(dir).multiplyScalar(120);
-  sun.intensity = SUNSET.int0 * (1 - 0.96 * k); hemi.intensity = SUNSET.hemi0 * (1 - 0.9 * k);
-  sun.color.copy(SUNSET.col0).lerp(DUSK_SUN, k); scene.fog.color.copy(SUNSET.fog0).lerp(DUSK_FOG, k);
-  // the camera drops in behind the rover and looks into the sun, the rover in silhouette
-  const r = S.rover, h = new THREE.Vector3(dir.x, 0, dir.z).normalize();
-  const want = r.pos.clone().addScaledVector(h, -11).add(new THREE.Vector3(0, 2.6, 0));
-  want.y = Math.max(want.y, height(want.x, want.z) + 1.8);
-  const look = r.pos.clone().addScaledVector(h, 40).add(new THREE.Vector3(0, 3.5, 0));
-  const t = 1 - Math.exp(-1.6 * dt);
-  camPos.lerp(want, t); camTgt.lerp(look, t);
-  camera.position.copy(camPos); camera.lookAt(camTgt);
-  sky.position.copy(camera.position); aimSun(r);
-  if (SUNSET.t >= SUNSET.dur) endSunset();
+  sunOff.copy(dir).multiplyScalar(120);      // the shadow light follows the sun down, so shadows lengthen
+  sun.intensity = DUSK.int0 * (1 - 0.35 * ez(u)) * (1 - 0.9 * k); hemi.intensity = DUSK.hemi0 * (1 - 0.85 * k);
+  sun.color.copy(DUSK.col0).lerp(DUSK_SUN, k); scene.fog.color.copy(DUSK.fog0).lerp(DUSK_FOG, k);
+  if (k > 0.05 && !DUSK.told) { DUSK.told = true; toast('The sun is going down over Jezero'); }
 }
-function endSunset() { if (S.phase !== 'sunset') return; document.body.classList.remove('cinema'); done(); }
-addEventListener('pointerdown', () => { if (S.phase === 'sunset' && SUNSET.t > 1) endSunset(); });
-addEventListener('keydown', () => { if (S.phase === 'sunset' && SUNSET.t > 1) endSunset(); });
 
 function done() {
   S.phase = 'done';
   if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
     $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`;
-    $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.'; $('done-p2').style.display = ''; $('done-fig').hidden = false;
+    $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.';
+    $('done-p2').style.display = DUSK ? '' : 'none'; $('done-fig').hidden = !DUSK;
     if (SITE.next) $('btn-again').textContent = 'Next level'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
   $('btn-again').textContent = 'Next level · 2022';      // the landing site in 2021 leads on to the year levels
@@ -1916,12 +1907,13 @@ function update(dt, now = performance.now()) {
   }
 
   stepDust(dt);
-  if (S.phase === 'sunset') stepSunset(dt); else stepCamera(dt);
+  stepDusk(dt);
+  stepCamera(dt);
   stepMarks();
   if (CRASH && !CRASH.done && S.phase === 'drive' && S.heli.phase === 'landed' && (CRASH.t += dt) > 45) launchHeli();      // flight 72 goes ahead whether you ask or not
   if (GOAL && S.phase === 'drive') {      // the end of the drive
     const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
-    if (d < 14) { if (S.logged >= S.outcrops.length) startSunset(); else if (!GOAL.told) { GOAL.told = true; toast(`End of the path · finish the objectives first${kb('M')}`); } }
+    if (d < 14) { if (S.logged >= S.outcrops.length) done(); else if (!GOAL.told) { GOAL.told = true; toast(`End of the path · finish the objectives first${kb('M')}`); } }
     else if (d > 30) GOAL.told = false;
   }
 

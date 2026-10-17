@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.18 / zion-sky-v387 — 2026-10-17
+- Simulator: the blue sunset is now a one-time event at the end of the 2024
+  level only. Over the last minute (from about 300 m out) the sun sinks,
+  the light dims, shadows stretch and the sky turns gray with a blue glow
+  round the sun, so the Lookout Hill panorama is taken at dusk. That
+  level's debriefing card alone carries the sunset photo. Other levels end
+  in daylight, with no sunset sequence and no photo.
+
 ## v4.17 / zion-sky-v386 — 2026-10-17
 - Simulator: the drive-complete card shows Perseverance's first sunset
   photograph (Mastcam-Z, 9 November 2021, sol 257), and the in-game sunset

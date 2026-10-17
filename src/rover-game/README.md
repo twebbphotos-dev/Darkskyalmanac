@@ -17,6 +17,10 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.21 — one sunset
+- The end-of-drive sunset cinematic is gone. `SITE.dusk` (2024 only) runs `stepDusk`: from 300 m out, progress = max(time / 60 s, distance closed / 180 m), eased and never reversed; the sun's elevation falls to 2.5°, `sunOff` follows (longer shadows), the sky's `dusk` uniform, the lights and the fog fade. Full dusk by Lookout Hill, so its panorama turns through the blue glow.
+- The sunset note and photo (`#done-fig`) show on that level's drive-complete card only.
+
 ## What changed in 3.20 — a natural route, quieter messages
 - **Route grading** keeps the ground's texture: the correction (graded minus raw height along the path) is smoothed over ±4 m and may hand back at most 40 cm of bump, then added to the raw height with a 2.5–10 m smoothstep shoulder. No flat bed.
 - **Rocks**: the block-free strip has a ragged, noise-modulated edge; the off-route block boost ramps from 5 to 30 m instead of stepping at 14 m; `scatterRocks({ trail })` adds 9,000 pebbles and cobbles (≤ 24 cm) in a ±4.5 m Gaussian band along the route.

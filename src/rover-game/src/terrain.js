@@ -53,7 +53,8 @@ const SITES = {
   3: { year: 2024, title: 'Cheyava Falls and the crater rim', files: ['y2024_site_1m.png', 'y2024_area_4m.png'], hi: 'img/y2024_hr.jpg', hiArea: 'img/y2024_area.jpg',
     origin: { x: -8823, z: -2026 },
     goals: [{ type: 'sample', x: 270, z: -454, unit: 4, label: 'Cheyava Falls', real: REAL.cheyava }, { type: 'pano', x: -596, z: 527, label: 'Lookout Hill', real: REAL.lookout }],
-    crash: { x: 685, z: -453, real: REAL.valinor },      // Valinor Hills: Mastcam-Z azimuth 320.6° at about 415-450 m from the rover on sols 1049 and 1068 (traverse), the two fixes 66 m apart
+    crash: { x: 685, z: -453, real: REAL.valinor },
+    dusk: true,      // the one level that ends at sunset, Lookout Hill's panorama in the blue glow      // Valinor Hills: Mastcam-Z azimuth 320.6° at about 415-450 m from the rover on sols 1049 and 1068 (traverse), the two fixes 66 m apart
     sq: 2.4, sv: 0.6, playR: 900, fine: 2.2, mid: 3.2, fog: 4200,      // a bigger country, squeezed harder so the whole climb fits, from Ingenuity's last airfield to Lookout Hill
     scale: 'drawn at under half scale across and 60% in height, so slopes come out about 1.4 times steeper', src: 'CTX stereo elevation and HiRISE images',
     text: 'Early in 2024 the rover was heading west toward Neretva Vallis, with Ingenuity still flying nearby. In July, in Neretva Vallis, the channel where the river once ran into the lake, Perseverance found “Cheyava Falls”: an arrowhead-shaped rock with white veins of calcium sulfate and tiny “leopard spots”, pale patches with dark rims. On Earth, marks like that can be left by microbes living on chemical energy in rock. The rover drilled a sample, and in 2025 NASA called it the clearest potential sign of ancient life yet found on Mars. Then came the climb: about 500 m up the crater rim to Lookout Hill, reached in December 2024, with Jezero spread out behind.',
