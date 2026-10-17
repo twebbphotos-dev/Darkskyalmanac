@@ -17,6 +17,9 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.10 — 2025: along the crater rim
+- **Level 4 · 2025.** All 6.5 km of the year's drives, starting at Silver Mountain (the rover's first core from the rim, January 2025), a few hundred metres from where 2024 ends. Same big-country settings as 2024 (750 m roaming radius, 2.4× across, 0.6× in height). Data: `site.py y2025 -11300 0`, `levelpath.py 2025 -11300 0 2.4 750`.
+
 ## What changed in 3.9 — 2024: Cheyava Falls and the crater rim; the laser
 - **Level 3 · 2024.** From “Cheyava Falls” in Neretva Vallis (the outcrop) up about 500 m of real climb to Lookout Hill on the crater rim, 5 km of the year's drives. A bigger country: 750 m roaming radius, squeezed 2.4× across and 0.6× in height so the whole climb fits (slopes about 1.4× real), haze pushed back to 4.2 km for the view over Jezero. Heights here are CTX stereo (no HiRISE stereo model reaches this far west).
 - **Fixed: SuperCam's laser drew as flat squares.** The line that aimed the beam's cylinder along its length had been swallowed into a comment, so it stood upright and was stretched sideways; and the spark at the rock was an untextured square sprite. Both fixed: a thin beam from the mast to the rock and a soft round spark.

@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.05 / zion-sky-v374 — 2026-10-17
+- Mars Rover Simulator 3.10: Level 4 · 2025, along the crater rim. All
+  6.5 km of the year's real drives, starting at Silver Mountain beside the
+  end of 2024; one outcrop half way, the beacon at the end.
+
 ## v4.04 / zion-sky-v373 — 2026-10-17
 - Mars Rover Simulator 3.9: Level 3 · 2024, Cheyava Falls to the crater
   rim. A bigger level: start at the falls (the outcrop), then about 500 m of
