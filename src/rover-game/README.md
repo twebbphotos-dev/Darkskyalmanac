@@ -17,6 +17,10 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.13 — photos in 3D, a to-do list
+- **Photographs open inside the game.** A panorama wraps round you on the inside of a cylinder (taken to span about 40° top to bottom): drag to look along it, pinch or scroll to zoom. Other photographs fill the screen. Before, the card's photo was a plain link and opened the bare file in a new tab.
+- **Objectives list**, top left in the year levels: each objective and the beacon, ticked off as you go.
+
 ## What changed in 3.12 — a bigger 2023, Ingenuity on film, a calmer phone screen
 - **2023 is bigger**: 6.9 km of the year's drives across the delta top, with Belva in the middle (`site.py y2023 -4500 -2200`, the big-country settings of 2024 and 2025). The old Belva-only files are gone.
 - **Ingenuity's flights are filmed**: letterboxed, a low shot beside it as the rotors spin up and it lifts off, a wide tracking shot as it scouts ahead, a slow circle while it images the ground, and a follow shot down to its new airfield, with captions. Drag at any time to take the camera.

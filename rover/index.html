@@ -369,6 +369,19 @@
     #edl-prompt{left:10px;right:10px;bottom:auto;top:150px;max-width:86vw} #edl-call{top:98px}
   }
 #card.siteonly .row, #card.siteonly h2.rd { display: none; }
+  #photo{position:fixed;inset:0;z-index:60;background:#05040a;display:none}
+  #photo.on{display:block}
+  #photo-cv{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab}
+  #photo-img{position:absolute;inset:0;margin:auto;max-width:100%;max-height:100%;display:none}
+  #photo-x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);right:12px;width:40px;height:40px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--hi);font-size:20px;cursor:pointer;z-index:2}
+  #photo-tip{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);text-align:center;font-size:9px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);pointer-events:none}
+  #goals{position:fixed;top:calc(env(safe-area-inset-top,0px) + 54px);left:12px;z-index:20;font-size:10px;line-height:1.6;color:#EDE3C6;pointer-events:none;max-width:46vw;padding:5px 9px 5px 7px;border-radius:7px;background:rgba(13,10,24,.5);text-shadow:0 1px 2px #000}
+  #goals div{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  #goals div::before{content:'○';display:inline-block;width:14px;color:var(--gold)}
+  #goals div.ok{color:var(--mute);text-decoration:line-through}
+  #goals div.ok::before{content:'●';color:#6FCF7F;text-decoration:none}
+  body.cinema #goals,body.camview #goals,body.edl #goals{display:none}
+  @media(max-width:720px){ #goals{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;font-size:9px} }
 </style>
 </head>
 <body>
@@ -393,6 +406,8 @@
   </div>
 </div>
 
+<div id="goals" hidden></div>
+<div id="photo"><canvas id="photo-cv"></canvas><img id="photo-img" alt=""><button id="photo-x" aria-label="Close">&times;</button><div id="photo-tip">Drag to look around · pinch or scroll to zoom</div></div>
 <canvas id="minimap" width="170" height="170" title="Map"></canvas>
 <canvas id="attitude" width="320" height="184" title="Tilt: roll and pitch against the tip-over limits"></canvas>
 <div id="flash"></div>
@@ -451,7 +466,7 @@
     <div class="two" style="margin-top:8px"><button class="btn" data-level="3">Level 3 · 2024</button><button class="btn" data-level="4">Level 4 · 2025</button></div>
     <button class="btn" data-level="5" style="width:100%;margin-top:8px">Level 5 · 2026 · Beyond the rim</button>
     <div class="diff" id="diff"><span>Difficulty</span><button data-d="easy">Easy</button><button data-d="real">Realistic</button></div>
-    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.12</p>
+    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.13</p>
   </div>
 </div>
 

@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.08 / zion-sky-v377 — 2026-10-17
+- Mars Rover Simulator 3.13: tapping a photo on a card opens it in the game,
+  and panoramas wrap round you in 3D (drag to look, pinch to zoom). Why: the
+  photo was a plain link, so it opened the bare file in a new tab. Plus a
+  small objectives checklist at top left in the year levels.
+
 ## v4.07 / zion-sky-v376 — 2026-10-17
 - Mars Rover Simulator 3.12: the 2023 level is bigger (6.9 km of real
   drives across the delta top, Belva in the middle); Ingenuity's flights

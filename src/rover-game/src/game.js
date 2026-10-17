@@ -146,7 +146,7 @@ GOALS.filter(g => g.type === 'pano').forEach(g => {
   const ringMat = new THREE.MeshBasicMaterial({ color: CYAN_RING, transparent: true, opacity: 0.8, side: THREE.DoubleSide, fog: false, depthWrite: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(7, 7.6, 64), ringMat);
   ring.position.set(g.x, y + 0.2, g.z); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalAt(g.x, g.z, 5)); scene.add(ring);
-  S.outcrops.push({ type: 'pano', name: g.real.t, label: g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false });
+  S.outcrops.push({ type: 'pano', name: g.real.t, label: g.label, short: g.short || g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false });
 });
 GOALS.filter(q => q.type !== 'pano').forEach((goal, i) => {
   const x = goal.x, z = goal.z;
@@ -1418,6 +1418,43 @@ function showCard(o) {
   $('card').querySelector('.card').scrollTop = 0;
 }
 
+/* Photographs open here, never in a new tab: a panorama wraps round you on the inside of a cylinder (drag to look
+   along it, pinch or scroll to zoom); anything else fills the screen. */
+function openPhoto(src) {
+  const ov = $('photo'), cv = $('photo-cv'), flat = $('photo-img');
+  ov.classList.add('on');
+  const im = new Image();
+  im.onload = () => {
+    const a = im.naturalWidth / im.naturalHeight;
+    $('photo-tip').style.display = a < 2.2 ? 'none' : '';
+    if (a < 2.2) { flat.src = src; flat.style.display = 'block'; cv.style.display = 'none'; return; }
+    flat.style.display = 'none'; cv.style.display = 'block';
+    const rr = new THREE.WebGLRenderer({ canvas: cv, antialias: true }); rr.setPixelRatio(Math.min(2, devicePixelRatio)); rr.outputColorSpace = THREE.SRGBColorSpace;
+    const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+    const tex = new THREE.Texture(im); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.needsUpdate = true;
+    const arc = Math.min(Math.PI * 2, a * 0.7), R = 10, Hh = R * arc / a;      // the picture taken to span about 40° top to bottom
+    const g = new THREE.CylinderGeometry(R, R, Hh, 128, 1, true, Math.PI - arc / 2, arc);      // centred on -z, where the camera looks
+    const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide })); m.scale.x = -1; sc.add(m);      // seen from inside, so mirrored back
+    let yaw = 0, pitch = 0, fov = 2 * Math.atan(Hh / 2 / R) * 180 / Math.PI, drag = null, pinch = 0, run = true;      // start with the picture filling the screen top to bottom
+    const lim = () => { const half = Math.max(0, arc / 2 - fov * Math.PI / 360 * (cv.clientWidth / cv.clientHeight)); yaw = arc >= Math.PI * 2 - 1e-3 ? yaw : Math.max(-half, Math.min(half, yaw));
+      const vh = Math.atan(Hh / 2 / R) - fov * Math.PI / 360; pitch = Math.max(-Math.max(0, vh), Math.min(Math.max(0, vh), pitch)); };
+    const size = () => { rr.setSize(cv.clientWidth, cv.clientHeight, false); cam.aspect = cv.clientWidth / cv.clientHeight; cam.updateProjectionMatrix(); };
+    const pts = new Map();
+    cv.onpointerdown = e => { cv.setPointerCapture(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]); drag = [e.clientX, e.clientY]; };
+    cv.onpointermove = e => { if (!pts.has(e.pointerId)) return; const p0 = pts.get(e.pointerId); pts.set(e.pointerId, [e.clientX, e.clientY]);
+      if (pts.size === 2) { const [q, w] = [...pts.values()], d = Math.hypot(q[0] - w[0], q[1] - w[1]); if (pinch) fov = Math.max(12, Math.min(75, fov * pinch / d)); pinch = d; return; }
+      const k = fov / 60 * 0.005; yaw += (e.clientX - p0[0]) * k; pitch += (e.clientY - p0[1]) * k; };
+    cv.onpointerup = cv.onpointercancel = e => { pts.delete(e.pointerId); pinch = 0; };
+    cv.onwheel = e => { e.preventDefault(); fov = Math.max(12, Math.min(75, fov * Math.exp(e.deltaY * 0.001))); };
+    const loop = () => { if (!run) return; size(); cam.fov = fov; cam.updateProjectionMatrix(); lim(); cam.rotation.set(pitch, yaw, 0, 'YXZ'); rr.render(sc, cam); requestAnimationFrame(loop); };
+    loop();
+    ov.close = () => { run = false; g.dispose(); tex.dispose(); rr.dispose(); };
+  };
+  im.src = src;
+}
+$('photo-x').addEventListener('click', () => { const ov = $('photo'); ov.classList.remove('on'); if (ov.close) { ov.close(); ov.close = null; } $('photo-img').src = ''; });
+$('real-link').addEventListener('click', e => { const h = $('real-link').getAttribute('href'); if (h && h !== '#' && !/^https?:/.test(h)) { e.preventDefault(); openPhoto(h); } });
+
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
   if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done. Carry on along the route to the end of the drive, the gold beacon.' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left on the route.`); }
@@ -1687,7 +1724,14 @@ let toastT = 0;
 function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.4; }
 function toastSoon(m) { setTimeout(() => toast(m), 500); }
 
+function goalList() {      // the year level's to-do list, top left: tiny, ticked off as you go
+  const el = $('goals'); if (!SITE || !el) return;
+  el.hidden = false;
+  const name = o => o.type === 'sample' ? `Core ${o.label}` : o.type === 'pano' ? `Panorama: ${o.short.replace(/^the /, '')}` : 'Analyze an outcrop';
+  el.innerHTML = S.outcrops.map(o => `<div class="${o.logged ? 'ok' : ''}">${name(o)}</div>`).join('') + `<div class="${S.phase === 'done' ? 'ok' : ''}">Reach the beacon</div>`;
+}
 function hud() {
+  goalList();
   $('logged').textContent = `${S.logged} / ${S.outcrops.length}`;
   $('flights').textContent = S.flights;
 
