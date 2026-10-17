@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
 <meta name="theme-color" content="#141319">
-<title>Jezero Traverse · Perseverance &amp; Ingenuity</title>
+<title>Mars Rover · Perseverance Simulator</title>
 <meta name="description" content="Drive Perseverance across Martian topography and read the layers in the rock with Mastcam-Z.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -382,6 +382,8 @@
   #goals div.ok::before{content:'●';color:#6FCF7F;text-decoration:none}
   body.cinema #goals,body.camview #goals,body.edl #goals{display:none}
   @media(max-width:720px){ #goals{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;font-size:9px} }
+  .levels{display:grid;grid-template-columns:1fr;gap:8px}
+  .levels .btn{width:100%;padding:13px 14px;font-size:10px;text-align:center}
 </style>
 </head>
 <body>
@@ -398,8 +400,8 @@
 </div>
 
 <div id="top">
-  <a id="back" href="../objects.html" aria-label="Back to Objects">&#8249;</a>
-  <div id="title">Jezero Traverse<small>Perseverance · Ingenuity</small></div>
+  <a id="back" href="../objects" aria-label="Back to Objects">&#8249;</a>
+  <div id="title">Perseverance Simulator<small>Mars rover · Jezero crater</small></div>
   <div class="stats">
     <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span id="stat-label">Outcrops</span></div>
     <div class="stat"><b id="flights">6</b><span>Flights</span></div>
@@ -434,8 +436,8 @@
 
 <div class="sheet" id="brief">
   <div class="card">
-    <h1>Mars 2020 · Entry, Descent &amp; Landing</h1>
-    <h2>The landing · Mission briefing</h2>
+    <h1>Perseverance Simulator</h1>
+    <h2>Mars 2020 · Entry, descent and landing</h2>
     <p>Atmospheric entry to touchdown takes about seven minutes. One-way light time to Earth is
       <b>11 min 22 s</b>: by the time mission control hears the capsule hit the atmosphere, it has
       already landed or crashed. Everything in between runs on board. Today, that's you.</p>
@@ -458,15 +460,15 @@
       <kbd>Stick ▲ ▼</kbd><span>Pitch thrusters: keep the swing on the centre line</span>
       <kbd>Deploy</kbd><span>Parachute · backshell separation · sky crane</span>
     </div>
-    <div class="two">
-      <button class="btn primary" id="btn-start">Fly the landing</button>
-      <button class="btn" id="btn-skip">Skip to the surface</button>
+    <div class="levels">
+      <button class="btn primary" id="btn-start">2021 · The Landing</button>
+      <button class="btn" data-level="1">2022 · Delta Front</button>
+      <button class="btn" data-level="2">2023 · Belva Crater</button>
+      <button class="btn" data-level="3">2024 · Lookout Hill</button>
+      <button class="btn" data-level="4">2025 · Crater Rim</button>
+      <button class="btn" data-level="5">2026 · Beyond the Rim</button>
     </div>
-    <div class="two" style="margin-top:8px"><button class="btn" data-level="1">2022 · Delta front</button><button class="btn" data-level="2">2023 · Belva Crater</button></div>
-    <div class="two" style="margin-top:8px"><button class="btn" data-level="3">2024 · Lookout Hill</button><button class="btn" data-level="4">2025 · Crater rim</button></div>
-    <button class="btn" data-level="5" style="width:100%;margin-top:8px">2026 · Beyond the rim</button>
     <div class="diff" id="diff"><span>Difficulty</span><button data-d="easy">Easy</button><button data-d="real">Realistic</button></div>
-    <p class="fine" style="margin:12px 0 0">Proof of concept · v3.14</p>
   </div>
 </div>
 
@@ -648,7 +650,7 @@
     <p id="edl-fail-why"></p>
     <div class="two">
       <button class="btn primary" id="edl-retry">Try that again</button>
-      <button class="btn" id="edl-skip">Skip to the surface</button>
+      <button class="btn" id="edl-skip">Skip to 2022</button>
     </div>
   </div>
 </div>
@@ -665,7 +667,7 @@
     <p id="edl-verdict"></p>
     <p class="fine">The real landing, 18 February 2021: 410 seconds from entry, parachute at
       about 11 km and 420 m/s, backshell away at 2.1 km, touchdown at 0.75 m/s.</p>
-    <button class="btn primary" id="edl-go">Begin the traverse</button>
+    <button class="btn primary" id="edl-go">Next · 2022 · Delta Front</button>
   </div>
 </div>
 

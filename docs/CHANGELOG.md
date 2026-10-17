@@ -3,6 +3,17 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.10 / zion-sky-v379 — 2026-10-17
+- The rover game is now the Mars Rover · Perseverance Simulator: no
+  proof-of-concept wording, the briefing is a menu with one equal-width
+  button per year (2021 · The Landing to 2026 · Beyond the Rim), and the
+  landing leads straight on to 2022. The old 2021 landing-site traverse and
+  "Skip to the surface" are gone.
+- Fix: Back failed on iPhone ("This site can't be reached"). Why: it linked
+  objects.html, which redirects to /objects, and a redirected page served
+  from the offline cache fails to open. It now links /objects like every
+  other page.
+
 ## v4.09 / zion-sky-v378 — 2026-10-17
 - Mars Rover Simulator 3.14: the rover starts facing down the route; the
   route dashes are slightly clearer and the real line is kept passable (big

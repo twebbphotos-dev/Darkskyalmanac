@@ -1824,7 +1824,8 @@ function update(dt, now = performance.now()) {
 let frameN = 0;
 
 /* ── wiring ───────────────────────────────────────────────────── */
-{ const go = e => { e.preventDefault(); e.stopPropagation(); location.href = '../objects.html'; };      // the game's own touch handling can swallow a plain link tap on iPhone
+// Back: the extensionless address, as every other page links it. The .html one redirects, and a redirected page from the offline cache fails to open.
+{ const go = e => { e.preventDefault(); e.stopPropagation(); location.href = '../objects'; };      // the game's own touch handling can swallow a plain link tap on iPhone
   $('back').addEventListener('pointerup', go); $('back').addEventListener('click', go); }
 $('btn-cam').addEventListener('click', () => S.phase === 'cam' ? capture() : S.phase === 'cine' ? endCine() : openCam());
 $('btn-heli').addEventListener('click', () => S.phase === 'cam' ? closeCam() : launchHeli());
@@ -1859,7 +1860,6 @@ $('btn-drive').addEventListener('click', () => {
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
-$('btn-skip').addEventListener('click', () => { $('brief').classList.remove('on'); startSurface(null); });
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { location.search = '?level=' + b.dataset.level; }));
 if (SITE) {      // a year level: straight onto the ground
   $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
@@ -1900,7 +1900,7 @@ $('btn-map').addEventListener('click', () => toggleMap());
       sun.target.position.set(x, y, z); sun.position.copy(sun.target.position).add(sunOff);
     },
     settleRover: (x, z) => { S.rover.pos.set(x, height(x, z), z); S.rover.speed = 0; gReady = false; stepRover(0); },
-    onLanded: startSurface,
+    onLanded: () => { location.search = '?level=1'; },      // after the landing, the first year on the ground
   });
   hud();
   $('loading').classList.remove('on');

@@ -1,6 +1,6 @@
-# Jezero Traverse — Mars rover mini-game (proof of concept v3.4)
+# Mars Rover · Perseverance Simulator
 
-An open-world Perseverance + Ingenuity POC built on the same engine and assets as the
+An open-world Perseverance and Ingenuity game built on the same engine and assets as the
 Dark Sky Almanac spacecraft viewer: three.js r186, the `perseverance.glb` and
 `ingenuity.glb` models, and the viewer's Mars environment (sky gradient, fog, ground
 palette, hemisphere + sun lighting). Stripped down to just what a game needs.
@@ -16,6 +16,11 @@ python3 -m http.server 8000
 ```
 
 Or drop the whole folder onto any static host.
+
+## What changed in 3.15 — the full game
+- Presented as the **Mars Rover · Perseverance Simulator**: the briefing is the menu, one equal-width button per year, 2021 (the landing) to 2026. No "proof of concept" wording.
+- The landing leads straight on to 2022. The old 2021 landing-site traverse (six outcrops) and "Skip to the surface" are gone from the menu.
+- Back goes to `../objects`, the address every other page uses. The `.html` address redirects, and a redirected page from the offline cache fails to open (Chrome on iPhone showed "This site can't be reached").
 
 ## What changed in 3.14 — on the route
 - The rover starts each year level **facing down the route**.
