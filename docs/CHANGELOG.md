@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.17 / zion-sky-v386 — 2026-10-17
+- Simulator: the drive-complete card shows Perseverance's first sunset
+  photograph (Mastcam-Z, 9 November 2021, sol 257), and the in-game sunset
+  now matches it: a flat gray sky, a tight blue-white glow over the Sun and
+  ground fading to silhouette, instead of the deep navy sky before.
+
 ## v4.16 / zion-sky-v385 — 2026-10-17
 - Simulator: the real route no longer looks like a graded road. Why: the
   grading replaced the ground along it with one smooth profile and kept a

@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v385';
+const CACHE = 'zion-sky-v386';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -100,7 +100,7 @@ const OFFLINE3D = [
   'img/cmp/carina-hubble.jpg', 'img/cmp/carina-webb.jpg', 'img/cmp/deep-field-hubble.jpg',
   'img/cmp/deep-field-webb.jpg', 'img/cmp/pillars-hubble.jpg', 'img/cmp/pillars-webb.jpg',
   'img/cmp/southern-ring-hubble.jpg', 'img/cmp/southern-ring-webb.jpg',
-  'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg',
+  'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg', 'img/m20/first-sunset.jpg',
   // Mars rover game (rover/), opened from the Mars page: page, code, models,
   // terrain, textures and photos (about 19 MB). Same rules as the 3D models.
   'rover/',

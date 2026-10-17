@@ -1553,7 +1553,7 @@ function startSunset() {
   document.body.classList.add('cinema'); $('prompt').classList.remove('on');
   GOAL.ring.visible = false; GOAL.chunks.forEach(c => { c.line.visible = false; });
 }
-const DUSK_FOG = new THREE.Color(0x2e2420), DUSK_SUN = new THREE.Color(0xdfe6ff);
+const DUSK_FOG = new THREE.Color(0x3c393d), DUSK_SUN = new THREE.Color(0xdfe6ff);
 function stepSunset(dt) {
   SUNSET.t = Math.min(SUNSET.dur, SUNSET.t + dt);
   const u = SUNSET.t / SUNSET.dur, ez = x => x * x * (3 - 2 * x);
@@ -1561,7 +1561,7 @@ function stepSunset(dt) {
   const dir = new THREE.Vector3(Math.sin(SUNSET.az) * Math.cos(el), Math.sin(el), -Math.cos(SUNSET.az) * Math.cos(el));
   sky.material.uniforms.sunDir.value.copy(dir); sky.material.uniforms.dusk.value = k;
   sunOff.copy(dir).multiplyScalar(120);
-  sun.intensity = SUNSET.int0 * (1 - 0.9 * k); hemi.intensity = SUNSET.hemi0 * (1 - 0.8 * k);
+  sun.intensity = SUNSET.int0 * (1 - 0.96 * k); hemi.intensity = SUNSET.hemi0 * (1 - 0.9 * k);
   sun.color.copy(SUNSET.col0).lerp(DUSK_SUN, k); scene.fog.color.copy(SUNSET.fog0).lerp(DUSK_FOG, k);
   // the camera drops in behind the rover and looks into the sun, the rover in silhouette
   const r = S.rover, h = new THREE.Vector3(dir.x, 0, dir.z).normalize();
@@ -1582,7 +1582,7 @@ function done() {
   S.phase = 'done';
   if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
     $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`;
-    $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.'; $('done-p2').style.display = '';
+    $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.'; $('done-p2').style.display = ''; $('done-fig').hidden = false;
     if (SITE.next) $('btn-again').textContent = 'Next level'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
   $('btn-again').textContent = 'Next level · 2022';      // the landing site in 2021 leads on to the year levels

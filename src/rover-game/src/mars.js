@@ -232,8 +232,8 @@ function skyDome(top, horizon, sunDir) {
         col += vec3(0.62, 0.72, 0.9) * (pow(s, 28.0) * 0.30 + pow(s, 5.0) * 0.07);
         // dusk: the sky dims to brown-gray and the glow round the low sun turns deep blue,
         // because fine dust scatters blue light forward, close to the sun's direction
-        col = mix(col, mix(vec3(0.030, 0.022, 0.018), vec3(0.006, 0.006, 0.010), pow(t, 0.6)), dusk);      // linear, to meet the dusk fog
-        col += dusk * vec3(0.20, 0.42, 1.0) * (pow(s, 90.0) * 1.5 + pow(s, 24.0) * 0.4 + pow(s, 8.0) * 0.05);
+        col = mix(col, mix(vec3(0.046, 0.042, 0.047), vec3(0.022, 0.021, 0.025), pow(t, 0.6)), dusk);      // linear: the flat gray of Mastcam-Z's sunset, meeting the dusk fog
+        col += dusk * vec3(0.42, 0.55, 0.95) * (pow(s, 160.0) * 1.6 + pow(s, 30.0) * 0.28 + pow(s, 8.0) * 0.035);      // a tight blue-white glow over the sun
         col += vec3(1.0, 0.97, 0.92) * smoothstep(0.99990, 0.99996, s) * 6.0;
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
