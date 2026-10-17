@@ -188,7 +188,7 @@ const GOAL = SITE ? (() => {
   const p = SITE.path, pts = [];
   for (let i = 0; i + 2 < p.length; i += 2) { const x0 = p[i], z0 = p[i + 1], x1 = p[i + 2], z1 = p[i + 3], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 2));
     for (let k = 0; k < n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; pts.push(new THREE.Vector3(x, height(x, z) + 0.35, z)); } }
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: GOLD, dashSize: 2.2, gapSize: 2.2, transparent: true, opacity: 0.55, depthWrite: false }));
+  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xe6cc85, dashSize: 2.8, gapSize: 1.8, transparent: true, opacity: 0.72, depthWrite: false }));
   line.computeLineDistances(); scene.add(line);
   const { x, z } = SITE.end, y = height(x, z);
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide, fog: false }));
@@ -212,12 +212,32 @@ async function loadScans() {
   }
   return out;
 }
+/* Year levels: the rover really drove this line, so it was passable. Big blocks are kept off it and mid-size rocks
+   thinned along it; pebbles stay. Where a level marks ground as clear (Belva's dune-filled floor), no blocks at all. */
+const ROUTE_SEG = SITE ? (() => { const p = SITE.path, out = []; for (let i = 0; i + 2 < p.length; i += 2) out.push([p[i], p[i + 1], p[i + 2], p[i + 3]]); return out; })() : [];
+function routeDist(x, z) {
+  let best = 1e9;
+  for (const [ax, az, bx, bz] of ROUTE_SEG) {
+    if (Math.max(ax, bx) + 6 < x || Math.min(ax, bx) - 6 > x || Math.max(az, bz) + 6 < z || Math.min(az, bz) - 6 > z) continue;
+    const dx = bx - ax, dz = bz - az, t = Math.max(0, Math.min(1, ((x - ax) * dx + (z - az) * dz) / (dx * dx + dz * dz || 1)));
+    best = Math.min(best, Math.hypot(x - ax - dx * t, z - az - dz * t));
+  }
+  return best;
+}
+function routeClear(x, z, s) {
+  if (!SITE) return false;
+  const h = Math.abs(Math.sin(x * 12.9898 + z * 78.233) * 43758.5453) % 1;      // a steady random number for this spot
+  if (SITE.clear && SITE.clear.some(c => Math.hypot(x - c.x, z - c.z) < c.r)) return s > 0.14 || h < 0.6;
+  if (s <= 0.14) return false;
+  const d = routeDist(x, z);
+  return s > 0.36 ? d < 4.5 : d < 2.6 && h < 0.7;
+}
 function scatter(scans) {
   rockCount = scatterRocks(scene, {
     seed: 5150, scans,
     exclude: (x, z, s) =>
       Math.hypot(x - START.x, z - START.z) < (s > 0.36 ? 9 : 3.2) ||
-      S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5),
+      S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5) || routeClear(x, z, s),
   });
 }
 
@@ -1627,9 +1647,9 @@ function stepCamera(dt) {
       HCAM.a += dt;
       const fwd = new THREE.Vector3(-Math.sin(h.yaw), 0, -Math.cos(h.yaw)), side = new THREE.Vector3(fwd.z, 0, -fwd.x), gy = height(hp.x, hp.z);
       if (h.phase === 'spinup' || h.phase === 'takeoff') {        // low on the ground beside it, looking up as it lifts
-        wantP = hp.clone().addScaledVector(side, 4.2).addScaledVector(fwd, 2.6); wantP.y = gy + 0.55; k = 1.6;
+        wantP = hp.clone().addScaledVector(side, 5).addScaledVector(fwd, 3); wantP.y = Math.max(gy, hp.y) + 3.5; k = 1.6;      // just above it, looking down as it lifts
       } else if (h.phase === 'out' || h.phase === 'hop') {        // a wide tracking shot from the side, the country running past behind it
-        wantP = hp.clone().addScaledVector(side, 14 + 4 * Math.sin(HCAM.a * 0.3)).addScaledVector(fwd, -5).add(new THREE.Vector3(0, 3.5, 0)); k = 1.3;
+        wantP = hp.clone().addScaledVector(side, 14 + 4 * Math.sin(HCAM.a * 0.3)).addScaledVector(fwd, -5).add(new THREE.Vector3(0, 6, 0)); k = 1.3;
       } else if (h.phase === 'scan') {                            // circling it while it holds station
         const a = HCAM.a * 0.55; wantP = hp.clone().add(new THREE.Vector3(Math.cos(a) * 10, 2.5, Math.sin(a) * 10)); k = 1.8;
       } else {                                                    // following it down to its new airfield
@@ -1660,6 +1680,7 @@ function stepCamera(dt) {
   if (!camInit) { camPos.copy(wantP); camTgt.copy(wantT); camInit = true; }
   const t = 1 - Math.exp(-k * dt);
   camPos.lerp(wantP, t);
+  { const g = height(camPos.x, camPos.z) + 1.6; if (camPos.y < g) camPos.y = g; }      // on its way between shots too, never through a hill
   camTgt.lerp(wantT, kT ? 1 - Math.exp(-kT * dt) : t);
   camera.position.copy(camPos);
   camera.lookAt(camTgt);
@@ -1816,6 +1837,10 @@ function startSurface(landed) {
   const x = landed ? landed.x : START.x, z = landed ? landed.z : START.z;
   rover.visible = true;
   S.rover.pos.set(x, height(x, z), z); S.rover.speed = 0;
+  if (SITE && !landed) {      // pointed down the route: at a spot on it about 25 m ahead
+    const p = SITE.path; let k = 2; while (k + 2 < p.length && Math.hypot(p[k] - x, p[k + 1] - z) < 25) k += 2;
+    S.rover.yaw = Math.atan2(-(p[k] - x), -(p[k + 1] - z));
+  }
   gReady = false; camInit = false; S.cam = 'chase'; tracks.cut();
   // Ingenuity rode down under the rover's belly; by now it has been set on the ground nearby
   const pad = findLanding(x + 7, z - 10, [{ x, z, r: 5 }]);

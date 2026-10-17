@@ -38,6 +38,7 @@ const SITES = {
   2: { year: 2023, title: 'Belva Crater and the delta top', files: ['y2023_site_1m.png', 'y2023_area_4m.png'], hi: 'img/y2023_hr.jpg', hiArea: 'img/y2023_area.jpg',
     origin: { x: -4500, z: -2200 },
     goals: [{ type: 'outcrop', mid: true, unit: 0 }, { type: 'pano', x: -42, z: -28, label: 'Belva Crater’s west rim', short: 'Belva rim', real: REAL.belva }],
+    clear: [{ x: 236, z: -41, r: 190 }],      // Belva's floor and lower walls: dunes and sand in the HiRISE pictures and the rim panorama, no field of blocks
     sq: 2.4, sv: 0.6, playR: 750, fine: 2.0, mid: 3.0, fog: 4200,      // 6.9 km of the year's drives across the top of the delta
     scale: 'drawn at under half scale across and 60% in height, so slopes come out about 1.4 times steeper',
     text: 'On top of the delta now, beside Belva, a crater about 0.9 km across punched into it. The impact cut down through the delta’s layers; dunes now fill its floor. Perseverance drove this way in 2023 and photographed the walls from the west rim on 22 April.',

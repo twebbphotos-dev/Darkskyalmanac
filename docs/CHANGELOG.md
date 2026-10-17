@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.09 / zion-sky-v378 — 2026-10-17
+- Mars Rover Simulator 3.14: the rover starts facing down the route; the
+  route dashes are slightly clearer and the real line is kept passable (big
+  blocks off it, mid-size rocks thinned); Belva's floor has no boulder field,
+  matching the HiRISE dunes and the rim panorama; level buttons carry names
+  and years. Fix: Ingenuity's camera went through hills because it flew a
+  straight line between shots; it now stays above the ground and the
+  take-off shot looks down from just above.
+
 ## v4.08 / zion-sky-v377 — 2026-10-17
 - Mars Rover Simulator 3.13: tapping a photo on a card opens it in the game,
   and panoramas wrap round you in 3D (drag to look, pinch to zoom). Why: the

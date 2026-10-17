@@ -17,6 +17,13 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.14 — on the route
+- The rover starts each year level **facing down the route**.
+- **The route is easier to follow**: the dashes are a touch brighter and longer, and the real line is passable as it really was: no big blocks within 4.5 m of it and fewer mid-size rocks within 2.6 m (pebbles stay).
+- **Belva's floor is clear**: no field of blocks inside the crater (`clear` in the level settings), matching the dunes and sand in the HiRISE pictures and the rim panorama.
+- **Ingenuity's camera never goes through a hill**: the take-off shot is from just above, looking down, and the camera is held above the ground on its way between shots.
+- The briefing's level buttons are named: 2022 · Delta front, 2023 · Belva Crater, 2024 · Lookout Hill, 2025 · Crater rim, 2026 · Beyond the rim.
+
 ## What changed in 3.13 — photos in 3D, a to-do list
 - **Photographs open inside the game.** A panorama wraps round you on the inside of a cylinder (taken to span about 40° top to bottom): drag to look along it, pinch or scroll to zoom. Other photographs fill the screen. Before, the card's photo was a plain link and opened the bare file in a new tab.
 - **Objectives list**, top left in the year levels: each objective and the beacon, ticked off as you go.
