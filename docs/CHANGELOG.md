@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.20 / zion-sky-v389 — 2026-10-17
+- Mars page: tap the blue-sunset photo to open it full screen as a horizon
+  you drag along, opening on the glow. A pan rather than a 3D sphere: the
+  picture is 1280 × 251 px, sharp enough at about 2× but not for a
+  full-surround view.
+
 ## v4.19 / zion-sky-v388 — 2026-10-17
 - Mars page: a "Blue Sunsets" card with Perseverance's first sunset photo
   (9 November 2021) and why Martian sunsets are blue: fine dust scatters

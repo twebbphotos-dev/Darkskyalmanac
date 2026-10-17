@@ -261,7 +261,16 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .mr-lm{display:grid;grid-template-columns:1fr 1fr;gap:9px}
 @media(max-width:620px){.mr-lm{grid-template-columns:1fr}}
 .mr-play{display:block;text-decoration:none;color:inherit}
-.mr-sun img{display:block;width:100%;height:auto;border-radius:8px;margin:0 0 10px}
+.mr-sun img{display:block;width:100%;height:auto;border-radius:8px}
+.mr-sunbtn{position:relative;display:block;width:100%;padding:0;margin:0 0 10px;border:0;background:none;cursor:zoom-in}
+.mr-sunbtn span{position:absolute;right:8px;bottom:8px;font:600 9px Montserrat,sans-serif;letter-spacing:.14em;text-transform:uppercase;color:#F2E4BE;background:rgba(13,10,24,.7);border:1px solid rgba(203,168,90,.4);border-radius:12px;padding:4px 9px}
+#mr-pano{position:fixed;inset:0;z-index:10000;background:#08070d;display:flex;align-items:center}
+#mr-pano[hidden]{display:none}
+#mr-pano .sc{width:100%;overflow-x:auto;overflow-y:hidden;-webkit-overflow-scrolling:touch;scrollbar-width:none;cursor:grab;touch-action:pan-x}
+#mr-pano .sc::-webkit-scrollbar{display:none}
+#mr-pano img{display:block;height:min(62vh,500px);width:auto;max-width:none;user-select:none;-webkit-user-drag:none}
+#mr-pano .x{position:absolute;top:calc(env(safe-area-inset-top,0px) + 12px);left:12px;width:40px;height:40px;border-radius:50%;border:1px solid rgba(203,168,90,.4);background:rgba(13,10,24,.8);color:#E6CC85;font-size:24px;line-height:1;cursor:pointer}
+#mr-pano .tip{position:absolute;left:0;right:0;bottom:calc(env(safe-area-inset-bottom,0px) + 20px);text-align:center;font:500 10px Montserrat,sans-serif;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66}
 .mr-sun .mr-cap{font-size:10px;line-height:1.5;color:#9A8A66;margin-top:8px}
 .mr-play .zcl-pcard{transition:border-color .15s}
 .mr-play:hover .zcl-pcard{border-color:#CBA85A}
@@ -344,11 +353,23 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
       </div>
       <div class="zcl-psec"><div class="zcl-psec-label">Blue Sunsets</div>
         <div class="zcl-pcard mr-sun">
-          <img src="img/m20/first-sunset.jpg" alt="Sunset over the hills at Jezero Crater, a pale blue glow where the Sun has just set" loading="lazy" width="1280" height="251">
+          <button class="mr-sunbtn" id="mr-sunopen" aria-label="Open the sunset panorama"><img src="img/m20/first-sunset.jpg" alt="Sunset over the hills at Jezero Crater, a pale blue glow where the Sun has just set" loading="lazy" width="1280" height="251"><span>Panorama &#8250;</span></button>
           <div class="zcl-pcsub">Mars has its colors the other way round from Earth: a butterscotch sky by day and blue at sunset. Fine dust hangs in the thin air, and the grains, around a micrometer across, scatter blue light forward, close to the Sun’s direction. Low in the sky, sunlight crosses far more of that dust, so the sky round the setting Sun glows blue while the rest fades to gray.</div>
           <div class="mr-cap">Perseverance’s first sunset photograph, from Jezero Crater on 9 November 2021 (sol 257). The air held less dust than usual, so the blue is paler than most Martian sunsets. Mastcam-Z. NASA/JPL-Caltech/ASU/MSSS</div>
         </div>
       </div>
+      <div id="mr-pano" hidden><div class="sc"><img src="img/m20/first-sunset.jpg" alt="Sunset at Jezero Crater, Mars"></div><button class="x" aria-label="Close">&times;</button><div class="tip">Drag to look along the horizon</div></div>
+<script>(function(){      // the sunset as a horizon you pan along: opens on the glow, drag or swipe sideways
+var ov=document.getElementById('mr-pano'),sc=ov.querySelector('.sc'),drag=null;document.body.appendChild(ov);
+function close(){ov.hidden=true;document.body.style.overflow='';}
+document.getElementById('mr-sunopen').addEventListener('click',function(){ov.hidden=false;document.body.style.overflow='hidden';
+  var im=sc.querySelector('img'),go=function(){sc.scrollLeft=Math.max(0,im.offsetWidth*0.41-sc.clientWidth/2);};if(im.complete)go();else im.onload=go;});
+ov.querySelector('.x').addEventListener('click',close);
+document.addEventListener('keydown',function(e){if(e.key==='Escape'&&!ov.hidden)close();});
+sc.addEventListener('pointerdown',function(e){if(e.pointerType!=='mouse')return;drag={x:e.clientX,l:sc.scrollLeft};sc.setPointerCapture(e.pointerId);sc.style.cursor='grabbing';});
+sc.addEventListener('pointermove',function(e){if(drag)sc.scrollLeft=drag.l-(e.clientX-drag.x);});
+sc.addEventListener('pointerup',function(){drag=null;sc.style.cursor='';});
+})();</script>
       <div class="zcl-psec"><div class="zcl-psec-label">The Two Moons</div>
         <div class="zcl-moonlist">
           <div class="mr-moon"><svg viewBox="0 0 34 34" aria-hidden="true"><ellipse cx="17" cy="17" rx="13.0" ry="10.0" fill="#8C7F6E"/><circle cx="13.1" cy="15" r="1.6" fill="rgba(0,0,0,.25)"/></svg><span><span class="mn">Phobos</span><br><span class="ms">27 km long · orbits in 7 hours 39 minutes — faster than Mars spins, so from the surface it rises in the west and sets in the east, twice a day. It is spiralling inward and is expected to break apart or crash into Mars within about 50 million years.</span></span></div>
