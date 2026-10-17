@@ -1,26 +1,28 @@
-# Level 3 of the Mars Rover Simulator (preview): the ground round Belva Crater.
-# Writes, in the game's own formats (see src/rover-game/README.md, "What changed in 2.3"):
-#   rover/dtm/belva_site_1m.png  1.2 km square at 1 m      rover/dtm/belva_area_4m.png  8 km square at 4 m
+# A year level of the Mars Rover Simulator: the real ground round one stretch of Perseverance's route.
+# Writes, in the game's own formats (see src/rover-game/README.md, "What changed in 2.3"), for NAME:
+#   rover/dtm/NAME_site_1m.png  1.2 km square at 1 m      rover/dtm/NAME_area_4m.png  8 km square at 4 m
 #     heights in metres relative to the landing site, packed (h + 300) x 50 in red and green (the rim to the west tops 600 m)
-#   rover/img/belva_hr.jpg   2048 m square at 1 m          rover/img/belva_area.jpg   8192 m square at 4 m
+#   rover/img/NAME_hr.jpg   2048 m square at 1 m          rover/img/NAME_area.jpg   8192 m square at 4 m
 # all centred on O (landing-site frame, metres east and south), north up.
-# Heights: the HiRISE stereo DTM DTEEC_002387_1985_003798_1985_A01 (1 m posts, USGS SOCET, astrogeo-ard), shifted
-# like the HiRISE pictures (hirise.py), over models/m20dem.bin (dem20.py) where it does not reach.
+# Heights: the HiRISE stereo DTMs (1 m posts, USGS SOCET, astrogeo-ard), shifted like the HiRISE pictures (hirise.py),
+# over models/m20dem.bin (dem20.py) where they do not reach.
 # Pictures: the viewer's HiRISE tiles, models/m20hr (1 m) and models/m20mid (4 m).
-# usage (from the repo root): python3 src/jezero-crater/belva.py
+# usage (from the repo root): python3 src/jezero-crater/site.py NAME X Z
+#   2022 (the delta front): y2022 -2200 -550        2023 (Belva Crater): belva -4050 -2290
 import numpy as np, math, json, os, rasterio
 from rasterio.windows import from_bounds
 from rasterio.enums import Resampling
 from scipy import ndimage
 from PIL import Image
-O = (-4050., -2290.)
+import sys
+NAME, O = sys.argv[1], (float(sys.argv[2]), float(sys.argv[3]))
 R = 3396190.; LAT1, LON1 = 18.4447, 77.4508; k = R * math.pi / 180; CL = math.cos(math.radians(LAT1))
-DTM = 'https://astrogeo-ard.s3.us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/PSP_002387_1985_PSP_003798_1985/DTEEC_002387_1985_003798_1985_A01.tif'
-SH = (0., -80.)                                   # metres to add to its georeference (hirise.py's alignment)
+B = 'https://astrogeo-ard.s3.us-west-2.amazonaws.com/mars/mro/hirise/controlled/dtm/'
+DTMS = [(B + 'PSP_002387_1985_PSP_003798_1985/DTEEC_002387_1985_003798_1985_A01.tif', (0., -80.)),      # with the metres to add to each georeference (hirise.py's alignment)
+        (B + 'ESP_045994_1985_ESP_046060_1985/DTEEC_045994_1985_046060_1985_U01.tif', (0., -160.))]
 dem = np.fromfile('models/m20dem.bin', '<i2').reshape(1024, 1024) / 4.
 def coarse(X, Z): return ndimage.map_coordinates(dem, [(Z + 12288) / 20 - .5, (X + 16384) / 20 - .5], order=1, mode='nearest')
-src = rasterio.open('/vsicurl/' + DTM)
-def hirise(X, Z, px):                             # the stereo DTM sampled at X, Z (landing frame), read at px metres; NaN outside
+def hirise(X, Z, px, src, SH):                             # the stereo DTM sampled at X, Z (landing frame), read at px metres; NaN outside
   XP = R * math.radians(LON1) + (X - SH[0]) / CL; YP = R * math.radians(LAT1) - (Z - SH[1])
   b = src.bounds; xa, xb = max(XP.min(), b.left), min(XP.max(), b.right); ya, yb = max(YP.min(), b.bottom), min(YP.max(), b.top)
   if xa >= xb or ya >= yb: return np.full(X.shape, np.nan)
@@ -32,7 +34,10 @@ def hirise(X, Z, px):                             # the stereo DTM sampled at X,
   return np.where(w > .999, h, np.nan)
 def heights(n, px):
   g = (np.arange(n) + .5) * px - n * px / 2; X, Z = np.meshgrid(O[0] + g, O[1] + g)
-  c = coarse(X, Z); h = hirise(X, Z, px); ok = np.isfinite(h)
+  c = coarse(X, Z); h = np.full(X.shape, np.nan)
+  for url, sh in DTMS:      # the first that reaches each point
+    q = hirise(X, Z, px, rasterio.open('/vsicurl/' + url), sh); h = np.where(np.isfinite(h), h, q + (np.nanmedian(c - q) if np.isfinite(q).any() else 0))
+  ok = np.isfinite(h)
   if ok.sum() > 1000:
     h = h + np.median(c[ok] - h[ok]); bad = ndimage.binary_dilation(np.abs(h - c) > 40, iterations=3); ok &= ~bad
   w = ndimage.gaussian_filter(np.clip(ndimage.distance_transform_edt(ok) / (60 / px), 0, 1), 2) * ok
@@ -42,8 +47,8 @@ def heights(n, px):
 def pack(h, path):
   q = np.clip(np.round((h + 300) * 50), 0, 65535).astype(np.uint32)
   Image.fromarray(np.stack([q >> 8, q & 255, np.zeros_like(q)], -1).astype(np.uint8)).save(path, optimize=True)
-pack(heights(1200, 1.), 'rover/dtm/belva_site_1m.png')
-pack(heights(2000, 4.), 'rover/dtm/belva_area_4m.png')
+pack(heights(1200, 1.), f'rover/dtm/{NAME}_site_1m.png')
+pack(heights(2000, 4.), f'rover/dtm/{NAME}_area_4m.png')
 def picture(dirn, T, n, px, out, fallback=None):     # a square of n px at px metres from the viewer's tiles
   ix = json.load(open(f'models/{dirn}/index.json')); have = set(map(tuple, ix['tiles'])); tp = 1024 / T
   img = np.zeros((n, n, 3)); got = np.zeros((n, n)); x0, z0 = O[0] - n * px / 2, O[1] - n * px / 2
@@ -59,6 +64,6 @@ def picture(dirn, T, n, px, out, fallback=None):     # a square of n px at px me
   print(out, 'covered %.0f%%' % (100 * got.mean()))
   Image.fromarray(np.clip(img, 0, 255).astype(np.uint8)).save(out, quality=84, optimize=True, progressive=True)
   return img
-area = picture('m20mid', 4096, 2048, 4., 'rover/img/belva_area.jpg')
+area = picture('m20mid', 4096, 2048, 4., f'rover/img/{NAME}_area.jpg')
 up = np.asarray(Image.fromarray(area[768:1280, 768:1280].astype(np.uint8)).resize((2048, 2048), Image.BICUBIC), float)      # the 4 m picture, where there is no 1 m tile
-picture('m20hr', 1024, 2048, 1., 'rover/img/belva_hr.jpg', up)
+picture('m20hr', 1024, 2048, 1., f'rover/img/{NAME}_hr.jpg', up)

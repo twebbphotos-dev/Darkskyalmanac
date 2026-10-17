@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.8 — a level for each year
+- **The landing stays the opening**, followed by the 2021 landing-site traverse. After it, each year of Perseverance's real route is a level, opened from the briefing or `?level=N`:
+  - **Level 1 · 2022, the delta front.** About 4.3 km of the year's drives round the foot of the delta; the outcrop is at “Wildcat Ridge”, where the rover found its strongest signs of organic molecules.
+  - **Level 2 · 2023, Belva Crater** (was the 3.7 preview; `?level=3` still opens it).
+- Each level: real HiRISE ground (`src/jezero-crater/site.py NAME X Z`), that year's route as gold dashes (`src/jezero-crater/levelpath.py`), one outcrop on it, and a beacon at the end. **Next level** on the finish card goes on to the following year.
+
 ## What changed in 3.7 — Level 3 preview: Belva Crater
 - **A third level**, opened from the briefing (or `?level=3`): the ground round Belva Crater, a crater about 0.9 km across in the top of the delta, 4 km west of the landing site.
 - **Real ground.** Heights from the HiRISE stereo DTM DTEEC_002387_1985_003798_1985_A01 at 1 m, and at 4 m out to 4 km from the Dark Sky Almanac's CTX + HiRISE height model; colour from the Almanac's HiRISE picture tiles, laid over the game's own grain as light and dark. Space is compressed 1.5× as before; heights are not exaggerated here, so slopes come out 1.5× real. Built by `src/jezero-crater/belva.py` (`dtm/belva_*.png`, `img/belva_*.jpg`; heights packed (h + 300) × 50 because the rim to the west tops 600 m).

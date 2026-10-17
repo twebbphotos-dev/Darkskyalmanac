@@ -138,7 +138,7 @@ resize();
 
 /* ── outcrops ─────────────────────────────────────────────────── */
 OUTCROP_SITES.forEach(([x, z], i) => {
-  const u = UNITS[i];
+  const u = UNITS[SITE ? SITE.unit : i];
   const g = makeOutcrop({
     feature: u.feature, seed: 400 + i * 131, x, z, ground: height,
     length: 4.4 + (i % 3) * 0.7, width: 2.3 + (i % 2) * 0.5,
@@ -1360,9 +1360,11 @@ $('card-ok').addEventListener('click', () => {
 
 function done() {
   S.phase = 'done';
-  if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = 'Level 3 · Belva Crater';
-    $('done-p').textContent = 'You followed Perseverance’s 2023 route past Belva Crater, read the rocks half way, and reached the end of the drive. The next level will start here.'; $('done-p2').style.display = 'none'; $('done').classList.add('on'); return; }
+  if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
+    $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`; $('done-p2').style.display = 'none';
+    if (SITE.next) $('btn-again').textContent = 'Next level'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
+  $('btn-again').textContent = 'Next level · 2022';      // the landing site in 2021 leads on to the year levels
   $('done').classList.add('on');
 }
 
@@ -1694,15 +1696,15 @@ $('btn-drive').addEventListener('click', () => {
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
 $('btn-skip').addEventListener('click', () => { $('brief').classList.remove('on'); startSurface(null); });
-$('btn-l3').addEventListener('click', () => { location.search = '?level=3'; });
-if (SITE) {      // level 3: straight onto the ground at Belva
-  $('rb-h1').textContent = 'Belva Crater'; $('rb-h2').textContent = 'Level 3 · Preview';
+document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { location.search = '?level=' + b.dataset.level; }));
+if (SITE) {      // a year level: straight onto the ground
+  $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
   document.querySelectorAll('#rover-brief .spec span').forEach(sp => { if (sp.textContent === 'Objective') sp.nextElementSibling.textContent = 'Follow Perseverance’s route (the gold dashes), image the outcrop half way, then reach the beacon at the end of the drive. Go anywhere you like on the way'; });
-  $('rb-p').textContent = 'You are on the delta top beside Belva, a crater about 0.9 km across punched into it. The impact cut down through the delta’s layers; dunes now fill its floor. Perseverance drove this way in 2023 and photographed the walls from the west rim on 22 April. The ground is the real one, from HiRISE elevation and images, drawn at two-thirds scale across, so slopes come out 1.5 times steeper.';
+  $('rb-p').textContent = SITE.text + ' The ground is the real one, from HiRISE elevation and images, drawn at two-thirds scale across, so slopes come out 1.5 times steeper.';
 }
 { const marks = () => document.querySelectorAll('#diff [data-d]').forEach(b => b.classList.toggle('on', b.dataset.d === difficulty()));      // Easy or Realistic, remembered on this device
   document.querySelectorAll('#diff [data-d]').forEach(b => b.addEventListener('click', () => { setDifficulty(b.dataset.d); marks(); })); marks(); }
-$('btn-again').addEventListener('click', () => location.reload());
+$('btn-again').addEventListener('click', () => { if (!SITE) location.search = '?level=1'; else if (SITE.next) location.search = '?level=' + SITE.next; else location.reload(); });
 $('minimap').addEventListener('click', () => toggleMap(true));
 $('map-close').addEventListener('click', () => toggleMap(false));
 $('btn-map').addEventListener('click', () => toggleMap());

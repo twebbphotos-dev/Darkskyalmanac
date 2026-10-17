@@ -9,24 +9,29 @@
 import * as THREE from 'three';
 import { rng, MARS, GRADE_GLSL, gradeColor } from './mars.js';
 
-/* Level 3 (preview, ?level=3): the ground round Belva Crater, 4 km west of the landing site, from the same HiRISE
-   elevation and pictures as the Dark Sky Almanac's Perseverance map (src/jezero-crater/belva.py). Heights there are
-   true to scale against the compressed ground (SV 1, so slopes come out 1.5 times real): the crater is 70 m deep. */
-export const SITE = (typeof location !== 'undefined' && new URLSearchParams(location.search).get('level') === '3') ? {
-  name: 'Belva Crater', files: ['belva_site_1m.png', 'belva_area_4m.png'], scale: 50, sv: 1,
-  origin: { x: -4050, z: -2290 },                    // metres east and south of the landing site
-  hi: 'img/belva_hr.jpg', hiArea: 'img/belva_area.jpg',
-  // Perseverance's drives here in 2023 (models/jezero-route.json, in game metres): in from the south-east, past the
-  // crater's west rim, out to the west. Start at one end, an outcrop half way, the next level from the other end.
-  path: [11.5, 431.6, 31.7, 391.7, 39.7, 382.9, 36.4, 395.4, 25.3, 414.7, 20.1, 417.1, 13.7, 414.4, -48.7, 380.1, -119.2, 353.1, -145.2, 334.6, -213.3, 296.0, -245.1, 268.7, -264.3, 259.4, -273.4, 251.1, -281.9, 247.2, -290.5, 237.5, -315.6, 221.1, -329.7, 206.3, -341.3, 188.9, -351.7, 161.9, -356.9, 137.3, -365.7, 129.9, -369.4, 120.4, -370.3, 101.7, -368.1, 82.6, -370.8, 33.0, -368.8, 18.1, -374.4, 18.9, -378.9, 15.7, -386.5, -5.3, -395.4, 2.1, -397.3, 8.9, -395.1, 12.4, -397.3, 13.5, -425.5, -7.5, -432.0, -4.1, -437.3, 4.5, -443.4, 4.8],
-} : null;
+/* Year levels (?level=1, 2, ...): the real ground round one stretch of Perseverance's route, from the same HiRISE
+   elevation and pictures as the Dark Sky Almanac's Perseverance map (src/jezero-crater/site.py; paths from
+   src/jezero-crater/levelpath.py, in game metres). Heights are true to scale against the compressed ground (SV 1, so
+   slopes come out 1.5 times real). Each level follows that year's drives: an outcrop on the way, the next level at the end. */
+const SITES = {
+  1: { year: 2022, title: 'The delta front', files: ['y2022_site_1m.png', 'y2022_area_4m.png'], hi: 'img/y2022_hr.jpg', hiArea: 'img/y2022_area.jpg',
+    origin: { x: -2200, z: -550 }, unit: 1, outcrop: { x: -208, z: -177 },      // “Wildcat Ridge”, where the rover stood on sol 503
+    text: 'In April 2022 Perseverance reached the foot of the delta, the cliffs left by the fan of sediment an ancient river built into the lake. It spent the year working along the delta front. At “Wildcat Ridge” it found a mudstone with the strongest signs of organic molecules seen so far, and in December it began setting down a depot of sample tubes nearby.',
+    path: [414.1,-145.5,284.3,-70.7,227.3,-42.0,99.0,4.1,22.1,11.1,-15.1,7.3,-88.4,-8.6,-98.4,-6.7,-107.1,2.4,-117.5,27.3,-125.2,35.3,-184.6,66.9,-218.5,91.5,-226.6,104.1,-252.1,215.3,-258.8,224.1,-356.2,201.9,-364.1,201.9,-374.6,207.3,-383.2,191.1,-384.9,167.3,-381.9,151.3,-376.5,146.0,-293.1,153.1,-283.9,149.5,-264.6,157.7,-254.9,149.6,-247.4,133.9,-243.4,121.8,-244.6,107.1,-241.0,99.3,-235.6,99.2,-176.1,47.5,-134.5,42.6,-130.0,39.4,-120.5,-2.9,-118.7,-79.1,-108.7,-142.1,-111.5,-146.1,-120.9,-147.5,-148.8,-141.0,-199.2,-141.0,-201.7,-151.5,-194.0,-160.4,-206.7,-176.7,-207.3,-186.8,-213.9,-186.7,-214.6,-183.9,-209.7,-180.0,-196.7,-174.9,-113.6,-165.9,-108.9,-163.6,-111.1,-158.1,-107.5,-139.1,-112.9,-117.3,-132.4,-71.3,-158.9,-22.6,-235.7,99.7,-248.3,137.8,-256.1,151.9,-267.7,159.9,-273.6,150.7,-272.9,143.5,-272.1,146.8,-276.7,150.1,-310.5,150.7,-348.0,148.2,-370.1,142.9,-375.7,136.7,-377.0,128.1,-386.1,125.3,-390.4,103.7,-388.0,97.2,-395.1,86.9,-435.5,58.5,-462.3,51.9,-409.4,71.3,-386.2,91.9,-384.6,98.8,-392.6,110.9,-393.6,136.1,-392.3,142.7,-381.9,149.7,-367.2,154.4,-333.4,148.6,-303.2,150.2,-291.5,147.9,-266.1,157.7,-259.3,145.6,-247.0,134.1,-242.9,107.1,-216.7,78.1,-176.3,61.5,-151.1,58.1,-147.6,54.8,-142.6,57.0,-135.3,48.0] },
+  2: { year: 2023, title: 'Belva Crater', files: ['belva_site_1m.png', 'belva_area_4m.png'], hi: 'img/belva_hr.jpg', hiArea: 'img/belva_area.jpg',
+    origin: { x: -4050, z: -2290 }, unit: 0,
+    text: 'On top of the delta now, beside Belva, a crater about 0.9 km across punched into it. The impact cut down through the delta’s layers; dunes now fill its floor. Perseverance drove this way in 2023 and photographed the walls from the west rim on 22 April.',
+    path: [11.5, 431.6, 31.7, 391.7, 39.7, 382.9, 36.4, 395.4, 25.3, 414.7, 20.1, 417.1, 13.7, 414.4, -48.7, 380.1, -119.2, 353.1, -145.2, 334.6, -213.3, 296.0, -245.1, 268.7, -264.3, 259.4, -273.4, 251.1, -281.9, 247.2, -290.5, 237.5, -315.6, 221.1, -329.7, 206.3, -341.3, 188.9, -351.7, 161.9, -356.9, 137.3, -365.7, 129.9, -369.4, 120.4, -370.3, 101.7, -368.1, 82.6, -370.8, 33.0, -368.8, 18.1, -374.4, 18.9, -378.9, 15.7, -386.5, -5.3, -395.4, 2.1, -397.3, 8.9, -395.1, 12.4, -397.3, 13.5, -425.5, -7.5, -432.0, -4.1, -437.3, 4.5, -443.4, 4.8] },
+};
+const LV = typeof location !== 'undefined' ? new URLSearchParams(location.search).get('level') : null;
+export const SITE = SITES[LV === '3' ? 2 : LV] ? { ...SITES[LV === '3' ? 2 : LV], level: +(LV === '3' ? 2 : LV), scale: 50, sv: 1, next: SITES[+(LV === '3' ? 2 : LV) + 1] ? +(LV === '3' ? 2 : LV) + 1 : 0 } : null;
 if (SITE) { const p = SITE.path, n = p.length / 2; SITE.start = { x: p[0], z: p[1] }; SITE.end = { x: p[p.length - 2], z: p[p.length - 1] };
-  let L = 0; const cum = [0]; for (let i = 1; i < n; i++) cum.push(L += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]));
-  const k = cum.findIndex(c => c >= L / 2); SITE.mid = { x: p[k * 2] + 9, z: p[k * 2 + 1] + 9 }; }
+  if (!SITE.outcrop) { let L = 0; const cum = [0]; for (let i = 1; i < n; i++) cum.push(L += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]));
+    const k = cum.findIndex(c => c >= L / 2); SITE.outcrop = { x: p[k * 2] + 9, z: p[k * 2 + 1] + 9 }; } }
 export const PLAY_R = 500;                 // you can roam this far from the origin (2.7: 2.5× wider; 3.5: 3.2× the area again, more of the real ground)
 export const TILE = 7;                     // metres per ground-texture tile
 export const START = SITE ? SITE.start : { x: 0, z: 18 };
-export const OUTCROP_SITES = SITE ? [[SITE.mid.x, SITE.mid.z]] : [      // at Belva, one, half way along the route            // drawn in closer in 2.4: a shorter drive between finds
+export const OUTCROP_SITES = SITE ? [[SITE.outcrop.x, SITE.outcrop.z]] : [      // in a year level, one, on the route            // drawn in closer in 2.4: a shorter drive between finds
   [  52, -78], [-112,  -8], [ 128,  96],
   [ -58, 152], [ 196,-112], [-168,-150],
 ];

@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.03 / zion-sky-v372 — 2026-10-17
+- Mars Rover Simulator 3.8: a level for each year of Perseverance's route,
+  after the landing and the 2021 traverse. Level 1 · 2022, the delta front
+  (outcrop at Wildcat Ridge); Level 2 · 2023, Belva Crater. Real HiRISE
+  ground, that year's real route to follow, Next level on the finish card.
+  Built by src/jezero-crater/site.py and levelpath.py.
+
 ## v4.02 / zion-sky-v371 — 2026-10-16
 - Mars Rover Simulator 3.7: Level 3 preview, Belva Crater (button on the
   briefing, or rover/?level=3). Real ground from the HiRISE stereo DTM (1 m)
