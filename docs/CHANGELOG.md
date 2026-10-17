@@ -3,6 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.22 / zion-sky-v391 — 2026-10-17
+- The blue-sunset photo (Mars page and the 2024 simulator card) is now the
+  2576 × 505 px version, twice the old one, so the full-screen pan is sharp.
+
 ## v4.21 / zion-sky-v390 — 2026-10-17
 - Mars page: removed the "Panorama" tag on the sunset photo (too big). The
   photo itself still opens the viewer.
