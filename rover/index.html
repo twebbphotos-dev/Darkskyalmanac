@@ -158,7 +158,7 @@
     border-radius:10px;background:rgba(13,10,24,.72);border:1px solid var(--line);backdrop-filter:blur(8px);pointer-events:none}
   body.edl #attitude,body.camview #attitude,body.brief #attitude{display:none}
   #mapsheet .mapcard{max-width:620px}
-  #bigmap{display:block;width:min(100%,62vh);margin-left:auto !important;margin-right:auto !important;aspect-ratio:1;border-radius:8px;border:1px solid var(--line);margin:0 0 10px}
+  #bigmap{display:block;cursor:crosshair;width:min(100%,62vh);margin-left:auto !important;margin-right:auto !important;aspect-ratio:1;border-radius:8px;border:1px solid var(--line);margin:0 0 10px}
   .legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:9.5px;letter-spacing:.05em;color:var(--dim);margin-bottom:8px}
   .legend i{display:inline-block;width:10px;height:10px;margin-right:5px;vertical-align:-1px}
   .lg-you{background:#F2E4BE;clip-path:polygon(50% 0,100% 100%,50% 70%,0 100%)} .lg-heli{border:2px solid #7FD4E0;border-radius:50%}
@@ -506,7 +506,7 @@
         <kbd>Mastcam-Z</kbd><span>Aim, then tap Capture</span>
         <kbd>Ingenuity</kbd><span>Fly ahead to scout</span>
       </div>
-      <p class="fine">Driving is time-compressed. The real rover tops out at about 150 m an hour.</p>
+      <p class="fine">Driving is time-compressed. The real rover tops out at about 150 m an hour (0.1 mph), roughly 30 times slower than walking pace.</p>
       <button class="btn primary" id="btn-drive">Start driving</button>
     </div>
   </div>

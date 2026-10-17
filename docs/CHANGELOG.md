@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.12 / zion-sky-v381 — 2026-10-17
+- Simulator: tap (or click) anywhere on the big map to send Ingenuity there
+  to scout. The map note says how many flights are left.
+- Fix: near a panorama objective the prompt said "Outcrop in Mastcam range".
+  Why: the prompt was written for the original outcrop hunt and never learned
+  the newer objective types. It now says Panorama location / Sample site.
+- The speed note gives context: about 150 m an hour (0.1 mph), roughly 30
+  times slower than walking pace. "Centred" is now US "centered".
+
 ## v4.11 / zion-sky-v380 — 2026-10-17
 - Simulator: "Scout Ahead" is now "Fly Ingenuity". A small POV button
   cycles Chase · Wide (higher, wider) · Rover (first person).

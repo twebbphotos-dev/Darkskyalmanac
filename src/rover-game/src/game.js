@@ -596,7 +596,7 @@ function toggleMap(force) {
   if (MAP.open) {
     drawMap($('bigmap'), true);
     const left = S.outcrops.filter(o => !o.found).length, clues = MAP.clues.filter(k => !k.o.found).length;
-    $('map-note').textContent = left === 0 ? 'Every outcrop has been found.'
+    $('map-note').textContent = SITE ? `${TOUCH ? 'Tap' : 'Click'} the map to send Ingenuity there to scout (${S.flights} flight${S.flights === 1 ? '' : 's'} left).` : left === 0 ? 'Every outcrop has been found.'
       : clues ? `${left} outcrop${left > 1 ? 's' : ''} still unfound. Ingenuity has ${clues} lead${clues > 1 ? 's' : ''} — the dashed circles.`
       : `${left} outcrop${left > 1 ? 's' : ''} still unfound. Send Ingenuity${kb('F')} over the dark ground to look for leads.`;
   }
@@ -1010,7 +1010,7 @@ function reveal(o, self) {
   if (o.found) return;
   o.found = true;
   o.ring.visible = true;
-  if (self) toast(o.site ? `${o.label} in view.` : `Outcrop in view — ${o.name.toLowerCase()} candidate.`);
+  if (self) toast(o.type === 'pano' ? `Panorama location in view: ${o.label}.` : o.type === 'sample' ? `Sample site in view: ${o.label}.` : o.site ? `${o.label} in view.` : `Outcrop in view — ${o.name.toLowerCase()} candidate.`);
   hud();
 }
 
@@ -1033,16 +1033,16 @@ function setDown(x, z, yaw) {
   landedQuat(x, z, yaw, heli.quaternion);
 }
 
-function launchHeli() {
+function launchHeli(target) {      // target {x,z}: a spot picked on the map; otherwise the ground ahead of the rover
   const h = S.heli;
-  if (S.phase !== 'drive' || h.phase !== 'landed') return;
+  if (S.phase !== 'drive' || h.phase !== 'landed') { if (target) toast('Ingenuity is busy. Try again once it has landed.'); return; }
   if (S.flights <= 0) { toast('Ingenuity is out of charge for today.'); return; }
 
   S.phase = 'fly';
   S.flights--;
   S.rover.speed = 0;
 
-  const ahead = S.rover.pos.clone().addScaledVector(fwdV, CFG.scoutRange);
+  const ahead = target ? new THREE.Vector3(target.x, 0, target.z) : S.rover.pos.clone().addScaledVector(fwdV, CFG.scoutRange);
   const d = Math.hypot(ahead.x, ahead.z);
   if (d > PLAY_R - 14) { ahead.x *= (PLAY_R - 14) / d; ahead.z *= (PLAY_R - 14) / d; }
 
@@ -1061,7 +1061,7 @@ function launchHeli() {
   h.yaw = Math.atan2(h.to.x - h.from.x, h.to.z - h.from.z) + Math.PI;
   S.cam = 'heli';
   hud();
-  toast('Ingenuity spinning up — imaging the ground ahead.');
+  toast(target ? 'Ingenuity spinning up — flying to the spot you picked.' : 'Ingenuity spinning up — imaging the ground ahead.');
 }
 
 /* A flight leg is one smooth curve: a quadratic arc in height over a straight ground track,
@@ -1342,7 +1342,7 @@ function closeCam() {
 
 function capture() {
   if (S.phase !== 'cam') return;
-  if (!S.framed) { toast('Nothing centred in the frame.'); return; }
+  if (!S.framed) { toast('Nothing centered in the frame.'); return; }
   const o = S.framed;
   o.logged = true;
   S.logged++;
@@ -1783,12 +1783,13 @@ function hud() {
   $('btn-heli').textContent = cam ? 'Back to driving' + kl('Esc') : 'Fly Ingenuity' + kl('F');
   $('btn-cam').textContent = cam ? 'Capture' + kl('Space') : 'Mastcam-Z' + kl('C');
   $('btn-map').textContent = 'Map' + kl('M');
-  if (S.phase === 'cam') p = TOUCH ? (S.framed ? 'Target centred — tap <b>Capture</b>' : 'Drag to aim · <b>Back to driving</b> to stow')
-                                     : (S.framed ? 'Target centred — <b>Space</b> or <b>C</b> to capture' : 'Drag or use the drive keys to aim · <b>Esc</b> to stow');
+  if (S.phase === 'cam') p = TOUCH ? (S.framed ? 'Target centered — tap <b>Capture</b>' : 'Drag to aim · <b>Back to driving</b> to stow')
+                                     : (S.framed ? 'Target centered — <b>Space</b> or <b>C</b> to capture' : 'Drag or use the drive keys to aim · <b>Esc</b> to stow');
   else if (S.phase === 'fly') p = 'Ingenuity in flight…';
   else if (S.phase === 'drive') {
     const near = S.outcrops.find(o => !o.logged && S.rover.pos.distanceTo(o.pos) < CFG.camRange);
-    if (near) p = TOUCH ? 'Outcrop in Mastcam range — tap <b>Mastcam-Z</b>' : 'Outcrop in Mastcam range — press <b>C</b>';
+    const what = !near ? '' : near.type === 'sample' ? 'Sample site' : near.type === 'pano' ? 'Panorama location' : 'Outcrop';
+    if (near) p = TOUCH ? `${what} in Mastcam range — tap <b>Mastcam-Z</b>` : `${what} in Mastcam range — press <b>C</b>`;
   }
   $('prompt').innerHTML = p;
   $('prompt').classList.toggle('on', !!p);
@@ -1898,6 +1899,11 @@ if (SITE) {      // a year level: straight onto the ground
   document.querySelectorAll('#diff [data-d]').forEach(b => b.addEventListener('click', () => { setDifficulty(b.dataset.d); marks(); })); marks(); }
 $('btn-again').addEventListener('click', () => { if (!SITE) location.search = '?level=1'; else if (SITE.next) location.search = '?level=' + SITE.next; else location.reload(); });
 $('minimap').addEventListener('click', () => toggleMap(true));
+$('bigmap').addEventListener('click', e => {      // tap the map to send Ingenuity there
+  const r = $('bigmap').getBoundingClientRect(), R = MAP.R;
+  const x = (e.clientX - r.left) / r.width * 2 * R - R, z = (e.clientY - r.top) / r.height * 2 * R - R;
+  toggleMap(false); launchHeli({ x, z });
+});
 $('map-close').addEventListener('click', () => toggleMap(false));
 $('btn-map').addEventListener('click', () => toggleMap());
 

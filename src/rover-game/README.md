@@ -17,6 +17,11 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.17 — scout anywhere
+- **Tap the big map** to send Ingenuity to that spot (`launchHeli({x,z})`, clamped to the roaming area). Without a target it still images the ground 72 m ahead.
+- The Mastcam prompt and "in view" message name the objective type: Panorama location, Sample site or Outcrop.
+- The briefing puts the real rover's speed in context (0.1 mph, ~30× slower than walking).
+
 ## What changed in 3.16 — fog, POV, easier Easy
 - **Fly Ingenuity** replaces "Scout Ahead".
 - **POV button**: Chase, Wide (camera 2.3× farther and higher) or Rover (first person from the mast).
