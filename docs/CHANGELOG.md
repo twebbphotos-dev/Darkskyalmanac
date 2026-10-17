@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.23 / zion-sky-v392 — 2026-10-17
+- The blue-sunset photo is now the full 4884 × 958 px original. Why the last
+  one was smaller: chat attachments are resized on the way in; this copy came
+  straight from Google Drive. The full-screen pan shows it a little larger.
+
 ## v4.22 / zion-sky-v391 — 2026-10-17
 - The blue-sunset photo (Mars page and the 2024 simulator card) is now the
   2576 × 505 px version, twice the old one, so the full-screen pan is sharp.
