@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.15 / zion-sky-v384 — 2026-10-17
+- Fix: after a release, the phone could still run the previous version of
+  the rover game (seen as v4.13's Ingenuity panel on the 2023 end card after
+  v4.14 removed it). Why: with "Download everything" on, the worker gave
+  the network 4 s and then served the saved copy; the 1 MB game bundle
+  takes longer than that on a weak signal. Code files (the rover page and
+  every .bundle.js) now wait for the network and fall back to the saved
+  copy only when it fails. Textures and terrain keep the 4 s rule.
+
 ## v4.14 / zion-sky-v383 — 2026-10-17
 - Simulator: the 2024 level now plays out Ingenuity's 72nd and last flight.
   Its first flight of the year (or one it makes by itself after 45 s) goes

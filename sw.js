@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v383';
+const CACHE = 'zion-sky-v384';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -324,6 +324,9 @@ self.addEventListener('fetch', function(e){
           if(self.navigator && self.navigator.onLine === false) return hit;
           const net = fetch(req).then(function(r){ if(r && r.status === 200) c.put(req, r.clone()); return r; });
           try{ e.waitUntil(net.catch(function(){})); }catch(err){}
+          // Code (the rover page and the bundles) waits for the network: on a weak signal a 4 s
+          // deadline served the saved copy, so the phone ran the previous release's game.
+          if(/\.js(\?|$)|\/rover\/(index\.html)?(\?|#|$)/.test(url)) return net.then(function(r){ return (r && r.ok) ? r : hit; }, function(){ return hit; });
           return deadline(net, ASSET_WAIT).then(function(r){ return (r && r.ok) ? r : hit; }, function(){ return hit; });
         });
       });
