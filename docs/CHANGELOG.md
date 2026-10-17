@@ -3,6 +3,20 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.13 / zion-sky-v382 — 2026-10-17
+- Simulator: each drive ends at sunset. The camera drops behind the rover
+  and the sky round the low Sun turns blue, as fine Martian dust scatters
+  blue light forward. A tap skips it.
+- Ingenuity is grounded in the 2024–2026 levels: its 72nd and last flight,
+  on 18 January 2024, broke its rotor blades. The end of the 2023 level now
+  tells that story with Perseverance's Mastcam-Z mosaic of Valinor Hills.
+  Why not on the map: from NASA's traverse, the rover saw it from about
+  415 m away at a spot between the 2023 and 2024 maps, outside both.
+- Real panoramas: the sample depot (31 January 2023) in 2022, and the
+  360° "Crocodile Bridge" panorama in 2026, at the spot where NASA's
+  traverse shows the rover parked from sol 1710 to 1756. The photo viewer
+  wraps a 360° picture all the way round.
+
 ## v4.12 / zion-sky-v381 — 2026-10-17
 - Simulator: tap (or click) anywhere on the big map to send Ingenuity there
   to scout. The map note says how many flights are left.

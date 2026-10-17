@@ -17,6 +17,12 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.18 — sunset, a grounded helicopter, real panoramas
+- **Sunset at the beacon** (`startSunset`/`stepSunset`, 14 s, tap to skip): the sun drops to 2.5°, a `dusk` uniform in the sky shader (mars.js) dims the sky to linear brown-gray and adds a tight blue glow round the sun; sun and sky light fade, the fog darkens, the camera sits behind the rover looking into the sun.
+- **No Ingenuity from 2024** (`NOHELI`, year ≥ 2024): no helicopter, button, flights count, map taps or legend; the briefing says it is grounded. `.heli-only` / `.heli-gone` in index.html.
+- **2023 epilogue** (`SITE.epilogue`): Ingenuity's last flight and the Valinor Hills mosaic (sol 1068) on the drive-complete card. Valinor Hills is ~2.5 km west of the 2023 map and east of the 2024 map, so it is not placed in either.
+- **Real panoramas**: the sample depot portrait (sol 693) in 2022; "Crocodile Bridge" 360° (sols 1717 and 1754) in 2026 at the 2026 start, where the traverse shows the rover parked for sols 1710–1756. File names ending `-360.` wrap the full circle in the photo viewer.
+
 ## What changed in 3.17 — scout anywhere
 - **Tap the big map** to send Ingenuity to that spot (`launchHeli({x,z})`, clamped to the roaming area). Without a target it still images the ground 72 m ahead.
 - The Mastcam prompt and "in view" message name the objective type: Panorama location, Sample site or Outcrop.

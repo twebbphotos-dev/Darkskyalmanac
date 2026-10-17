@@ -122,7 +122,7 @@ renderer.shadowMap.type = THREE.PCFSoftShadowMap;
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 6000);
 
-const { sun, sky, map, bump, sunDir } = buildMars(scene, renderer);
+const { sun, sky, map, bump, sunDir, hemi } = buildMars(scene, renderer);
 document.getElementById('loadmsg').textContent = 'Loading Jezero elevation…';
 await loadDTM('dtm/');                               // the real ground, before anything is built on it
 if (DTM.on) { scene.fog.near = 60; scene.fog.far = SITE ? SITE.fog : 1900; }   // far enough to see the delta front, 2.5 km off
@@ -199,11 +199,13 @@ const GOAL = SITE ? (() => {
   beam.position.set(x, y + 30, z); scene.add(beam);
   const ring = new THREE.Mesh(new THREE.RingGeometry(9, 10, 64), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(x, y + 0.3, z); scene.add(ring);
-  return { beam, told: false, chunks };
+  return { beam, ring, told: false, chunks };
 })() : null;
 const EASY = difficulty() === 'easy';
+const NOHELI = !!SITE && SITE.year >= 2024;      // Ingenuity's flying ended on 18 January 2024
+if (NOHELI) document.body.classList.add('noheli');
 function seenAt(x, z) { const { n, cell, R } = MAP, i = Math.floor((x + R) / cell), j = Math.floor((z + R) / cell); return i >= 0 && j >= 0 && i < n && j < n && MAP.seen[j * n + i] === 1; }
-function revealRoute() { if (GOAL) GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
+function revealRoute() { if (GOAL && S.phase !== 'sunset') GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
 
 /* rocks, kept clear of the start pad and the outcrops — scattered once the scanned rocks have loaded */
 let rockCount = null;
@@ -566,7 +568,7 @@ function drawMap(cv, big) {
     if (big) { c.fillStyle = '#F2E4BE'; c.font = '600 11px Montserrat, sans-serif'; c.textAlign = 'left'; c.fillText(o.logged ? o.name : `${o.name} — not yet imaged`, x + 12, y + 4); }
   });
   // Ingenuity
-  if (S.heli.site) {
+  if (S.heli.site && !NOHELI) {
     const [x, y] = P(heli ? heli.position.x : S.heli.site.x, heli ? heli.position.z : S.heli.site.z);
     c.strokeStyle = '#7FD4E0'; c.lineWidth = 1.5; const r = big ? 6 : 4;
     c.beginPath(); c.moveTo(x - r, y); c.lineTo(x + r, y); c.moveTo(x, y - r); c.lineTo(x, y + r); c.stroke();
@@ -596,7 +598,7 @@ function toggleMap(force) {
   if (MAP.open) {
     drawMap($('bigmap'), true);
     const left = S.outcrops.filter(o => !o.found).length, clues = MAP.clues.filter(k => !k.o.found).length;
-    $('map-note').textContent = SITE ? `${TOUCH ? 'Tap' : 'Click'} the map to send Ingenuity there to scout (${S.flights} flight${S.flights === 1 ? '' : 's'} left).` : left === 0 ? 'Every outcrop has been found.'
+    $('map-note').textContent = NOHELI ? 'Ingenuity is grounded, so the fog lifts only where the rover drives.' : SITE ? `${TOUCH ? 'Tap' : 'Click'} the map to send Ingenuity there to scout (${S.flights} flight${S.flights === 1 ? '' : 's'} left).` : left === 0 ? 'Every outcrop has been found.'
       : clues ? `${left} outcrop${left > 1 ? 's' : ''} still unfound. Ingenuity has ${clues} lead${clues > 1 ? 's' : ''} — the dashed circles.`
       : `${left} outcrop${left > 1 ? 's' : ''} still unfound. Send Ingenuity${kb('F')} over the dark ground to look for leads.`;
   }
@@ -1035,6 +1037,7 @@ function setDown(x, z, yaw) {
 
 function launchHeli(target) {      // target {x,z}: a spot picked on the map; otherwise the ground ahead of the rover
   const h = S.heli;
+  if (NOHELI) { if (S.phase === 'drive') toast('Ingenuity is grounded: its last flight, in January 2024, damaged its rotor blades.'); return; }
   if (S.phase !== 'drive' || h.phase !== 'landed') { if (target) toast('Ingenuity is busy. Try again once it has landed.'); return; }
   if (S.flights <= 0) { toast('Ingenuity is out of charge for today.'); return; }
 
@@ -1467,7 +1470,7 @@ function openPhoto(src) {
     const rr = new THREE.WebGLRenderer({ canvas: cv, antialias: true }); rr.setPixelRatio(Math.min(2, devicePixelRatio)); rr.outputColorSpace = THREE.SRGBColorSpace;
     const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
     const tex = new THREE.Texture(im); tex.colorSpace = THREE.SRGBColorSpace; tex.anisotropy = 8; tex.needsUpdate = true;
-    const arc = Math.min(Math.PI * 2, a * 0.7), R = 10, Hh = R * arc / a;      // the picture taken to span about 40° top to bottom
+    const arc = /-360\./.test(src) ? Math.PI * 2 : Math.min(Math.PI * 2, a * 0.7), R = 10, Hh = R * arc / a;      // the picture taken to span about 40° top to bottom
     const g = new THREE.CylinderGeometry(R, R, Hh, 128, 1, true, Math.PI - arc / 2, arc);      // centred on -z, where the camera looks
     const m = new THREE.Mesh(g, new THREE.MeshBasicMaterial({ map: tex, side: THREE.BackSide })); m.scale.x = -1; sc.add(m);      // seen from inside, so mirrored back
     let yaw = 0, pitch = 0, fov = 2 * Math.atan(Hh / 2 / R) * 180 / Math.PI, drag = null, pinch = 0, run = true;      // start with the picture filling the screen top to bottom
@@ -1496,10 +1499,48 @@ $('card-ok').addEventListener('click', () => {
   else if (S.logged >= S.outcrops.length) done();
 });
 
+/* The end of the drive is the end of the sol: the sun goes down over the route and the
+   sky round it turns blue, as Mastcam-Z has seen it. About 12 s; a tap skips it. */
+const SUNSET = { t: 0, dur: 14 };
+function startSunset() {
+  S.phase = 'sunset'; S.rover.speed = 0; SUNSET.t = 0;
+  SUNSET.az = Math.atan2(sunDir.x, -sunDir.z); SUNSET.el0 = Math.asin(sunDir.y);
+  SUNSET.int0 = sun.intensity; SUNSET.hemi0 = hemi.intensity; SUNSET.fog0 = scene.fog.color.clone(); SUNSET.col0 = sun.color.clone();
+  document.body.classList.add('cinema'); $('prompt').classList.remove('on');
+  GOAL.beam.visible = GOAL.ring.visible = false; GOAL.chunks.forEach(c => { c.line.visible = false; });
+}
+const DUSK_FOG = new THREE.Color(0x2e2420), DUSK_SUN = new THREE.Color(0xdfe6ff);
+function stepSunset(dt) {
+  SUNSET.t = Math.min(SUNSET.dur, SUNSET.t + dt);
+  const u = SUNSET.t / SUNSET.dur, ez = x => x * x * (3 - 2 * x);
+  const el = SUNSET.el0 + (2.5 * Math.PI / 180 - SUNSET.el0) * ez(Math.min(1, u / 0.75)), k = ez(Math.min(1, Math.max(0, (u - 0.12) / 0.58)));
+  const dir = new THREE.Vector3(Math.sin(SUNSET.az) * Math.cos(el), Math.sin(el), -Math.cos(SUNSET.az) * Math.cos(el));
+  sky.material.uniforms.sunDir.value.copy(dir); sky.material.uniforms.dusk.value = k;
+  sunOff.copy(dir).multiplyScalar(120);
+  sun.intensity = SUNSET.int0 * (1 - 0.9 * k); hemi.intensity = SUNSET.hemi0 * (1 - 0.8 * k);
+  sun.color.copy(SUNSET.col0).lerp(DUSK_SUN, k); scene.fog.color.copy(SUNSET.fog0).lerp(DUSK_FOG, k);
+  // the camera drops in behind the rover and looks into the sun, the rover in silhouette
+  const r = S.rover, h = new THREE.Vector3(dir.x, 0, dir.z).normalize();
+  const want = r.pos.clone().addScaledVector(h, -11).add(new THREE.Vector3(0, 2.6, 0));
+  want.y = Math.max(want.y, height(want.x, want.z) + 1.8);
+  const look = r.pos.clone().addScaledVector(h, 40).add(new THREE.Vector3(0, 3.5, 0));
+  const t = 1 - Math.exp(-1.6 * dt);
+  camPos.lerp(want, t); camTgt.lerp(look, t);
+  camera.position.copy(camPos); camera.lookAt(camTgt);
+  sky.position.copy(camera.position); aimSun(r);
+  if (SUNSET.t >= SUNSET.dur) endSunset();
+}
+function endSunset() { if (S.phase !== 'sunset') return; document.body.classList.remove('cinema'); done(); }
+addEventListener('pointerdown', () => { if (S.phase === 'sunset' && SUNSET.t > 1) endSunset(); });
+addEventListener('keydown', () => { if (S.phase === 'sunset' && SUNSET.t > 1) endSunset(); });
+
 function done() {
   S.phase = 'done';
   if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
-    $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`; $('done-p2').style.display = 'none';
+    $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`;
+    const ep = SITE.epilogue; $('done-epi').hidden = !ep;
+    if (ep) { $('done-epi-h').textContent = ep.h; $('done-epi-img').src = '../' + ep.img; $('done-epi-img').onclick = () => openPhoto('../' + ep.img); $('done-epi-cap').textContent = ep.cap; $('done-epi-p').textContent = ep.x; }
+    $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.'; $('done-p2').style.display = '';
     if (SITE.next) $('btn-again').textContent = 'Next level'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
   $('btn-again').textContent = 'Next level · 2022';      // the landing site in 2021 leads on to the year levels
@@ -1736,7 +1777,7 @@ function stepMarks() {
 
   // where the helicopter is parked, once it is far enough off to lose sight of
   let show = false;
-  if (heli && S.heli.phase === 'landed' && (S.phase === 'drive' || S.phase === 'cam')) {
+  if (heli && !NOHELI && S.heli.phase === 'landed' && (S.phase === 'drive' || S.phase === 'cam')) {
     const dist = heli.position.distanceTo(S.rover.pos);
     _p.copy(heli.position); _p.y += 0.9; _p.project(camera);
     const x = (_p.x * 0.5 + 0.5) * innerWidth, y = (-_p.y * 0.5 + 0.5) * innerHeight;
@@ -1832,12 +1873,12 @@ function update(dt, now = performance.now()) {
   }
 
   stepDust(dt);
-  stepCamera(dt);
+  if (S.phase === 'sunset') stepSunset(dt); else stepCamera(dt);
   stepMarks();
   if (GOAL && S.phase === 'drive') {      // level 3: the end of the drive
     GOAL.beam.material.opacity = 0.22 + Math.sin(now * 0.003) * 0.08;
     const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
-    if (d < 14) { if (S.logged >= S.outcrops.length) done(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Finish the objectives on the route first: M shows them on the map.'); } }
+    if (d < 14) { if (S.logged >= S.outcrops.length) startSunset(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Finish the objectives on the route first: M shows them on the map.'); } }
     else if (d > 30) GOAL.told = false;
   }
 
@@ -1871,7 +1912,7 @@ function startSurface(landed) {
   const pad = findLanding(x + 7, z - 10, [{ x, z, r: 5 }]);
   S.heli.site = pad; S.heli.phase = 'landed';
   setDown(pad.x, pad.z, S.heli.yaw);
-  heli.visible = true;
+  heli.visible = !NOHELI;
   S.phase = 'brief';
   hud();
   $('rover-brief').classList.add('on');
@@ -1881,7 +1922,7 @@ $('btn-drive').addEventListener('click', () => {
   $('rover-brief').classList.remove('on');
   S.phase = 'drive'; hud();
   stepMap(1);
-  toast(SITE ? `${EASY ? 'Follow the gold dashes, Perseverance’s real route' : 'Perseverance’s real route shows in gold as you explore or fly Ingenuity'}: ${SITE.goalText}. Then the beacon. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
+  toast(SITE ? `${EASY ? 'Follow the gold dashes, Perseverance’s real route' : (NOHELI ? 'Perseverance’s real route shows in gold as you explore' : 'Perseverance’s real route shows in gold as you explore or fly Ingenuity')}: ${SITE.goalText}. Then the beacon. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
@@ -1902,6 +1943,7 @@ $('minimap').addEventListener('click', () => toggleMap(true));
 $('bigmap').addEventListener('click', e => {      // tap the map to send Ingenuity there
   const r = $('bigmap').getBoundingClientRect(), R = MAP.R;
   const x = (e.clientX - r.left) / r.width * 2 * R - R, z = (e.clientY - r.top) / r.height * 2 * R - R;
+  if (NOHELI) return;
   toggleMap(false); launchHeli({ x, z });
 });
 $('map-close').addEventListener('click', () => toggleMap(false));

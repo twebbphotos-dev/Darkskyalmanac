@@ -136,6 +136,7 @@
   #real h2{margin-bottom:11px}
   #real-link{display:block;text-decoration:none;color:inherit;border-radius:8px}
   #real-link:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+  #done-epi img{display:block;width:100%;border-radius:8px;margin:4px 0 4px;cursor:zoom-in} #done-epi .fine{margin:0 0 8px} #done .card{max-height:92vh;overflow-y:auto}
   #real-fig{position:relative;margin:0 0 11px;aspect-ratio:16/10;border-radius:8px;overflow:hidden;
     background:#0c0913;border:1px solid var(--line)}
   #real-img{width:100%;height:100%;object-fit:cover;display:block}
@@ -170,6 +171,8 @@
   #letterbox i{position:fixed;left:0;right:0;height:0;background:#000;z-index:18;transition:height .6s cubic-bezier(.2,.7,.2,1);pointer-events:none}
   #letterbox i:first-child{top:0} #letterbox i:last-child{bottom:0}
   body.cinema #letterbox i{height:9vh}
+  body.cinema #goals,body.cinema #btn-pov{opacity:0;pointer-events:none}
+  .heli-gone{display:none} body.noheli .heli-only{display:none !important} body.noheli .heli-gone{display:revert}
   body.cinema #top,body.cinema #bottom,body.cinema #minimap,body.cinema #attitude,body.cinema #prompt,body.cinema #toast{opacity:0;pointer-events:none}
   #top,#bottom,#minimap,#attitude{transition:opacity .4s}
   #beat{position:fixed;left:calc(env(safe-area-inset-left,0px) + 5vw);bottom:calc(9vh + 22px);z-index:26;max-width:min(560px,86vw);
@@ -409,7 +412,7 @@
   <div id="title">Perseverance Simulator<small>Mars rover · Jezero crater</small></div>
   <div class="stats">
     <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span id="stat-label">Outcrops</span></div>
-    <div class="stat"><b id="flights">6</b><span>Flights</span></div>
+    <div class="stat heli-only"><b id="flights">6</b><span>Flights</span></div>
   </div>
 </div>
 
@@ -429,7 +432,7 @@
 
 <div id="bottom">
   <div id="acts">
-    <button class="btn" id="btn-heli">Fly Ingenuity · F</button>
+    <button class="btn heli-only" id="btn-heli">Fly Ingenuity · F</button>
     <button class="btn" id="btn-cam">Mastcam-Z · C</button>
     <button class="btn" id="btn-map">Map · M</button>
   </div>
@@ -492,19 +495,20 @@
       <div class="spec">
         <span>Rover</span><b>1,025 kg, six wheels, rocker-bogie suspension</b>
         <span>Mobility</span><b>Climbs blocks up to ~50 cm. The software stops at 30° of tilt; drift sand slips past ~25°</b>
-        <span>Ingenuity</span><b>1.8 kg, two 1.2 m rotors at ~2,500 rpm</b>
+        <span class="heli-only">Ingenuity</span><b class="heli-only">1.8 kg, two 1.2 m rotors at ~2,500 rpm</b>
+        <span class="heli-gone">Ingenuity</span><b class="heli-gone">Grounded: its 72nd and last flight, on 18 January 2024, damaged its rotor blades on landing</b>
       </div>
       <div class="keys kb">
         <kbd>W A S D</kbd><span>Drive · drag to look around, scroll to zoom</span>
         <kbd>C</kbd><span>Mastcam-Z, then <b>Space</b> to take the picture</span>
-        <kbd>F</kbd><span>Fly Ingenuity ahead to scout</span>
+        <kbd class="heli-only">F</kbd><span class="heli-only">Fly Ingenuity ahead to scout · tap the map to pick a spot</span>
         <kbd>M</kbd><span>Map</span>
       </div>
       <div class="keys tc">
         <kbd>Stick</kbd><span>Drive: push further to go faster</span>
         <kbd>Drag</kbd><span>Look around the rover</span>
         <kbd>Mastcam-Z</kbd><span>Aim, then tap Capture</span>
-        <kbd>Ingenuity</kbd><span>Fly ahead to scout</span>
+        <kbd class="heli-only">Ingenuity</kbd><span class="heli-only">Fly ahead to scout · tap the map to pick a spot</span>
       </div>
       <p class="fine">Driving is time-compressed. The real rover tops out at about 150 m an hour (0.1 mph), roughly 30 times slower than walking pace.</p>
       <button class="btn primary" id="btn-drive">Start driving</button>
@@ -517,8 +521,8 @@
     <h1>Traverse map</h1>
     <h2>Jezero crater floor · north up</h2>
     <canvas id="bigmap" width="560" height="560"></canvas>
-    <div class="legend"><span><i class="lg-you"></i>Perseverance</span><span><i class="lg-heli"></i>Ingenuity</span>
-      <span><i class="lg-found"></i>found</span><span><i class="lg-logged"></i>imaged</span><span><i class="lg-clue"></i>Ingenuity lead</span><span><i class="lg-fog"></i>unexplored</span></div>
+    <div class="legend"><span><i class="lg-you"></i>Perseverance</span><span class="heli-only"><i class="lg-heli"></i>Ingenuity</span>
+      <span><i class="lg-found"></i>found</span><span><i class="lg-logged"></i>imaged</span><span class="heli-only"><i class="lg-clue"></i>Ingenuity lead</span><span><i class="lg-fog"></i>unexplored</span></div>
     <p id="map-note"></p>
     <button class="btn primary" id="map-close">Back to driving</button>
   </div>
@@ -560,6 +564,7 @@
       wet planet.</p>
     <p id="done-p2">Every one of them is something a rover has really found. The photographs came
       from Curiosity in Gale crater and Perseverance in Jezero.</p>
+    <div id="done-epi" hidden><h2 id="done-epi-h"></h2><img id="done-epi-img" alt=""><p class="fine" id="done-epi-cap"></p><p id="done-epi-p"></p></div>
     <button class="btn primary" id="btn-again">Run it again</button>
   </div>
 </div>

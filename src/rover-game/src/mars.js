@@ -213,6 +213,7 @@ function skyDome(top, horizon, sunDir) {
       cTop: { value: new THREE.Color(top) },
       cBot: { value: new THREE.Color(horizon) },
       sunDir: { value: sunDir.clone() },
+      dusk: { value: 0 },
     },
     vertexShader: `
       varying vec3 vDir;
@@ -221,7 +222,7 @@ function skyDome(top, horizon, sunDir) {
         gl_Position = projectionMatrix * modelViewMatrix * vec4(position,1.0);
       }`,
     fragmentShader: `
-      uniform vec3 cTop; uniform vec3 cBot; uniform vec3 sunDir; varying vec3 vDir;
+      uniform vec3 cTop; uniform vec3 cBot; uniform vec3 sunDir; uniform float dusk; varying vec3 vDir;
       void main(){
         vec3 d = normalize(vDir);
         float t = clamp(d.y * 1.5 + 0.02, 0.0, 1.0);
@@ -229,6 +230,10 @@ function skyDome(top, horizon, sunDir) {
         float s = max(dot(d, sunDir), 0.0);
         // Mars: the sky is tan, but forward-scattering dust makes it blue-white round the sun
         col += vec3(0.62, 0.72, 0.9) * (pow(s, 28.0) * 0.30 + pow(s, 5.0) * 0.07);
+        // dusk: the sky dims to brown-gray and the glow round the low sun turns deep blue,
+        // because fine dust scatters blue light forward, close to the sun's direction
+        col = mix(col, mix(vec3(0.030, 0.022, 0.018), vec3(0.006, 0.006, 0.010), pow(t, 0.6)), dusk);      // linear, to meet the dusk fog
+        col += dusk * vec3(0.20, 0.42, 1.0) * (pow(s, 90.0) * 1.5 + pow(s, 24.0) * 0.4 + pow(s, 8.0) * 0.05);
         col += vec3(1.0, 0.97, 0.92) * smoothstep(0.99990, 0.99996, s) * 6.0;
         gl_FragColor = vec4(col, 1.0);
         #include <tonemapping_fragment>
@@ -259,7 +264,8 @@ export function buildMars(scene, renderer) {
   const { map, bump } = groundTextures(11);
   map.anisotropy = bump.anisotropy = renderer.capabilities.getMaxAnisotropy();
 
-  scene.add(new THREE.HemisphereLight(MARS.hemiSky, MARS.hemiGround, MARS.hemiInt));
+  const hemi = new THREE.HemisphereLight(MARS.hemiSky, MARS.hemiGround, MARS.hemiInt);
+  scene.add(hemi);
 
   const sun = new THREE.DirectionalLight(MARS.sunColor, 2.5);
   sun.position.copy(sunDir).multiplyScalar(120);
@@ -278,5 +284,5 @@ export function buildMars(scene, renderer) {
   renderer.toneMappingExposure = MARS.exposure;
   renderer.outputColorSpace = THREE.SRGBColorSpace;
 
-  return { sun, sunDir, sky, map, bump };
+  return { sun, sunDir, sky, map, bump, hemi };
 }
