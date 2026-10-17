@@ -3,6 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.21 / zion-sky-v390 — 2026-10-17
+- Mars page: removed the "Panorama" tag on the sunset photo (too big). The
+  photo itself still opens the viewer.
+
 ## v4.20 / zion-sky-v389 — 2026-10-17
 - Mars page: tap the blue-sunset photo to open it full screen as a horizon
   you drag along, opening on the glow. A pan rather than a 3D sphere: the
