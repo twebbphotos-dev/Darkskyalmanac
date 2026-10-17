@@ -183,7 +183,7 @@ GOALS.filter(q => q.type !== 'pano').forEach((goal, i) => {
 });
 S.outcrops.sort((a, b) => GOALS.findIndex(g => g.x === a.pos.x && g.z === a.pos.z) - GOALS.findIndex(g => g.x === b.pos.x && g.z === b.pos.z));      // in route order
 
-/* level 3: Perseverance's route as a faint dashed line on the ground, and a beacon at the end of it */
+/* year levels: Perseverance's route as a faint dashed line on the ground, and a ring where it ends */
 const GOAL = SITE ? (() => {
   const p = SITE.path, pts = [];
   for (let i = 0; i + 2 < p.length; i += 2) { const x0 = p[i], z0 = p[i + 1], x1 = p[i + 2], z1 = p[i + 3], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 2));
@@ -195,15 +195,14 @@ const GOAL = SITE ? (() => {
     line.computeLineDistances(); scene.add(line); const c = seg[seg.length >> 1]; chunks.push({ line, x: c.x, z: c.z });
   }
   const { x, z } = SITE.end, y = height(x, z);
-  const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide, fog: false }));
-  beam.position.set(x, y + 30, z); scene.add(beam);
   const ring = new THREE.Mesh(new THREE.RingGeometry(9, 10, 64), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(x, y + 0.3, z); scene.add(ring);
-  return { beam, ring, told: false, chunks };
+  return { ring, told: false, chunks };
 })() : null;
 const EASY = difficulty() === 'easy';
-const NOHELI = !!SITE && SITE.year >= 2024;      // Ingenuity's flying ended on 18 January 2024
+let NOHELI = !!SITE && SITE.year >= 2024 && !SITE.crash;      // Ingenuity's flying ended on 18 January 2024...
 if (NOHELI) document.body.classList.add('noheli');
+const CRASH = SITE && SITE.crash ? { ...SITE.crash, done: false, t: 0 } : null;      // ...on its 72nd flight, which the 2024 level plays out
 function seenAt(x, z) { const { n, cell, R } = MAP, i = Math.floor((x + R) / cell), j = Math.floor((z + R) / cell); return i >= 0 && j >= 0 && i < n && j < n && MAP.seen[j * n + i] === 1; }
 function revealRoute() { if (GOAL && S.phase !== 'sunset') GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
 
@@ -1045,12 +1044,13 @@ function launchHeli(target) {      // target {x,z}: a spot picked on the map; ot
   S.flights--;
   S.rover.speed = 0;
 
+  if (CRASH && !CRASH.done) { target = CRASH; h.crash = true; }      // whatever was asked, this is flight 72
   const ahead = target ? new THREE.Vector3(target.x, 0, target.z) : S.rover.pos.clone().addScaledVector(fwdV, CFG.scoutRange);
   const d = Math.hypot(ahead.x, ahead.z);
   if (d > PLAY_R - 14) { ahead.x *= (PLAY_R - 14) / d; ahead.z *= (PLAY_R - 14) / d; }
 
   // decide now where it will put down afterwards
-  h.site = findLanding(ahead.x, ahead.z, [
+  h.site = h.crash ? { x: CRASH.x, z: CRASH.z } : findLanding(ahead.x, ahead.z, [
     ...S.outcrops.map(o => ({ x: o.pos.x, z: o.pos.z, r: 11 })),
     { x: S.rover.pos.x, z: S.rover.pos.z, r: 7 },
   ]);
@@ -1064,7 +1064,7 @@ function launchHeli(target) {      // target {x,z}: a spot picked on the map; ot
   h.yaw = Math.atan2(h.to.x - h.from.x, h.to.z - h.from.z) + Math.PI;
   S.cam = 'heli';
   hud();
-  toast(target ? 'Ingenuity spinning up — flying to the spot you picked.' : 'Ingenuity spinning up — imaging the ground ahead.');
+  toast(h.crash ? 'Ingenuity spinning up for its 72nd flight, over the dunes at “Valinor Hills.”' : target ? 'Ingenuity spinning up — flying to the spot you picked.' : 'Ingenuity spinning up — imaging the ground ahead.');
 }
 
 /* A flight leg is one smooth curve: a quadratic arc in height over a straight ground track,
@@ -1107,6 +1107,10 @@ function heliAttitude(h, dt, accFwd, accSide, wobble) {
 
 function stepHeli(dt) {
   const h = S.heli;
+  if (h.phase === 'wreck') {      // hold on the crash a moment, then back to the rover
+    if (S.phase === 'fly' && (h.t += dt) > 3) afterCrash();
+    return;
+  }
   const flying = h.phase !== 'landed' && h.phase !== 'spindown';
   h.spin += ((flying ? 1 : 0) - h.spin) * Math.min(1, dt * (flying ? 3.5 : 2.2));
   if (h.spin > 0.004) rotors.forEach(([o, d]) => o.rotateX(d * HELI.rotor * h.spin * dt));
@@ -1130,6 +1134,7 @@ function stepHeli(dt) {
       takeoff: ['Lift-off', 'Ingenuity weighs 1.8 kg. On its first flight, in April 2021, it rose 3 m and hovered for 39 seconds.'],
       out: ['Scouting the route', 'Flying ahead of the rover to look at the ground it will have to cross.'], scan: ['Imaging the ground', 'A downward camera photographs the terrain for the drivers on Earth.'],
       hop: ['A new airfield', 'It picks a flat, clear patch and heads for it.'], land: ['Touchdown', 'Feet down on the slope, rotors winding down.'] }[h.phase];
+    if (h.crash && h.phase === 'land') cap[0] = 'Coming down', cap[1] = 'Over bland, rippled sand the navigation camera has little to track…';
     if (cap) beat('Ingenuity', cap[0], cap[1], true);
   }
   if (h.phase === 'spinup') {
@@ -1183,10 +1188,11 @@ function stepHeli(dt) {
 
   } else if (h.phase === 'land') {
     // a slow, eased settle: fastest mid-way, feather-light at touchdown
-    const k = Math.min(1, h.t / (HELI.lift * 1.2));
+    const k = Math.min(1, h.t / (HELI.lift * (h.crash ? 0.8 : 1.2)));
     const ground = height(h.site.x, h.site.z) + 0.01;
-    heli.position.set(h.site.x, h.from.y + (ground - h.from.y) * smoother(k), h.site.z);
-    if (k < 0.75) { const [af, as] = motion(); heliAttitude(h, dt, af, as, 1 - k); }
+    heli.position.set(h.site.x, h.from.y + (ground - h.from.y) * (h.crash ? k * k : smoother(k)), h.site.z);      // flight 72 does not slow for the ground
+    if (h.crash) { const [af, as] = motion(); heliAttitude(h, dt, af + Math.sin(h.t * 9) * 3, as + 2.5 * k, 1); if (k >= 1) { crashDown(); return; } }
+    else if (k < 0.75) { const [af, as] = motion(); heliAttitude(h, dt, af, as, 1 - k); }
     else heli.quaternion.slerp(qLand, Math.min(1, dt * 5));
     wash(h.site.x, h.site.z, 0.7 * k);
     if (k >= 1) {
@@ -1202,6 +1208,39 @@ function stepHeli(dt) {
   } else if (h.phase === 'spindown') {
     if (h.spin < 0.02) { h.phase = 'landed'; hud(); }
   }
+}
+
+/* Flight 72, 18 January 2024: a hard landing on the sand ripples at Valinor Hills breaks the rotor blades.
+   Ingenuity never flies again, and photographing it becomes a new objective. */
+function crashDown() {
+  const h = S.heli; h.crash = false; CRASH.done = true;
+  landedQuat(h.site.x, h.site.z, h.yaw, heli.quaternion);
+  heli.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.05, 0, 0.09)));      // still standing, as NASA's photographs show it, a little askew
+  heli.position.y = height(h.site.x, h.site.z) - 0.05;
+  rotors.forEach(([o], i) => { o.scale.multiplyScalar(i ? 0.62 : 0.78); o.rotateX(i ? 0.9 : 0.3); });      // blades snapped short, stopped askew
+  h.spin = 0; h.phase = 'wreck'; h.t = 0;
+  for (let i = 0; i < 26; i++) puff(h.site.x + (Math.random() - .5) * 2.4, height(h.site.x, h.site.z) + 0.1, h.site.z + (Math.random() - .5) * 2.4, 2.2, 0.6);
+  const frag = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.02, 0.09), new THREE.MeshStandardMaterial({ color: 0x3a3634, roughness: 0.7 }));      // a piece of blade on the sand
+  const fx = h.site.x - 6, fz = h.site.z + 1.5; frag.position.set(fx, height(fx, fz) + 0.02, fz); frag.rotation.y = 0.8; frag.castShadow = true; scene.add(frag);
+  beat('Ingenuity', 'Hard landing', 'The rotor blades are broken. Ingenuity will never fly again.', true);
+}
+function afterCrash() {
+  const h = S.heli;
+  NOHELI = true; document.body.classList.add('noheli');
+  S.phase = 'drive'; S.cam = 'chase';
+  toast('Hard landing. Ingenuity’s rotor blades are broken: it will never fly again.');
+  addPhotoGoal(h.site.x, h.site.z, SITE.crash.real);
+  setTimeout(() => toast('New objective: photograph Ingenuity at Valinor Hills with Mastcam-Z. The real rover did, from about 415 m away.'), 3800);
+  hud();
+}
+function addPhotoGoal(x, z, real) {
+  const y = height(x, z);
+  const ringMat = new THREE.MeshBasicMaterial({ color: CYAN_RING, transparent: true, opacity: 0.8, side: THREE.DoubleSide, fog: false, depthWrite: false });
+  const ring = new THREE.Mesh(new THREE.RingGeometry(3.2, 3.6, 48), ringMat);
+  ring.position.set(x, y + 0.15, z); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalAt(x, z, 4)); scene.add(ring);
+  S.outcrops.push({ type: 'photo', name: real.t, label: 'Ingenuity', short: 'Ingenuity', site: real, pos: new THREE.Vector3(x, y, z), focus: new THREE.Vector3(x, y + 0.3, z),
+    ring, ringMat, found: true, logged: false, range: 200 });
+  marks.push(makeMark());
 }
 
 let scanNote = '';
@@ -1227,7 +1266,7 @@ function doScan() {
   scanNote = n ? `Ingenuity found ${n} outcrop${n > 1 ? 's' : ''} — marked on the ground.`
                : hints ? `Nothing close, but Ingenuity glimpsed layering further out — ${hints} clue${hints > 1 ? 's' : ''} on the map${kb('M')}.`
                : 'Nothing layered in frame. Try a different heading.';
-  toast(scanNote);
+  if (!S.heli.crash) toast(scanNote);
 }
 
 /* ── Mastcam-Z ────────────────────────────────────────────────── */
@@ -1235,7 +1274,7 @@ function openCam() {
   if (S.phase !== 'drive') return;
   const pano = S.outcrops.find(o => o.type === 'pano' && !o.logged && Math.hypot(S.rover.pos.x - o.pos.x, S.rover.pos.z - o.pos.z) < 12);
   if (pano) { startPano(pano); return; }
-  const near = S.outcrops.filter(o => o.type !== 'pano' && !o.logged && S.rover.pos.distanceTo(o.pos) < CFG.camRange);
+  const near = S.outcrops.filter(o => o.type !== 'pano' && !o.logged && S.rover.pos.distanceTo(o.pos) < (o.range || CFG.camRange));
   if (!near.length) { toast(S.outcrops.some(o => o.type === 'pano' && !o.logged) ? 'Nothing in Mastcam range. For a panorama, park inside the blue ring.' : 'Nothing in Mastcam range — drive closer to an outcrop.'); return; }
   S.phase = 'cam';
   S.rover.speed = 0;
@@ -1356,6 +1395,10 @@ function capture() {
   $('stamp').textContent = `Image acquired · ${o.name}`;
   $('stamp').animate([{ opacity: 0, transform: 'translate(-50%,-50%) scale(1.15)' }, { opacity: 1, transform: 'translate(-50%,-50%) scale(1)', offset: 0.15 }, { opacity: 1, offset: 0.8 }, { opacity: 0 }],
     { duration: 1300, easing: 'ease-out' });
+  if (o.type === 'photo') {      // a photograph only: SuperCam has no business firing at a helicopter
+    $('reticle').classList.remove('on'); S.framed = null;
+    setTimeout(() => { if (S.phase === 'cam') closeCam(); showCard(o); }, 1400); hud(); return;
+  }
   LASER.t = -1.1; LASER.on = true; LASER.target = o; LASER.n = 0;        // hold on the frame for a beat first
   S.phase = 'laser';
   $('reticle').classList.remove('on');
@@ -1413,12 +1456,12 @@ function stepLaser(dt) {
    neither loads (some hosts block outside images) the link still stands. */
 function showCard(o) {
   const done = S.outcrops.filter(q => q.logged).length, n = S.outcrops.length;
-  $('card').classList.toggle('siteonly', !!o.site && (o.type === 'pano' || o.plain));
+  $('card').classList.toggle('siteonly', !!o.site && (o.type === 'pano' || o.type === 'photo' || o.plain));
   if (o.site) {      // a real place: what the rover itself did here, with NASA's photograph
     const st = o.site, img = $('real-img'), fig = $('real-fig');
-    $('card-name').textContent = o.type === 'pano' ? `Panorama · ${o.label}` : o.plain ? o.name : `${o.site.t} · ${o.name.toLowerCase()}`;
+    $('card-name').textContent = o.type === 'pano' ? `Panorama · ${o.label}` : o.type === 'photo' ? o.site.t : o.plain ? o.name : `${o.site.t} · ${o.name.toLowerCase()}`;
     if (!o.plain) { $('card-read').textContent = o.read; $('card-mean').textContent = o.mean; }
-    $('card-n').textContent = `${o.type === 'sample' ? 'Sample cored' : o.type === 'pano' ? 'Panorama taken' : 'Outcrop analyzed'} · objective ${done} of ${n}`;
+    $('card-n').textContent = `${o.type === 'sample' ? 'Sample cored' : o.type === 'pano' ? 'Panorama taken' : o.type === 'photo' ? 'Photograph taken' : 'Outcrop analyzed'} · objective ${done} of ${n}`;
     $('real-h').textContent = st.img ? 'What Perseverance did here' : (o.type === 'pano' ? 'Why panoramas matter' : 'What Perseverance did here');
     $('real-place').textContent = `${st.t} · ${st.d}`; $('real-by').textContent = ''; $('real-note').textContent = st.x; $('real-credit').textContent = st.cap || '';
     $('real-link').href = st.img ? '../' + st.img : '#';
@@ -1495,7 +1538,7 @@ $('real-link').addEventListener('click', e => { const h = $('real-link').getAttr
 
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
-  if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done. Carry on along the route to the end of the drive, the gold beacon.' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left on the route.`); }
+  if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done. Carry on to the end of the rover’s path.' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left on the route.`); }
   else if (S.logged >= S.outcrops.length) done();
 });
 
@@ -1507,7 +1550,7 @@ function startSunset() {
   SUNSET.az = Math.atan2(sunDir.x, -sunDir.z); SUNSET.el0 = Math.asin(sunDir.y);
   SUNSET.int0 = sun.intensity; SUNSET.hemi0 = hemi.intensity; SUNSET.fog0 = scene.fog.color.clone(); SUNSET.col0 = sun.color.clone();
   document.body.classList.add('cinema'); $('prompt').classList.remove('on');
-  GOAL.beam.visible = GOAL.ring.visible = false; GOAL.chunks.forEach(c => { c.line.visible = false; });
+  GOAL.ring.visible = false; GOAL.chunks.forEach(c => { c.line.visible = false; });
 }
 const DUSK_FOG = new THREE.Color(0x2e2420), DUSK_SUN = new THREE.Color(0xdfe6ff);
 function stepSunset(dt) {
@@ -1538,8 +1581,6 @@ function done() {
   S.phase = 'done';
   if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
     $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`;
-    const ep = SITE.epilogue; $('done-epi').hidden = !ep;
-    if (ep) { $('done-epi-h').textContent = ep.h; $('done-epi-img').src = '../' + ep.img; $('done-epi-img').onclick = () => openPhoto('../' + ep.img); $('done-epi-cap').textContent = ep.cap; $('done-epi-p').textContent = ep.x; }
     $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.'; $('done-p2').style.display = '';
     if (SITE.next) $('btn-again').textContent = 'Next level'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
@@ -1556,7 +1597,7 @@ function updateFraming() {
   for (const o of S.outcrops) {
     if (o.logged || o.type === 'pano') continue;      // a panorama is taken from inside its ring, not framed
     const dist = S.rover.pos.distanceTo(o.pos);
-    if (dist > CFG.camRange + 8) continue;
+    if (dist > (o.range || CFG.camRange) + 8) continue;
     toT.subVectors(o.focus, camera.position).normalize();
     const a = Math.acos(Math.min(1, camFwd.dot(toT))) * 180 / Math.PI;
     if (a < CFG.framedDeg && a < bestA) { best = o; bestA = a; }
@@ -1566,7 +1607,7 @@ function updateFraming() {
   const ret = $('reticle');
   ret.classList.toggle('on', !!best);
   if (best) {
-    $('ret-name').textContent = 'LAYERED TARGET';
+    $('ret-name').textContent = best.type === 'photo' ? 'INGENUITY' : 'LAYERED TARGET';
     $('ret-dist').textContent = Math.round(S.rover.pos.distanceTo(best.pos)) + ' m';
     if (!best.found) reveal(best, false);
   }
@@ -1758,13 +1799,14 @@ function aimSun(r) {
 }
 
 /* ── screen markers for found-but-unlogged outcrops ───────────── */
-const marks = S.outcrops.map(() => {
+function makeMark() {
   const el = document.createElement('div');
   el.className = 'mark';
   el.innerHTML = '<i></i><b></b>';
   $('marks').appendChild(el);
   return el;
-});
+}
+const marks = S.outcrops.map(makeMark);
 
 const heliMark = document.createElement('div');
 heliMark.className = 'mark heli';
@@ -1811,8 +1853,8 @@ function toastSoon(m) { setTimeout(() => toast(m), 500); }
 function goalList() {      // the year level's to-do list, top left: tiny, ticked off as you go
   const el = $('goals'); if (!SITE || !el) return;
   el.hidden = false;
-  const name = o => o.type === 'sample' ? `Core ${o.label}` : o.type === 'pano' ? `Panorama: ${o.short.replace(/^the /, '')}` : 'Analyze an outcrop';
-  el.innerHTML = S.outcrops.map(o => `<div class="${o.logged ? 'ok' : ''}">${name(o)}</div>`).join('') + `<div class="${S.phase === 'done' ? 'ok' : ''}">Reach the beacon</div>`;
+  const name = o => o.type === 'sample' ? `Core ${o.label}` : o.type === 'photo' ? `Photograph ${o.label}` : o.type === 'pano' ? `Panorama: ${o.short.replace(/^the /, '')}` : 'Analyze an outcrop';
+  el.innerHTML = S.outcrops.map(o => `<div class="${o.logged ? 'ok' : ''}">${name(o)}</div>`).join('') + `<div class="${S.phase === 'done' ? 'ok' : ''}">Reach the end of the rover’s path</div>`;
 }
 function hud() {
   goalList();
@@ -1828,8 +1870,8 @@ function hud() {
                                      : (S.framed ? 'Target centered — <b>Space</b> or <b>C</b> to capture' : 'Drag or use the drive keys to aim · <b>Esc</b> to stow');
   else if (S.phase === 'fly') p = 'Ingenuity in flight…';
   else if (S.phase === 'drive') {
-    const near = S.outcrops.find(o => !o.logged && S.rover.pos.distanceTo(o.pos) < CFG.camRange);
-    const what = !near ? '' : near.type === 'sample' ? 'Sample site' : near.type === 'pano' ? 'Panorama location' : 'Outcrop';
+    const near = S.outcrops.find(o => !o.logged && S.rover.pos.distanceTo(o.pos) < (o.range || CFG.camRange));
+    const what = !near ? '' : near.type === 'sample' ? 'Sample site' : near.type === 'pano' ? 'Panorama location' : near.type === 'photo' ? 'Ingenuity' : 'Outcrop';
     if (near) p = TOUCH ? `${what} in Mastcam range — tap <b>Mastcam-Z</b>` : `${what} in Mastcam range — press <b>C</b>`;
   }
   $('prompt').innerHTML = p;
@@ -1875,8 +1917,8 @@ function update(dt, now = performance.now()) {
   stepDust(dt);
   if (S.phase === 'sunset') stepSunset(dt); else stepCamera(dt);
   stepMarks();
-  if (GOAL && S.phase === 'drive') {      // level 3: the end of the drive
-    GOAL.beam.material.opacity = 0.22 + Math.sin(now * 0.003) * 0.08;
+  if (CRASH && !CRASH.done && S.phase === 'drive' && S.heli.phase === 'landed' && (CRASH.t += dt) > 45) launchHeli();      // flight 72 goes ahead whether you ask or not
+  if (GOAL && S.phase === 'drive') {      // the end of the drive
     const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
     if (d < 14) { if (S.logged >= S.outcrops.length) startSunset(); else if (!GOAL.told) { GOAL.told = true; toast('This is the end of the drive. Finish the objectives on the route first: M shows them on the map.'); } }
     else if (d > 30) GOAL.told = false;
@@ -1922,7 +1964,7 @@ $('btn-drive').addEventListener('click', () => {
   $('rover-brief').classList.remove('on');
   S.phase = 'drive'; hud();
   stepMap(1);
-  toast(SITE ? `${EASY ? 'Follow the gold dashes, Perseverance’s real route' : (NOHELI ? 'Perseverance’s real route shows in gold as you explore' : 'Perseverance’s real route shows in gold as you explore or fly Ingenuity')}: ${SITE.goalText}. Then the beacon. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
+  toast(SITE ? `${EASY ? 'Follow the gold dashes, Perseverance’s real route' : (NOHELI ? 'Perseverance’s real route shows in gold as you explore' : 'Perseverance’s real route shows in gold as you explore or fly Ingenuity')}: ${SITE.goalText}. Then reach the end of the rover’s path. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
@@ -1932,7 +1974,7 @@ if (SITE) {      // a year level: straight onto the ground
   const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
   const list = SITE.goals.map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
   SITE.goalText = goalText;
-  $('rb-goal').textContent = `Follow Perseverance’s route${EASY ? ' (the gold dashes)' : ' (it appears as you explore)'}: ${goalText}, then reach the beacon at the end of the drive. Go anywhere you like on the way.`;
+  $('rb-goal').textContent = `Follow Perseverance’s route${EASY ? ' (the gold dashes)' : ' (it appears as you explore)'}: ${goalText}, then reach the end of the rover’s path. Go anywhere you like on the way.`;
   $('stat-label').textContent = 'Objectives';
   $('rb-p').textContent = `${SITE.text} The ground is the real one, from ${SITE.src}, ${SITE.scale}.`;
 }

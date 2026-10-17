@@ -17,6 +17,13 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.19 — flight 72
+- **2024 level re-centered** to (-8823, -2026), `playR` 900, `fine` 2.2: `site.py y2024 -8823 -2026`, `levelpath.py 2024 -8823 -2026 2.4 900`. Goals moved with it.
+- **`SITE.crash`** (Valinor Hills, game 685, -453): the level's first Ingenuity flight, or one forced after 45 s of driving, flies there and crashes (`crashDown`, phase `wreck`, 3 s hold, `afterCrash`). Ingenuity stays upright, blades scaled short; a blade fragment lies 6 m off. Then `NOHELI` turns on and `addPhotoGoal` adds a `photo` objective (range 200 m, no SuperCam laser, card with the Valinor Hills mosaic).
+- Location: azimuth 320.6° read off the gridded Mastcam-Z mosaic, ranges ~450 m (sol 1049) and ~415 m (sol 1068) from the traverse positions; fixes 66 m apart, averaged.
+- The 2023 epilogue card is gone (the story now happens in 2024).
+- No beacon beam at the end of the drive, just the ring; "Reach the end of the rover's path".
+
 ## What changed in 3.18 — sunset, a grounded helicopter, real panoramas
 - **Sunset at the beacon** (`startSunset`/`stepSunset`, 14 s, tap to skip): the sun drops to 2.5°, a `dusk` uniform in the sky shader (mars.js) dims the sky to linear brown-gray and adds a tight blue glow round the sun; sun and sky light fade, the fog darkens, the camera sits behind the rover looking into the sun.
 - **No Ingenuity from 2024** (`NOHELI`, year ≥ 2024): no helicopter, button, flights count, map taps or legend; the briefing says it is grounded. `.heli-only` / `.heli-gone` in index.html.

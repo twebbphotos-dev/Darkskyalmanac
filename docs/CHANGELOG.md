@@ -3,6 +3,21 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.14 / zion-sky-v383 — 2026-10-17
+- Simulator: the 2024 level now plays out Ingenuity's 72nd and last flight.
+  Its first flight of the year (or one it makes by itself after 45 s) goes
+  to "Valinor Hills", lands hard and breaks the rotor blades. A surprise
+  objective follows: photograph the wreck with Mastcam-Z, then NASA's real
+  mosaic. The 2023 end card no longer tells this story.
+- Valinor Hills placed from evidence: Mastcam-Z's azimuth to the helicopter
+  (320.6°, from the gridded mosaic) at about 450 m and 415 m from the
+  rover's sol-1049 and sol-1068 positions (NASA traverse); the two fixes
+  agree within 66 m. The 2024 map was re-centered and widened (origin
+  -8823, -2026, roaming radius 900) so the site, Cheyava Falls and Lookout
+  Hill all fit; terrain and pictures regenerated.
+- The end of each drive is a plain ring, no glowing beacon, and the
+  objective reads "Reach the end of the rover's path".
+
 ## v4.13 / zion-sky-v382 — 2026-10-17
 - Simulator: each drive ends at sunset. The camera drops behind the rover
   and the sky round the low Sun turns blue, as fine Martian dust scatters
