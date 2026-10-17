@@ -188,15 +188,22 @@ const GOAL = SITE ? (() => {
   const p = SITE.path, pts = [];
   for (let i = 0; i + 2 < p.length; i += 2) { const x0 = p[i], z0 = p[i + 1], x1 = p[i + 2], z1 = p[i + 3], n = Math.max(1, Math.ceil(Math.hypot(x1 - x0, z1 - z0) / 2));
     for (let k = 0; k < n; k++) { const x = x0 + (x1 - x0) * k / n, z = z0 + (z1 - z0) * k / n; pts.push(new THREE.Vector3(x, height(x, z) + 0.35, z)); } }
-  const line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts), new THREE.LineDashedMaterial({ color: 0xe6cc85, dashSize: 2.8, gapSize: 1.8, transparent: true, opacity: 0.72, depthWrite: false }));
-  line.computeLineDistances(); scene.add(line);
+  const mat = new THREE.LineDashedMaterial({ color: 0xe6cc85, dashSize: 2.8, gapSize: 1.8, transparent: true, opacity: 0.58, depthWrite: false });
+  const chunks = [];      // 14 m pieces, so in Realistic the line shows only where the ground has been explored
+  for (let i = 0; i < pts.length - 1; i += 7) {
+    const seg = pts.slice(i, Math.min(pts.length, i + 8)), line = new THREE.Line(new THREE.BufferGeometry().setFromPoints(seg), mat);
+    line.computeLineDistances(); scene.add(line); const c = seg[seg.length >> 1]; chunks.push({ line, x: c.x, z: c.z });
+  }
   const { x, z } = SITE.end, y = height(x, z);
   const beam = new THREE.Mesh(new THREE.CylinderGeometry(2.2, 2.2, 60, 24, 1, true), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.25, depthWrite: false, side: THREE.DoubleSide, fog: false }));
   beam.position.set(x, y + 30, z); scene.add(beam);
   const ring = new THREE.Mesh(new THREE.RingGeometry(9, 10, 64), new THREE.MeshBasicMaterial({ color: GOLD, transparent: true, opacity: 0.7, side: THREE.DoubleSide, depthWrite: false }));
   ring.rotation.x = -Math.PI / 2; ring.position.set(x, y + 0.3, z); scene.add(ring);
-  return { beam, told: false };
+  return { beam, told: false, chunks };
 })() : null;
+const EASY = difficulty() === 'easy';
+function seenAt(x, z) { const { n, cell, R } = MAP, i = Math.floor((x + R) / cell), j = Math.floor((z + R) / cell); return i >= 0 && j >= 0 && i < n && j < n && MAP.seen[j * n + i] === 1; }
+function revealRoute() { if (GOAL) GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
 
 /* rocks, kept clear of the start pad and the outcrops — scattered once the scanned rocks have loaded */
 let rockCount = null;
@@ -230,11 +237,12 @@ function routeClear(x, z, s) {
   if (SITE.clear && SITE.clear.some(c => Math.hypot(x - c.x, z - c.z) < c.r)) return s > 0.14 || h < 0.6;
   if (s <= 0.14) return false;
   const d = routeDist(x, z);
-  return s > 0.36 ? d < 4.5 : d < 2.6 && h < 0.7;
+  return s > 0.36 ? d < (EASY ? 6.5 : 4.5) : d < (EASY ? 3.6 : 2.6) && h < (EASY ? 0.9 : 0.7);
 }
 function scatter(scans) {
   rockCount = scatterRocks(scene, {
     seed: 5150, scans,
+    boost: SITE ? (x, z) => { const d = routeDist(x, z); return d < 14 ? (EASY ? 0.25 : 0.45) : (EASY ? 1.1 : 1.7); } : null,      // block fields off the route: the real line is the good way through
     exclude: (x, z, s) =>
       Math.hypot(x - START.x, z - START.z) < (s > 0.36 ? 9 : 3.2) ||
       S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5) || routeClear(x, z, s),
@@ -511,6 +519,10 @@ function buildRelief() {
   c.putImageData(id, 0, 0);
   MAP.relief = cv;
 }
+function drawRoute(c, P, big) {
+  c.strokeStyle = 'rgba(203,168,90,.75)'; c.lineWidth = big ? 2 : 1.2; c.setLineDash([4, 3]); c.beginPath();
+  for (let i = 0; i < SITE.path.length; i += 2) c[i ? 'lineTo' : 'moveTo'](...P(SITE.path[i], SITE.path[i + 1])); c.stroke(); c.setLineDash([]);
+}
 function drawMap(cv, big) {
   const c = cv.getContext('2d'), W = cv.width, R = MAP.R, sc = W / (2 * R), P = (x, z) => [(x + R) * sc, (z + R) * sc];
   if (!MAP.relief) buildRelief();
@@ -522,6 +534,7 @@ function drawMap(cv, big) {
   const fc = MAP.fog.getContext('2d'), fd = fc.createImageData(n, n);
   for (let k = 0; k < n * n; k++) { fd.data[k * 4] = 14; fd.data[k * 4 + 1] = 10; fd.data[k * 4 + 2] = 20; fd.data[k * 4 + 3] = seen[k] ? 0 : 190; }
   fc.putImageData(fd, 0, 0);
+  if (SITE && !EASY) drawRoute(c, P, big);      // in Realistic the fog hides the route until you have been near it
   c.imageSmoothingEnabled = true; c.drawImage(MAP.fog, 0, 0, W, W);
   // the edge of the roaming area
   c.strokeStyle = 'rgba(242,228,190,.35)'; c.setLineDash([4, 4]); c.lineWidth = 1;
@@ -538,9 +551,8 @@ function drawMap(cv, big) {
     c.strokeStyle = 'rgba(242,228,190,.8)'; c.lineWidth = big ? 2 : 1.2; c.beginPath();
     MAP.track.forEach(([x, z], i) => c[i ? 'lineTo' : 'moveTo'](...P(x, z))); c.stroke();
   }
-  if (SITE) {      // level 3: Perseverance's route and the end of the drive
-    c.strokeStyle = 'rgba(203,168,90,.75)'; c.lineWidth = big ? 2 : 1.2; c.setLineDash([4, 3]); c.beginPath();
-    for (let i = 0; i < SITE.path.length; i += 2) c[i ? 'lineTo' : 'moveTo'](...P(SITE.path[i], SITE.path[i + 1])); c.stroke(); c.setLineDash([]);
+  if (SITE) {      // Perseverance's route and the end of the drive
+    if (EASY) drawRoute(c, P, big);
     const [gx, gy] = P(SITE.end.x, SITE.end.z); c.fillStyle = '#E6CC85'; c.beginPath(); c.arc(gx, gy, big ? 6 : 3.5, 0, 6.3); c.fill();
     if (big) { c.font = '600 11px Montserrat, sans-serif'; c.textAlign = 'left'; c.fillText('End of the drive', gx + 10, gy + 4); }
   }
@@ -576,7 +588,7 @@ function stepMap(dt) {
   const p = S.rover.pos, last = MAP.track[MAP.track.length - 1];
   if (!last || Math.hypot(p.x - last[0], p.z - last[1]) > 2.5) { MAP.track.push([p.x, p.z]); seeArea(p.x, p.z, 40); }
   MAP.t += dt;
-  if (MAP.t > 0.25) { MAP.t = 0; drawMap($('minimap'), false); if (MAP.open) drawMap($('bigmap'), true); }
+  if (MAP.t > 0.25) { MAP.t = 0; revealRoute(); drawMap($('minimap'), false); if (MAP.open) drawMap($('bigmap'), true); }
 }
 function toggleMap(force) {
   MAP.open = force ?? !MAP.open;
@@ -678,13 +690,16 @@ const MOB = {
 MOB.tipSide = Math.atan(MOB.halfTrack / MOB.cgH);                   // ≈ 49°
 MOB.tipFwd = Math.atan((MOB.front + MOB.cgAft) / MOB.cgH);          // nose down ≈ 52°
 MOB.tipBack = Math.atan((MOB.rear - MOB.cgAft) / MOB.cgH);          // nose up ≈ 48°
+if (difficulty() === 'easy') {      // Easy: more forgiving than the real rover, and better grip on slopes
+  MOB.tipSide *= 1.12; MOB.tipFwd *= 1.12; MOB.tipBack *= 1.12; MOB.warn = 36 * Math.PI / 180; MOB.gripBonus = 0.12;
+}
 const WHEEL_PLAN = 0.27;                 // a tyre's footprint, as a circle in plan
 const BODY = { hw: 0.78, hl: 1.45 };     // the body box between the wheels, half-width and half-length
 
 /* how well the wheels grip here: tan of the steepest slope they can hold */
 function grip(x, z) {
   const sand = sandMask(x, z), pave = paverMask(x, z);
-  return 0.70 + 0.15 * pave - 0.25 * sand;     // ~35° on regolith, ~40° on bedrock, ~25° on drift sand
+  return 0.70 + 0.15 * pave - 0.25 * sand + (MOB.gripBonus || 0);     // ~35° on regolith, ~40° on bedrock, ~25° on drift sand (more on Easy)
 }
 
 const ATT = { pitch: 0, lean: 0, effRoll: 0, effPitch: 0, tipT: 0, warnT: 0, slipT: 0, safe: null, safeT: 0, bumpT: 0 };
@@ -1666,12 +1681,19 @@ function stepCamera(dt) {
         ORB.yaw -= ORB.yaw * f; ORB.pitch -= ORB.pitch * f;
       }
     }
-    const D = 10.9 * ORB.dist, el = Math.max(0.06, Math.min(1.35, 0.497 + ORB.pitch)), az = r.yaw + ORB.yaw;
+    if (S.pov === 2) {      // first person: from the front of the deck, at the mast's eye height, looking where you drive (drag to look round)
+      const az = r.yaw + ORB.yaw, el = -0.12 + ORB.pitch * 0.8;
+      wantP = r.pos.clone().addScaledVector(fwdV, 1.3).add(new THREE.Vector3(0, 1.9, 0));
+      wantT = wantP.clone().add(new THREE.Vector3(-Math.sin(az) * Math.cos(el) * 10, Math.sin(el) * 10, -Math.cos(az) * Math.cos(el) * 10));
+      k = 12; kT = 12;
+    } else {
+    const D = 10.9 * ORB.dist * (S.pov === 1 ? 2.3 : 1), el = Math.max(0.06, Math.min(1.35, 0.497 + ORB.pitch + (S.pov === 1 ? 0.32 : 0))), az = r.yaw + ORB.yaw;
     wantP = r.pos.clone().add(new THREE.Vector3(Math.sin(az) * Math.cos(el) * D, Math.sin(el) * D, Math.cos(az) * Math.cos(el) * D));
     const ahead = r.pos.clone().addScaledVector(fwdV, 8).add(new THREE.Vector3(0, 1.1, 0));
     const centre = r.pos.clone().add(new THREE.Vector3(0, 1.1, 0));
     wantT = ahead.lerp(centre, Math.min(1, Math.abs(Math.atan2(Math.sin(ORB.yaw), Math.cos(ORB.yaw))) * 1.6 + Math.abs(ORB.pitch) * 1.2));
     if (ORB.id !== null) k = 9;                                         // follow the finger, not lag behind it
+    }
   }
 
   // never let the chase camera sink into a hill
@@ -1758,7 +1780,7 @@ function hud() {
 
   let p = '';
   const kl = k => TOUCH ? '' : ` · ${k}`, cam = S.phase === 'cam';
-  $('btn-heli').textContent = cam ? 'Back to driving' + kl('Esc') : 'Scout ahead' + kl('F');
+  $('btn-heli').textContent = cam ? 'Back to driving' + kl('Esc') : 'Fly Ingenuity' + kl('F');
   $('btn-cam').textContent = cam ? 'Capture' + kl('Space') : 'Mastcam-Z' + kl('C');
   $('btn-map').textContent = 'Map' + kl('M');
   if (S.phase === 'cam') p = TOUCH ? (S.framed ? 'Target centred — tap <b>Capture</b>' : 'Drag to aim · <b>Back to driving</b> to stow')
@@ -1825,6 +1847,7 @@ let frameN = 0;
 
 /* ── wiring ───────────────────────────────────────────────────── */
 // Back: the extensionless address, as every other page links it. The .html one redirects, and a redirected page from the offline cache fails to open.
+$('btn-pov').addEventListener('click', () => { S.pov = ((S.pov || 0) + 1) % 3; if (roverModel) roverModel.visible = true; $('btn-pov').textContent = ['Chase', 'Wide', 'Rover'][S.pov]; camInit = false; });
 { const go = e => { e.preventDefault(); e.stopPropagation(); location.href = '../objects'; };      // the game's own touch handling can swallow a plain link tap on iPhone
   $('back').addEventListener('pointerup', go); $('back').addEventListener('click', go); }
 $('btn-cam').addEventListener('click', () => S.phase === 'cam' ? capture() : S.phase === 'cine' ? endCine() : openCam());
@@ -1852,11 +1875,12 @@ function startSurface(landed) {
   hud();
   $('rover-brief').classList.add('on');
 }
+$('rb-next').addEventListener('click', () => $('rover-brief').classList.add('p2'));
 $('btn-drive').addEventListener('click', () => {
   $('rover-brief').classList.remove('on');
   S.phase = 'drive'; hud();
   stepMap(1);
-  toast(SITE ? `Follow the gold dashes, Perseverance’s real route: ${SITE.goalText}. Then the beacon. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
+  toast(SITE ? `${EASY ? 'Follow the gold dashes, Perseverance’s real route' : 'Perseverance’s real route shows in gold as you explore or fly Ingenuity'}: ${SITE.goalText}. Then the beacon. M opens the map.` : 'Six outcrops to find. Ingenuity is parked beside you. M opens the map.');
 });
 
 $('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
@@ -1866,7 +1890,7 @@ if (SITE) {      // a year level: straight onto the ground
   const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
   const list = SITE.goals.map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
   SITE.goalText = goalText;
-  document.querySelectorAll('#rover-brief .spec span').forEach(sp => { if (sp.textContent === 'Objective') sp.nextElementSibling.textContent = `Follow Perseverance’s route (the gold dashes): ${goalText}, then reach the beacon at the end of the drive. Go anywhere you like on the way`; });
+  $('rb-goal').textContent = `Follow Perseverance’s route${EASY ? ' (the gold dashes)' : ' (it appears as you explore)'}: ${goalText}, then reach the beacon at the end of the drive. Go anywhere you like on the way.`;
   $('stat-label').textContent = 'Objectives';
   $('rb-p').textContent = `${SITE.text} The ground is the real one, from ${SITE.src}, ${SITE.scale}.`;
 }

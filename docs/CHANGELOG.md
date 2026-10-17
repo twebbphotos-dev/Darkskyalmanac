@@ -3,6 +3,21 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.11 / zion-sky-v380 — 2026-10-17
+- Simulator: "Scout Ahead" is now "Fly Ingenuity". A small POV button
+  cycles Chase · Wide (higher, wider) · Rover (first person).
+- Realistic mode: the gold route shows only where the fog has lifted, by
+  driving near it or flying Ingenuity over it. Easy shows it all, as before.
+- Easy mode: fewer rocks near the route and 12% more lenient tip angles
+  with extra grip. The gold dashes are a little fainter.
+- Year levels follow the overhead map more closely: the real route is
+  graded into one drivable line (steepest spot on 2024 from 29° to 22°,
+  every year now under 24°), with denser block fields off it, so leaving
+  the route is the hard way. Why: the raw 20 m terrain put short 30°+ ramps
+  on the real path, and where the route doubles back, two stretches at
+  different heights sat side by side.
+- The rover briefing is two short pages so it fits on a phone screen.
+
 ## v4.10 / zion-sky-v379 — 2026-10-17
 - The rover game is now the Mars Rover · Perseverance Simulator: no
   proof-of-concept wording, the briefing is a menu with one equal-width

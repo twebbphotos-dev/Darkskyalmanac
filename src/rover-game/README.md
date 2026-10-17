@@ -17,6 +17,14 @@ python3 -m http.server 8000
 
 Or drop the whole folder onto any static host.
 
+## What changed in 3.16 — fog, POV, easier Easy
+- **Fly Ingenuity** replaces "Scout Ahead".
+- **POV button**: Chase, Wide (camera 2.3× farther and higher) or Rover (first person from the mast).
+- **Realistic hides the route** until the fog lifts there: the route is cut into 14 m pieces, each shown once its map cell has been seen (by the rover or Ingenuity). Easy draws it all, over the fog.
+- **Easy** keeps big blocks 6.5 m off the route (4.5 m on Realistic), thins mid rocks to 3.6 m, cuts the off-route block boost, and loosens tip limits 12% with a +0.12 grip bonus.
+- **Route grading** (`routeGrade` in terrain.js): the real path is sampled every 2 m, its height smoothed with a ±40 m Gaussian, averaged with any other stretch within 10 m (the route doubles back), relaxed until no 2 m step is steeper than 18°, and blended into the terrain within 3.5–9 m of the line (weighted over all samples within 9 m, so there are no steps at corners). Every year's route now peaks under 24°. One good path; the ground beside it keeps its true slopes, and boulder fields off it are denser.
+- The rover briefing is two pages (the year and its goal, then the controls).
+
 ## What changed in 3.15 — the full game
 - Presented as the **Mars Rover · Perseverance Simulator**: the briefing is the menu, one equal-width button per year, 2021 (the landing) to 2026. No "proof of concept" wording.
 - The landing leads straight on to 2022. The old 2021 landing-site traverse (six outcrops) and "Skip to the surface" are gone from the menu.

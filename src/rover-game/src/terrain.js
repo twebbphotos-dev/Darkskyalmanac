@@ -298,7 +298,47 @@ export function mesaT(x, z) {      // nearest mesa in units of its radius
 }
 
 let SITE_BASE = null;
+/* The route of a year level, graded: the rover really drove it, at slopes up to about 20 percent, but the elevation
+   models are noisy at that scale and the game steepens slopes. Within a few metres of the line the ground eases toward
+   a smoothed profile along it, so the real route is the one good way through; everywhere else stays as measured. */
+let ROUTE = null;
+function routeGrade() {
+  const p = SITE.path, xs = [], zs = [];
+  for (let i = 0; i + 2 < p.length; i += 2) { const L = Math.hypot(p[i + 2] - p[i], p[i + 3] - p[i + 1]), n = Math.max(1, Math.ceil(L / 2));
+    for (let k = 0; k < n; k++) { xs.push(p[i] + (p[i + 2] - p[i]) * k / n); zs.push(p[i + 1] + (p[i + 3] - p[i + 1]) * k / n); } }
+  const n = xs.length, raw = xs.map((x, i) => heightBase(x, zs[i])), hs = new Float32Array(n), W = 20;      // ±40 m window
+  for (let i = 0; i < n; i++) { let t = 0, w = 0; for (let k = -W; k <= W; k++) { const j = Math.min(n - 1, Math.max(0, i + k)), g = Math.exp(-(k * k) / (2 * 100)); t += raw[j] * g; w += g; } hs[i] = t / w; }
+  const grid = new Map(), C = 10;
+  for (let i = 0; i < n; i++) { const key = Math.floor(xs[i] / C) + ',' + Math.floor(zs[i] / C); if (!grid.has(key)) grid.set(key, []); grid.get(key).push(i); }
+  const lim = Math.tan(18 / 57.3) * 2;
+  for (let round = 0; round < 3; round++) {
+    const sp = new Float32Array(n);                     // stretches where the route doubles back share one grade
+    for (let i = 0; i < n; i++) { const cx = Math.floor(xs[i] / C), cz = Math.floor(zs[i] / C); let t = 0, tw = 0;
+      for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = grid.get((cx + a) + ',' + (cz + b)); if (!l) continue;
+        for (const j of l) { const d = (xs[j] - xs[i]) ** 2 + (zs[j] - zs[i]) ** 2; if (d < 100) { const q = 1 - Math.sqrt(d) / 10; t += hs[j] * q; tw += q; } } }
+      sp[i] = t / tw; }
+    hs.set(sp);
+    for (let pass = 0; pass < 400; pass++) { let steep = false;   // then relax any stretch still steeper than 18°
+      for (let i = 1; i < n - 1; i++) if (Math.abs(hs[i + 1] - hs[i]) > lim || Math.abs(hs[i] - hs[i - 1]) > lim) { hs[i] = (hs[i - 1] + hs[i] + hs[i + 1]) / 3; steep = true; }
+      if (!steep) break; }
+  }
+  ROUTE = { xs, zs, hs, grid, C };
+}
 function heightReal(x, z) {
+  const h = heightBase(x, z);
+  if (!SITE || !SITE.path) return h;
+  if (!ROUTE) { ROUTE = { building: true }; routeGrade(); }
+  if (ROUTE.building) return h;
+  const { xs, zs, hs, grid, C } = ROUTE, cx = Math.floor(x / C), cz = Math.floor(z / C);
+  let best = 81, t = 0, tw = 0;                          // weighted over every sample within 9 m, so corners and doubled-back stretches have no step
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = grid.get((cx + a) + ',' + (cz + b)); if (!l) continue;
+    for (const i of l) { const d = (xs[i] - x) * (xs[i] - x) + (zs[i] - z) * (zs[i] - z); if (d >= 81) continue;
+      const q = 1 - Math.sqrt(d) / 9; t += hs[i] * q * q; tw += q * q; if (d < best) best = d; } }
+  if (!tw) return h;
+  const w = smooth(9, 3.5, Math.sqrt(best));
+  return h + (t / tw - h) * w;
+}
+function heightBase(x, z) {
   const d = Math.sqrt(x * x + z * z);
   let h = dtmAt(x, z);
   const near = 1 - smooth(PLAY_R + 30, PLAY_R + 110, d);
@@ -754,7 +794,7 @@ export function prepScan(mesh) {
   return { geo: g, mat };
 }
 
-export function scatterRocks(scene, { seed = 5150, exclude, scans = null }) {
+export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost = null }) {      // boost(x, z): more or fewer blocks here
   const rand = rng(seed);
   const mat = rockMaterial();
 
@@ -797,10 +837,10 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null }) {
   };
 
   // boulders and blocks: power-law sizes, a handful genuinely large
-  for (let i = 0, g = 0; i < 2600 && g < 144000; g++) {      // counts scaled with the roaming area in 3.5
+  for (let i = 0, g = 0; i < (boost ? 3600 : 2600) && g < 200000; g++) {      // counts scaled with the roaming area in 3.5
     const a = rand() * Math.PI * 2, r = 9 + Math.sqrt(rand()) * (PLAY_R + 40);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
-    if (rand() > density(x, z)) continue;
+    if (rand() > density(x, z) * (boost ? boost(x, z) : 1)) continue;
     place(x, z, Math.min(2.6, 0.36 * Math.pow(0.02 + rand() * 0.98, -0.55)), true); i++;
   }
   // cobbles: the ones the suspension has to walk over

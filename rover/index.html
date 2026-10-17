@@ -384,6 +384,11 @@
   @media(max-width:720px){ #goals{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;font-size:9px} }
   .levels{display:grid;grid-template-columns:1fr;gap:8px}
   .levels .btn{width:100%;padding:13px 14px;font-size:10px;text-align:center}
+  #btn-pov{position:fixed;z-index:21;right:9px;top:calc(env(safe-area-inset-top,0px) + 324px);padding:6px 10px;font-size:8.5px;pointer-events:auto}
+  body.cinema #btn-pov,body.camview #btn-pov,body.edl #btn-pov,body.brief #btn-pov{display:none}
+  @media(max-width:720px){ #btn-pov{top:calc(env(safe-area-inset-top,0px) + 200px);right:8px;padding:5px 9px;font-size:8px} }
+  #rover-brief .pg2{display:none} #rover-brief.p2 .pg1{display:none} #rover-brief.p2 .pg2{display:block}
+  #rover-brief .goal{font-size:12.5px;color:var(--hi);border-left:2px solid var(--gold);padding:2px 0 2px 10px;margin:12px 0 16px}
 </style>
 </head>
 <body>
@@ -409,6 +414,7 @@
 </div>
 
 <div id="goals" hidden></div>
+<button class="btn" id="btn-pov" title="Camera: chase, wide, or from the rover">Chase</button>
 <div id="photo"><canvas id="photo-cv"></canvas><img id="photo-img" alt=""><button id="photo-x" aria-label="Close">&times;</button><div id="photo-tip">Drag to look around · pinch or scroll to zoom</div></div>
 <canvas id="minimap" width="170" height="170" title="Map"></canvas>
 <canvas id="attitude" width="320" height="184" title="Tilt: roll and pitch against the tip-over limits"></canvas>
@@ -423,7 +429,7 @@
 
 <div id="bottom">
   <div id="acts">
-    <button class="btn" id="btn-heli">Scout ahead · F</button>
+    <button class="btn" id="btn-heli">Fly Ingenuity · F</button>
     <button class="btn" id="btn-cam">Mastcam-Z · C</button>
     <button class="btn" id="btn-map">Map · M</button>
   </div>
@@ -474,33 +480,35 @@
 
 <div class="sheet" id="rover-brief">
   <div class="card">
-    <h1 id="rb-h1">Welcome to Jezero</h1>
-    <h2 id="rb-h2">2021 · Surface operations</h2>
-    <p id="rb-p">Jezero is a 45 km crater that held a lake about 3.5 billion years ago. A river cut through
-      its western rim and built a delta, now eroded into the cliffs on your horizon. Fine layered
-      sediment like this is where microbial life, if there ever was any, would most likely be preserved.</p>
-    <div class="spec">
-      <span>Rover</span><b>1,025 kg, six wheels, rocker-bogie suspension</b>
-      <span>Mobility</span><b>Wheels climb blocks up to ~50 cm. Tips over past ~48°; the software stops at 30°. Drift sand slips past ~25°</b>
-      <span>Mastcam-Z</span><b>Stereo zoom, 26–110 mm</b>
-      <span>Ingenuity</span><b>1.8 kg, 1.2 m rotors at ~2,500 rpm</b>
-      <span>Objective</span><b>Image six layered outcrops and read their history</b>
+    <div class="pg1">
+      <h1 id="rb-h1">Welcome to Jezero</h1>
+      <h2 id="rb-h2">Surface operations</h2>
+      <p id="rb-p"></p>
+      <p id="rb-goal" class="goal"></p>
+      <button class="btn primary" id="rb-next">Next ›</button>
     </div>
-    <div class="keys kb">
-      <kbd>W A S D</kbd><span>Drive</span>
-      <kbd>Drag</kbd><span>Swing the camera round the rover · scroll to zoom</span>
-      <kbd>C</kbd><span>Mastcam-Z, then <b>Space</b> to image the target</span>
-      <kbd>F</kbd><span>Send Ingenuity on a scouting flight</span>
-      <kbd>M</kbd><span>Traverse map: where you have been, and Ingenuity's leads</span>
+    <div class="pg2">
+      <h1>Driving Perseverance</h1>
+      <div class="spec">
+        <span>Rover</span><b>1,025 kg, six wheels, rocker-bogie suspension</b>
+        <span>Mobility</span><b>Climbs blocks up to ~50 cm. The software stops at 30° of tilt; drift sand slips past ~25°</b>
+        <span>Ingenuity</span><b>1.8 kg, two 1.2 m rotors at ~2,500 rpm</b>
+      </div>
+      <div class="keys kb">
+        <kbd>W A S D</kbd><span>Drive · drag to look around, scroll to zoom</span>
+        <kbd>C</kbd><span>Mastcam-Z, then <b>Space</b> to take the picture</span>
+        <kbd>F</kbd><span>Fly Ingenuity ahead to scout</span>
+        <kbd>M</kbd><span>Map</span>
+      </div>
+      <div class="keys tc">
+        <kbd>Stick</kbd><span>Drive: push further to go faster</span>
+        <kbd>Drag</kbd><span>Look around the rover</span>
+        <kbd>Mastcam-Z</kbd><span>Aim, then tap Capture</span>
+        <kbd>Ingenuity</kbd><span>Fly ahead to scout</span>
+      </div>
+      <p class="fine">Driving is time-compressed. The real rover tops out at about 150 m an hour.</p>
+      <button class="btn primary" id="btn-drive">Start driving</button>
     </div>
-    <div class="keys tc">
-      <kbd>Stick</kbd><span>Drive: push further to go faster</span>
-      <kbd>Drag</kbd><span>Swing the camera round the rover</span>
-      <kbd>Mastcam-Z</kbd><span>Drag or use the stick to aim, then tap Capture</span>
-      <kbd>Scout</kbd><span>Send Ingenuity on a scouting flight</span>
-    </div>
-    <p class="fine">Driving is time-compressed. The real rover tops out at about 150 m an hour.</p>
-    <button class="btn primary" id="btn-drive">Start driving</button>
   </div>
 </div>
 
