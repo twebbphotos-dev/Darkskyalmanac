@@ -646,7 +646,7 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
           float l4 = dot( textureLod( tHiA, t4, lod4 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
           float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
-          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
+          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.75, 0.3, 2.0 );      // more contrast than the picture: the blur and the game's own grain soften it
         }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)

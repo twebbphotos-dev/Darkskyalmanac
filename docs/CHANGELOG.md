@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.38 / zion-sky-v407 — 2026-10-18
+- Mars rover sim: no more small dark crescents scattered over the dunes. They
+  were the HiRISE picture's small ripples, each a few metres across, magnified
+  and given extra contrast. The picture now adds only light and dark broader
+  than about 16 m (dunes, sand patches, the big real shadows), blurred to that
+  scale however close the camera is, with its contrast lifted a little to
+  keep the big shadows strong.
+
 ## v4.37 / zion-sky-v406 — 2026-10-18
 - Mars rover sim: the small repeating "Tetris" pattern on the ground is gone.
   It was the game's painted ground tile (mottling plus stamped polygon pebbles),
