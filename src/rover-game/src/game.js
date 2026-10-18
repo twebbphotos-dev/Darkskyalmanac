@@ -645,9 +645,9 @@ addEventListener('pointermove', e => {
   const dx = e.clientX - ORB.x, dy = e.clientY - ORB.y;
   ORB.x = e.clientX; ORB.y = e.clientY;
   const sp = TOUCH ? 1.4 : 1;
-  if (S.phase === 'cam') {                       // aim Mastcam-Z: narrow lens, so a finer touch
-    S.camYaw = Math.max(-0.9, Math.min(0.9, S.camYaw + dx * 0.0022 * sp));
-    S.camPitch = Math.max(-0.7, Math.min(0.3, S.camPitch + dy * 0.0018 * sp));
+  if (S.phase === 'cam') {                       // aim Mastcam-Z like a camera: drag right to look right, up to look up; a finer touch for the narrow lens
+    S.camYaw = Math.max(-2.8, Math.min(2.8, S.camYaw - dx * 0.0022 * sp));
+    S.camPitch = Math.max(-0.7, Math.min(0.3, S.camPitch - dy * 0.0018 * sp));
     return;
   }
   ORB.yaw -= dx * 0.0065 * sp;
@@ -1314,7 +1314,7 @@ function openCam() {
   const d = face.sub(eye);
   let dy = Math.atan2(-d.x, -d.z) - r.yaw;
   dy = Math.atan2(Math.sin(dy), Math.cos(dy));           // wrap to [-pi, pi]
-  S.camYaw = Math.max(-0.9, Math.min(0.9, dy));
+  S.camYaw = Math.max(-2.8, Math.min(2.8, dy));      // the mast head turns most of the way round
   S.camPitch = Math.max(-0.7, Math.min(0.3, Math.asin(d.y / d.length())));
   /* The hero sequence, in beats:
        1 the mast swings up off the deck      (first time only)
@@ -1737,7 +1737,7 @@ function stepCamera(dt) {
     // look down the mast: narrow field, pan and tilt with the drive keys
     if (S.phase === 'cam') S.camYaw += axT() * 0.7 * dt;
     S.camPitch = Math.max(-0.7, Math.min(0.3, S.camPitch + axF() * 0.5 * dt));
-    S.camYaw = Math.max(-0.9, Math.min(0.9, S.camYaw));
+    S.camYaw = Math.max(-2.8, Math.min(2.8, S.camYaw));
 
     const yaw = r.yaw + S.camYaw;
     const eye = MAST.head ? MAST.head.getWorldPosition(new THREE.Vector3()) : new THREE.Vector3(r.pos.x, r.pos.y + 2.3, r.pos.z).addScaledVector(fwdV, 0.75);

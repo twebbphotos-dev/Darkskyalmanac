@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.29 / zion-sky-v398 — 2026-10-18
+- Fix: Mastcam-Z aiming was flipped and cramped. Why: dragging moved the
+  view "grab the scene" style (drag right, look left), the opposite of the
+  joystick and keys, and the mast head could turn only 51° each way, so a
+  target to the side was out of reach. Now drag right looks right, drag up
+  looks up, and the head turns up to 160° each way.
+
 ## v4.28 / zion-sky-v397 — 2026-10-18
 - Copyright: a LICENSE file (all rights reserved, with third-party
   carve-outs), a copyright notice on the Sources page, a copyright banner at
