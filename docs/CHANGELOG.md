@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.52 / zion-sky-v421 — 2026-10-18
+- Lunar Rover sim: the whole third drive. The drivable ground grew from 840 m
+  to 1.8 km, at half scale, and now follows the real valley from NASA's
+  terrain model (the climb to the North Massif and the run home past Van
+  Serg), with generated craters and rocks on it. Only Drive 3 is drawn, as
+  a blue dotted line that stays visible into the distance, and the speed
+  record counts on it only. Finer terrain rings round the square, in the
+  same soil, so its edge no longer shows.
+
 ## v4.51 / zion-sky-v420 — 2026-10-18
 - Lunar Rover sim:
   - The real Apollo 17 drives near the lander as dotted lines (stops surveyed

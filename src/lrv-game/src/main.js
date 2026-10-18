@@ -29,25 +29,41 @@ const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
    Near the lander the ground is generated: NASA's terrain model of the site has 250 m cells, far too coarse
    for the craters a rover drives among. Craters follow the Moon's size mix (many small, few large, most of
    them worn), each a bowl with a raised rim; a fresh rim drops away steeply on the inside, which is what
-   throws the rover into the air. The mountains around the valley are the real ones, from the terrain model. */
-const HALF = 420, CELL = 1.25, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 840 m across
+   throws the rover into the air. The mountains around the valley are the real ones, from the terrain model.
+   The drivable square holds the whole of the third drive (stops 6 to 9), at half scale across: one game metre is
+   SQ metres of the Moon, and heights are squashed by SV, so slopes come out SQ·SV = 1.5 times real. The valley's
+   shape under it comes from the same terrain model, with the Moon's curvature; the craters are game size. */
+const SQ = 2, SV = 0.75, RM = 1737400;
+const HALF = 900, CX = 750, CZ = -760, CELL = 2.5, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 1.8 km across, round the third drive
+const inSq = (x, z, m) => Math.abs(x - CX) < HALF - m && Math.abs(z - CZ) < HALF - m;
+let DEM = null;      // NASA's terrain model of the site (models/moon-a17.bin): 256 × 250 m, heights in quarter-metres, centred on the lander
+function demRaw(X, Z) {      // metres, at X east and Z south of the lander in real metres; Catmull-Rom between the 250 m cells so slopes stay smooth
+  if (!DEM) return 0;
+  const u = X / 250 + 127.5, v = Z / 250 + 127.5, i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+  const d = (a, b) => DEM[Math.max(0, Math.min(255, b)) * 256 + Math.max(0, Math.min(255, a))] / 4;
+  const cr = (a, b, c, e, t) => b + 0.5 * t * (c - a + t * (2 * a - 5 * b + 4 * c - e + t * (3 * (b - c) + e - a)));
+  const row = k => cr(d(i - 1, k), d(i, k), d(i + 1, k), d(i + 2, k), fu);
+  return cr(row(j - 1), row(j), row(j + 1), row(j + 2), fv);
+}
+let DEM0 = 0;
+function demGame(x, z) { const X = x * SQ, Z = z * SQ; return (demRaw(X, Z) - DEM0) * SV - (X * X + Z * Z) / (2 * RM) * SV; }
 const craters = [], rocks = [];
 { const r = rng(1972);
   const add = (x, z, R, fresh) => craters.push({ x, z, R, fresh, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
   // a few fresh ones within reach of the start, the rims to aim for
   [[48, -18, 13, 1], [-30, 64, 17, .95], [96, 52, 21, .9], [20, 120, 11, 1], [-92, -40, 24, .85]].forEach(c => add(...c));
-  for (let i = 0; i < 1500; i++) {
+  for (let i = 0; i < 6900; i++) {
     const R = 1.2 / Math.sqrt(1 - r() * (1 - (1.2 / 32) ** 2));        // a power-law spread of sizes, 1.2 to 32 m
-    const x = (r() * 2 - 1) * (HALF - 10), z = (r() * 2 - 1) * (HALF - 10);
+    const x = CX + (r() * 2 - 1) * (HALF - 10), z = CZ + (r() * 2 - 1) * (HALF - 10);
     if (Math.hypot(x, z) < 14 || Math.hypot(x + 12, z - 4) < 14) continue;      // the start and the lander stand on level ground
     add(x, z, R, Math.pow(r(), 2.2));
   }
-  for (let i = 0; i < 900; i++) { const x = (r() * 2 - 1) * (HALF - 6), z = (r() * 2 - 1) * (HALF - 6); if (Math.hypot(x, z) < 10) continue;
+  for (let i = 0; i < 4100; i++) { const x = CX + (r() * 2 - 1) * (HALF - 6), z = CZ + (r() * 2 - 1) * (HALF - 6); if (Math.hypot(x, z) < 10) continue;
     rocks.push({ x, z, s: 0.12 + Math.pow(r(), 3) * 0.7, yaw: r() * 6.28, k: r() }); }
   // a fresh crater digs through the soil into rock and throws blocks out over its rim; worn ones have lost theirs
   for (const c of craters) { if (c.fresh < 0.55 || c.R < 4) continue; const n = Math.round(c.R * c.fresh * 2.2);
     for (let i = 0; i < n; i++) { const a = r() * 6.2832, d = c.R * (0.85 + Math.pow(r(), 1.7) * 1.3), x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d;
-      if (Math.abs(x) > HALF - 6 || Math.abs(z) > HALF - 6 || Math.hypot(x, z) < 10) continue;
+      if (!inSq(x, z, 6) || Math.hypot(x, z) < 10) continue;
       rocks.push({ x, z, s: 0.2 + Math.pow(r(), 2.2) * Math.min(1.6, c.R * 0.07), yaw: r() * 6.28, k: r() }); } }
 }
 const CG = 16, CRATER_GRID = new Map();      // craters by 16 m cell, so each point checks only its neighbors
@@ -70,8 +86,9 @@ function brightness(x, z) {
 function buildGround() {
   indexCraters();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
-    const x = -HALF + i * CELL, z = -HALF + j * CELL;
-    H[j * N + i] = (fbm(x / 60, z / 60, 4) - .5) * 3 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35 + craterH(x, z);
+    const x = CX - HALF + i * CELL, z = CZ - HALF + j * CELL;
+    const edge = ss(0, 40, HALF - Math.max(Math.abs(x - CX), Math.abs(z - CZ)));      // the detail fades out at the edge, where the terrain model's ring takes over
+    H[j * N + i] = demGame(x, z) + edge * ((fbm(x / 60, z / 60, 4) - .5) * 2.2 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35 + craterH(x, z));
     B[j * N + i] = brightness(x, z);
   }
 }
@@ -103,7 +120,7 @@ function microRaw(x, z) {
 const PATCH = { cx: 0, cz: 0, half: 48 };
 function microFade(x, z) { return ss(PATCH.half, PATCH.half - 6, Math.max(Math.abs(x - PATCH.cx), Math.abs(z - PATCH.cz))); }
 function groundBase(x, z) {
-  const u = Math.max(0, Math.min(N - 1.001, (x + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+  const u = Math.max(0, Math.min(N - 1.001, (x - CX + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z - CZ + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
   const a = H[j * N + i], b = H[j * N + i + 1], c = H[(j + 1) * N + i], d = H[(j + 1) * N + i + 1];
   return a + (b - a) * fu + (c - a) * fv + (a - b - c + d) * fu * fv;
 }
@@ -167,10 +184,10 @@ coarse.onBeforeCompile = sh => {
 };
 
 function groundMesh() {
-  const g = new THREE.PlaneGeometry(2 * HALF, 2 * HALF, N - 1, N - 1); g.rotateX(-Math.PI / 2);
+  const g = new THREE.PlaneGeometry(2 * HALF, 2 * HALF, N - 1, N - 1); g.rotateX(-Math.PI / 2); g.translate(CX, 0, CZ);
   const p = g.attributes.position, uv = g.attributes.uv;
   const col = new Float32Array(p.count * 3);
-  for (let k = 0; k < p.count; k++) { const i = Math.round((p.getX(k) + HALF) / CELL), j = Math.round((p.getZ(k) + HALF) / CELL); p.setY(k, H[j * N + i]); uv.setXY(k, p.getX(k) / 3.2, p.getZ(k) / 3.2); col.fill(B[j * N + i], k * 3, k * 3 + 3); }
+  for (let k = 0; k < p.count; k++) { const i = Math.round((p.getX(k) - CX + HALF) / CELL), j = Math.round((p.getZ(k) - CZ + HALF) / CELL); p.setY(k, H[j * N + i]); uv.setXY(k, p.getX(k) / 3.2, p.getZ(k) / 3.2); col.fill(B[j * N + i], k * 3, k * 3 + 3); }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, coarse); m.receiveShadow = true; scene.add(m);
@@ -180,7 +197,7 @@ const PS = 0.4 * DETAIL.grid, PN = Math.round(2 * PATCH.half / PS) + 1;
 const patchGeo = new THREE.PlaneGeometry(2 * PATCH.half, 2 * PATCH.half, PN - 1, PN - 1); patchGeo.rotateX(-Math.PI / 2);
 patchGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(PN * PN * 3), 3));
 const patchMesh = new THREE.Mesh(patchGeo, soil); patchMesh.receiveShadow = true; patchMesh.frustumCulled = false;
-function bilB(x, z) { const u = Math.max(0, Math.min(N - 1.001, (x + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+function bilB(x, z) { const u = Math.max(0, Math.min(N - 1.001, (x - CX + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z - CZ + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
   return B[j * N + i] * (1 - fu) * (1 - fv) + B[j * N + i + 1] * fu * (1 - fv) + B[(j + 1) * N + i] * (1 - fu) * fv + B[(j + 1) * N + i + 1] * fu * fv; }
 function buildPatch(cx, cz) {
   PATCH.cx = Math.round(cx / PS) * PS; PATCH.cz = Math.round(cz / PS) * PS;
@@ -192,25 +209,24 @@ function buildPatch(cx, cz) {
 }
 // the valley and its mountains, from NASA's terrain model: 64 km square on a 250 m grid, heights in quarter-metres,
 // drawn at true size with the Moon's curvature; sunk just under the drivable square where the two overlap
-function farMesh(dem) {
-  const DN = 256, C = 250, RM = 1737400, M = 192, W = DN * C;
-  const dv = (i, j) => dem[Math.max(0, Math.min(DN - 1, j)) * DN + Math.max(0, Math.min(DN - 1, i))] / 4;
-  const at = (x, z) => { const u = x / C + DN / 2 - .5, v = z / C + DN / 2 - .5, i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
-    return dv(i, j) * (1 - fu) * (1 - fv) + dv(i + 1, j) * fu * (1 - fv) + dv(i, j + 1) * (1 - fu) * fv + dv(i + 1, j + 1) * fu * fv; };
-  const h0 = at(0, 0), g = new THREE.PlaneGeometry(W, W, M, M); g.rotateX(-Math.PI / 2);
+// The valley and its mountains, from NASA's terrain model at the same half scale as the drivable square, in two rings:
+// a fine one 8 km across at 25 m, so that where it meets the drivable square the two follow the same shape (the coarse
+// ring alone, at 167 m, sagged metres below it on the slopes and left a step), and one at 80 m out to 32 km.
+function ringMesh(half, seg, hole) {
+  const g = new THREE.PlaneGeometry(2 * half, 2 * half, seg, seg); g.rotateX(-Math.PI / 2); g.translate(CX, 0, CZ);
   const p = g.attributes.position;
-  for (let k = 0; k < p.count; k++) { const x = p.getX(k), z = p.getZ(k), r = Math.hypot(x, z), inside = 1 - ss(HALF * 1.2, HALF * 2.2, Math.max(Math.abs(x), Math.abs(z)));
-    p.setY(k, (at(x, z) - h0) * ss(HALF * 0.9, 2600, r) - r * r / (2 * RM) - 1.2 * inside); }
+  const uv = g.attributes.uv, col = new Float32Array(p.count * 3);
+  for (let k = 0; k < p.count; k++) { const x = p.getX(k), z = p.getZ(k); p.setY(k, demGame(x, z) - 0.15); uv.setXY(k, x / 3.2, z / 3.2); col.fill(brightness(x, z), k * 3, k * 3 + 3); }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
-  // Not drawn over the drivable square at all. Sunk 1.2 m under it, it still showed through as flat
-  // grey sheets wherever the near ground dipped deeper: in every crater, and round the rover.
-  const fm = new THREE.MeshStandardMaterial({ color: 0x8f8b85, roughness: 1 });
-  fm.onBeforeCompile = sh => {
+  const fm = new THREE.MeshStandardMaterial({ color: soil.color, roughness: 1, map: soil.map, vertexColors: true });      // the same soil as the drivable square, so its edge does not show
+  fm.onBeforeCompile = sh => {      // not drawn where the next ring in is (sunk under it instead, it showed through every dip)
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('void main() {', `void main() {\n  if (max(abs(vWxz.x), abs(vWxz.y)) < ${(HALF - 1).toFixed(1)}) discard;`);
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('void main() {', `void main() {\n  if (max(abs(vWxz.x - ${CX.toFixed(1)}), abs(vWxz.y - ${CZ.toFixed(1)})) < ${(hole - 1).toFixed(1)}) discard;`);
   };
   const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }
+function farMesh() { ringMesh(4000, 320, HALF); ringMesh(16000, 400, 4000); }
 function rockMeshes() {
   const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
   for (let k = 0; k < p.count; k++) { const s = 0.75 + r() * 0.4; p.setXYZ(k, p.getX(k) * s, p.getY(k) * s * 0.7, p.getZ(k) * s); }
@@ -295,7 +311,7 @@ function step(h) {
   const dq = new THREE.Quaternion(car.w.x * h * .5, car.w.y * h * .5, car.w.z * h * .5, 0).multiply(car.q);
   car.q.x += dq.x; car.q.y += dq.y; car.q.z += dq.z; car.q.w += dq.w; car.q.normalize();
   // keep to the mapped square
-  const lim2 = HALF - 12; if (Math.abs(car.p.x) > lim2 || Math.abs(car.p.z) > lim2) { car.p.x = Math.max(-lim2, Math.min(lim2, car.p.x)); car.p.z = Math.max(-lim2, Math.min(lim2, car.p.z)); car.v.multiplyScalar(0.3); }
+  const lim2 = HALF - 12; if (Math.abs(car.p.x - CX) > lim2 || Math.abs(car.p.z - CZ) > lim2) { car.p.x = CX + Math.max(-lim2, Math.min(lim2, car.p.x - CX)); car.p.z = CZ + Math.max(-lim2, Math.min(lim2, car.p.z - CZ)); car.v.multiplyScalar(0.3); }
   // air time: off the ground with nothing touching
   if (touching === 0) {
     if (AIR.grounded && AIR.t === 0) { AIR.start = car.p.clone(); AIR.peak = 0; AIR.spin = 0; }
@@ -308,33 +324,34 @@ function step(h) {
   return touching;
 }
 
-/* ── the real drives: the stops were surveyed from orbit (Haase et al. 2019, as in the 3D viewer), in metres east and
-   south of the lander; between stops the line follows the general route. Only the stretches near the lander fall
-   inside the drivable square: each drive's start and its way home. ── */
-const DRIVES = [
-  ['#F3E9CC', [[0, 0], [-192, -36], [-40, 60], [150, 520], [423, 1031], [367, 566], [129, -27], [0, 0]]],
-  ['#F0A23C', [[0, 0], [-386, 57], [-1350, 400], [-2500, 760]]],
-  ['#F0A23C', [[-2100, -330], [-1297, 157], [-275, 72], [0, 0]]],
-  ['#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700]]],
-  ['#7CC7F2', [[1735, -1228], [900, -600], [145, -39]]],
+/* ── the third drive: the stops were surveyed from orbit (Haase et al. 2019, as in the 3D viewer), in metres east and
+   south of the lander, drawn at the square's half scale; between stops the line follows the general route. ── */
+const DRIVES = [      // the third drive only: north to the split boulder at stops 6 and 7, east to 8, home past Van Serg crater (9)
+  ['#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700], [805, -3003], [1294, -3036], [2200, -2950], [3012, -2599], [2500, -1900], [1735, -1228], [900, -600], [145, -39]]],
 ];
 const LMP = [-12, 4];      // where the lander stands here
+const COURSE = [];      // Drive 3's dots, flattened x, z: the speed record counts only on them
 function routeDots() {
   const cr = (a, b, c, d, t) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
   const pos = [], col = [], cc = new THREE.Color();
   for (const [hex, raw] of DRIVES) {
-    const C = raw.map(q => [LMP[0] + q[0], LMP[1] + q[1]]), P = i => C[Math.max(0, Math.min(C.length - 1, i))]; cc.set(hex);
+    const C = raw.map(q => [LMP[0] + q[0] / SQ, LMP[1] + q[1] / SQ]), P = i => C[Math.max(0, Math.min(C.length - 1, i))]; cc.set(hex);
     let carry = 0;
     for (let i = 0; i < C.length - 1; i++) {
       const L = Math.hypot(C[i + 1][0] - C[i][0], C[i + 1][1] - C[i][1]), n = Math.max(2, Math.ceil(L / 0.5));
       for (let k = 0; k < n; k++) { const t = k / n, x = cr(P(i - 1)[0], P(i)[0], P(i + 1)[0], P(i + 2)[0], t), z = cr(P(i - 1)[1], P(i)[1], P(i + 1)[1], P(i + 2)[1], t);
         if ((carry += L / n) < 3) continue; carry = 0;      // a dot every 3 m
-        if (Math.max(Math.abs(x), Math.abs(z)) > HALF - 14) continue;
-        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); }
+        if (!inSq(x, z, 14)) continue;
+        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); if (hex === '#7CC7F2') COURSE.push(x, z); }
     }
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  const m = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.4, map: DOT, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false })); m.frustumCulled = false; scene.add(m);
+  // 0.5 m dots, never smaller than 3 pixels: at their true size they vanished a few tens of metres ahead
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: DOT }, px: { value: 1 }, vh: { value: 800 } },
+    vertexShader: 'attribute vec3 color; varying vec3 vC; uniform float px, vh; void main() { vC = color; vec4 mv = modelViewMatrix * vec4( position, 1.0 ); gl_Position = projectionMatrix * mv; gl_PointSize = max( 3.0 * px, 0.5 * projectionMatrix[1][1] * 0.5 * vh / -mv.z ); }',
+    fragmentShader: 'uniform sampler2D map; varying vec3 vC; void main() { float a = texture2D( map, gl_PointCoord ).a; if ( a < 0.02 ) discard; gl_FragColor = vec4( vC, a * 0.9 ); }' });
+  const m = new THREE.Points(g, mat), _vs = new THREE.Vector2(); m.frustumCulled = false; m.renderOrder = 2; scene.add(m);
+  m.onBeforeRender = r => { mat.uniforms.px.value = r.getPixelRatio(); mat.uniforms.vh.value = r.getDrawingBufferSize(_vs).y; };
 }
 
 /* ── dust: thrown off the wheels, it flies in clean parabolas and falls straight back. There is no air to hold it up. ── */
@@ -460,10 +477,14 @@ function showRecords() {
   const top = FAST ? REC.v2 : REC.v; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
   $('rec').textContent = REC.t ? `Records: ${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : '';
 }
-/* Top speed, on the ground only: Cernan's 18 km/h was driven, not flown. A new best is announced once the run is over. */
-const RUN = { peak: 0 };
+/* Top speed, on the ground and on Drive 3's line only (the blue dots): Cernan's 18 km/h was driven, not flown.
+   A new best is announced once the run is over. */
+const RUN = { peak: 0, on: false };
+function onCourse(x, z) { for (let i = 0; i < COURSE.length; i += 2) { const dx = COURSE[i] - x, dz = COURSE[i + 1] - z; if (dx * dx + dz * dz < 64) return true; } return false; }      // within 8 m of the blue line
 function speedRecord(kmh, grounded) {
-  if (grounded && kmh > RUN.peak) RUN.peak = kmh;
+  const on = onCourse(car.p.x, car.p.z);
+  if (on !== RUN.on) { RUN.on = on; toast(on ? 'On Drive 3 · speed record timing' : 'Off Drive 3 · back on the blue line to count'); }
+  if (grounded && on && kmh > RUN.peak) RUN.peak = kmh;
   const key = FAST ? 'v2' : 'v';
   if (RUN.peak > REC[key] + 0.05 && kmh < RUN.peak * 0.7) {
     const old = REC[key]; REC[key] = RUN.peak;
@@ -526,9 +547,10 @@ function frame(now) {
 (async () => {
   $('loadmsg').textContent = 'Shaping the valley…';
   await new Promise(r => setTimeout(r, 30));
+  try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) { DEM = new Int16Array(await r.arrayBuffer()); DEM0 = demRaw(0, 0); } } catch (e) { /* offline without it: flat ground, no mountains */ }
   buildGround(); indexRocks(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); routeDots(); showRecords();
-  try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) farMesh(new Int16Array(await r.arrayBuffer())); } catch (e) { /* offline without it: the drivable square alone */ }
-  place(0, 0, Math.atan2(-64, -30));      // facing the nearest fresh crater, the Sun behind
+  if (DEM) farMesh();
+  place(0, 0, Math.atan2(350, 82));      // facing up the third drive, toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
   if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); }      // tires on the ground at the resting ride height

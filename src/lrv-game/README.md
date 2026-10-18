@@ -54,3 +54,14 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
   Double at 11.2 m/s with more grip and motor force (`lrv-speed`). Top speed on the ground is a record per mode
   (`v`, `v2` in `lrv-records`), announced when the run slows below 70% of its peak.
 - **Dust**: soft round sprites, 4 cm.
+
+## The third drive (v4.52)
+
+- The drivable square is 1.8 km across (`HALF` 900 at 2.5 m, centred at `CX`, `CZ`) and holds all of Drive 3
+  at half scale: one game metre is `SQ` = 2 m of the Moon, heights × `SV` = 0.75 (slopes 1.5× real).
+- Its base is NASA's terrain model (`demGame`: Catmull-Rom between the 250 m cells, with the Moon's curvature),
+  loaded before the ground is built; noise and ~6,900 game-size craters ride on it, faded out over the last 40 m
+  so the edge meets the terrain rings exactly.
+- Rings outside it, same model and same soil material: 8 km at 25 m, then 32 km at 80 m, each discarded where the
+  next one in is drawn.
+- Only Drive 3 is drawn (blue dots, 3 m apart, never under 3 px on screen); the speed record counts within 8 m of it.
