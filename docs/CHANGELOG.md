@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.48 / zion-sky-v417 — 2026-10-18
+- Detailed Cloud Cover: "Blended Forecast" renamed "Multi-source Forecast".
+
 ## v4.47 / zion-sky-v416 — 2026-10-18
 - Detailed Cloud Cover: the "Best window" line moved from above the blended
   chart to below its notes, so the chart leads and the summary follows.
