@@ -88,3 +88,10 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
 - Straying (v4.57): more than 20 m from the line warns, more than 35 m ends the attempt; the clock clears and the
   line fades out over 1.5 s (it fades in the same way when the clock starts). The line is faint: 0.3 m dots at 45%
   opacity, never under 2 px.
+
+## Turning wheels (v4.58)
+
+- The model is a scan with the wheels fused in. `rigWheels()` finds them on load: points below the hubs at each
+  corner give each wheel's centre (one radius for all four, the widest cluster's: 0.42 m), and every triangle wholly
+  inside a wheel's cylinder is cut into its own mesh under a steer group (Y, from `car.steer`) and a spin group
+  (Z, from each wheel's `spin` in the physics). If the clusters are not found the model is left whole.

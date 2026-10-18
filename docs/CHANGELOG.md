@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.58 / zion-sky-v427 — 2026-10-18
+- Lunar Rover sim: the wheels turn as you drive and steer, all four. The
+  model is a scan with the wheels fused in, so they are found and cut out
+  of it when it loads.
+
 ## v4.57 / zion-sky-v426 — 2026-10-18
 - Lunar Rover time trial: stray too far from the route (a warning at 20 m,
   over at 35 m) and the clock disappears and the line fades away. The

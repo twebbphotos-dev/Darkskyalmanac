@@ -600,7 +600,7 @@ function frame(now) {
     if (Math.max(Math.abs(car.p.x - PATCH.cx), Math.abs(car.p.z - PATCH.cz)) > 14) buildPatch(car.p.x, car.p.z);      // keep the fine ground under the rover
     upsideT = _up.y < 0.35 ? upsideT + dt : 0; $('btn-recover').classList.toggle('on', upsideT > 1.2);
   }
-  rover.position.copy(car.p); rover.quaternion.copy(car.q);
+  rover.position.copy(car.p); rover.quaternion.copy(car.q); turnWheels();
   // chase camera, held a little above the ground
   ORB.idle += dt; if (ORB.idle > 2.5) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
   _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q);
@@ -625,6 +625,53 @@ function frame(now) {
   requestAnimationFrame(frame);
 }
 
+/* ── the wheels: the model is a scan of the museum's rover, with the wheels fused into the rest. Each wheel is found
+   from the geometry (the cluster of points low at each corner gives its centre and radius), and every triangle inside
+   its cylinder is cut out into its own part, pivoted at the hub, so it can turn with the physics and steer. ── */
+const WHEEL_PARTS = [];
+function rigWheels() {
+  rover.updateMatrixWorld(true);
+  const inv = rover.matrixWorld.clone().invert(), meshes = [], P = new THREE.Vector3();
+  rover.traverse(o => { if (o.isMesh) meshes.push(o); });
+  const src = meshes.map(m => { const M = inv.clone().multiply(m.matrixWorld), pos = m.geometry.attributes.position, f = new Float32Array(pos.count * 3);
+    for (let i = 0; i < pos.count; i++) { P.fromBufferAttribute(pos, i).applyMatrix4(M); f[i * 3] = P.x; f[i * 3 + 1] = P.y; f[i * 3 + 2] = P.z; }
+    return { m, M, f }; });
+  const box = [0, 1, 2, 3].map(() => ({ x0: 1e9, x1: -1e9, z0: 1e9, z1: -1e9, y0: 1e9, n: 0 }));
+  for (const { f } of src) for (let i = 0; i < f.length; i += 3) { const x = f[i], y = f[i + 1], z = f[i + 2];
+    if (y > -0.45 || Math.abs(x) < 0.6 || Math.abs(z) < 0.45) continue;
+    const b = box[(x > 0 ? 0 : 2) + (z > 0 ? 0 : 1)];      // the same order as WHEELS
+    b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.z0 = Math.min(b.z0, z); b.z1 = Math.max(b.z1, z); b.y0 = Math.min(b.y0, y); b.n++; }
+  if (box.some(b => b.n < 100)) return;      // not the model expected: leave it whole
+  const R = Math.max(...box.map(b => (b.x1 - b.x0) / 2));      // all four wheels are the same size: the widest cluster is the least clipped by what stands next to it
+  const W = box.map(b => ({ c: new THREE.Vector3((b.x0 + b.x1) / 2, b.y0 + R, (b.z0 + b.z1) / 2), r: R * 1.02, hw: (b.z1 - b.z0) / 2 + 0.02 }));
+  const inside = (f, i) => { for (let k = 0; k < 4; k++) { const w = W[k], dx = f[i * 3] - w.c.x, dy = f[i * 3 + 1] - w.c.y, dz = f[i * 3 + 2] - w.c.z; if (dx * dx + dy * dy < w.r * w.r && Math.abs(dz) < w.hw) return k; } return -1; };
+  W.forEach(w => { const steer = new THREE.Group(), spin = new THREE.Group(); steer.position.copy(w.c); steer.add(spin); rover.add(steer); w.steer = steer; w.spin = spin; });
+  const nm = new THREE.Matrix3();
+  for (const { m, M, f } of src) {
+    const g = m.geometry, idx = g.index ? g.index.array : null, nTri = (idx ? idx.length : g.attributes.position.count) / 3, vi = (t, k) => idx ? idx[t * 3 + k] : t * 3 + k;
+    const keep = [[], [], [], [], []];      // triangles' vertex lists: wheels 0-3, then the rest
+    for (let t = 0; t < nTri; t++) { const a = vi(t, 0), b = vi(t, 1), c = vi(t, 2), ka = inside(f, a);
+      keep[ka >= 0 && inside(f, b) === ka && inside(f, c) === ka ? ka : 4].push(a, b, c); }
+    if (keep[4].length === nTri * 3) continue;      // nothing of a wheel in this part
+    nm.getNormalMatrix(M);
+    const build = (list, off) => {
+      const out = new THREE.BufferGeometry(), nrm = g.attributes.normal;
+      const pos = new Float32Array(list.length * 3); list.forEach((v, i) => { pos[i * 3] = f[v * 3] - off.x; pos[i * 3 + 1] = f[v * 3 + 1] - off.y; pos[i * 3 + 2] = f[v * 3 + 2] - off.z; });
+      out.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+      if (nrm) { const a = new Float32Array(list.length * 3); list.forEach((v, i) => { P.fromBufferAttribute(nrm, v).applyMatrix3(nm).normalize(); a[i * 3] = P.x; a[i * 3 + 1] = P.y; a[i * 3 + 2] = P.z; }); out.setAttribute('normal', new THREE.BufferAttribute(a, 3)); }
+      for (const name of Object.keys(g.attributes)) { if (name === 'position' || name === 'normal') continue; const at = g.attributes[name], s = at.itemSize, a = new Float32Array(list.length * s);
+        list.forEach((v, i) => { a[i * s] = at.getX(v); if (s > 1) a[i * s + 1] = at.getY(v); if (s > 2) a[i * s + 2] = at.getZ(v); if (s > 3) a[i * s + 3] = at.getW(v); }); out.setAttribute(name, new THREE.BufferAttribute(a, s)); }
+      return out;
+    };
+    const mk = (geo, parent) => { const n = new THREE.Mesh(geo, m.material); n.castShadow = n.receiveShadow = true; parent.add(n); };
+    mk(build(keep[4], new THREE.Vector3()), rover);
+    for (let k = 0; k < 4; k++) if (keep[k].length) mk(build(keep[k], W[k].c), W[k].spin);
+    m.parent.remove(m);
+  }
+  WHEEL_PARTS.push(...W);
+}
+function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -car.steer * WHEELS[k].steer; w.spin.rotation.z = -WHEELS[k].spin; }); }
+
 /* ── start ── */
 (async () => {
   $('loadmsg').textContent = 'Shaping the valley…';
@@ -635,10 +682,10 @@ function frame(now) {
   place(0, 0, Math.atan2(350, 82));      // facing north, up the valley toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
-  if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); }      // tires on the ground at the resting ride height
+  if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); rigWheels(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
   if (lm) { const o = lm.scene; dusty(o); const x = -12, z = 4; o.position.set(x, ground(x, z) - 0.15, z); o.rotation.y = -Math.PI / 2; scene.add(o); }
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { CRASH, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
