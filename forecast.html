@@ -1196,7 +1196,7 @@ function hourlyCloudPanel(date){
     }
   }
   // ---- calm single-tone bars (the deep multi-model view lives on /clouds) ----
-  const W=560, H=148, padL=30, padR=8, top=12, bot=38;
+  const W=560, H=158, padL=30, padR=8, top=12, bot=48;
   const bw=(W-padL-padR)/hrs.length;
   const y=v=>top+(100-v)/100*(H-top-bot);
   let bars='', labels='';
@@ -1204,9 +1204,9 @@ function hourlyCloudPanel(date){
     const x=(padL+i*bw+1).toFixed(1), w=(bw-2).toFixed(1);
     if(e.sky>=0.5) bars+='<rect x="'+x+'" width="'+w+'" y="'+y(e.sky).toFixed(1)+'" height="'+(y(0)-y(e.sky)).toFixed(1)+'" fill="#B39A6B" opacity="0.85"/>';
     { const hh=e.h%24, cx=(padL+i*bw+bw/2).toFixed(1), mk=hh<12?'AM':'PM';      // every hour numbered, each with its AM / PM
-      if(hh===0&&i>0) labels+='<line x1="'+(padL+i*bw).toFixed(1)+'" y1="'+top+'" x2="'+(padL+i*bw).toFixed(1)+'" y2="'+(H-21)+'" stroke="rgba(203,168,90,.28)" stroke-width="1"/>';      // midnight
-      labels+='<text x="'+cx+'" y="'+(H-15)+'" fill="#B8AB88" font-size="11" text-anchor="middle">'+(hh%12||12)+'</text>'
-        +(mk?'<text x="'+cx+'" y="'+(H-4)+'" fill="#7A6E55" font-size="7.5" letter-spacing=".08em" text-anchor="middle">'+mk+'</text>':''); }
+      if(hh===0&&i>0) labels+='<line x1="'+(padL+i*bw).toFixed(1)+'" y1="'+top+'" x2="'+(padL+i*bw).toFixed(1)+'" y2="'+(H-30)+'" stroke="rgba(203,168,90,.28)" stroke-width="1"/>';      // midnight
+      labels+='<text x="'+cx+'" y="'+(H-21)+'" fill="#B8AB88" font-size="15" text-anchor="middle">'+(hh%12||12)+'</text>'
+        +(mk?'<text x="'+cx+'" y="'+(H-5)+'" fill="#8A7D60" font-size="10.5" letter-spacing=".08em" text-anchor="middle">'+mk+'</text>':''); }
   });
   let grid='';
   [50,100].forEach(v=>{

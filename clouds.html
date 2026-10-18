@@ -513,7 +513,7 @@ function freshnessTxt(){
 // ── shared chart builder ──
 function stackChart(hrs, pick, opts){
   opts=opts||{};
-  const W=560, H=(opts.h||158)+8, padL=30, padR=8, top=12, bot=opts.strip?48:38;
+  const W=560, H=(opts.h||158)+18, padL=30, padR=8, top=12, bot=opts.strip?58:48;
   const bw=(W-padL-padR)/hrs.length;
   const y=v=>top+(100-v)/100*(H-top-bot);
   let bars='', labels='', strip='', nwsLine='';
@@ -540,9 +540,9 @@ function stackChart(hrs, pick, opts){
       strip+='<rect x="'+x+'" width="'+w+'" y="'+(H-bot+7)+'" height="4" rx="1" fill="'+sc+'" opacity="0.9"/>';
     }
     { const hh=e.h%24, cx=(padL+i*bw+bw/2).toFixed(1), mk=hh<12?'AM':'PM';      // every hour numbered, each with its AM / PM
-      if(hh===0&&i>0) labels+='<line x1="'+(padL+i*bw).toFixed(1)+'" y1="'+top+'" x2="'+(padL+i*bw).toFixed(1)+'" y2="'+(H-21)+'" stroke="rgba(203,168,90,.28)" stroke-width="1"/>';      // midnight
-      labels+='<text x="'+cx+'" y="'+(H-15)+'" fill="#B8AB88" font-size="11" text-anchor="middle">'+(hh%12||12)+'</text>'
-        +(mk?'<text x="'+cx+'" y="'+(H-4)+'" fill="#7A6E55" font-size="7.5" letter-spacing=".08em" text-anchor="middle">'+mk+'</text>':''); }
+      if(hh===0&&i>0) labels+='<line x1="'+(padL+i*bw).toFixed(1)+'" y1="'+top+'" x2="'+(padL+i*bw).toFixed(1)+'" y2="'+(H-30)+'" stroke="rgba(203,168,90,.28)" stroke-width="1"/>';      // midnight
+      labels+='<text x="'+cx+'" y="'+(H-21)+'" fill="#B8AB88" font-size="15" text-anchor="middle">'+(hh%12||12)+'</text>'
+        +(mk?'<text x="'+cx+'" y="'+(H-5)+'" fill="#8A7D60" font-size="10.5" letter-spacing=".08em" text-anchor="middle">'+mk+'</text>':''); }
   });
   if(opts.nws){
     let pts=[];

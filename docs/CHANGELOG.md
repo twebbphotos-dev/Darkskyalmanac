@@ -3,6 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.50 / zion-sky-v419 — 2026-10-18
+- Cloud charts: bigger hour numbers and AM / PM labels; they were too small
+  to read on a phone.
+
 ## v4.49 / zion-sky-v418 — 2026-10-18
 - Cloud charts: every hour shows its AM / PM, and a faint vertical line marks
   midnight.
