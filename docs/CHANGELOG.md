@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.54 / zion-sky-v423 — 2026-10-18
+- Mars rover sim, 2022: the blue sunset panorama is a surprise. Its ring,
+  list entry and count stay hidden, and the briefing does not mention it,
+  until the first objective is done; then it appears with a "New objective"
+  note.
+
 ## v4.53 / zion-sky-v422 — 2026-10-18
 - Mars rover sim: the blue sunset moved from 2024, where it clashed with the
   Lookout Hill panorama, to the end of 2022 as its own climax: "Take a

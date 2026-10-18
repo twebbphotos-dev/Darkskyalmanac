@@ -674,3 +674,6 @@ relief fades by pixel footprint, not distance, so far crests do not alias.
   earlier, the ring says to wait (or to finish the other objectives first). The drive-complete card waits for the
   panorama's card to close, then shows the sunset note and photo.
 - Tire tracks: a soft red-brown at about half the old strength, instead of near-black.
+- **A surprise** (v4.54): the sunset objective is held back (`SURPRISE`): no ring, no list entry, no marker, not
+  counted and not named in the briefing, until the first objective is logged; `revealSurprise()` (from `hud()`) then
+  adds it with its ring and a "New objective" toast.

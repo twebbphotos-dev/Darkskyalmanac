@@ -140,6 +140,12 @@ addEventListener('resize', resize);
 resize();
 
 /* ── outcrops ─────────────────────────────────────────────────── */
+let SURPRISE = null;      // an objective that appears only once the first is done (2022: the blue sunset)
+function revealSurprise() {
+  if (!SURPRISE || S.logged < 1) return;
+  const o = SURPRISE; SURPRISE = null; o.ring.visible = true; S.outcrops.push(o); marks.push(makeMark());
+  toastSoon(o.sunset ? 'New objective · take a panorama of the blue sunset, at the end of the path' : `New objective · ${o.label}`);
+}
 /* In a year level the objectives are the level's goals: a rock to analyze (outcrop) or to core (sample), or a point of
    interest for a Mastcam-Z panorama (pano), which has no rock, only a marker you can see from the start. */
 const GOALS = SITE ? SITE.goals : OUTCROP_SITES.map(([x, z], i) => ({ type: 'outcrop', x, z, unit: i }));
@@ -149,7 +155,8 @@ GOALS.filter(g => g.type === 'pano').forEach(g => {
   const ringMat = new THREE.MeshBasicMaterial({ color: CYAN_RING, transparent: true, opacity: 0.8, side: THREE.DoubleSide, fog: false, depthWrite: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(7, 7.6, 64), ringMat);
   ring.position.set(g.x, y + 0.2, g.z); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalAt(g.x, g.z, 5)); scene.add(ring);
-  S.outcrops.push({ type: 'pano', sunset: !!g.sunset, name: g.real.t, label: g.label, short: g.short || g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false });
+  const o = { type: 'pano', sunset: !!g.sunset, name: g.real.t, label: g.label, short: g.short || g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false };
+  if (g.sunset) { ring.visible = false; SURPRISE = o; } else S.outcrops.push(o);      // the blue sunset is a surprise: kept out of the objectives until the first is done
 });
 GOALS.filter(q => q.type !== 'pano').forEach((goal, i) => {
   const x = goal.x, z = goal.z;
@@ -1612,7 +1619,7 @@ function progSave(complete) {
   if (!SITE) return;
   const p = progRead(), L = p[SITE.level] || { got: [] };
   S.outcrops.forEach(o => { const k = o.label || o.name; if (o.logged && !L.got.includes(k)) L.got.push(k); });
-  L.n = SITE.goals.length + (SITE.crash ? 1 : 0); if (complete) L.done = true;
+  L.n = S.outcrops.length + (SITE.crash && !S.outcrops.some(o => o.type === 'photo') ? 1 : 0); if (complete) L.done = true;      // a surprise not yet revealed is not counted
   p[SITE.level] = L; progWrite(p);
 }
 function progMenu() {      // under each year on the menu: complete, or how many objectives so far
@@ -1905,6 +1912,7 @@ function goalList() {      // the year level's to-do list, top left: tiny, ticke
   el.innerHTML = S.outcrops.map(o => `<div class="${o.logged ? 'ok' : ''}">${name(o)}</div>`).join('') + `<div class="${S.phase === 'done' ? 'ok' : ''}">Reach the end of the rover’s path</div>`;
 }
 function hud() {
+  revealSurprise();
   goalList();
   $('logged').textContent = `${S.logged} / ${S.outcrops.length}`;
   $('flights').textContent = S.flights;
@@ -2059,7 +2067,7 @@ document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click
 if (SITE) {      // a year level: straight onto the ground
   $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
   const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.sunset ? 'end the day with a panorama of the blue sunset' : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
-  const list = SITE.goals.map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
+  const list = SITE.goals.filter(g => !g.sunset).map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
   SITE.goalText = goalText;
   const before = progRead()[SITE.level];
   $('rb-goal').textContent = `Follow Perseverance’s route${EASY ? ' (the gold dashes)' : ' (it appears as you explore)'}: ${goalText}, then reach the end of the rover’s path. Go anywhere you like on the way.${before ? (before.done ? ' You have completed this year before.' : ` Done before: ${Math.min(before.got.length, before.n)} of ${before.n} objectives.`) : ''}`;
