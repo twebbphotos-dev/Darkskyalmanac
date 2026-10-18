@@ -149,7 +149,7 @@ GOALS.filter(g => g.type === 'pano').forEach(g => {
   const ringMat = new THREE.MeshBasicMaterial({ color: CYAN_RING, transparent: true, opacity: 0.8, side: THREE.DoubleSide, fog: false, depthWrite: false });
   const ring = new THREE.Mesh(new THREE.RingGeometry(7, 7.6, 64), ringMat);
   ring.position.set(g.x, y + 0.2, g.z); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalAt(g.x, g.z, 5)); scene.add(ring);
-  S.outcrops.push({ type: 'pano', name: g.real.t, label: g.label, short: g.short || g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false });
+  S.outcrops.push({ type: 'pano', sunset: !!g.sunset, name: g.real.t, label: g.label, short: g.short || g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false });
 });
 GOALS.filter(q => q.type !== 'pano').forEach((goal, i) => {
   const x = goal.x, z = goal.z;
@@ -303,7 +303,7 @@ function stepDust(dt) {
 }
 
 /* ── wheel tracks ─────────────────────────────────────────────── */
-/* Two ribbons laid on the ground behind the rear wheels: deep and dark in
+/* Two ribbons laid on the ground behind the rear wheels: deeper in
    sand, faint on bedrock, fading out with age. One mesh, rewritten in
    place as the rover moves. */
 const TRK = { max: 560, step: 0.3, half: 0.2, lane: 1.1, back: 1.17 };
@@ -311,14 +311,15 @@ const tracks = (() => {
   const cv = document.createElement('canvas'); cv.width = 64; cv.height = 64;
   const c = cv.getContext('2d');
   const edge = c.createLinearGradient(0, 0, 64, 0);
-  edge.addColorStop(0, 'rgba(34,18,11,0)'); edge.addColorStop(0.14, 'rgba(34,18,11,0.5)');
-  edge.addColorStop(0.86, 'rgba(34,18,11,0.5)'); edge.addColorStop(1, 'rgba(34,18,11,0)');
+  // a soft red-brown, not black: churned soil is a shade darker and redder than the dusty surface, not a stripe of paint
+  edge.addColorStop(0, 'rgba(96,48,28,0)'); edge.addColorStop(0.14, 'rgba(96,48,28,0.26)');
+  edge.addColorStop(0.86, 'rgba(96,48,28,0.26)'); edge.addColorStop(1, 'rgba(96,48,28,0)');
   c.fillStyle = edge; c.fillRect(0, 0, 64, 64);
-  c.strokeStyle = 'rgba(14,7,4,0.6)'; c.lineWidth = 4.5; c.lineCap = 'round';
+  c.strokeStyle = 'rgba(72,34,18,0.3)'; c.lineWidth = 4.5; c.lineCap = 'round';
   for (const y of [8, 24, 40, 56]) {                       // grouser prints: shallow chevrons
     c.beginPath(); c.moveTo(9, y + 4); c.quadraticCurveTo(32, y - 6, 55, y + 4); c.stroke();
   }
-  c.strokeStyle = 'rgba(120,80,55,0.22)'; c.lineWidth = 2;  // the lip of soil each grouser throws up
+  c.strokeStyle = 'rgba(160,100,68,0.16)'; c.lineWidth = 2;  // the lip of soil each grouser throws up
   for (const y of [16, 32, 48, 64]) { c.beginPath(); c.moveTo(10, y + 3); c.quadraticCurveTo(32, y - 6, 54, y + 3); c.stroke(); }
   const tex = new THREE.CanvasTexture(cv);
   tex.wrapS = THREE.ClampToEdgeWrapping; tex.wrapT = THREE.RepeatWrapping;
@@ -1302,6 +1303,8 @@ function doScan() {
 function openCam() {
   if (S.phase !== 'drive') return;
   const pano = S.outcrops.find(o => o.type === 'pano' && !o.logged && Math.hypot(S.rover.pos.x - o.pos.x, S.rover.pos.z - o.pos.z) < 12);
+  if (pano && pano.sunset && !(DUSK && DUSK.k >= 0.8)) {      // the sunset panorama waits for the sunset
+    toast(S.outcrops.some(o => !o.sunset && !o.logged) ? 'Save this one for last · finish the other objectives first' : 'The sun is still going down · wait for the blue glow'); return; }
   if (pano) { startPano(pano); return; }
   const near = S.outcrops.filter(o => o.type !== 'pano' && !o.logged && S.rover.pos.distanceTo(o.pos) < (o.range || CFG.camRange));
   if (!near.length) { toast(S.outcrops.some(o => o.type === 'pano' && !o.logged) ? 'Nothing in range · park in the blue ring for a panorama' : 'Nothing in range · drive closer'); return; }
@@ -1568,26 +1571,29 @@ $('real-link').addEventListener('click', e => { const h = $('real-link').getAttr
 
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
-  if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done · on to the end of the path' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left`); }
+  if (SITE && S.outcrops.every(o => o.logged || o.sunset) && S.outcrops.some(o => o.sunset && !o.logged)) toast('Last objective · a panorama of the blue sunset, at the end of the path');
+  else if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done · on to the end of the path' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left`); }
   else if (S.logged >= S.outcrops.length) done();
 });
 
-/* One level ends at sunset (SITE.dusk): over its last minute, from about 300 m out, the sun sinks toward the horizon,
-   the light dims and the shadows stretch, the sky goes gray and the glow round the sun turns blue, as Mastcam-Z has
-   seen it. Driving on brings it on as surely as waiting, so the last panorama is taken at dusk. It never runs backward. */
+/* One level ends at sunset (SITE.dusk, 2022): once every other objective is done, and from about 300 m out of the
+   blue sunset panorama's ring at the end of the drive, the sun sinks toward the horizon over about two minutes, the light dims and the shadows
+   stretch, the sky goes gray and the glow round the sun turns blue, as Mastcam-Z has seen it. Driving on brings it on a
+   little sooner, never faster than over about 75 s. The panorama can be taken once it is mostly down. Never backward. */
 const DUSK = SITE && SITE.dusk ? { on: false, t: 0, k: 0 } : null;
 const DUSK_FOG = new THREE.Color(0x3c393d), DUSK_SUN = new THREE.Color(0xdfe6ff);
 function stepDusk(dt) {
   if (!DUSK || S.phase === 'brief' || S.phase === 'done') return;
-  const dEnd = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
-  if (!DUSK.on) { if (dEnd > 300) return; DUSK.on = true;
+  const spot = S.outcrops.find(o => o.sunset); if (!spot) return;
+  const dEnd = Math.hypot(S.rover.pos.x - spot.pos.x, S.rover.pos.z - spot.pos.z);
+  if (!DUSK.on) { if (dEnd > 300 || S.outcrops.some(o => !o.sunset && !o.logged)) return; DUSK.on = true;
     DUSK.az = Math.atan2(sunDir.x, -sunDir.z); DUSK.el0 = Math.asin(sunDir.y);
     DUSK.int0 = sun.intensity; DUSK.hemi0 = hemi.intensity; DUSK.fog0 = scene.fog.color.clone(); DUSK.col0 = sun.color.clone(); }
   DUSK.t += dt;
   const ez = x => x * x * (3 - 2 * x);
-  const want = Math.min(1, Math.max(DUSK.t / 60, (300 - dEnd) / 180));
+  const want = Math.min(1, Math.max(DUSK.t / 130, (300 - dEnd) / 300));
   if (want <= DUSK.k + 1e-4) return;
-  DUSK.k = Math.min(want, DUSK.k + dt / 6);      // eased in, never a jump
+  DUSK.k = Math.min(want, DUSK.k + dt / 75);      // slow, and never a jump
   const u = DUSK.k, el = DUSK.el0 + (2.5 * Math.PI / 180 - DUSK.el0) * ez(u), k = ez(Math.min(1, Math.max(0, (u - 0.3) / 0.7)));
   const dir = new THREE.Vector3(Math.sin(DUSK.az) * Math.cos(el), Math.sin(el), -Math.cos(DUSK.az) * Math.cos(el));
   sky.material.uniforms.sunDir.value.copy(dir); sky.material.uniforms.dusk.value = k;
@@ -1595,6 +1601,7 @@ function stepDusk(dt) {
   sun.intensity = DUSK.int0 * (1 - 0.35 * ez(u)) * (1 - 0.9 * k); hemi.intensity = DUSK.hemi0 * (1 - 0.85 * k);
   sun.color.copy(DUSK.col0).lerp(DUSK_SUN, k); scene.fog.color.copy(DUSK.fog0).lerp(DUSK_FOG, k);
   if (k > 0.05 && !DUSK.told) { DUSK.told = true; toast('The sun is going down over Jezero'); }
+  if (DUSK.k >= 0.8 && !DUSK.ready) { DUSK.ready = true; toast(`The glow is turning blue · take the sunset panorama${kb('C')}`); }
 }
 
 /* Progress, remembered on this device: the objectives each year has had done, and the years driven to the end. */
@@ -1620,7 +1627,7 @@ function done() {
   progSave(true);
   if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
     $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`;
-    $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.';
+    $('done-p2').textContent = 'And you ended the day with the blue sunset. On Mars, fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.';
     $('done-p2').style.display = DUSK ? '' : 'none'; $('done-fig').hidden = !DUSK;
     if (SITE.next) $('btn-again').textContent = 'Next level'; $('done').classList.add('on'); return; }
   $('done-n').textContent = S.outcrops.length;
@@ -1894,7 +1901,7 @@ function toastSoon(m) { setTimeout(() => toast(m), 500); }
 function goalList() {      // the year level's to-do list, top left: tiny, ticked off as you go
   const el = $('goals'); if (!SITE || !el) return;
   el.hidden = false;
-  const name = o => o.type === 'sample' ? `Core ${o.label}` : o.type === 'photo' ? `Photograph ${o.label}` : o.type === 'pano' ? `Panorama: ${o.short.replace(/^the /, '')}` : 'Analyze an outcrop';
+  const name = o => o.sunset ? 'Take a panorama of the blue sunset' : o.type === 'sample' ? `Core ${o.label}` : o.type === 'photo' ? `Photograph ${o.label}` : o.type === 'pano' ? `Panorama: ${o.short.replace(/^the /, '')}` : 'Analyze an outcrop';
   el.innerHTML = S.outcrops.map(o => `<div class="${o.logged ? 'ok' : ''}">${name(o)}</div>`).join('') + `<div class="${S.phase === 'done' ? 'ok' : ''}">Reach the end of the rover’s path</div>`;
 }
 function hud() {
@@ -1964,7 +1971,7 @@ function update(dt, now = performance.now()) {
   if (CRASH && !CRASH.done && S.phase === 'drive' && S.heli.phase === 'landed' && (CRASH.t += dt) > 45) launchHeli();      // flight 72 goes ahead whether you ask or not
   if (GOAL && S.phase === 'drive') {      // the end of the drive
     const d = Math.hypot(S.rover.pos.x - SITE.end.x, S.rover.pos.z - SITE.end.z);
-    if (d < 14) { if (S.logged >= S.outcrops.length) done(); else if (!GOAL.told) { GOAL.told = true; toast(`End of the path · finish the objectives first${kb('M')}`); } }
+    if (d < 14) { if (S.logged >= S.outcrops.length) { if (!$('card').classList.contains('on')) done(); } else if (!GOAL.told) { GOAL.told = true; toast(`End of the path · finish the objectives first${kb('M')}`); } }
     else if (d > 30) GOAL.told = false;
   }
 
@@ -2051,7 +2058,7 @@ $('btn-resume').addEventListener('click', () => {      // back to the drive; a f
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { location.search = '?level=' + b.dataset.level; }));
 if (SITE) {      // a year level: straight onto the ground
   $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
-  const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
+  const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.sunset ? 'end the day with a panorama of the blue sunset' : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
   const list = SITE.goals.map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
   SITE.goalText = goalText;
   const before = progRead()[SITE.level];

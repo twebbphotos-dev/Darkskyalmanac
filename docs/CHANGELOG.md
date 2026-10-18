@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.53 / zion-sky-v422 — 2026-10-18
+- Mars rover sim: the blue sunset moved from 2024, where it clashed with the
+  Lookout Hill panorama, to the end of 2022 as its own climax: "Take a
+  panorama of the blue sunset", on the flat at the foot of the delta looking
+  over its hills, the view of Perseverance's first sunset photograph. It
+  starts once the other objectives are done and now takes about two
+  minutes instead of as little as six seconds.
+- Tire tracks are a subtle soft red-brown instead of near-black.
+
 ## v4.52 / zion-sky-v421 — 2026-10-18
 - Lunar Rover sim: the whole third drive. The drivable ground grew from 840 m
   to 1.8 km, at half scale, and now follows the real valley from NASA's

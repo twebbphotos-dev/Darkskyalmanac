@@ -662,3 +662,15 @@ relief fades by pixel footprint, not distance, so far crests do not alias.
 - Ingenuity flies a fixed distance along the rover's heading. Letting the player pick
   the recon point would make scouting a real decision.
 - Wheel tracks in the sand.
+
+## The blue sunset moves to 2022 (v4.53)
+
+- The 2024 level no longer ends at dusk: Lookout Hill's panorama is taken in daylight.
+- 2022 ends with a special objective, "Take a panorama of the blue sunset": a pano goal with `sunset: true` at the
+  end of the path, on the flat at the foot of the delta, looking west-southwest over the delta's hills, the view of
+  Perseverance's first sunset photograph (9 November 2021, `REAL.sunset`).
+- `stepDusk` starts once every other objective is logged and the rover is within 300 m of that ring: progress =
+  max(time / 130 s, distance closed / 300 m), never faster than 1/75 per second. The panorama opens at 80% dusk;
+  earlier, the ring says to wait (or to finish the other objectives first). The drive-complete card waits for the
+  panorama's card to close, then shows the sunset note and photo.
+- Tire tracks: a soft red-brown at about half the old strength, instead of near-black.
