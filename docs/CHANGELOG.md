@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.39 / zion-sky-v408 — 2026-10-18
+- Mars rover sim: the HiRISE ground pictures are back at full detail, with
+  their relief and radiating texture. v4.38 blurred them to remove small dark
+  chevrons, but the chevrons repeated, so they came from the 7 m painted ground
+  tile, which v4.37 already fades with distance; the blur only cost detail and
+  left soft blocks. Same rendering as v4.37.
+
 ## v4.38 / zion-sky-v407 — 2026-10-18
 - Mars rover sim: no more small dark crescents scattered over the dunes. They
   were the HiRISE picture's small ripples, each a few metres across, magnified

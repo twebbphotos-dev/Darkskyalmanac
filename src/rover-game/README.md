@@ -630,9 +630,8 @@ few metres its shapes line up into a grid-like repeating pattern, so the terrain
 shader fades it to its own average colour (its last mip) between 3 and 14 m, and
 the bump to a fifth. The broad light and dark that used to come from sampling the
 same tile at larger scales now comes from non-repeating fbm (48 m and 210 m).
-The HiRISE picture keeps its own shading, but only broader than about 16 m:
-it is sampled at mip level 4 or coarser (2 for the 4 m area picture), because
-its small ripples, magnified, scattered dark crescents over the ground.
+The HiRISE picture keeps its full detail and shading: the repeating marks were
+the painted tile, never the picture (blurring the picture in v4.38 only lost detail).
 
 ## Obvious next steps
 
