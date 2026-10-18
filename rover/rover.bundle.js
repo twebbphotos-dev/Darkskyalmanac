@@ -4354,8 +4354,14 @@ ${ge?"uniform sampler2D tHi, tHiA;":""}
         }
         ${ge?`{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${Kf} m of Mars
           vec2 r = vWPos.xz * ${Kf.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
-          float l1 = dot( texture2D( tHi, vec2( u1.x, 1.0 - u1.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
-          float l4 = dot( texture2D( tHiA, vec2( u4.x, 1.0 - u4.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          // Only the picture's broad light and dark: dunes, sand patches, the big shadows. Its finer
+          // detail (small ripples, each a dark crescent a few metres across) was magnified into marks
+          // scattered all over the ground, so it is blurred away below about 16 m, however close.
+          vec2 t1 = vec2( u1.x, 1.0 - u1.y ), t4 = vec2( u4.x, 1.0 - u4.y ), q1 = t1 * 2048.0, q4 = t4 * 2048.0;
+          float lod1 = max( 4.0, 0.5 * log2( max( dot( dFdx( q1 ), dFdx( q1 ) ), dot( dFdy( q1 ), dFdy( q1 ) ) ) ) );
+          float lod4 = max( 2.0, 0.5 * log2( max( dot( dFdx( q4 ), dFdx( q4 ) ), dot( dFdy( q4 ), dFdy( q4 ) ) ) ) );
+          float l1 = dot( textureLod( tHi, t1, lod1 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float l4 = dot( textureLod( tHiA, t4, lod4 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
           float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
           sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
