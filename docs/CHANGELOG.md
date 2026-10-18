@@ -3,6 +3,20 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.41 / zion-sky-v410 — 2026-10-18
+- Mars rover sim: dunes and sand ripples now have real 3D shape, and the
+  ground pictures no longer show their pixels up close.
+  - Relief: the elevation models are too coarse for ripples, but the HiRISE
+    pictures show them, since each slope is brighter the more it faces the
+    Sun. `src/jezero-crater/relief.py` turns that brightness into height
+    (photoclinometry), saved as `rover/img/NAME_relief.jpg`; the terrain
+    lights it as fine relief.
+  - Smoothness: the pictures are sampled bicubic instead of bilinear.
+  - Sun: moved from the southeast (140°) to the west-southwest (255°), where
+    it stood for the pictures' afternoon, so their shading and the game's
+    3D lighting agree instead of fighting. The sunset level now sets in the
+    west, as it should.
+
 ## v4.40 / zion-sky-v409 — 2026-10-18
 - Mars rover sim: Reset progress in Settings. Two taps (the first asks "Tap
   again to erase"), so a stray one cannot wipe it. Forgets completed levels and

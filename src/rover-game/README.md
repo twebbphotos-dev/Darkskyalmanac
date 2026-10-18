@@ -633,6 +633,17 @@ same tile at larger scales now comes from non-repeating fbm (48 m and 210 m).
 The HiRISE picture keeps its full detail and shading: the repeating marks were
 the painted tile, never the picture (blurring the picture in v4.38 only lost detail).
 
+The pictures are sampled with a four-tap B-spline bicubic, so magnified 1 m
+pixels never show. `rover/img/NAME_relief.jpg` (from `src/jezero-crater/relief.py`)
+is the small relief the elevation models miss, worked out from the picture by
+photoclinometry: brightness against ~12 m surroundings is slope toward the
+Sun (azimuth 265°, incidence 50°), integrated along the Sun's direction in
+Fourier space and high-passed at ~12 m; grey 128 = 0, ±1 m. The terrain uses it
+as a bump (screen-space derivatives of the height, ×3 because the method
+underestimates), within the 1 m square and fading out by 420 m. The game's Sun
+(`MARS.sunAz` 255°) stands where the pictures' did, so the baked shading and
+the lighting agree.
+
 ## Obvious next steps
 
 - The differential bar and its links on the deck stay still; they are small, but they

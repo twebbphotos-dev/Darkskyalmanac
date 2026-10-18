@@ -654,9 +654,9 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
           float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
           sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
-          // ripples and small dunes as relief: ±1 m of Mars per the picture's range, heights squashed as the ground is, doubled because the method
+          // ripples and small dunes as relief: ±1 m of Mars per the picture's range, heights squashed as the ground is, tripled because the method
           // underestimates them; faded out far off, where it would only shimmer
-          hiH = ( bicubic( tRel, vec2( u1.x, 1.0 - u1.y ) ).r - 0.502 ) * 2.0 * ${SV.toFixed(2)} * 2.0 * in1 * ( 1.0 - smoothstep( 180.0, 420.0, length( vViewPosition ) ) );
+          hiH = ( bicubic( tRel, vec2( u1.x, 1.0 - u1.y ) ).r - 0.502 ) * 2.0 * ${SV.toFixed(2)} * 3.0 * in1 * ( 1.0 - smoothstep( 180.0, 420.0, length( vViewPosition ) ) );
         }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)
