@@ -644,6 +644,13 @@ underestimates), within the 1 m square and fading out by 420 m. The game's Sun
 (`MARS.sunAz` 255°) stands where the pictures' did, so the baked shading and
 the lighting agree.
 
+`relief.py` reshapes ripples to sharp crests and broad troughs (an exponential of
+each against its local amplitude, only where the relief is real), and writes
+`NAME_dunes.jpg` (512 px): ripple fields, found by strong relief whose gradients
+run one way (structure-tensor coherence). On them the terrain drops the grit and
+pebble bumps and deepens the relief, and `duneAt(x, z)` keeps rocks off. The
+relief fades by pixel footprint, not distance, so far crests do not alias.
+
 ## Obvious next steps
 
 - The differential bar and its links on the deck stay still; they are small, but they

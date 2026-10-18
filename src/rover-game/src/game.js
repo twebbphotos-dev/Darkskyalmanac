@@ -13,7 +13,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { buildMars } from './mars.js';
 import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks, rockReach, prepScan, findLanding, colliders,
-         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT, SITE, WIND } from './terrain.js';
+         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT, SITE, WIND, duneAt } from './terrain.js';
 import { buildAtmos } from './atmos.js';
 import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
@@ -251,7 +251,8 @@ function scatter(scans) {
     trail: SITE ? (() => { const p = SITE.path, out = []; for (let i = 0; i + 2 < p.length; i += 2) { const n = Math.max(1, Math.ceil(Math.hypot(p[i + 2] - p[i], p[i + 3] - p[i + 1]) / 4)); for (let k = 0; k < n; k++) out.push([p[i] + (p[i + 2] - p[i]) * k / n, p[i + 1] + (p[i + 3] - p[i + 1]) * k / n]); } return out; })() : null,
     exclude: (x, z, s) =>
       Math.hypot(x - START.x, z - START.z) < (s > 0.36 ? 9 : 3.2) ||
-      S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5) || routeClear(x, z, s),
+      S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5) || routeClear(x, z, s) ||
+      duneAt(x, z) > 0.35,      // ripple fields stay clean sand
   });
   rockReach(START.x, START.z);
 }

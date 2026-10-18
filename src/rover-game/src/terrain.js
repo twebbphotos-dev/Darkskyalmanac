@@ -249,8 +249,24 @@ export async function loadDTM(base = 'dtm/') {
   for (let i = 0; i < 2000; i += 8) edge.push(a[i], a[1999 * 2000 + i], a[i * 2000], a[i * 2000 + 1999]);
   edge.sort((p, q) => p - q); DTM.edge = edge[edge.length >> 1]; DTM.plain = DTM.edge * SV;
   DTM.on = true;
+  if (SITE) {      // the ripple fields (src/jezero-crater/relief.py), so the rocks keep off them; no map, no harm
+    try {
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = SITE.hi.replace('_hr.jpg', '_dunes.jpg'); });
+      const c = document.createElement('canvas'); c.width = c.height = 512;
+      const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, 512, 512);
+      const d = g.getImageData(0, 0, 512, 512).data; DTM.dune = new Float32Array(512 * 512);
+      for (let i = 0; i < DTM.dune.length; i++) DTM.dune[i] = d[i * 4] / 255;
+    } catch (e) { DTM.dune = null; }
+  }
   CRATERS.length = 0;                              // the real craters are in the elevation now
   return true;
+}
+/* 0 to 1: how surely (x, z) lies in a ripple field */
+export function duneAt(x, z) {
+  if (!DTM.dune) return 0;
+  const u = (x * SQ / 2048 + 0.5) * 512, v = (z * SQ / 2048 + 0.5) * 512;
+  if (u < 0 || v < 0 || u >= 511 || v >= 511) return 0;
+  return bilerp(DTM.dune, 512, u - 0.5, v - 0.5);
 }
 function bilerp(arr, n, u, v) {
   u = Math.max(0, Math.min(n - 1.001, u)); v = Math.max(0, Math.min(n - 1.001, v));
@@ -528,6 +544,7 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
     scan.tHi = { value: hi(SITE.hi) }; scan.tHiA = { value: hi(SITE.hiArea) };
     const rl = TL.load(SITE.hi.replace('_hr.jpg', '_relief.jpg')); rl.anisotropy = 8;      // small relief worked out from the picture (src/jezero-crater/relief.py)
     scan.tRel = { value: rl };
+    scan.tDune = { value: TL.load(SITE.hi.replace('_hr.jpg', '_dunes.jpg')) };      // where the ripple fields are: kept clean, no grit, no rocks
   }
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, scan, { uSun: { value: sunV } });
@@ -540,7 +557,7 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
       varying float vSand; varying vec2 vGround; varying vec3 vWPos;
       float vCrack;
       uniform vec3 uSun; uniform sampler2D tReg, tRegN, tSand, tSandN, tPeb, tPebN, tSlab, tSlabN;
-${SITE ? `uniform sampler2D tHi, tHiA, tRel;
+${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
       float hiH = 0.0;
       // B-spline bicubic from four bilinear taps: magnified, the 1 m pictures stay smooth instead of showing their pixels
       vec4 cubicW( float v ) { vec4 n = vec4( 1.0, 2.0, 3.0, 4.0 ) - v, s = n * n * n; float x = s.x, y = s.y - 4.0 * s.x, z = s.z - 4.0 * s.y + 6.0 * s.x; return vec4( x, y, z, 6.0 - x - y - z ) / 6.0; }
@@ -557,7 +574,7 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
         float l = dot( c, vec3( 0.3, 0.55, 0.15 ) );
         return mix( vec3( l ), c, 0.3 );               // mostly brightness: the scan's grain, not its Earth colour
       }
-      float sDet; vec2 sUv;
+      float sDet; vec2 sUv; float dune = 0.0;
       ${GRADE_GLSL}
       vec2 hash2( vec2 p ) { return fract( sin( vec2( dot( p, vec2( 127.1, 311.7 ) ), dot( p, vec2( 269.5, 183.3 ) ) ) ) * 43758.5453 ); }
       float vnoise( vec2 p ) {
@@ -586,6 +603,11 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
         // its shapes line up into an obvious repeating pattern. It gives way to its own average colour
         // with distance; the scanned grain below carries the detail from there.
         float tileNear = 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) );
+        ${SITE ? `{      // ripple fields: untouched sand, smooth and clean, so the crests carry the picture
+          vec2 du = vWPos.xz * ${SQ.toFixed(2)} / 2048.0 + 0.5;
+          dune = texture2D( tDune, vec2( du.x, 1.0 - du.y ) ).r * smoothstep( 0.5, 0.45, max( abs( du.x - 0.5 ), abs( du.y - 0.5 ) ) );
+          tileNear *= 1.0 - 0.8 * dune;
+        }` : ''}
         vec4 sampledDiffuseColor = texture2D( map, vMapUv );
         sampledDiffuseColor.rgb = mix( textureLod( map, vMapUv, 10.0 ).rgb * 0.95, sampledDiffuseColor.rgb, 0.12 + 0.88 * tileNear );
         // broad light and dark over tens and hundreds of metres, from noise that never repeats
@@ -645,7 +667,7 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
           vec3 dt = mix( reg, snd, vSand );
           dt = mix( dt, slb, vGround.x * 0.7 * ( 1.0 - vSand ) );
           vec3 far = detail( tReg, vWPos.xz / 31.0, vec3( 0.2918, 0.1620, 0.0763 ) );   // the same grain, much larger, for mid distance
-          sampledDiffuseColor.rgb *= mix( vec3( 1.0 ), dt, sDet * 0.9 ) * mix( vec3( 1.0 ), far, sMid * 0.35 );
+          sampledDiffuseColor.rgb *= mix( vec3( 1.0 ), dt, sDet * 0.9 * ( 1.0 - 0.8 * dune ) ) * mix( vec3( 1.0 ), far, sMid * 0.35 * ( 1.0 - 0.7 * dune ) );
         }
         ${SITE ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
           vec2 r = vWPos.xz * ${SQ.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
@@ -654,9 +676,9 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
           float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
           sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
-          // ripples and small dunes as relief: ±1 m of Mars per the picture's range, heights squashed as the ground is, tripled because the method
-          // underestimates them; faded out far off, where it would only shimmer
-          hiH = ( bicubic( tRel, vec2( u1.x, 1.0 - u1.y ) ).r - 0.502 ) * 2.0 * ${SV.toFixed(2)} * 3.0 * in1 * ( 1.0 - smoothstep( 180.0, 420.0, length( vViewPosition ) ) );
+          // ripples and small dunes as relief: ±1 m of Mars per the picture's range, heights squashed as the ground is, tripled (more on the ripple fields) because the method
+          // underestimates them; faded out wherever a metre of it is smaller than a pixel, where crests would only break into jagged lines
+          hiH = ( bicubic( tRel, vec2( u1.x, 1.0 - u1.y ) ).r - 0.502 ) * 2.0 * ${SV.toFixed(2)} * ( 3.0 + 1.5 * dune ) * in1 * ( 1.0 - smoothstep( 0.5, 1.6, length( fwidth( u1 * 2048.0 ) ) ) );
         }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)
@@ -675,7 +697,7 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
       // fine wind ripples run square to the wind — about 40 cm crest to crest
       .replace('#include <normal_fragment_maps>', `
       #ifdef USE_BUMPMAP
-        normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd() * ( 0.2 + 0.8 * ( 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) ) ) ) * ( 1.0 - vSand * 0.85 ) * ( 1.0 - vCrack * 0.6 ), faceDirection );
+        normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd() * ( 0.2 + 0.8 * ( 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) ) ) ) * ( 1.0 - vSand * 0.85 ) * ( 1.0 - vCrack * 0.6 ) * ( 1.0 - 0.85 * dune ), faceDirection );
       #endif
       ${SITE ? '#ifdef USE_BUMPMAP\n      normal = perturbNormalArb( - vViewPosition, normal, vec2( dFdx( hiH ), dFdy( hiH ) ), faceDirection );\n      #endif' : ''}
       // scanned normals: the real relief of grit, pebbles and cracks
@@ -685,7 +707,7 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel;
         vec3 nL = texture2D( tSlabN, vWPos.xz / 3.2 ).xyz * 2.0 - 1.0;
         vec3 tn = mix( mix( nR, nS, vSand ), nL, vGround.x * 0.7 * ( 1.0 - vSand ) );
         vec3 wn = inverseTransformDirection( normal, viewMatrix );
-        wn = normalize( wn + vec3( tn.x, 0.0, -tn.y ) * 0.9 * sDet );       // ground lies flat: tangent x = east, y = north
+        wn = normalize( wn + vec3( tn.x, 0.0, -tn.y ) * 0.9 * sDet * ( 1.0 - 0.85 * dune ) );       // ground lies flat: tangent x = east, y = north
         normal = normalize( ( viewMatrix * vec4( wn, 0.0 ) ).xyz );
       }
       if ( vSand > 0.02 ) {

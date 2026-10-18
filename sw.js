@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v410';
+const CACHE = 'zion-sky-v411';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -105,11 +105,11 @@ const OFFLINE3D = [
   // terrain, textures and photos (about 41 MB). Same rules as the 3D models.
   'rover/',
   'rover/dtm/area_4m.png', 'rover/dtm/site_1m.png', 'rover/img/jezero-region.jpg',
-  'rover/dtm/y2023_site_1m.png', 'rover/dtm/y2023_area_4m.png', 'rover/img/y2023_hr.jpg', 'rover/img/y2023_relief.jpg', 'rover/img/y2023_area.jpg',
-  'rover/dtm/y2022_site_1m.png', 'rover/dtm/y2022_area_4m.png', 'rover/img/y2022_hr.jpg', 'rover/img/y2022_relief.jpg', 'rover/img/y2022_area.jpg',
-  'rover/dtm/y2024_site_1m.png', 'rover/dtm/y2024_area_4m.png', 'rover/img/y2024_hr.jpg', 'rover/img/y2024_relief.jpg', 'rover/img/y2024_area.jpg',
-  'rover/dtm/y2025_site_1m.png', 'rover/dtm/y2025_area_4m.png', 'rover/img/y2025_hr.jpg', 'rover/img/y2025_relief.jpg', 'rover/img/y2025_area.jpg',
-  'rover/dtm/y2026_site_1m.png', 'rover/dtm/y2026_area_4m.png', 'rover/img/y2026_hr.jpg', 'rover/img/y2026_relief.jpg', 'rover/img/y2026_area.jpg',
+  'rover/dtm/y2023_site_1m.png', 'rover/dtm/y2023_area_4m.png', 'rover/img/y2023_hr.jpg', 'rover/img/y2023_relief.jpg', 'rover/img/y2023_dunes.jpg', 'rover/img/y2023_area.jpg',
+  'rover/dtm/y2022_site_1m.png', 'rover/dtm/y2022_area_4m.png', 'rover/img/y2022_hr.jpg', 'rover/img/y2022_relief.jpg', 'rover/img/y2022_dunes.jpg', 'rover/img/y2022_area.jpg',
+  'rover/dtm/y2024_site_1m.png', 'rover/dtm/y2024_area_4m.png', 'rover/img/y2024_hr.jpg', 'rover/img/y2024_relief.jpg', 'rover/img/y2024_dunes.jpg', 'rover/img/y2024_area.jpg',
+  'rover/dtm/y2025_site_1m.png', 'rover/dtm/y2025_area_4m.png', 'rover/img/y2025_hr.jpg', 'rover/img/y2025_relief.jpg', 'rover/img/y2025_dunes.jpg', 'rover/img/y2025_area.jpg',
+  'rover/dtm/y2026_site_1m.png', 'rover/dtm/y2026_area_4m.png', 'rover/img/y2026_hr.jpg', 'rover/img/y2026_relief.jpg', 'rover/img/y2026_dunes.jpg', 'rover/img/y2026_area.jpg',
   'rover/img/mars-globe.jpg', 'rover/models/perseverance.glb', 'rover/models/rocks/boulder_01.glb',
   'rover/models/rocks/boulder_namaqua_03.glb', 'rover/models/rocks/boulder_namaqua_03_low.glb', 'rover/models/rocks/boulder_namaqua_06.glb',
   'rover/models/rocks/rock_moon_04_low.glb', 'rover/models/rocks/stone_01_low.glb', 'rover/models/rocks/stones_namaqua_01_low.glb',

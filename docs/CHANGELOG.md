@@ -3,6 +3,19 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.42 / zion-sky-v411 — 2026-10-18
+- Mars rover sim: cleaner, sharper dunes.
+  - Crests: wind ripples have sharp crests and broad troughs, but the relief
+    came out as smooth waves. `relief.py` now reshapes each ripple that way
+    and smooths less.
+  - Clean sand: it also maps the ripple fields (strong relief running one
+    way, unlike rocky ground) into `rover/img/NAME_dunes.jpg`. On them the
+    game drops the grit texture and pebble bumps, deepens the relief, and
+    scatters no rocks.
+  - Distant ripples: relief fades where a metre of ground is smaller than a
+    pixel, so far crests no longer break into jagged lines.
+- Ingenuity at "Valinor Hills" photo cropped to drop the black margins.
+
 ## v4.41 / zion-sky-v410 — 2026-10-18
 - Mars rover sim: dunes and sand ripples now have real 3D shape, and the
   ground pictures no longer show their pixels up close.
