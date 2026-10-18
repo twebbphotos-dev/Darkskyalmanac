@@ -1196,14 +1196,16 @@ function hourlyCloudPanel(date){
     }
   }
   // ---- calm single-tone bars (the deep multi-model view lives on /clouds) ----
-  const W=560, H=140, padL=30, padR=8, top=12, bot=30;
+  const W=560, H=148, padL=30, padR=8, top=12, bot=38;
   const bw=(W-padL-padR)/hrs.length;
   const y=v=>top+(100-v)/100*(H-top-bot);
   let bars='', labels='';
   hrs.forEach((e,i)=>{
     const x=(padL+i*bw+1).toFixed(1), w=(bw-2).toFixed(1);
     if(e.sky>=0.5) bars+='<rect x="'+x+'" width="'+w+'" y="'+y(e.sky).toFixed(1)+'" height="'+(y(0)-y(e.sky)).toFixed(1)+'" fill="#B39A6B" opacity="0.85"/>';
-    if(i%3===0) labels+='<text x="'+(padL+i*bw+bw/2).toFixed(1)+'" y="'+(H-12)+'" fill="#9A8E70" font-size="9" text-anchor="middle">'+fmtHr(e.h)+'</text>';
+    { const hh=e.h%24, cx=(padL+i*bw+bw/2).toFixed(1), mk=(i===0||hh===0||hh===12)?(hh<12?'AM':'PM'):'';      // every hour numbered; AM / PM only where it starts and changes
+      labels+='<text x="'+cx+'" y="'+(H-15)+'" fill="#B8AB88" font-size="11" text-anchor="middle">'+(hh%12||12)+'</text>'
+        +(mk?'<text x="'+cx+'" y="'+(H-4)+'" fill="#7A6E55" font-size="7.5" letter-spacing=".08em" text-anchor="middle">'+mk+'</text>':''); }
   });
   let grid='';
   [50,100].forEach(v=>{

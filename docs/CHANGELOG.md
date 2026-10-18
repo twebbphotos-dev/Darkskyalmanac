@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.46 / zion-sky-v415 — 2026-10-18
+- Cloud charts (Detailed Cloud Cover and the Forecast's Cloud Cover): every
+  hour is now numbered under its bar, with a small PM / AM marker only where
+  the night starts and at midnight. Labels every third hour left the hours in
+  between hard to read.
+
 ## v4.45 / zion-sky-v414 — 2026-10-18
 - Lunar Rover sim: a Speed choice on the briefing card, Real (18 km/h) or
   Double (36 km/h), remembered on the device. Double also gets stronger
