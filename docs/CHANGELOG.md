@@ -3,6 +3,20 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.44 / zion-sky-v413 — 2026-10-18
+- Lunar Rover sim:
+  - No more flat grey sheets clipping through the ground. The distant
+    mountains' mesh lay only 1.2 m under the drivable square, so it showed
+    in every crater and dip, and round the rover, which made it look sunk.
+    It is no longer drawn there.
+  - Brighter, more natural ground. The soil texture averaged mid-grey, about
+    0.22 once linear, which made the near ground four times darker than the
+    mountains. The close grain no longer tiles out to the horizon, and the
+    craterlets are fewer and shallower.
+  - Faster: top speed 18 km/h, the record Gene Cernan set on Apollo 17
+    (the rover was built for about 13 km/h on the level), with stronger
+    motors and less rolling drag.
+
 ## v4.43 / zion-sky-v412 — 2026-10-18
 - Lunar Rover sim is now easy to find: a "Drive on the Moon" card on Objects,
   next to the Mars sim, and a Play card on the Moon page. Before, the only way

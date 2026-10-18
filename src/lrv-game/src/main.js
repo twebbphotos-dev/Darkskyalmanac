@@ -92,10 +92,10 @@ function microRaw(x, z) {
   let h = (vnoise(x / 1.7, z / 1.7) - .5) * 0.12 + (vnoise(x / 0.55 + 71, z / 0.55) - .5) * 0.04;
   const ci = Math.floor(x / MC), cj = Math.floor(z / MC);
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
-    const i = ci + a, j = cj + b, p = hash2(i, j); if (p > 0.42) continue;
+    const i = ci + a, j = cj + b, p = hash2(i, j); if (p > 0.26) continue;
     const R = 0.25 / Math.sqrt(1 - hash2(i + 91, j) * (1 - (0.25 / 1.5) ** 2)), cx = (i + hash2(i, j + 57)) * MC, cz = (j + hash2(i + 13, j + 7)) * MC;
     const d = Math.hypot(x - cx, z - cz) / R; if (d > 1.8) continue;
-    const dep = R * (0.06 + 0.12 * hash2(i + 5, j + 3)), rim = dep * 0.25;
+    const dep = R * (0.05 + 0.09 * hash2(i + 5, j + 3)), rim = dep * 0.25;
     h += d < 1 ? rim + (-dep - rim) * (1 - d * d) : rim * Math.exp(-(((d - 1) / 0.4) ** 2));
   }
   return h;
@@ -132,10 +132,11 @@ sun.shadow.mapSize.set(DETAIL.shadow, DETAIL.shadow); { const r = 30 * DETAIL.sh
 scene.add(sun, sun.target);
 scene.add(new THREE.HemisphereLight(0x000000, 0x6e6a64, 0.55));
 
-// regolith: a fine grey with a little noise, drawn at close range
+// regolith: a fine grey with a little noise, drawn at close range. Centred near white: a mid-grey map
+// (128, about 0.22 once linear) darkened the near ground to a quarter of the mountains' brightness
 function regolithTex() {
   const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), im = x.createImageData(S, S), r = rng(3);
-  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const n = (fbm(i / 18, j / 18, 4) - .5) * 40 + (r() - .5) * 26, v = Math.max(0, Math.min(255, 128 + n)), o = (j * S + i) * 4; im.data[o] = im.data[o + 1] = im.data[o + 2] = v; im.data[o + 3] = 255; }
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const n = (fbm(i / 18, j / 18, 4) - .5) * 40 + (r() - .5) * 26, v = Math.max(0, Math.min(255, 200 + n * 0.7)), o = (j * S + i) * 4; im.data[o] = im.data[o + 1] = im.data[o + 2] = v; im.data[o + 3] = 255; }
   x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
 // fine relief for the soil surface, as a normal map: pits and clods a few centimeters across, which the low Sun picks out
@@ -150,12 +151,16 @@ function grainNormal() {
     im.data[o] = 128 - gx / l * 127; im.data[o + 1] = 128 + gy / l * 127; im.data[o + 2] = 128 + 2 / l * 127; im.data[o + 3] = 255; }
   x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
 }
-const soil = new THREE.MeshStandardMaterial({ color: 0x9a968f, roughness: 1, metalness: 0, map: regolithTex(), normalMap: grainNormal(), vertexColors: true });
-soil.normalScale.set(0.5, 0.5);
+const soil = new THREE.MeshStandardMaterial({ color: 0xa8a49d, roughness: 1, metalness: 0, map: regolithTex(), normalMap: grainNormal(), vertexColors: true });
+soil.normalScale.set(0.34, 0.34);
+// the grain is for the ground at your feet: it tiles every 3.2 m, and further off it hammered the whole plain into one pattern
+const grainFade = sh => sh.fragmentShader.replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps.replace('mapN.xy *= normalScale;', 'mapN.xy *= normalScale * ( 1.0 - smoothstep( 5.0, 22.0, length( vViewPosition ) ) );'));
+soil.onBeforeCompile = sh => { sh.fragmentShader = grainFade(sh); };
 soil.polygonOffset = true; soil.polygonOffsetFactor = -1; soil.polygonOffsetUnits = -1;      // the fine patch wins where it overlaps the coarse ground
 const patchU = { value: new THREE.Vector4(0, 0, 0, 0) };      // the fine patch's centre and half-size: the coarse ground is not drawn there
 const coarse = soil.clone();
 coarse.onBeforeCompile = sh => {
+  sh.fragmentShader = grainFade(sh);
   sh.uniforms.uPatch = patchU;
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz; uniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
@@ -197,7 +202,14 @@ function farMesh(dem) {
   for (let k = 0; k < p.count; k++) { const x = p.getX(k), z = p.getZ(k), r = Math.hypot(x, z), inside = 1 - ss(HALF * 1.2, HALF * 2.2, Math.max(Math.abs(x), Math.abs(z)));
     p.setY(k, (at(x, z) - h0) * ss(HALF * 0.9, 2600, r) - r * r / (2 * RM) - 1.2 * inside); }
   g.computeVertexNormals();
-  const m = new THREE.Mesh(g, new THREE.MeshStandardMaterial({ color: 0x8f8b85, roughness: 1 })); m.receiveShadow = true; scene.add(m);
+  // Not drawn over the drivable square at all. Sunk 1.2 m under it, it still showed through as flat
+  // grey sheets wherever the near ground dipped deeper: in every crater, and round the rover.
+  const fm = new THREE.MeshStandardMaterial({ color: 0x8f8b85, roughness: 1 });
+  fm.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('void main() {', `void main() {\n  if (max(abs(vWxz.x), abs(vWxz.y)) < ${(HALF - 1).toFixed(1)}) discard;`);
+  };
+  const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }
 function rockMeshes() {
   const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
@@ -214,7 +226,7 @@ function rockMeshes() {
    3.1 m long and 2.06 m wide. On the Moon each wheel carries a sixth of what it would on Earth, so it grips
    a sixth as hard: the rover skids, bounces, and leaves the ground easily. */
 const MASS = 700, I = new THREE.Vector3(MASS / 12 * (1.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 1.1 ** 2));
-const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, MU = 0.62, CRR = 0.07, VMAX = 3.6, VREV = 1.4;      // 3.6 m/s = 13 km/h, the rover's top speed on the level
+const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, MU = 0.62, CRR = 0.05, VMAX = 5.0, VREV = 1.6;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
 const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0 }));
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
 const car = { p: new THREE.Vector3(0, 0, 0), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), steer: 0 };
@@ -248,7 +260,7 @@ function step(h) {
     _ws.copy(n).cross(_wf).normalize();
     const vf = _vc.dot(_wf), vs = _vc.dot(_ws), lim = MU * Fn;
     let Fl;
-    if (throttle > 0.02 && vf > -0.3) Fl = throttle * 420 * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
+    if (throttle > 0.02 && vf > -0.3) Fl = throttle * 520 * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
     else if (throttle < -0.02 && vf < 0.3) Fl = throttle * 300 * Math.max(0, 1 + vf / VREV);
     else if (Math.abs(throttle) > 0.02) Fl = -Math.sign(vf) * lim;                            // driving against the motion is braking
     else Fl = 0;
