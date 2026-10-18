@@ -1,0 +1,33 @@
+Dark Sky Almanac
+Copyright (c) 2026 Tyler Webb (Zion Canyon Light). All rights reserved.
+
+This software and its original content are proprietary: the code, the page
+designs and graphics, the text, the maps and map markings, the curated object
+and event lists, the Mars Rover · Perseverance Simulator (its code, levels,
+terrain processing and writing) and the Star ID solver.
+
+No part of it may be copied, modified, redistributed, republished, sold, or
+used to train machine-learning models, in whole or in part, without written
+permission from the copyright holder. Viewing and using the app at
+app.darkskyalmanac.com for personal purposes is permitted.
+
+Third-party material
+--------------------
+Parts of the app come from others and remain under their own terms. They are
+credited on the app's Sources page (sources.html). They include:
+
+- Astronomy Engine (Don Cross): MIT license; notice kept in suncalc.min.js.
+- three.js: MIT license; its license notice is kept in the *.bundle.js files.
+- HYG star database v4.1 (astronexus): CC BY-SA 4.0. The Star ID star
+  catalog derived from it is shared under the same license.
+- OpenNGC: CC BY-SA 4.0.
+- Constellation line figures: Stellarium sky culture data (modern_iau).
+- Poly Haven scanned rocks and textures: CC0.
+- Natural Earth borders and coastlines: public domain.
+- NASA, JPL, USGS, NOAA and National Park Service images, maps and data:
+  generally not subject to copyright in the United States; credited where used.
+- 3D models from NASA 3D Resources, and the Apollo Lunar Rover scan by
+  Deutsches Museum Digital, under the terms of their publishers.
+
+Nothing in this notice claims ownership of third-party material, of public
+facts, or of scientific data.

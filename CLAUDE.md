@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v4.27, service-worker cache `zion-sky-v396`.**
-Next release: v4.28, cache `zion-sky-v397`.
+**Current release: v4.28, service-worker cache `zion-sky-v397`.**
+Next release: v4.29, cache `zion-sky-v398`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -126,6 +126,12 @@ node tests/solver/regress.mjs                     # compare with tests/solver/ba
 **Other checks:**
 - After editing inline scripts, extract each `<script>` block and run `node --check` on it.
 - Check that `<div>` and `</div>` counts balance outside scripts.
+
+## Copyright
+
+- `LICENSE` (repo root, not shipped): all rights reserved, with the third-party carve-outs (HYG and OpenNGC are CC BY-SA 4.0; Astronomy Engine and three.js MIT; Poly Haven CC0; NASA/USGS/NOAA/NPS public domain). The Sources page footer carries the same notice for users.
+- Every `*.bundle.js` starts with the copyright banner. When rebuilding with esbuild, add `--banner:js='/*! Dark Sky Almanac © 2026 Tyler Webb · Zion Canyon Light. All rights reserved. Third-party license notices are kept below. */'` (esbuild keeps three.js's `@license` comments).
+- `robots.txt` opts out of AI-training crawlers. Keep new third-party material credited on the Sources page with its license.
 
 ## Gotchas learned the hard way
 

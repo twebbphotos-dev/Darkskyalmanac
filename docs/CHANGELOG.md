@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.28 / zion-sky-v397 — 2026-10-18
+- Copyright: a LICENSE file (all rights reserved, with third-party
+  carve-outs), a copyright notice on the Sources page, a copyright banner at
+  the top of each 3D/simulator bundle, and robots.txt asking AI-training
+  crawlers to stay out.
+- Sources: the constellation-figure credit still named H.A. Rey's figures
+  (modern_rey). It now names the IAU / Sky & Telescope figures from
+  Stellarium's modern_iau, which the app has used since the figure audit.
+
 ## v4.27 / zion-sky-v396 — 2026-10-18
 - Fix: on the Clouds page, stepping to a later day still showed the satellite
   loop as if it belonged to that day. Why: the loop is always the last three
