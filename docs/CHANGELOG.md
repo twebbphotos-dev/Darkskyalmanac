@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.36 / zion-sky-v405 — 2026-10-18
+- Forecast: the cloud section is one plain row again, "Cloud Cover", like Sun &
+  Moon and the rest. The hourly chart and its best-window line sit inside, with
+  a "Detailed Cloud Cover" link to the multi-model and satellite page (renamed
+  from "Cloud Coverage" to match). The long summary in the heading wrapped to
+  two lines and the link card sat loose between sections, which read as chaotic.
+
 ## v4.35 / zion-sky-v404 — 2026-10-18
 - Mars rover sim: no more dark smears on the dunes. The HiRISE pictures carry
   the light of the afternoon they were taken (lit from the west); the game
