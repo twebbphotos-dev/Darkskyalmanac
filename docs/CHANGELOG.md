@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.45 / zion-sky-v414 — 2026-10-18
+- Lunar Rover sim: a Speed choice on the briefing card, Real (18 km/h) or
+  Double (36 km/h), remembered on the device. Double also gets stronger
+  motors and grippier tires, since at one-sixth gravity grip, not power,
+  limits how fast the rover can speed up.
+
 ## v4.44 / zion-sky-v413 — 2026-10-18
 - Lunar Rover sim:
   - No more flat grey sheets clipping through the ground. The distant

@@ -226,7 +226,12 @@ function rockMeshes() {
    3.1 m long and 2.06 m wide. On the Moon each wheel carries a sixth of what it would on Earth, so it grips
    a sixth as hard: the rover skids, bounces, and leaves the ground easily. */
 const MASS = 700, I = new THREE.Vector3(MASS / 12 * (1.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 1.1 ** 2));
-const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, MU = 0.62, CRR = 0.05, VMAX = 5.0, VREV = 1.6;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
+// Double speed, chosen on the briefing card: twice the top speed, with stronger motors and grippier tires to get there
+let FAST = (() => { try { return localStorage.getItem('lrv-speed') === '2'; } catch (e) { return false; } })();
+const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.6;
+let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
+function setSpeed(fast) { FAST = fast; MU = fast ? 0.85 : 0.62; VMAX = fast ? 11.2 : 5.0; try { localStorage.setItem('lrv-speed', fast ? '2' : '1'); } catch (e) { /* not remembered */ } }
+setSpeed(FAST);
 const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0 }));
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
 const car = { p: new THREE.Vector3(0, 0, 0), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), steer: 0 };
@@ -260,7 +265,7 @@ function step(h) {
     _ws.copy(n).cross(_wf).normalize();
     const vf = _vc.dot(_wf), vs = _vc.dot(_ws), lim = MU * Fn;
     let Fl;
-    if (throttle > 0.02 && vf > -0.3) Fl = throttle * 520 * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
+    if (throttle > 0.02 && vf > -0.3) Fl = throttle * (FAST ? 900 : 520) * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
     else if (throttle < -0.02 && vf < 0.3) Fl = throttle * 300 * Math.max(0, 1 + vf / VREV);
     else if (Math.abs(throttle) > 0.02) Fl = -Math.sign(vf) * lim;                            // driving against the motion is braking
     else Fl = 0;
@@ -419,6 +424,10 @@ function showRecords() { $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s'
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
+document.querySelectorAll('#speedpick button').forEach(b => {
+  b.classList.toggle('on', (b.dataset.v === '2') === FAST);
+  b.addEventListener('click', () => { setSpeed(b.dataset.v === '2'); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
+});
 $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); running = true; });
 { const go = e => { e.preventDefault(); location.href = '../moon'; }; $('back').addEventListener('click', go); }
 

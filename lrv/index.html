@@ -61,6 +61,10 @@
   .spec span{color:var(--mute);text-transform:uppercase;letter-spacing:.1em;font-size:8.5px;padding-top:2px}
   .spec b{color:var(--hi);font-weight:500}
   .fine{font-size:10px !important;color:var(--mute) !important}
+  .pick{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 16px}
+  .pick span{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-right:6px}
+  .pick button{font:inherit;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:999px;padding:7px 12px;cursor:pointer}
+  .pick button.on{color:#0d0a18;background:var(--gold);border-color:var(--gold);font-weight:600}
   #loading{position:fixed;inset:0;z-index:50;display:none;align-items:center;justify-content:center;background:#000;font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
   #loading.on{display:flex}
 </style>
@@ -101,6 +105,7 @@
       <span>Ground</span><b>The mountains are real, from NASA's terrain model of the site. The ground near the lander is generated: the model is too coarse for the craters underfoot</b>
     </div>
     <p class="fine">Look for a fresh crater with a sharp rim, and drive off the edge. Earth hangs in the west-southwest, where it always is from here. The Seat camera puts you where Gene Cernan sat.</p>
+    <div class="pick" id="speedpick"><span>Speed</span><button data-v="1">Real · 18 km/h</button><button data-v="2">Double · 36 km/h</button></div>
     <button class="btn primary" id="btn-go">Start driving</button>
   </div>
 </div>
