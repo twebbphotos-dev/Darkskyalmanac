@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.27 / zion-sky-v396 — 2026-10-18
+- Fix: on the Clouds page, stepping to a later day still showed the satellite
+  loop as if it belonged to that day. Why: the loop is always the last three
+  hours of real pictures, and the card ignored the day picker. It now shows
+  with today only; other days say why it is missing.
+- Forecast: the way to the Clouds page is a full-width "Clouds in depth" card,
+  always visible, instead of a small link inside the collapsed Hourly Cloud
+  Cover box.
+
 ## v4.26 / zion-sky-v395 — 2026-10-18
 - Simulator, flight 72: Ingenuity lines up 14 m off and comes in fast, still
   moving sideways, digs into a sand ripple, pitches and rolls, and a blade

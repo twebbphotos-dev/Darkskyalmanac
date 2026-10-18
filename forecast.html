@@ -227,6 +227,8 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .zcl-pcards.cols4{grid-template-columns:2fr 1fr 1fr}
 @media(max-width:520px){.zcl-pcards.cols3,.zcl-pcards.cols4{grid-template-columns:1fr 1fr}}
 .zcl-pcard{background:#0d0a18;border:1px solid rgba(203,168,90,.18);border-radius:8px;padding:10px 12px}
+.zcl-clouds-go{display:flex;align-items:center;gap:12px;margin:10px 0 14px;padding:14px 16px;text-decoration:none;border-color:rgba(203,168,90,.4)}
+.zcl-clouds-go span{flex:1}.zcl-clouds-go b{display:block;color:#E6CC85;font-size:15px;font-weight:600;letter-spacing:.02em}.zcl-clouds-go small{display:block;color:#C9BD97;font-size:12px;line-height:1.45;margin-top:3px}.zcl-clouds-go i{font-style:normal;color:#CBA85A;font-size:24px;line-height:1}
 .zcl-pcard.accent{border-color:rgba(203,168,90,.38);background:rgba(203,168,90,.06)}
 .zcl-pclabel{font-size:10px;letter-spacing:.13em;color:#8A6E32;text-transform:uppercase;margin-bottom:6px}
 .zcl-pcval{font-size:16px;color:#E4D9B8;line-height:1.2}
@@ -1215,8 +1217,8 @@ function hourlyCloudPanel(date){
     +svg
     +(confLine?'<div class="zcl-hcc-conf">'+confLine+'</div>':'')
     +'<div class="zcl-hcc-note">Blend of 4 forecast models \u00B7 bar height = share of sky blocked, 5 PM \u2192 7 AM'+freshnessTxt()+'</div>'
-    +'<div class="zcl-hcc-note" style="margin-top:6px"><a href="clouds" style="color:#CBA85A;text-decoration:none;border-bottom:1px solid rgba(203,168,90,.4)">Full breakdown: per-model charts, cloud types &amp; NWS \u2192</a></div>'
-    +'</div></div></div>';
+    +'</div></div></div>'
+    +'<a class="zcl-pcard zcl-clouds-go" href="clouds"><span><b>Clouds in depth</b><small>Each forecast model, cloud layers, a National Weather Service cross-check and the live satellite loop</small></span><i>\u203A</i></a>';
 }
 
 // Network calls get a hard timeout. Without this a stalled request (common on

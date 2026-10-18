@@ -60,6 +60,8 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 .zcl-sat-town{fill:#F2E4BE;stroke:rgba(13,10,24,.85);stroke-width:3}
 .zcl-sat-lbl{font-family:Montserrat,sans-serif;font-size:34px;font-weight:600;fill:#F2E4BE;stroke:rgba(13,10,24,.85);stroke-width:7px;paint-order:stroke;letter-spacing:.5px}
 .zcl-sat-bar100{fill:none;stroke:#F2E4BE;stroke-width:3.5}
+.zcl-sat-later{max-width:520px;margin:0 auto;text-align:center;font-size:13px;line-height:1.5;color:#C9BD97}
+#zcl-sat-card.later .zcl-sat,#zcl-sat-card.later .zcl-sat-bar,#zcl-sat-card.later .zcl-note,#zcl-sat-card.later .zcl-sat-now{display:none}
 .zcl-sat-now{max-width:520px;margin:0 auto 10px;text-align:center;font-size:13px;line-height:1.5;color:#C9BD97}
 .zcl-sat-now b{color:#F2E4BE;font-weight:600}
 .zcl-sat-gw{fill:#E6CC85}
@@ -147,6 +149,7 @@ body{font-family:'Montserrat',sans-serif;-webkit-font-smoothing:antialiased}
 
   <div class="zcl-card" id="zcl-sat-card" hidden>
     <div class="zcl-cardtit">Satellite &middot; Clouds Right Now</div>
+    <div class="zcl-sat-later" id="zcl-sat-later" hidden>Satellite pictures show the clouds right now, so the loop appears with today’s forecast only.</div>
     <div class="zcl-sat-now" id="zcl-sat-now" hidden></div>
     <div class="zcl-sat" id="zcl-sat"><div class="zcl-sat-stage" id="zcl-sat-stage"></div><div class="zcl-sat-pin"></div></div>
     <div class="zcl-sat-bar">
@@ -560,6 +563,8 @@ function render(){
   $('zcl-daylab').textContent=new Intl.DateTimeFormat('en-US',{timeZone:TZ,weekday:'short',month:'long',day:'numeric'}).format(d);
   $('zcl-prev').disabled=(dayIdx<=0);
   $('zcl-next').disabled=(dayIdx>=MAXD);
+  // satellite pictures are of right now: they belong with today, not a day ahead
+  $('zcl-sat-card').classList.toggle('later', dayIdx>0); $('zcl-sat-later').hidden=dayIdx===0;
   const hrs=nights[isoKey(d)];
   const blendEl=$('zcl-blend'), modEl=$('zcl-models');
   if(!loaded){ blendEl.innerHTML='<div class="zcl-err">Loading forecast\u2026</div>'; modEl.innerHTML=''; return; }
