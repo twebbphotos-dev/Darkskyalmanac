@@ -65,3 +65,15 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
 - Rings outside it, same model and same soil material: 8 km at 25 m, then 32 km at 80 m, each discarded where the
   next one in is drawn.
 - Only Drive 3 is drawn (blue dots, 3 m apart, never under 3 px on screen); the speed record counts within 8 m of it.
+
+## Free roam, quarter scale, crashes (v4.55)
+
+- Quarter scale across (`SQ` 4), heights × `SV` 0.4 (slopes 1.6× real); the square is 940 m (`HALF` 470 at 1.6 m),
+  ~2,000 craters and ~1,150 rocks; terrain rings 5 km at 20 m and 16 km at 50 m. The briefing says the real drives
+  were four times as long.
+- Free roam first: no route shown. A blue ring at stop 8 (`OBJ`) with an on-screen marker and its distance; driving
+  into it starts the speed record attempt and shows the course, the third drive's run home from stop 8 past Van Serg
+  (stop 9) to the lander. Top speed counts only on it.
+- Crashes: a roof impact over 3.5 m/s, or tumbling upside down above 4 m/s, hides the rover and throws eight pieces
+  (wheels, panels, a seat, the dish, a battery, a fender) that arc and bounce under lunar gravity, with a burst of dust;
+  3.5 s later a new rover stands where it last drove upright (sampled each second).

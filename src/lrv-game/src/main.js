@@ -30,11 +30,11 @@ const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
    for the craters a rover drives among. Craters follow the Moon's size mix (many small, few large, most of
    them worn), each a bowl with a raised rim; a fresh rim drops away steeply on the inside, which is what
    throws the rover into the air. The mountains around the valley are the real ones, from the terrain model.
-   The drivable square holds the whole of the third drive (stops 6 to 9), at half scale across: one game metre is
-   SQ metres of the Moon, and heights are squashed by SV, so slopes come out SQ·SV = 1.5 times real. The valley's
+   The drivable square holds the whole of the third drive (stops 6 to 9), at a quarter scale across: one game metre is
+   SQ metres of the Moon, and heights are squashed by SV, so slopes come out SQ·SV = 1.6 times real. The valley's
    shape under it comes from the same terrain model, with the Moon's curvature; the craters are game size. */
-const SQ = 2, SV = 0.75, RM = 1737400;
-const HALF = 900, CX = 750, CZ = -760, CELL = 2.5, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 1.8 km across, round the third drive
+const SQ = 4, SV = 0.4, RM = 1737400;
+const HALF = 470, CX = 373, CZ = -375, CELL = 1.6, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 940 m across, round the third drive
 const inSq = (x, z, m) => Math.abs(x - CX) < HALF - m && Math.abs(z - CZ) < HALF - m;
 let DEM = null;      // NASA's terrain model of the site (models/moon-a17.bin): 256 × 250 m, heights in quarter-metres, centred on the lander
 function demRaw(X, Z) {      // metres, at X east and Z south of the lander in real metres; Catmull-Rom between the 250 m cells so slopes stay smooth
@@ -52,13 +52,13 @@ const craters = [], rocks = [];
   const add = (x, z, R, fresh) => craters.push({ x, z, R, fresh, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
   // a few fresh ones within reach of the start, the rims to aim for
   [[48, -18, 13, 1], [-30, 64, 17, .95], [96, 52, 21, .9], [20, 120, 11, 1], [-92, -40, 24, .85]].forEach(c => add(...c));
-  for (let i = 0; i < 6900; i++) {
+  for (let i = 0; i < 2000; i++) {
     const R = 1.2 / Math.sqrt(1 - r() * (1 - (1.2 / 32) ** 2));        // a power-law spread of sizes, 1.2 to 32 m
     const x = CX + (r() * 2 - 1) * (HALF - 10), z = CZ + (r() * 2 - 1) * (HALF - 10);
     if (Math.hypot(x, z) < 14 || Math.hypot(x + 12, z - 4) < 14) continue;      // the start and the lander stand on level ground
     add(x, z, R, Math.pow(r(), 2.2));
   }
-  for (let i = 0; i < 4100; i++) { const x = CX + (r() * 2 - 1) * (HALF - 6), z = CZ + (r() * 2 - 1) * (HALF - 6); if (Math.hypot(x, z) < 10) continue;
+  for (let i = 0; i < 1150; i++) { const x = CX + (r() * 2 - 1) * (HALF - 6), z = CZ + (r() * 2 - 1) * (HALF - 6); if (Math.hypot(x, z) < 10) continue;
     rocks.push({ x, z, s: 0.12 + Math.pow(r(), 3) * 0.7, yaw: r() * 6.28, k: r() }); }
   // a fresh crater digs through the soil into rock and throws blocks out over its rim; worn ones have lost theirs
   for (const c of craters) { if (c.fresh < 0.55 || c.R < 4) continue; const n = Math.round(c.R * c.fresh * 2.2);
@@ -210,8 +210,8 @@ function buildPatch(cx, cz) {
 // the valley and its mountains, from NASA's terrain model: 64 km square on a 250 m grid, heights in quarter-metres,
 // drawn at true size with the Moon's curvature; sunk just under the drivable square where the two overlap
 // The valley and its mountains, from NASA's terrain model at the same half scale as the drivable square, in two rings:
-// a fine one 8 km across at 25 m, so that where it meets the drivable square the two follow the same shape (the coarse
-// ring alone, at 167 m, sagged metres below it on the slopes and left a step), and one at 80 m out to 32 km.
+// a fine one 5 km across at 20 m, so that where it meets the drivable square the two follow the same shape (the coarse
+// ring alone, at 167 m, sagged metres below it on the slopes and left a step), and one at 50 m out to 16 km.
 function ringMesh(half, seg, hole) {
   const g = new THREE.PlaneGeometry(2 * half, 2 * half, seg, seg); g.rotateX(-Math.PI / 2); g.translate(CX, 0, CZ);
   const p = g.attributes.position;
@@ -226,7 +226,7 @@ function ringMesh(half, seg, hole) {
   };
   const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }
-function farMesh() { ringMesh(4000, 320, HALF); ringMesh(16000, 400, 4000); }
+function farMesh() { ringMesh(2500, 250, HALF); ringMesh(8000, 320, 2500); }
 function rockMeshes() {
   const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
   for (let k = 0; k < p.count; k++) { const s = 0.75 + r() * 0.4; p.setXYZ(k, p.getX(k) * s, p.getY(k) * s * 0.7, p.getZ(k) * s); }
@@ -297,6 +297,7 @@ function step(h) {
     if (pen <= 0) continue;
     touching++;
     const r = _r.copy(a).sub(car.p); _vc.copy(car.w).cross(r).add(car.v); const n = normalAt(a.x, a.z), vn = _vc.dot(n);
+    if (c.y > 0) CRASH.roof = Math.max(CRASH.roof, -vn);      // the top of the rover hitting the ground: how hard
     const Fn = Math.max(0, 90000 * pen - 3000 * vn);
     _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.55 * Fn, vt * 3000) / vt);
     _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
@@ -324,13 +325,16 @@ function step(h) {
   return touching;
 }
 
-/* ── the third drive: the stops were surveyed from orbit (Haase et al. 2019, as in the 3D viewer), in metres east and
-   south of the lander, drawn at the square's half scale; between stops the line follows the general route. ── */
-const DRIVES = [      // the third drive only: north to the split boulder at stops 6 and 7, east to 8, home past Van Serg crater (9)
-  ['#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700], [805, -3003], [1294, -3036], [2200, -2950], [3012, -2599], [2500, -1900], [1735, -1228], [900, -600], [145, -39]]],
+/* ── the speed record course: the third drive's run home, from stop 8 past Van Serg crater (stop 9) to the lander,
+   downhill most of the way. The stops were surveyed from orbit (Haase et al. 2019, as in the 3D viewer), in metres
+   east and south of the lander, drawn at the square's quarter scale; between stops the line follows the general
+   route. It stays hidden while you roam, until you drive into the ring at stop 8. ── */
+const DRIVES = [
+  ['#7CC7F2', [[3012, -2599], [2500, -1900], [1735, -1228], [900, -600], [145, -39]]],
 ];
 const LMP = [-12, 4];      // where the lander stands here
-const COURSE = [];      // Drive 3's dots, flattened x, z: the speed record counts only on them
+const COURSE = [];      // the course's dots, flattened x, z: the speed record counts only on them
+const OBJ = { x: LMP[0] + 3012 / SQ, z: LMP[1] - 2599 / SQ, ring: null, line: null };      // the start, at stop 8
 function routeDots() {
   const cr = (a, b, c, d, t) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
   const pos = [], col = [], cc = new THREE.Color();
@@ -350,7 +354,9 @@ function routeDots() {
   const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: DOT }, px: { value: 1 }, vh: { value: 800 } },
     vertexShader: 'attribute vec3 color; varying vec3 vC; uniform float px, vh; void main() { vC = color; vec4 mv = modelViewMatrix * vec4( position, 1.0 ); gl_Position = projectionMatrix * mv; gl_PointSize = max( 3.0 * px, 0.5 * projectionMatrix[1][1] * 0.5 * vh / -mv.z ); }',
     fragmentShader: 'uniform sampler2D map; varying vec3 vC; void main() { float a = texture2D( map, gl_PointCoord ).a; if ( a < 0.02 ) discard; gl_FragColor = vec4( vC, a * 0.9 ); }' });
-  const m = new THREE.Points(g, mat), _vs = new THREE.Vector2(); m.frustumCulled = false; m.renderOrder = 2; scene.add(m);
+  const m = new THREE.Points(g, mat), _vs = new THREE.Vector2(); m.frustumCulled = false; m.renderOrder = 2; m.visible = false; scene.add(m); OBJ.line = m;
+  const ring = new THREE.Mesh(new THREE.RingGeometry(5.4, 6, 64), new THREE.MeshBasicMaterial({ color: 0x7CC7F2, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
+  ring.rotation.x = -Math.PI / 2; ring.position.set(OBJ.x, groundBase(OBJ.x, OBJ.z) + 0.25, OBJ.z); scene.add(ring); OBJ.ring = ring;
   m.onBeforeRender = r => { mat.uniforms.px.value = r.getPixelRatio(); mat.uniforms.vh.value = r.getDrawingBufferSize(_vs).y; };
 }
 
@@ -477,13 +483,23 @@ function showRecords() {
   const top = FAST ? REC.v2 : REC.v; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
   $('rec').textContent = REC.t ? `Records: ${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : '';
 }
-/* Top speed, on the ground and on Drive 3's line only (the blue dots): Cernan's 18 km/h was driven, not flown.
-   A new best is announced once the run is over. */
-const RUN = { peak: 0, on: false };
+/* Top speed, on the ground and on the course only (the blue dots, shown once you reach stop 8): Cernan's 18 km/h was
+   driven, not flown. A new best is announced once the run is over. */
+const RUN = { peak: 0, on: false, active: false };
 function onCourse(x, z) { for (let i = 0; i < COURSE.length; i += 2) { const dx = COURSE[i] - x, dz = COURSE[i + 1] - z; if (dx * dx + dz * dz < 64) return true; } return false; }      // within 8 m of the blue line
 function speedRecord(kmh, grounded) {
+  if (!RUN.active) {      // roaming: an objective ring at stop 8, with its distance on screen
+    const dx = OBJ.x - car.p.x, dz = OBJ.z - car.p.z, d = Math.hypot(dx, dz);
+    if (d < 7) { RUN.active = true; OBJ.ring.visible = false; OBJ.line.visible = true; $('objmark').style.display = 'none';
+      toast('Speed record attempt · race the blue line home past Van Serg'); return; }
+    _tp.set(OBJ.x, groundBase(OBJ.x, OBJ.z) + 2, OBJ.z).project(camera);
+    const el = $('objmark'), x = (_tp.x * 0.5 + 0.5) * innerWidth, y = (-_tp.y * 0.5 + 0.5) * innerHeight;
+    if (_tp.z < 1) { el.style.display = 'block'; el.style.transform = `translate(${Math.max(20, Math.min(innerWidth - 170, x))}px,${Math.max(80, Math.min(innerHeight - 60, y))}px)`; el.querySelector('b').textContent = `Speed record · ${Math.round(d)} m`; }
+    else el.style.display = 'none';
+    return;
+  }
   const on = onCourse(car.p.x, car.p.z);
-  if (on !== RUN.on) { RUN.on = on; toast(on ? 'On Drive 3 · speed record timing' : 'Off Drive 3 · back on the blue line to count'); }
+  if (on !== RUN.on) { RUN.on = on; toast(on ? 'On the course · top speed counts' : 'Off the course · back on the blue line to count'); }
   if (grounded && on && kmh > RUN.peak) RUN.peak = kmh;
   const key = FAST ? 'v2' : 'v';
   if (RUN.peak > REC[key] + 0.05 && kmh < RUN.peak * 0.7) {
@@ -493,6 +509,46 @@ function speedRecord(kmh, grounded) {
     showRecords();
   }
   if (kmh < RUN.peak * 0.7) RUN.peak = 0;
+}
+/* A catastrophic crash, rolling onto the roof hard or tumbling at speed: the rover breaks apart, pieces fly in clean
+   lunar arcs and bounce, and after a few seconds it is back on its wheels where it last drove safely. */
+const CRASH = { roof: 0, on: false, t: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, pieces: [] };
+const PIECE_MATS = [0xb9b6b0, 0x8a8782, 0xc89a3c, 0x3a3836].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.3 }));
+function breakApart() {
+  CRASH.on = true; CRASH.t = 0; rover.visible = false;
+  CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.pieces = [];
+  const shapes = [
+    ...[0, 1, 2, 3].map(() => [new THREE.CylinderGeometry(0.41, 0.41, 0.23, 18), 3]),      // the wire wheels
+    [new THREE.BoxGeometry(1.3, 0.12, 0.9), 0], [new THREE.BoxGeometry(1.1, 0.12, 0.8), 0], [new THREE.BoxGeometry(0.6, 0.35, 0.5), 1],      // chassis panels, a seat
+    [new THREE.ConeGeometry(0.5, 0.25, 16, 1, true), 0], [new THREE.BoxGeometry(0.5, 0.3, 0.35), 2], [new THREE.BoxGeometry(0.9, 0.08, 0.3), 2],      // the dish, a battery, a fender
+  ];
+  for (const [geo, mi] of shapes) {
+    const m = new THREE.Mesh(geo, PIECE_MATS[mi]); m.castShadow = true; scene.add(m);
+    const off = new THREE.Vector3((Math.random() - .5) * 2.4, Math.random() * 0.8, (Math.random() - .5) * 1.6).applyQuaternion(car.q);
+    m.position.copy(car.p).add(off); m.quaternion.copy(car.q);
+    const v = car.v.clone().multiplyScalar(0.6).add(new THREE.Vector3((Math.random() - .5) * 5, 1.5 + Math.random() * 4, (Math.random() - .5) * 5));
+    CRASH.pieces.push({ m, v, w: new THREE.Vector3((Math.random() - .5) * 9, (Math.random() - .5) * 9, (Math.random() - .5) * 9), r: 0.25 });
+  }
+  for (let k = 0; k < 160; k++) { const i = dnext; dnext = (dnext + 1) % DN;      // a cloud of dust, falling straight back
+    dpos[i * 3] = car.p.x + (Math.random() - .5) * 2; dpos[i * 3 + 1] = car.p.y; dpos[i * 3 + 2] = car.p.z + (Math.random() - .5) * 2;
+    dvel[i * 3] = (Math.random() - .5) * 6; dvel[i * 3 + 1] = Math.random() * 4; dvel[i * 3 + 2] = (Math.random() - .5) * 6; dlife[i] = 1; }
+  car.v.set(0, 0, 0); car.w.set(0, 0, 0); AIR.t = 0; AIR.grounded = true;
+  toast('Crash · the rover breaks apart');
+}
+function stepCrash(dt) {
+  if (!CRASH.on) {      // remember where it last drove upright, to bring it back there
+    if ((CRASH.safeT += dt) > 1 && _up.y > 0.85 && AIR.grounded) { CRASH.safeT = 0; CRASH.safe = { x: car.p.x, z: car.p.z, yaw: Math.atan2(-_fw.z, _fw.x) }; }
+    if (CRASH.roof > 3.5 || (_up.y < -0.2 && car.v.length() > 4)) breakApart();
+    CRASH.roof = 0;
+  } else if ((CRASH.t += dt) > 3.5) {
+    CRASH.on = false; rover.visible = true; place(CRASH.safe.x, CRASH.safe.z, CRASH.safe.yaw); camInit = false; toast('A new rover · back where you last drove safely');
+  }
+  for (const p of CRASH.pieces) {
+    p.v.y -= G * dt; p.m.position.addScaledVector(p.v, dt);
+    p.m.rotation.x += p.w.x * dt; p.m.rotation.y += p.w.y * dt; p.m.rotation.z += p.w.z * dt;
+    const g = ground(p.m.position.x, p.m.position.z) + p.r;
+    if (p.m.position.y < g) { p.m.position.y = g; if (p.v.y < 0) p.v.y *= -0.3; p.v.x *= 0.6; p.v.z *= 0.6; p.w.multiplyScalar(0.6); }
+  }
 }
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
@@ -513,7 +569,8 @@ function frame(now) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
-    for (let i = 0; i < n; i++) step(h);
+    if (!CRASH.on) for (let i = 0; i < n; i++) step(h);
+    _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q); stepCrash(dt);
     kick(dt); layTracks();
     if (Math.max(Math.abs(car.p.x - PATCH.cx), Math.abs(car.p.z - PATCH.cz)) > 14) buildPatch(car.p.x, car.p.z);      // keep the fine ground under the rover
     upsideT = _up.y < 0.35 ? upsideT + dt : 0; $('btn-recover').classList.toggle('on', upsideT > 1.2);
@@ -550,7 +607,7 @@ function frame(now) {
   try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) { DEM = new Int16Array(await r.arrayBuffer()); DEM0 = demRaw(0, 0); } } catch (e) { /* offline without it: flat ground, no mountains */ }
   buildGround(); indexRocks(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); routeDots(); showRecords();
   if (DEM) farMesh();
-  place(0, 0, Math.atan2(350, 82));      // facing up the third drive, toward the North Massif
+  place(0, 0, Math.atan2(350, 82));      // facing north, up the valley toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
   if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); }      // tires on the ground at the resting ride height
@@ -559,4 +616,4 @@ function frame(now) {
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { CRASH, OBJ, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };

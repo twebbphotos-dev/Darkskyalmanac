@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.55 / zion-sky-v424 — 2026-10-18
+- Lunar Rover sim:
+  - Free roam from the start. A ring at stop 8, with its distance on
+    screen, starts a speed record attempt down the third drive's real run
+    home past Van Serg crater; only then does the dotted course appear.
+  - The valley is now at a quarter scale, so drives are four times shorter
+    than the real ones, and the briefing says so.
+  - Hard rollovers break the rover apart: pieces fly and bounce, and a new
+    rover appears a few seconds later where it last drove safely.
+
 ## v4.54 / zion-sky-v423 — 2026-10-18
 - Mars rover sim, 2022: the blue sunset panorama is a surprise. Its ring,
   list entry and count stay hidden, and the briefing does not mention it,

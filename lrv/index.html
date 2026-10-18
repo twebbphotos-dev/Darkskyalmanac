@@ -33,6 +33,9 @@
     border:1px solid var(--line);border-left:2px solid var(--gold);border-radius:7px;padding:7px 12px;font-size:11px;color:var(--hi);
     opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
   #toast.on{opacity:1}
+  #objmark{position:fixed;left:0;top:0;z-index:18;display:none;pointer-events:none;margin:-9px 0 0 -9px}
+  #objmark i{display:block;width:18px;height:18px;border-radius:50%;border:2px solid #7CC7F2;box-shadow:0 0 0 1px rgba(0,0,0,.4)}
+  #objmark b{position:absolute;left:25px;top:0;white-space:nowrap;font-size:10px;font-weight:600;letter-spacing:.08em;color:#F2E4BE;text-shadow:0 1px 3px #000}
   #bottom{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:12px 14px calc(env(safe-area-inset-bottom,0px) + 12px);
     display:flex;align-items:flex-end;gap:11px;pointer-events:none}
   #hint{font-size:9px;letter-spacing:.06em;color:var(--mute);line-height:1.6;max-width:300px}
@@ -81,6 +84,7 @@
   </div>
 </div>
 <div id="air"></div>
+<div id="objmark"><i></i><b></b></div>
 <button class="btn" id="btn-pov" title="Camera: chase, wide, or from the driver's seat">Chase</button>
 <div id="toast"></div>
 
@@ -102,9 +106,9 @@
     <div class="spec">
       <span>Rover</span><b>About 700 kg loaded with crew; 3.1 m long; four wire-mesh wheels, each with its own motor; front and rear steering</b>
       <span>Top speed</span><b>18 km/h, the record Gene Cernan set on Apollo 17 (it was built for about 13 km/h on the level). Faster downhill, where gravity does the work</b>
-      <span>Ground</span><b>The valley's shape and the mountains are real, from NASA's terrain model of the site, drawn at half scale across (slopes about 1.5 times real) so the whole third drive fits. The craters and rocks underfoot are generated: the model is too coarse for them</b>
+      <span>Ground</span><b>The valley's shape and the mountains are real, from NASA's terrain model of the site, but drawn at a quarter of their size across, so every distance here is a quarter of the real one: the real drives were four times as long. Heights are squashed less, so slopes come out about 1.6 times real. The craters and rocks underfoot are generated: the model is too coarse for them</b>
     </div>
-    <p class="fine">The blue dotted line is the third drive: north to the split boulder at the foot of the North Massif (stops 6 and 7), east to stop 8, and home past Van Serg crater (stop 9). The stops were surveyed from orbit; between them the line follows the general route. Your top speed counts on the line only. To beat Cernan’s 18 km/h, use the downhill run home: on the flat the motors top out just under it. Look for a fresh crater with a sharp rim, and drive off the edge. Earth hangs in the west-southwest, where it always is from here. The Seat camera puts you where Gene Cernan sat.</p>
+    <p class="fine">Roam where you like. For a speed record attempt, drive to the blue ring at stop 8, out in the valley to the northeast, where the third drive turned for home: a dotted line then marks the real route back past Van Serg crater to the lander, downhill most of the way, and your top speed counts on it. To beat Cernan’s 18 km/h you will need the slope: on the flat the motors top out just under it. Roll it hard and it breaks apart, and a new rover waits where you last drove safely. Look for a fresh crater with a sharp rim, and drive off the edge. Earth hangs in the west-southwest, where it always is from here. The Seat camera puts you where Gene Cernan sat.</p>
     <div class="pick" id="speedpick"><span>Speed</span><button data-v="1">Real · 18 km/h</button><button data-v="2">Double · 36 km/h</button></div>
     <button class="btn primary" id="btn-go">Start driving</button>
   </div>
