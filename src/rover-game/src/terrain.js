@@ -526,6 +526,8 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
   if (SITE) {      // level 3: the real ground's light and dark, from the HiRISE pictures, laid over the game's own colour and grain
     const hi = t => { const x = TL.load(t); x.colorSpace = THREE.SRGBColorSpace; x.anisotropy = 8; return x; };
     scan.tHi = { value: hi(SITE.hi) }; scan.tHiA = { value: hi(SITE.hiArea) };
+    const rl = TL.load(SITE.hi.replace('_hr.jpg', '_relief.jpg')); rl.anisotropy = 8;      // small relief worked out from the picture (src/jezero-crater/relief.py)
+    scan.tRel = { value: rl };
   }
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, scan, { uSun: { value: sunV } });
@@ -538,7 +540,18 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
       varying float vSand; varying vec2 vGround; varying vec3 vWPos;
       float vCrack;
       uniform vec3 uSun; uniform sampler2D tReg, tRegN, tSand, tSandN, tPeb, tPebN, tSlab, tSlabN;
-${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
+${SITE ? `uniform sampler2D tHi, tHiA, tRel;
+      float hiH = 0.0;
+      // B-spline bicubic from four bilinear taps: magnified, the 1 m pictures stay smooth instead of showing their pixels
+      vec4 cubicW( float v ) { vec4 n = vec4( 1.0, 2.0, 3.0, 4.0 ) - v, s = n * n * n; float x = s.x, y = s.y - 4.0 * s.x, z = s.z - 4.0 * s.y + 6.0 * s.x; return vec4( x, y, z, 6.0 - x - y - z ) / 6.0; }
+      vec4 bicubic( sampler2D t, vec2 uv ) {
+        vec2 tc = uv * 2048.0 - 0.5, f = fract( tc ); tc -= f;
+        vec4 xc = cubicW( f.x ), yc = cubicW( f.y );
+        vec4 c = tc.xxyy + vec2( -0.5, 1.5 ).xyxy, sm = vec4( xc.xz + xc.yw, yc.xz + yc.yw );
+        vec4 o = ( c + vec4( xc.yw, yc.yw ) / sm ) / 2048.0;
+        float sx = sm.x / ( sm.x + sm.y ), sy = sm.z / ( sm.z + sm.w );
+        return mix( mix( texture2D( t, o.yw ), texture2D( t, o.xw ), sx ), mix( texture2D( t, o.yz ), texture2D( t, o.xz ), sx ), sy );
+      }` : ''}
       vec3 detail( sampler2D t, vec2 uv, vec3 mean ) {
         vec3 c = texture2D( t, uv ).rgb / mean;
         float l = dot( c, vec3( 0.3, 0.55, 0.15 ) );
@@ -636,11 +649,14 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
         }
         ${SITE ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
           vec2 r = vWPos.xz * ${SQ.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
-          float l1 = dot( texture2D( tHi, vec2( u1.x, 1.0 - u1.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
-          float l4 = dot( texture2D( tHiA, vec2( u4.x, 1.0 - u4.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float l1 = dot( bicubic( tHi, vec2( u1.x, 1.0 - u1.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float l4 = dot( bicubic( tHiA, vec2( u4.x, 1.0 - u4.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
           float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
           sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
+          // ripples and small dunes as relief: ±1 m of Mars per the picture's range, heights squashed as the ground is, doubled because the method
+          // underestimates them; faded out far off, where it would only shimmer
+          hiH = ( bicubic( tRel, vec2( u1.x, 1.0 - u1.y ) ).r - 0.502 ) * 2.0 * ${SV.toFixed(2)} * 2.0 * in1 * ( 1.0 - smoothstep( 180.0, 420.0, length( vViewPosition ) ) );
         }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)
@@ -661,6 +677,7 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
       #ifdef USE_BUMPMAP
         normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd() * ( 0.2 + 0.8 * ( 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) ) ) ) * ( 1.0 - vSand * 0.85 ) * ( 1.0 - vCrack * 0.6 ), faceDirection );
       #endif
+      ${SITE ? '#ifdef USE_BUMPMAP\n      normal = perturbNormalArb( - vViewPosition, normal, vec2( dFdx( hiH ), dFdy( hiH ) ), faceDirection );\n      #endif' : ''}
       // scanned normals: the real relief of grit, pebbles and cracks
       if ( sDet > 0.01 ) {
         vec3 nR = texture2D( tRegN, sUv ).xyz * 2.0 - 1.0;

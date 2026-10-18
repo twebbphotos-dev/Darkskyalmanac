@@ -21,7 +21,7 @@ export const MARS = {
   hemiInt:     1.9,           // dusty sky: a third of the light is skylight, so shadows are filled, not black          // dusty sky: shadows on Mars are filled, not black
   sunColor:    0xffe6cc,
   sunEl:       38,
-  sunAz:       140,
+  sunAz:       255,           // mid-afternoon, from the west-southwest: where the Sun stood for the HiRISE pictures under the levels, so their shading and the game's agree
   envIntensity: 0.35,
   exposure:    1.25,          // exposed the way the rover cameras are: sunlit ground mid-bright, not dim
 };
@@ -157,7 +157,7 @@ export function groundTextures(seed = 11) {
   const stones = ['#2e1f18', '#3b2920', '#4a3327', '#5a3f30', '#6b4c3a'];
 
   // Texture space maps to the ground with canvas +x = world +x and canvas +y = world −z,
-  // and the sun stands to the +x, +z side — so highlights go up-right, shadows down-left.
+  // and the sun stands to the −x side, a little +z — so highlights go left, shadows right.
   for (let i = 0; i < 460; i++) {
     const x = rand() * size, y = rand() * size;
     const r = 1.4 + Math.pow(rand(), 3) * 7;             // mostly grit, a few real pebbles
@@ -178,13 +178,13 @@ export function groundTextures(seed = 11) {
       const px = x + ox, py = y + oy;
       if (px < -12 || px > size + 12 || py < -12 || py > size + 12) continue;
 
-      cm.save(); cm.translate(px - r * 0.34, py + r * 0.30);       // shadow, down-sun
+      cm.save(); cm.translate(px + r * 0.44, py + r * 0.12);       // shadow, down-sun
       cm.fillStyle = 'rgba(18,10,7,0.42)'; stone(cm, 1.08); cm.fill(); cm.restore();
       cm.save(); cm.translate(px, py);
       cm.fillStyle = col; stone(cm, 1); cm.fill();
       cm.clip();                                                   // dusted, sunlit shoulder
       cm.fillStyle = 'rgba(196,146,110,0.34)';
-      cm.beginPath(); cm.arc(r * 0.42, -r * 0.4, r * 0.8, 0, 6.3); cm.fill();
+      cm.beginPath(); cm.arc(-r * 0.55, -r * 0.15, r * 0.8, 0, 6.3); cm.fill();
       cm.restore();
 
       cb.save(); cb.translate(px, py);
