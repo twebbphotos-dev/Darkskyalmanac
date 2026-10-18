@@ -201,8 +201,9 @@ const GOAL = SITE ? (() => {
 })() : null;
 const EASY = difficulty() === 'easy';
 let NOHELI = !!SITE && SITE.year >= 2024 && !SITE.crash;      // Ingenuity's flying ended on 18 January 2024...
+const heliShown = () => !NOHELI || (CRASH && CRASH.done);      // after flight 72 the wreck stays on the map, so it can be found
 if (NOHELI) document.body.classList.add('noheli');
-const CRASH = SITE && SITE.crash ? { ...SITE.crash, done: false, t: 0 } : null;      // ...on its 72nd flight, which the 2024 level plays out
+var CRASH = SITE && SITE.crash ? { ...SITE.crash, done: false, t: 0 } : null;      // ...on its 72nd flight, which the 2024 level plays out
 function seenAt(x, z) { const { n, cell, R } = MAP, i = Math.floor((x + R) / cell), j = Math.floor((z + R) / cell); return i >= 0 && j >= 0 && i < n && j < n && MAP.seen[j * n + i] === 1; }
 function revealRoute() { if (GOAL) GOAL.chunks.forEach(c => { c.line.visible = EASY || seenAt(c.x, c.z); }); }
 
@@ -568,7 +569,7 @@ function drawMap(cv, big) {
     if (big) { c.fillStyle = '#F2E4BE'; c.font = '600 11px Montserrat, sans-serif'; c.textAlign = 'left'; c.fillText(o.logged ? o.name : `${o.name} — not yet imaged`, x + 12, y + 4); }
   });
   // Ingenuity
-  if (S.heli.site && !NOHELI) {
+  if (S.heli.site && heliShown()) {
     const [x, y] = P(heli ? heli.position.x : S.heli.site.x, heli ? heli.position.z : S.heli.site.z);
     c.strokeStyle = '#7FD4E0'; c.lineWidth = 1.5; const r = big ? 6 : 4;
     c.beginPath(); c.moveTo(x - r, y); c.lineTo(x + r, y); c.moveTo(x, y - r); c.lineTo(x, y + r); c.stroke();
@@ -1109,7 +1110,7 @@ function heliAttitude(h, dt, accFwd, accSide, wobble) {
 function stepHeli(dt) {
   const h = S.heli;
   if (h.phase === 'wreck') {      // hold on the crash a moment, then back to the rover
-    if (S.phase === 'fly' && (h.t += dt) > 3) afterCrash();
+    if (S.phase === 'fly') { h.t += dt; stepWreck(h, dt); if (h.t > 4.5) afterCrash(); }
     return;
   }
   const flying = h.phase !== 'landed' && h.phase !== 'spindown';
@@ -1135,7 +1136,8 @@ function stepHeli(dt) {
       takeoff: ['Lift-off', 'Ingenuity weighs 1.8 kg. On its first flight, in April 2021, it rose 3 m and hovered for 39 seconds.'],
       out: ['Scouting the route', 'Flying ahead of the rover to look at the ground it will have to cross.'], scan: ['Imaging the ground', 'A downward camera photographs the terrain for the drivers on Earth.'],
       hop: ['A new airfield', 'It picks a flat, clear patch and heads for it.'], land: ['Touchdown', 'Feet down on the slope, rotors winding down.'] }[h.phase];
-    if (h.crash && h.phase === 'land') cap[0] = 'Coming down', cap[1] = 'Over bland, rippled sand the navigation camera has little to track…';
+    if (h.crash && h.phase === 'hop') cap[0] = 'Lining up', cap[1] = 'It swings out to come in over the sand ripples.';
+    if (h.crash && h.phase === 'land') cap[0] = 'Coming in fast', cap[1] = 'Over smooth, rippled sand the navigation camera has little to track. It misjudges its speed…';
     if (cap) beat('Ingenuity', cap[0], cap[1], true);
   }
   if (h.phase === 'spinup') {
@@ -1183,16 +1185,21 @@ function stepHeli(dt) {
       h.yawScan = undefined;
       h.phase = 'hop'; h.t = 0;
       const dest = new THREE.Vector3(h.site.x, height(h.site.x, h.site.z) + HELI.hover, h.site.z);
+      if (h.crash) {      // flight 72 lines up for a landing 14 m off, so it comes in with speed it cannot see
+        let dx = h.site.x - S.rover.pos.x, dz = h.site.z - S.rover.pos.z; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+        dest.set(h.site.x - dx * 14, height(h.site.x - dx * 14, h.site.z - dz * 14) + 5, h.site.z - dz * 14);
+      }
       if (Math.hypot(dest.x - heli.position.x, dest.z - heli.position.z) > 0.5) h.yaw = Math.atan2(dest.x - heli.position.x, dest.z - heli.position.z) + Math.PI;
       planLeg(h, heli.position.clone(), dest, CFG.heliAlt * 0.7);
     }
 
   } else if (h.phase === 'land') {
     // a slow, eased settle: fastest mid-way, feather-light at touchdown
-    const k = Math.min(1, h.t / (HELI.lift * (h.crash ? 0.8 : 1.2)));
+    const k = Math.min(1, h.t / (HELI.lift * (h.crash ? 1.0 : 1.2)));
     const ground = height(h.site.x, h.site.z) + 0.01;
-    heli.position.set(h.site.x, h.from.y + (ground - h.from.y) * (h.crash ? k * k : smoother(k)), h.site.z);      // flight 72 does not slow for the ground
-    if (h.crash) { const [af, as] = motion(); heliAttitude(h, dt, af + Math.sin(h.t * 9) * 3, as + 2.5 * k, 1); if (k >= 1) { crashDown(); return; } }
+    if (h.crash) heli.position.set(h.from.x + (h.site.x - h.from.x) * k, h.from.y + (ground - h.from.y) * Math.pow(k, 1.5), h.from.z + (h.site.z - h.from.z) * k);      // flight 72 still moving sideways when it meets the sand
+    else heli.position.set(h.site.x, h.from.y + (ground - h.from.y) * smoother(k), h.site.z);
+    if (h.crash) { const [af, as] = motion(); heliAttitude(h, dt, af * 0.3, as, 1); if (k >= 1) { crashDown(); return; } }
     else if (k < 0.75) { const [af, as] = motion(); heliAttitude(h, dt, af, as, 1 - k); }
     else heli.quaternion.slerp(qLand, Math.min(1, dt * 5));
     wash(h.site.x, h.site.z, 0.7 * k);
@@ -1215,15 +1222,31 @@ function stepHeli(dt) {
    Ingenuity never flies again, and photographing it becomes a new objective. */
 function crashDown() {
   const h = S.heli; h.crash = false; CRASH.done = true;
-  landedQuat(h.site.x, h.site.z, h.yaw, heli.quaternion);
-  heli.quaternion.multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.05, 0, 0.09)));      // still standing, as NASA's photographs show it, a little askew
-  heli.position.y = height(h.site.x, h.site.z) - 0.05;
+  let dx = h.site.x - h.from.x, dz = h.site.z - h.from.z; const L = Math.hypot(dx, dz) || 1; dx /= L; dz /= L;
+  const q1 = new THREE.Quaternion(); landedQuat(h.site.x, h.site.z, h.yaw, q1);
+  h.wq1 = q1.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.05, 0, 0.09)));      // where it comes to rest: still standing, as NASA's photographs show it, a little askew
+  h.wq0 = q1.clone().multiply(new THREE.Quaternion().setFromEuler(new THREE.Euler(0.55, 0, 0.7)));       // the moment it digs in: pitched and rolled hard
+  heli.quaternion.copy(h.wq0);
   rotors.forEach(([o], i) => { o.scale.multiplyScalar(i ? 0.62 : 0.78); o.rotateX(i ? 0.9 : 0.3); });      // blades snapped short, stopped askew
   h.spin = 0; h.phase = 'wreck'; h.t = 0;
-  for (let i = 0; i < 26; i++) puff(h.site.x + (Math.random() - .5) * 2.4, height(h.site.x, h.site.z) + 0.1, h.site.z + (Math.random() - .5) * 2.4, 2.2, 0.6);
-  const frag = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.02, 0.09), new THREE.MeshStandardMaterial({ color: 0x3a3634, roughness: 0.7 }));      // a piece of blade on the sand
-  const fx = h.site.x - 6, fz = h.site.z + 1.5; frag.position.set(fx, height(fx, fz) + 0.02, fz); frag.rotation.y = 0.8; frag.castShadow = true; scene.add(frag);
-  beat('Ingenuity', 'Hard landing', 'The rotor blades are broken. Ingenuity will never fly again.', true);
+  const gy = height(h.site.x, h.site.z);
+  for (let i = 0; i < 40; i++) puff(h.site.x + dx * Math.random() * 2 + (Math.random() - .5) * 2.6, gy + 0.1, h.site.z + dz * Math.random() * 2 + (Math.random() - .5) * 2.6, 2.6, 0.7);
+  const frag = new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.02, 0.09), new THREE.MeshStandardMaterial({ color: 0x3a3634, roughness: 0.7 }));      // a piece of blade, thrown clear
+  frag.castShadow = true; frag.position.set(h.site.x, gy + 0.7, h.site.z); scene.add(frag);
+  h.frag = { m: frag, v: new THREE.Vector3(dx * 4.5 - dz * 2, 3.2, dz * 4.5 + dx * 2), flying: true };
+  buzz(60);
+  beat('Ingenuity', 'Hit the dune', 'Still moving sideways, it touched down on a sand ripple, pitched and rolled, and the loads snapped its rotor blades.', true);
+}
+function stepWreck(h, dt) {      // the tumble settles and the blade piece lands, under Mars's 3.7 m/s² gravity
+  const u = Math.min(1, h.t / 1.4), e = 1 - Math.pow(1 - u, 3);
+  heli.quaternion.slerpQuaternions(h.wq0, h.wq1, e);
+  heli.position.set(h.site.x, height(h.site.x, h.site.z) - 0.05 + 0.3 * Math.abs(Math.sin(h.t * 8)) * Math.exp(-h.t * 3.5), h.site.z);
+  const f = h.frag;
+  if (f && f.flying) {
+    f.v.y -= 3.71 * dt; f.m.position.addScaledVector(f.v, dt); f.m.rotation.x += dt * 14; f.m.rotation.y += dt * 9;
+    const g = height(f.m.position.x, f.m.position.z) + 0.02;
+    if (f.m.position.y <= g) { f.m.position.y = g; f.m.rotation.set(0, f.m.rotation.y, 0); f.flying = false; puff(f.m.position.x, g + 0.05, f.m.position.z, 1.2, 0.4); }
+  }
 }
 function afterCrash() {
   const h = S.heli;
@@ -1326,7 +1349,7 @@ function stepPano(dt) {
   beat('Mastcam-Z panorama', o.label[0].toUpperCase() + o.label.slice(1), `Frame ${k} of ${N} · the mast head turns a full circle, 2 m above the ground.`, true);
   if (Math.floor(PANO.t * 3) !== PANO.last) { PANO.last = Math.floor(PANO.t * 3); $('flash').animate([{ opacity: 0.12 }, { opacity: 0 }], { duration: 160 }); }
   if (PANO.t >= PANO.dur) {
-    o.logged = true; S.logged++; o.ringMat.color.setHex(GREEN);
+    o.logged = true; S.logged++; o.ringMat.color.setHex(GREEN); progSave();
     if (roverModel) roverModel.visible = true;
     S.phase = 'drive'; cinema(false); clearBeat(); irisIn(); hud();
     showCard(o);
@@ -1389,6 +1412,7 @@ function capture() {
   const o = S.framed;
   o.logged = true;
   S.logged++;
+  progSave();
   o.ringMat.color.setHex(GREEN);
   // the shot: shutter, a held frame with its stamp, then out to watch SuperCam fire
   shutter();
@@ -1568,8 +1592,27 @@ function stepDusk(dt) {
   if (k > 0.05 && !DUSK.told) { DUSK.told = true; toast('The sun is going down over Jezero'); }
 }
 
+/* Progress, remembered on this device: the objectives each year has had done, and the years driven to the end. */
+const PROG_KEY = 'jt-progress';
+function progRead() { try { return JSON.parse(localStorage.getItem(PROG_KEY)) || {}; } catch (e) { return {}; } }
+function progWrite(p) { try { localStorage.setItem(PROG_KEY, JSON.stringify(p)); } catch (e) { /* private browsing: just not remembered */ } }
+function progSave(complete) {
+  if (!SITE) return;
+  const p = progRead(), L = p[SITE.level] || { got: [] };
+  S.outcrops.forEach(o => { const k = o.label || o.name; if (o.logged && !L.got.includes(k)) L.got.push(k); });
+  L.n = SITE.goals.length + (SITE.crash ? 1 : 0); if (complete) L.done = true;
+  p[SITE.level] = L; progWrite(p);
+}
+function progMenu() {      // under each year on the menu: complete, or how many objectives so far
+  const p = progRead(), tag = (b, t) => { let el = b.querySelector('small'); if (!el) { el = document.createElement('small'); b.appendChild(el); } el.textContent = t; };
+  document.querySelectorAll('.levels [data-level]').forEach(b => { const L = p[b.dataset.level]; tag(b, !L ? '' : L.done ? 'Complete ✓' : `${Math.min(L.got.length, L.n)} of ${L.n} objectives`); });
+  tag($('btn-start'), p.landing ? 'Landed ✓' : '');
+}
+progMenu();
+
 function done() {
   S.phase = 'done';
+  progSave(true);
   if (SITE) { $('done-h1').textContent = 'Drive complete'; $('done-h2').textContent = `Level ${SITE.level} · ${SITE.year} · ${SITE.title}`;
     $('done-p').textContent = `You followed Perseverance’s ${SITE.year} route, read the rocks on the way, and reached the end of the drive.${SITE.next ? ' The next level picks up the following year.' : ' More years are on the way.'}`;
     $('done-p2').textContent = 'Sunset on Mars is blue: fine dust scatters blue light forward, close to the Sun’s direction, so the sky round a setting Sun glows blue while the rest turns gray.';
@@ -1812,7 +1855,7 @@ function stepMarks() {
 
   // where the helicopter is parked, once it is far enough off to lose sight of
   let show = false;
-  if (heli && !NOHELI && S.heli.phase === 'landed' && (S.phase === 'drive' || S.phase === 'cam')) {
+  if (heli && heliShown() && (S.heli.phase === 'landed' || (S.heli.phase === 'wreck' && NOHELI)) && (S.phase === 'drive' || S.phase === 'cam')) {
     const dist = heli.position.distanceTo(S.rover.pos);
     _p.copy(heli.position); _p.y += 0.9; _p.project(camera);
     const x = (_p.x * 0.5 + 0.5) * innerWidth, y = (-_p.y * 0.5 + 0.5) * innerHeight;
@@ -1927,7 +1970,14 @@ let frameN = 0;
 /* ── wiring ───────────────────────────────────────────────────── */
 // Back: the extensionless address, as every other page links it. The .html one redirects, and a redirected page from the offline cache fails to open.
 $('btn-pov').addEventListener('click', () => { S.pov = ((S.pov || 0) + 1) % 3; if (roverModel) roverModel.visible = true; $('btn-pov').textContent = ['Chase', 'Wide', 'Rover'][S.pov]; camInit = false; });
-{ const go = e => { e.preventDefault(); e.stopPropagation(); location.href = '../objects'; };      // the game's own touch handling can swallow a plain link tap on iPhone
+{ const go = e => {      // the game's own touch handling can swallow a plain link tap on iPhone
+    e.preventDefault(); e.stopPropagation();
+    if ($('brief').classList.contains('on')) { location.href = '../objects'; return; }      // from the menu, out to Objects
+    if (S.phase === 'cam') closeCam();      // from a drive, first to the year menu
+    ['rover-brief', 'card', 'done'].forEach(id => $(id).classList.remove('on')); toggleMap(false);
+    S.rover.speed = 0; S.phase = 'brief'; progMenu();
+    $('btn-resume').hidden = !SITE; $('brief').classList.add('on');
+  };
   $('back').addEventListener('pointerup', go); $('back').addEventListener('click', go); }
 $('btn-cam').addEventListener('click', () => S.phase === 'cam' ? capture() : S.phase === 'cine' ? endCine() : openCam());
 $('btn-heli').addEventListener('click', () => S.phase === 'cam' ? closeCam() : launchHeli());
@@ -1962,14 +2012,19 @@ $('btn-drive').addEventListener('click', () => {
   toast(SITE ? `${EASY ? 'Follow the gold dashes, the real route' : 'The real route shows in gold as you explore'} · map${kb('M')}` : `Six outcrops to find · map${kb('M')}`);
 });
 
-$('btn-start').addEventListener('click', () => { $('brief').classList.remove('on'); edl.brief(); });
+$('btn-start').addEventListener('click', () => { if (SITE) { location.href = './?landing'; return; } $('brief').classList.remove('on'); edl.brief(); });
+$('btn-resume').addEventListener('click', () => {      // back to the drive; a flight still in the air carries on
+  $('brief').classList.remove('on');
+  S.phase = S.heli.phase !== 'landed' && S.heli.phase !== 'spindown' && !(S.heli.phase === 'wreck' && NOHELI) ? 'fly' : 'drive'; hud();
+});
 document.querySelectorAll('[data-level]').forEach(b => b.addEventListener('click', () => { location.search = '?level=' + b.dataset.level; }));
 if (SITE) {      // a year level: straight onto the ground
   $('rb-h1').textContent = SITE.title; $('rb-h2').textContent = `Level ${SITE.level} · ${SITE.year}`;
   const verb = g => g.type === 'sample' ? `core a sample at ${g.label}` : g.type === 'pano' ? `take a Mastcam-Z panorama from ${g.label}` : 'analyze an outcrop on the way';
   const list = SITE.goals.map(verb), goalText = list.length > 1 ? list.slice(0, -1).join(', ') + ' and ' + list[list.length - 1] : list[0];
   SITE.goalText = goalText;
-  $('rb-goal').textContent = `Follow Perseverance’s route${EASY ? ' (the gold dashes)' : ' (it appears as you explore)'}: ${goalText}, then reach the end of the rover’s path. Go anywhere you like on the way.`;
+  const before = progRead()[SITE.level];
+  $('rb-goal').textContent = `Follow Perseverance’s route${EASY ? ' (the gold dashes)' : ' (it appears as you explore)'}: ${goalText}, then reach the end of the rover’s path. Go anywhere you like on the way.${before ? (before.done ? ' You have completed this year before.' : ` Done before: ${Math.min(before.got.length, before.n)} of ${before.n} objectives.`) : ''}`;
   $('stat-label').textContent = 'Objectives';
   $('rb-p').textContent = `${SITE.text} The ground is the real one, from ${SITE.src}, ${SITE.scale}.`;
 }
@@ -2009,11 +2064,11 @@ $('btn-map').addEventListener('click', () => toggleMap());
       sun.target.position.set(x, y, z); sun.position.copy(sun.target.position).add(sunOff);
     },
     settleRover: (x, z) => { S.rover.pos.set(x, height(x, z), z); S.rover.speed = 0; gReady = false; stepRover(0); },
-    onLanded: () => { location.search = '?level=1'; },      // after the landing, the first year on the ground
+    onLanded: () => { const p = progRead(); p.landing = { done: true }; progWrite(p); location.search = '?level=1'; },      // after the landing, the first year on the ground
   });
   hud();
   $('loading').classList.remove('on');
-  if (SITE) startSurface(null); else $('brief').classList.add('on');
+  if (SITE) startSurface(null); else if (new URLSearchParams(location.search).has('landing')) edl.brief(); else $('brief').classList.add('on');
   requestAnimationFrame(frame);
 })();
 

@@ -3,6 +3,19 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.26 / zion-sky-v395 — 2026-10-18
+- Simulator, flight 72: Ingenuity lines up 14 m off and comes in fast, still
+  moving sideways, digs into a sand ripple, pitches and rolls, and a blade
+  piece flies off under Mars gravity before it settles upright. Captions tell
+  NASA's account of the cause.
+- The wreck keeps its pin: on screen with its distance, on the minimap and on
+  the map, before and after it is photographed.
+- Back from a drive opens the year menu (with Resume driving); Back from the
+  menu goes to Objects. Fix: the menu sheet covered the Back button.
+- Progress is remembered on this device: the menu shows each year as
+  "Complete ✓" or "1 of 3 objectives", the landing as "Landed ✓", and a
+  year's briefing notes what was done before.
+
 ## v4.25 / zion-sky-v394 — 2026-10-18
 - Fix: in the 2024–2026 levels Mastcam-Z had no way back to driving. Why:
   "Back to driving" is the Fly Ingenuity button relabeled, and that button

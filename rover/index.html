@@ -112,6 +112,7 @@
     color:var(--green);font-style:normal;font-weight:600}
 
   /* ── sheets ──────────────────────────────────────── */
+  body:has(#brief.on) #top{z-index:41} body:has(#brief.on) #top .stats{visibility:hidden}      /* the menu keeps its way out to Objects */
   .sheet{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;
     padding:22px;background:rgba(8,6,14,.86);backdrop-filter:blur(7px)}
   .sheet.on{display:flex}
@@ -387,6 +388,7 @@
   @media(max-width:720px){ #tl{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;max-width:calc(100vw - 116px)} #goals,#toast{font-size:9px} }
   .levels{display:grid;grid-template-columns:1fr;gap:8px}
   .levels .btn{width:100%;padding:13px 14px;font-size:10px;text-align:center}
+  .levels .btn small{display:block;font-size:8.5px;letter-spacing:.08em;text-transform:none;opacity:.7;margin-top:3px;font-weight:500} .levels .btn small:empty{display:none} .levels .btn[hidden]{display:none}
   #btn-pov{position:fixed;z-index:21;right:9px;top:calc(env(safe-area-inset-top,0px) + 324px);padding:6px 10px;font-size:8.5px;pointer-events:auto}
   body.cinema #btn-pov,body.camview #btn-pov,body.edl #btn-pov,body.brief #btn-pov{display:none}
   @media(max-width:720px){ #btn-pov{top:calc(env(safe-area-inset-top,0px) + 200px);right:8px;padding:5px 9px;font-size:8px} }
@@ -469,6 +471,7 @@
       <kbd>Deploy</kbd><span>Parachute · backshell separation · sky crane</span>
     </div>
     <div class="levels">
+      <button class="btn primary" id="btn-resume" hidden>Resume driving</button>
       <button class="btn primary" id="btn-start">2021 · The Landing</button>
       <button class="btn" data-level="1">2022 · Delta Front</button>
       <button class="btn" data-level="2">2023 · Belva Crater</button>
