@@ -13,7 +13,8 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { buildMars } from './mars.js';
 import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks, rockReach, prepScan, findLanding, colliders,
-         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT, SITE } from './terrain.js';
+         height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT, SITE, WIND } from './terrain.js';
+import { buildAtmos } from './atmos.js';
 import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
 import { createEDL, difficulty, setDifficulty } from './edl.js';
@@ -127,7 +128,8 @@ const { sun, sky, map, bump, sunDir, hemi } = buildMars(scene, renderer);
 document.getElementById('loadmsg').textContent = 'Loading Jezero elevation…';
 await loadDTM('dtm/');                               // the real ground, before anything is built on it
 if (DTM.on) { scene.fog.near = 60; scene.fog.far = SITE ? SITE.fog : 1900; }   // far enough to see the delta front, 2.5 km off
-buildTerrain(scene, map, bump);
+buildTerrain(scene, map, bump, sky.material.uniforms.sunDir.value);
+const atmos = buildAtmos(scene, { count: DETAIL.devils, height, sunV: sky.material.uniforms.sunDir.value, wind: WIND, playR: PLAY_R });
 
 function resize() {
   renderer.setSize(innerWidth, innerHeight, false);
@@ -1956,6 +1958,7 @@ function update(dt, now = performance.now()) {
   stepDust(dt);
   stepDusk(dt);
   stepCamera(dt);
+  atmos.step(dt, camera, DUSK ? DUSK.k : 0);      // dust devils die down at dusk
   stepMarks();
   if (CRASH && !CRASH.done && S.phase === 'drive' && S.heli.phase === 'landed' && (CRASH.t += dt) > 45) launchHeli();      // flight 72 goes ahead whether you ask or not
   if (GOAL && S.phase === 'drive') {      // the end of the drive
@@ -2095,7 +2098,7 @@ $('btn-map').addEventListener('click', () => toggleMap());
 /* small handle for tuning and smoke tests */
 const _w = new THREE.Vector3();
 window.__game = {
-  MAST, setMast, get LASER() { return LASER; }, get CIN() { return CIN; }, ATT, MOB, S, CFG, scene, camera, THREE, height, groundHeight, sandMask, paverMask, CRATERS, UNITS, get rockCount() { return rockCount; }, renderer, tick: (n, dt = 1 / 30) => { for (let i = 0; i < n; i++) update(dt); }, colliders,
+  MAST, setMast, atmos, get LASER() { return LASER; }, get CIN() { return CIN; }, ATT, MOB, S, CFG, scene, camera, THREE, height, groundHeight, sandMask, paverMask, CRATERS, UNITS, get rockCount() { return rockCount; }, renderer, tick: (n, dt = 1 / 30) => { for (let i = 0; i < n; i++) update(dt); }, colliders,
   card: i => { S.logged = Math.max(S.logged, 1); showCard(S.outcrops[i]); },
   get sus() { return sus; },
   get edl() { return edl; },

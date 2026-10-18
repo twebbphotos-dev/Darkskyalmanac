@@ -615,6 +615,19 @@ All rock tiers are tiled (pebbles 45 m, the rest 90 m). `rockReach(x, z)` in
 terrain.js hides tiles beyond their reach; game.js calls it every tenth frame
 with the camera position. Changing a setting reloads the level.
 
+`devils` sets how many dust devils (`src/atmos.js`) can be out at once: open,
+flaring tubes with a swirling-noise shader, spawned 260 m or more from the
+camera, drifting with the wind and fading with the dusk.
+
+## The ground pictures
+
+The HiRISE pictures under each level are lit from the west (fitted at 263–275°
+for 2022 and 2023). `src/jezero-crater/deshade.py` divides the shading that the
+elevation explains out of them. In the terrain shader, the picture blurred to
+about 11 m is the ground's light and dark; what is finer (ripples, small dunes)
+tilts the normal toward that western Sun instead of darkening the colour. The
+haze in the terrain's fog adds the sky dome's glow toward the Sun.
+
 ## Obvious next steps
 
 - The differential bar and its links on the deck stay still; they are small, but they

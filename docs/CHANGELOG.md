@@ -3,6 +3,20 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.35 / zion-sky-v404 — 2026-10-18
+- Mars rover sim: no more dark smears on the dunes. The HiRISE pictures carry
+  the light of the afternoon they were taken (lit from the west); the game
+  lights the ground with its own Sun, so the photo's shadows sat where the
+  game's light did not put them. `src/jezero-crater/deshade.py` fits that
+  shading from the elevation and divides it out of the 2022 and 2023 pictures
+  (the later levels' CTX heights are too coarse to fit, and were left as
+  they are). Ripples too small for the elevation now become surface relief
+  lit by the game's Sun instead of painted-on light and dark.
+- Haze brightens toward the Sun, as forward-scattering dust makes it, using
+  the sky dome's own glow so the two match.
+- Dust devils wander the plain (Medium 1, High 2, Ultra 3 at a time; none on
+  Low) and die down at dusk.
+
 ## v4.34 / zion-sky-v403 — 2026-10-18
 - Mars and Moon rover sims: new Settings sheet (gear by the Back button) for
   difficulty, level of detail (Auto, Low, Medium, High, Ultra) and camera.
