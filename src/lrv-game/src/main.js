@@ -14,7 +14,7 @@ import { DETAIL } from '../../rover-game/src/detail.js';      // the Mars simula
 
 const $ = id => document.getElementById(id);
 const G = 1.62;                       // lunar surface gravity, m/s²
-const TOUCH = matchMedia('(pointer: coarse)').matches;
+const TOUCH = document.documentElement.classList.contains('touch');
 
 /* ── random numbers and noise, seeded so the ground is the same every visit ── */
 function rng(seed) { let s = seed >>> 0; return () => { s = (s + 0x6D2B79F5) >>> 0; let t = s; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }

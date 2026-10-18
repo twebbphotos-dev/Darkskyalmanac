@@ -604,7 +604,10 @@ a scripted pilot flies it start to finish in the headless run.
 
 `src/detail.js` holds four tiers (low, medium, high, ultra), chosen in the
 Settings sheet and kept in `localStorage['jt-detail']`. Auto means Medium on a
-touch screen and Ultra otherwise. Each tier sets the pixel-ratio cap,
+touch screen and Ultra otherwise. The page marks touch screens with `html.touch`
+(any coarse pointer, or `navigator.maxTouchPoints`, since iPad Safari can report
+itself as a Mac); the thumbstick and the touch wording follow that class, not the
+screen width, so tablets get the stick too. Each tier sets the pixel-ratio cap,
 antialiasing, shadow map size and radius, terrain grid spacing (`grid`
 multiplies FINE and MID), the rock-count multiplier, the draw distance per rock
 size (`reach`) and whether mid-size rocks use the photo scans (`scanMid`). The
@@ -619,14 +622,15 @@ with the camera position. Changing a setting reloads the level.
 flaring tubes with a swirling-noise shader, spawned 260 m or more from the
 camera, drifting with the wind and fading with the dusk.
 
-## The ground pictures
+## The painted ground tile
 
-The HiRISE pictures under each level are lit from the west (fitted at 263–275°
-for 2022 and 2023). `src/jezero-crater/deshade.py` divides the shading that the
-elevation explains out of them. In the terrain shader, the picture blurred to
-about 11 m is the ground's light and dark; what is finer (ripples, small dunes)
-tilts the normal toward that western Sun instead of darkening the colour. The
-haze in the terrain's fog adds the sky dome's glow toward the Sun.
+The procedural albedo and bump tile (`groundTextures` in mars.js: mottling plus
+460 stamped polygon pebbles) repeats every 7 m (`TILE`). Seen from more than a
+few metres its shapes line up into a grid-like repeating pattern, so the terrain
+shader fades it to its own average colour (its last mip) between 3 and 14 m, and
+the bump to a fifth. The broad light and dark that used to come from sampling the
+same tile at larger scales now comes from non-repeating fbm (48 m and 210 m).
+The HiRISE picture keeps its own shading: the big real shadows stay.
 
 ## Obvious next steps
 

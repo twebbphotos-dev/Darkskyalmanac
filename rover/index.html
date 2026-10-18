@@ -9,6 +9,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script>/* touch screens, tablets included: a tablet is wide, and on iPad Safari may even call itself a Mac */if(matchMedia('(any-pointer: coarse)').matches||navigator.maxTouchPoints>0)document.documentElement.classList.add('touch')</script>
 <style>
   :root{
     --bg:#141319; --panel:rgba(13,10,24,.9); --line:rgba(203,168,90,.3);
@@ -226,7 +227,8 @@
     .c-tl,.c-bl{left:20px}.c-tr,.c-br{right:20px}
     #camlabel{left:58px;top:62px}
   }
-  @media(min-width:721px){ #pad{display:none} }
+  html:not(.touch) #pad{display:none}      /* the thumbstick goes wherever there is a touch screen, phone or tablet */
+  html.touch #hint{display:none}
 
   /* ── level 1: the landing ────────────────────────── */
   .two{display:flex;gap:9px;flex-wrap:wrap}
@@ -241,7 +243,7 @@
     background:rgba(203,168,90,.06);border:1px solid rgba(203,168,90,.18);font-size:11px;line-height:1.4}
   .spec span{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);padding-top:2px}
   .spec b{color:var(--hi);font-weight:500;font-variant-numeric:tabular-nums}
-  @media (pointer:coarse){ .keys.kb,.kbi{display:none} .keys.tc{display:grid} .tci{display:inline} }
+  html.touch .keys.kb,html.touch .kbi{display:none} html.touch .keys.tc{display:grid} html.touch .tci{display:inline}
   .maps{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:0 0 16px}
   .maps figure{margin:0;min-width:0}
   .maps canvas,.maps img{display:block;width:100%;aspect-ratio:1;object-fit:cover;border-radius:8px;border:1px solid var(--line);background:#0c0913}
@@ -375,9 +377,9 @@
   #edl-fade{position:absolute;inset:0;background:#000;opacity:0;pointer-events:none}
   body[data-edl=intro] #edl-steps,body[data-edl=intro] #edl-tele,body[data-edl=intro] #edl-guide,
   body[data-edl=intro] #edl-prompt,body[data-edl=intro] #edl-call,body[data-edl=intro] #edl-pad{display:none !important}
+  html.touch #edl-pad{display:flex}
   @media(max-width:720px){
     #edl-att{height:34px}
-    #edl-pad{display:flex}
     #edl-steps i:not(.on){display:none}
     #edl-tele{max-width:70vw} #edl-tele .stat{min-width:66px;padding:5px 6px} #edl-tele .stat b{font-size:11px}
     #edl-guide{width:196px;padding:8px 9px} #edl-scope,#edl-key{display:none !important} #edl-tip{font-size:10.5px}

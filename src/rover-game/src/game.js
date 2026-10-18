@@ -19,7 +19,7 @@ import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
 import { createEDL, difficulty, setDifficulty } from './edl.js';
 import { createStick, buzz } from './stick.js';
-import { DETAIL, DETAIL_NAME, detailChoice, setDetail } from './detail.js';
+import { DETAIL, DETAIL_NAME, detailChoice, setDetail, TOUCHY } from './detail.js';
 
 /* ── tunables ─────────────────────────────────────────────────── */
 const CFG = {
@@ -629,7 +629,7 @@ addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 addEventListener('blur', () => { for (const k in keys) keys[k] = false; });
 
 /* phones and tablets: no keyboard, so no key names anywhere in the text */
-const TOUCH = matchMedia('(pointer: coarse)').matches;
+const TOUCH = TOUCHY;
 const kb = (k, pre = ' ') => TOUCH ? '' : `${pre}(${k})`;
 
 /* Drag on the scene to swing the camera round the rover (mouse or finger); the wheel zooms.

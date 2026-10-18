@@ -715,7 +715,7 @@ export function createEDL(ctx) {
 
   /* ── stage control ──────────────────────────────────────────── */
   const ORDER = ['entry', 'chute', 'descent', 'powered', 'crane', 'down'];
-  const TOUCH = matchMedia('(pointer: coarse)').matches;
+  const TOUCH = document.documentElement.classList.contains('touch');
   const PROMPT = TOUCH ? {
     intro: '',
     entry: '<b>Stick ◀ ▶</b> bank toward the ◇ · <b>▲ ▼</b> hold trim.',

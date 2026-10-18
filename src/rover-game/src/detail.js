@@ -11,7 +11,7 @@ const TIERS = {
   high:   { pr: 2.0, aa: true,  shadow: 2048, shadowR: 1.0, grid: 1.0,  rocks: 1.0,  reach: [900, 210, 110], scanMid: true, devils: 2 },
   ultra:  { pr: 2.0, aa: true,  shadow: 4096, shadowR: 1.35, grid: 0.82, rocks: 1.35, reach: [1400, 300, 150], scanMid: true, devils: 3 },
 };
-const TOUCHY = typeof matchMedia !== 'undefined' && matchMedia('(pointer: coarse)').matches;
+export const TOUCHY = typeof document !== 'undefined' && document.documentElement.classList.contains('touch');      // set by the page: any touch screen, phone or tablet
 export function detailChoice() { try { return localStorage.getItem('jt-detail') || 'auto'; } catch (e) { return 'auto'; } }
 export function setDetail(v) { try { localStorage.setItem('jt-detail', v); } catch (e) { /* not remembered */ } }
 const choice = detailChoice();

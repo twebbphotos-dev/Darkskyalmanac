@@ -3,6 +3,18 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.37 / zion-sky-v406 — 2026-10-18
+- Mars rover sim: the small repeating "Tetris" pattern on the ground is gone.
+  It was the game's painted ground tile (mottling plus stamped polygon pebbles),
+  which repeats every 7 m, and was also sampled at larger scales for broad
+  light and dark. It now fades to its average colour beyond a few metres, and
+  the broad variation comes from non-repeating noise. The v4.35 de-shading was
+  the wrong layer: the HiRISE pictures and their real shadows are restored.
+- Rover sims on tablets: the thumbstick was hidden on any screen wider than
+  720 px, which assumed wide meant a computer. Touch is now detected directly
+  (iPad Safari included, which can report itself as a Mac), so tablets get the
+  stick, touch prompts and Medium detail on Auto.
+
 ## v4.36 / zion-sky-v405 — 2026-10-18
 - Forecast: the cloud section is one plain row again, "Cloud Cover", like Sun &
   Moon and the rest. The hourly chart and its best-window line sit inside, with

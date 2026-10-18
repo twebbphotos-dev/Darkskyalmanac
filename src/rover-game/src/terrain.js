@@ -544,7 +544,7 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
         float l = dot( c, vec3( 0.3, 0.55, 0.15 ) );
         return mix( vec3( l ), c, 0.3 );               // mostly brightness: the scan's grain, not its Earth colour
       }
-      float sDet; vec2 sUv; float hiFine = 0.0;
+      float sDet; vec2 sUv;
       ${GRADE_GLSL}
       vec2 hash2( vec2 p ) { return fract( sin( vec2( dot( p, vec2( 127.1, 311.7 ) ), dot( p, vec2( 269.5, 183.3 ) ) ) ) * 43758.5453 ); }
       float vnoise( vec2 p ) {
@@ -569,10 +569,14 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
       // the tiling, then eased toward clean sand where the sand sheets are
       .replace('#include <map_fragment>', `
       #ifdef USE_MAP
+        // The painted tile (mottling and stamped pebbles) repeats every ${TILE} m, so beyond a few metres
+        // its shapes line up into an obvious repeating pattern. It gives way to its own average colour
+        // with distance; the scanned grain below carries the detail from there.
+        float tileNear = 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) );
         vec4 sampledDiffuseColor = texture2D( map, vMapUv );
-        float macroL = dot( texture2D( map, vMapUv * 0.137 + 0.31 ).rgb, vec3( 0.3, 0.5, 0.2 ) );
-        float macroM = dot( texture2D( map, vMapUv * 0.031 + 0.67 ).rgb, vec3( 0.3, 0.5, 0.2 ) );
-        sampledDiffuseColor.rgb *= clamp( mix( 1.0, macroL / 0.085, 0.32 ) * mix( 1.0, macroM / 0.085, 0.22 ), 0.62, 1.5 );
+        sampledDiffuseColor.rgb = mix( textureLod( map, vMapUv, 10.0 ).rgb * 0.95, sampledDiffuseColor.rgb, 0.12 + 0.88 * tileNear );
+        // broad light and dark over tens and hundreds of metres, from noise that never repeats
+        sampledDiffuseColor.rgb *= clamp( ( 1.0 + fbm( vWPos.xz / 48.0 + 3.1 ) * 0.34 ) * ( 1.0 + fbm( vWPos.xz / 210.0 - 7.3 ) * 0.26 ), 0.62, 1.5 );
         sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vec3( 0.212, 0.099, 0.054 ), vSand * 0.82 );
 
         // bedrock pavement: pale flat plates a metre or so across, sand in the joints
@@ -632,18 +636,11 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
         }
         ${SITE ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
           vec2 r = vWPos.xz * ${SQ.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
-          vec2 t1 = vec2( u1.x, 1.0 - u1.y ), t4 = vec2( u4.x, 1.0 - u4.y );
-          vec3 Y = vec3( 0.3, 0.55, 0.15 );
-          float m1 = max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, Y ) ), m4 = max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, Y ) );
+          float l1 = dot( texture2D( tHi, vec2( u1.x, 1.0 - u1.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float l4 = dot( texture2D( tHiA, vec2( u4.x, 1.0 - u4.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
-          float hl = mix( mix( 1.0, dot( texture2D( tHiA, t4 ).rgb, Y ) / m4, in4 ), dot( texture2D( tHi, t1 ).rgb, Y ) / m1, in1 );
-          // the same picture blurred to about 11 m: the ground's own light and dark (dark sand, pale rock)
-          float hb = mix( mix( 1.0, dot( textureLod( tHiA, t4, 1.5 ).rgb, Y ) / m4, in4 ), dot( textureLod( tHi, t1, 3.5 ).rgb, Y ) / m1, in1 );
-          // What is left is mostly ripples and small dunes, too small for the elevation, bright on the
-          // side that faced the Sun when the picture was taken. Painted on, they read as smears; so
-          // they become relief instead (below), lit by the game's Sun, with only a trace left in the colour.
-          hiFine = clamp( hl / max( 0.05, hb ) - 1.0, -0.5, 0.5 );
-          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hb - 1.0 ) * 1.5, 0.3, 2.0 ) * ( 1.0 + hiFine * 0.3 );
+          float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
+          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
         }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)
@@ -662,7 +659,7 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
       // fine wind ripples run square to the wind — about 40 cm crest to crest
       .replace('#include <normal_fragment_maps>', `
       #ifdef USE_BUMPMAP
-        normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd() * ( 1.0 - vSand * 0.85 ) * ( 1.0 - vCrack * 0.6 ), faceDirection );
+        normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd() * ( 0.2 + 0.8 * ( 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) ) ) ) * ( 1.0 - vSand * 0.85 ) * ( 1.0 - vCrack * 0.6 ), faceDirection );
       #endif
       // scanned normals: the real relief of grit, pebbles and cracks
       if ( sDet > 0.01 ) {
@@ -674,11 +671,6 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
         wn = normalize( wn + vec3( tn.x, 0.0, -tn.y ) * 0.9 * sDet );       // ground lies flat: tangent x = east, y = north
         normal = normalize( ( viewMatrix * vec4( wn, 0.0 ) ).xyz );
       }
-      ${SITE ? `{      // the picture's ripples as slopes: brighter means tilted toward its Sun, low in the west (fitted by src/jezero-crater/deshade.py)
-        vec3 wn = inverseTransformDirection( normal, viewMatrix );
-        wn.xz += vec2( -0.999, 0.035 ) * hiFine * 0.9;
-        normal = normalize( ( viewMatrix * vec4( normalize( wn ), 0.0 ) ).xyz );
-      }` : ''}
       if ( vSand > 0.02 ) {
         vec2 wind = vec2( ${WIND.x.toFixed(3)}, ${WIND.z.toFixed(3)} );
         float along = dot( vWPos.xz, vec2( -wind.y, wind.x ) );
