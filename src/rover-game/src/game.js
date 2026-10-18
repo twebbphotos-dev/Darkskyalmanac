@@ -646,7 +646,7 @@ addEventListener('pointermove', e => {
   const sp = TOUCH ? 1.4 : 1;
   if (S.phase === 'cam') {                       // aim Mastcam-Z: narrow lens, so a finer touch
     S.camYaw = Math.max(-0.9, Math.min(0.9, S.camYaw + dx * 0.0022 * sp));
-    S.camPitch = Math.max(-0.28, Math.min(0.3, S.camPitch + dy * 0.0018 * sp));
+    S.camPitch = Math.max(-0.7, Math.min(0.3, S.camPitch + dy * 0.0018 * sp));
     return;
   }
   ORB.yaw -= dx * 0.0065 * sp;
@@ -1286,13 +1286,13 @@ function openCam() {
   const eye = new THREE.Vector3(r.pos.x, r.pos.y + 2.3, r.pos.z).addScaledVector(fwdV, 0.75);
   // aim at the face turned toward the rover, not the middle of the rock
   const toR = r.pos.clone().sub(t.focus).setY(0).normalize();
-  const face = t.focus.clone().addScaledVector(toR, Math.min(t.wid || 2, r.pos.distanceTo(t.focus) - 4) * 0.8);
+  const face = t.focus.clone().addScaledVector(toR, Math.max(0, Math.min(t.wid || 2, r.pos.distanceTo(t.focus) - 4)) * 0.8);
   face.y = height(face.x, face.z) + (t.top || 1) * 0.45;
   const d = face.sub(eye);
   let dy = Math.atan2(-d.x, -d.z) - r.yaw;
   dy = Math.atan2(Math.sin(dy), Math.cos(dy));           // wrap to [-pi, pi]
   S.camYaw = Math.max(-0.9, Math.min(0.9, dy));
-  S.camPitch = Math.max(-0.28, Math.min(0.3, Math.asin(d.y / d.length())));
+  S.camPitch = Math.max(-0.7, Math.min(0.3, Math.asin(d.y / d.length())));
   /* The hero sequence, in beats:
        1 the mast swings up off the deck      (first time only)
        2 the head turns to face the outcrop   — camera over the mast's shoulder
@@ -1592,7 +1592,8 @@ function updateFraming() {
     if (dist > (o.range || CFG.camRange) + 8) continue;
     toT.subVectors(o.focus, camera.position).normalize();
     const a = Math.acos(Math.min(1, camFwd.dot(toT))) * 180 / Math.PI;
-    if (a < CFG.framedDeg && a < bestA) { best = o; bestA = a; }
+    const tol = Math.max(CFG.framedDeg, Math.atan2(o.wid || 1, Math.max(1, dist)) * 57.3 * 0.9);      // a rock up close fills the frame: anywhere on it counts
+    if (a < tol && a < bestA) { best = o; bestA = a; }
   }
   if (best !== S.framed) { S.framed = best; hud(); }
   S.framed = best;
@@ -1692,7 +1693,7 @@ function stepCamera(dt) {
     MAST.panWant = S.camYaw;
     // look down the mast: narrow field, pan and tilt with the drive keys
     if (S.phase === 'cam') S.camYaw += axT() * 0.7 * dt;
-    S.camPitch = Math.max(-0.28, Math.min(0.3, S.camPitch + axF() * 0.5 * dt));
+    S.camPitch = Math.max(-0.7, Math.min(0.3, S.camPitch + axF() * 0.5 * dt));
     S.camYaw = Math.max(-0.9, Math.min(0.9, S.camYaw));
 
     const yaw = r.yaw + S.camYaw;
@@ -1856,6 +1857,7 @@ function hud() {
   let p = '';
   const kl = k => TOUCH ? '' : ` · ${k}`, cam = S.phase === 'cam';
   $('btn-heli').textContent = cam ? 'Back to driving' + kl('Esc') : 'Fly Ingenuity' + kl('F');
+  $('btn-heli').classList.toggle('heli-only', !cam);      // it doubles as the way out of Mastcam-Z, so it shows there even with Ingenuity grounded
   $('btn-cam').textContent = cam ? 'Capture' + kl('Space') : 'Mastcam-Z' + kl('C');
   $('btn-map').textContent = 'Map' + kl('M');
   if (S.phase === 'cam') p = TOUCH ? (S.framed ? 'Target centered — tap <b>Capture</b>' : 'Drag to aim · <b>Back to driving</b> to stow')

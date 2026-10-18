@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.25 / zion-sky-v394 — 2026-10-18
+- Fix: in the 2024–2026 levels Mastcam-Z had no way back to driving. Why:
+  "Back to driving" is the Fly Ingenuity button relabeled, and that button
+  is hidden once Ingenuity is grounded. It now shows whenever Mastcam-Z is open.
+- Fix: parked right beside a target, it couldn't be framed. Why: the camera
+  tilted down only 16°, and the pre-aim pushed past a rock closer than 4 m.
+  Now it tilts to 40°, the pre-aim stops at the rock, and a near rock counts
+  as framed anywhere it fills the view.
+
 ## v4.24 / zion-sky-v393 — 2026-10-18
 - Download everything: the 3D models and the rover game now behave like the
   rest of the app. Online, the newest copy if it arrives within a few seconds,
