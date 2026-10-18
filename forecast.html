@@ -1173,8 +1173,10 @@ function hourlyCloudPanel(date){
     const score=a+0.25*sp;
     if(!best || score<best.score) best={score, avg:a, from:w[0].h, to:w[2].h};
   }
-  let windowLine='';
+  let windowLine='', head='';
   if(best){
+    const sp2=fmtHr(best.from)+'\u2013'+fmtHr((best.to+1)%24);      // a summary for the section heading, so it reads at a glance before it is opened
+    head = best.avg<=12 ? 'Clear '+sp2 : best.avg<=35 ? 'Best '+sp2+' \u00B7 '+Math.round(best.avg)+'% cloud' : 'Cloudy \u00B7 least '+Math.round(best.avg)+'% at '+fmtHr(best.from);
     const span=fmtHr(best.from)+' \u2013 '+fmtHr((best.to+1)%24);
     if(best.avg<=12)      windowLine='Best window: <b>'+span+'</b> \u00B7 essentially clear (~'+Math.round(best.avg)+'% blocked)';
     else if(best.avg<=35) windowLine='Best window: <b>'+span+'</b> \u00B7 ~'+Math.round(best.avg)+'% of sky blocked';
@@ -1211,7 +1213,7 @@ function hourlyCloudPanel(date){
       +'<text x="2" y="'+(y(v)+3).toFixed(1)+'" fill="#7A6E55" font-size="8.5">'+v+'%</text>';
   });
   const svg='<svg viewBox="0 0 '+W+' '+H+'" width="100%" preserveAspectRatio="xMidYMid meet">'+grid+bars+labels+'</svg>';
-  return '<div class="zcl-psec collapsed"><div class="zcl-psec-label">Hourly Cloud Cover</div><div class="zcl-psec-body">'
+  return '<div class="zcl-psec collapsed"><div class="zcl-psec-label">Hourly Cloud Cover'+(head?' \u00B7 '+head:'')+'</div><div class="zcl-psec-body">'
     +'<div class="zcl-pcard">'
     +(windowLine?'<div class="zcl-hcc-window">'+windowLine+'</div>':'')
     +svg

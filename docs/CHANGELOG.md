@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.33 / zion-sky-v402 — 2026-10-18
+- Forecast: the Hourly Cloud Cover heading now says the night at a glance
+  before it is opened ("Clear 9 PM–1 AM", "Best 10 PM–1 AM · 25% cloud" or
+  "Cloudy · least 60% at 2 AM"), like the Planets heading does.
+
 ## v4.32 / zion-sky-v401 — 2026-10-18
 - Lunar Rover: finer ground round the rover (0.4 m, with craterlets and grain
   the wheels feel), a fine soil texture, bright rims on fresh craters, blocks
