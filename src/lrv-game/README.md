@@ -77,3 +77,11 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
 - Crashes: a roof impact over 3.5 m/s, or tumbling upside down above 4 m/s, hides the rover and throws eight pieces
   (wheels, panels, a seat, the dish, a battery, a fender) that arc and bounce under lunar gravity, with a burst of dust;
   3.5 s later a new rover stands where it last drove upright (sampled each second).
+
+## Time trial (v4.56)
+
+- The speed record attempt is now a timed loop of the whole third drive. A faint ring 46 m up the route from the start
+  (`OBJ`) starts the clock and shows the dotted loop; stops 6, 8 and 9 (`CPS`, within 14 m) must be passed in order,
+  the next one marked small on screen with its distance; back through the ring stops it. Best lap per speed setting
+  (`lap`, `lap2` in `lrv-records`) and the lap's top speed on the ground (`v`, `v2`). Leave the ring before it can
+  start again.

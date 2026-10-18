@@ -256,7 +256,7 @@ function place(x, z, yaw) { car.p.set(x, ground(x, z) + 0.8, z); car.v.set(0, 0,
 const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3(), _a = new THREE.Vector3(), _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _rt = new THREE.Vector3(),
       _vc = new THREE.Vector3(), _wf = new THREE.Vector3(), _ws = new THREE.Vector3(), _tmp = new THREE.Vector3(), _qi = new THREE.Quaternion(), _wb = new THREE.Vector3(), _L = new THREE.Vector3();
 const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true, spin: 0 };
-const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());      // v, v2: top speed in km/h, at real and at double speed
+const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0, lap: 0, lap2: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());      // v, v2: top speed in km/h, at real and at double speed
 let throttle = 0, steerIn = 0;
 function step(h) {
   _f.set(0, -G * MASS, 0); _t.set(0, 0, 0);
@@ -325,16 +325,16 @@ function step(h) {
   return touching;
 }
 
-/* ── the speed record course: the third drive's run home, from stop 8 past Van Serg crater (stop 9) to the lander,
-   downhill most of the way. The stops were surveyed from orbit (Haase et al. 2019, as in the 3D viewer), in metres
-   east and south of the lander, drawn at the square's quarter scale; between stops the line follows the general
-   route. It stays hidden while you roam, until you drive into the ring at stop 8. ── */
+/* ── the time trial: the whole third drive as a loop, out from the lander north to the split boulder at stop 6, east
+   to stop 8, and home past Van Serg crater (stop 9). The stops were surveyed from orbit (Haase et al. 2019, as in the
+   3D viewer), in metres east and south of the lander, drawn at the square's quarter scale; between stops the line
+   follows the general route. It stays hidden while you roam; a faint ring just up the route starts the clock. ── */
 const DRIVES = [
-  ['#7CC7F2', [[3012, -2599], [2500, -1900], [1735, -1228], [900, -600], [145, -39]]],
+  ['#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700], [805, -3003], [1294, -3036], [2200, -2950], [3012, -2599], [2500, -1900], [1735, -1228], [900, -600], [145, -39], [0, 0]]],
 ];
 const LMP = [-12, 4];      // where the lander stands here
-const COURSE = [];      // the course's dots, flattened x, z: the speed record counts only on them
-const OBJ = { x: LMP[0] + 3012 / SQ, z: LMP[1] - 2599 / SQ, ring: null, line: null };      // the start, at stop 8
+const OBJ = { x: LMP[0] + 150 / SQ, z: LMP[1] - 170 / SQ, ring: null, line: null };      // the start and finish, on the route just north of the lander
+const CPS = [['stop 6', 805, -3003], ['stop 8', 3012, -2599], ['stop 9 · Van Serg', 1735, -1228]].map(([n, x, z]) => ({ n, x: LMP[0] + x / SQ, z: LMP[1] + z / SQ }));      // to pass in order
 function routeDots() {
   const cr = (a, b, c, d, t) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
   const pos = [], col = [], cc = new THREE.Color();
@@ -346,7 +346,7 @@ function routeDots() {
       for (let k = 0; k < n; k++) { const t = k / n, x = cr(P(i - 1)[0], P(i)[0], P(i + 1)[0], P(i + 2)[0], t), z = cr(P(i - 1)[1], P(i)[1], P(i + 1)[1], P(i + 2)[1], t);
         if ((carry += L / n) < 3) continue; carry = 0;      // a dot every 3 m
         if (!inSq(x, z, 14)) continue;
-        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); if (hex === '#7CC7F2') COURSE.push(x, z); }
+        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); }
     }
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
@@ -355,7 +355,7 @@ function routeDots() {
     vertexShader: 'attribute vec3 color; varying vec3 vC; uniform float px, vh; void main() { vC = color; vec4 mv = modelViewMatrix * vec4( position, 1.0 ); gl_Position = projectionMatrix * mv; gl_PointSize = max( 3.0 * px, 0.5 * projectionMatrix[1][1] * 0.5 * vh / -mv.z ); }',
     fragmentShader: 'uniform sampler2D map; varying vec3 vC; void main() { float a = texture2D( map, gl_PointCoord ).a; if ( a < 0.02 ) discard; gl_FragColor = vec4( vC, a * 0.9 ); }' });
   const m = new THREE.Points(g, mat), _vs = new THREE.Vector2(); m.frustumCulled = false; m.renderOrder = 2; m.visible = false; scene.add(m); OBJ.line = m;
-  const ring = new THREE.Mesh(new THREE.RingGeometry(5.4, 6, 64), new THREE.MeshBasicMaterial({ color: 0x7CC7F2, transparent: true, opacity: 0.85, side: THREE.DoubleSide, depthWrite: false }));
+  const ring = new THREE.Mesh(new THREE.RingGeometry(3.6, 3.85, 48), new THREE.MeshBasicMaterial({ color: 0x7CC7F2, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }));      // faint: a gate, not a beacon
   ring.rotation.x = -Math.PI / 2; ring.position.set(OBJ.x, groundBase(OBJ.x, OBJ.z) + 0.25, OBJ.z); scene.add(ring); OBJ.ring = ring;
   m.onBeforeRender = r => { mat.uniforms.px.value = r.getPixelRatio(); mat.uniforms.vh.value = r.getDrawingBufferSize(_vs).y; };
 }
@@ -481,34 +481,49 @@ function landed(a) {
 function showRecords() {
   $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—';
   const top = FAST ? REC.v2 : REC.v; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
-  $('rec').textContent = REC.t ? `Records: ${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : '';
+  const lap = FAST ? REC.lap2 : REC.lap;
+  $('rec').textContent = [lap ? `Best loop ${Math.floor(lap / 60)}:${(lap % 60).toFixed(1).padStart(4, '0')}` : '', REC.t ? `${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : ''].filter(Boolean).join(' · ');
 }
-/* Top speed, on the ground and on the course only (the blue dots, shown once you reach stop 8): Cernan's 18 km/h was
-   driven, not flown. A new best is announced once the run is over. */
-const RUN = { peak: 0, on: false, active: false };
-function onCourse(x, z) { for (let i = 0; i < COURSE.length; i += 2) { const dx = COURSE[i] - x, dz = COURSE[i + 1] - z; if (dx * dx + dz * dz < 64) return true; } return false; }      // within 8 m of the blue line
-function speedRecord(kmh, grounded) {
-  if (!RUN.active) {      // roaming: an objective ring at stop 8, with its distance on screen
-    const dx = OBJ.x - car.p.x, dz = OBJ.z - car.p.z, d = Math.hypot(dx, dz);
-    if (d < 7) { RUN.active = true; OBJ.ring.visible = false; OBJ.line.visible = true; $('objmark').style.display = 'none';
-      toast('Speed record attempt · race the blue line home past Van Serg'); return; }
-    _tp.set(OBJ.x, groundBase(OBJ.x, OBJ.z) + 2, OBJ.z).project(camera);
-    const el = $('objmark'), x = (_tp.x * 0.5 + 0.5) * innerWidth, y = (-_tp.y * 0.5 + 0.5) * innerHeight;
-    if (_tp.z < 1) { el.style.display = 'block'; el.style.transform = `translate(${Math.max(20, Math.min(innerWidth - 170, x))}px,${Math.max(80, Math.min(innerHeight - 60, y))}px)`; el.querySelector('b').textContent = `Speed record · ${Math.round(d)} m`; }
-    else el.style.display = 'none';
+/* The time trial. Through the faint ring the clock starts and the loop appears; stops 6, 8 and 9 must be passed in that
+   order (the next one is marked on screen with its distance), and back through the ring the clock stops. Best lap per
+   speed setting; the top speed on the ground during a lap is kept too (Cernan's 18 km/h was driven, not flown). */
+const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false };
+const fmtT = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
+function mark(x, z, label) {      // the small on-screen marker for the gate or the next checkpoint
+  _tp.set(x, groundBase(x, z) + 2, z).project(camera);
+  const el = $('objmark'), px = (_tp.x * 0.5 + 0.5) * innerWidth, py = (-_tp.y * 0.5 + 0.5) * innerHeight;
+  if (_tp.z < 1) { el.style.display = 'block'; el.style.transform = `translate(${Math.max(20, Math.min(innerWidth - 170, px))}px,${Math.max(80, Math.min(innerHeight - 60, py))}px)`; el.querySelector('b').textContent = label; }
+  else el.style.display = 'none';
+}
+function speedRecord(kmh, grounded, dt) {
+  const dG = Math.hypot(OBJ.x - car.p.x, OBJ.z - car.p.z);
+  if (!RUN.on) {
+    if (dG < 4.5 && !RUN.away) { RUN.on = true; RUN.t = 0; RUN.cp = 0; RUN.peak = 0; RUN.away = true; OBJ.line.visible = true;
+      toast("Clock running · stops 6, 8 and 9, then back here"); }
+    if (dG > 8) RUN.away = false;      // after a lap, drive out of the ring before it can start again
+    mark(OBJ.x, OBJ.z, dG > 25 ? `Time trial · ${Math.round(dG)} m` : 'Time trial'); $('clock').textContent = '';
     return;
   }
-  const on = onCourse(car.p.x, car.p.z);
-  if (on !== RUN.on) { RUN.on = on; toast(on ? 'On the course · top speed counts' : 'Off the course · back on the blue line to count'); }
-  if (grounded && on && kmh > RUN.peak) RUN.peak = kmh;
-  const key = FAST ? 'v2' : 'v';
-  if (RUN.peak > REC[key] + 0.05 && kmh < RUN.peak * 0.7) {
-    const old = REC[key]; REC[key] = RUN.peak;
-    toast(`Top speed ${RUN.peak.toFixed(1)} km/h` + (!FAST && RUN.peak > 18 && old <= 18 ? ' · faster than Cernan’s 18 km/h' : ' · new record'));
-    try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
-    showRecords();
+  RUN.t += dt;
+  if (grounded && kmh > RUN.peak) RUN.peak = kmh;
+  const next = CPS[RUN.cp];
+  if (next) {
+    const d = Math.hypot(next.x - car.p.x, next.z - car.p.z);
+    if (d < 14) { RUN.cp++; toast(`${next.n[0].toUpperCase() + next.n.slice(1)} · ${fmtT(RUN.t)}`); }
+    mark(next.x, next.z, `${next.n} · ${Math.round(d)} m`);
+  } else {
+    mark(OBJ.x, OBJ.z, `Finish · ${Math.round(dG)} m`);
+    if (dG < 4.5) {
+      RUN.on = false; RUN.away = true; OBJ.line.visible = false;
+      const lk = FAST ? 'lap2' : 'lap', vk = FAST ? 'v2' : 'v', best = !REC[lk] || RUN.t < REC[lk];
+      if (best) REC[lk] = RUN.t;
+      const vb = RUN.peak > REC[vk] + 0.05; if (vb) REC[vk] = RUN.peak;
+      toast(`Loop ${fmtT(RUN.t)}${best ? ' · best lap' : ''} · top speed ${RUN.peak.toFixed(1)} km/h${!FAST && RUN.peak > 18 ? ' · faster than Cernan’s 18' : ''}`);
+      try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
+      showRecords();
+    }
   }
-  if (kmh < RUN.peak * 0.7) RUN.peak = 0;
+  $('clock').textContent = fmtT(RUN.t);
 }
 /* A catastrophic crash, rolling onto the roof hard or tumbling at speed: the rover breaks apart, pieces fly in clean
    lunar arcs and bounce, and after a few seconds it is back on its wheels where it last drove safely. */
@@ -593,7 +608,7 @@ function frame(now) {
   }
   if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);      // test hook
   sun.position.copy(car.p).addScaledVector(SUN, 120); sun.target.position.copy(car.p);
-  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0);
+  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
   renderer.render(scene, camera);
@@ -616,4 +631,4 @@ function frame(now) {
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { CRASH, OBJ, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { CRASH, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };

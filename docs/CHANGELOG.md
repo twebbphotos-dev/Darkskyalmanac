@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.56 / zion-sky-v425 — 2026-10-18
+- Lunar Rover sim: the speed record attempt is a time trial round the whole
+  third drive. A faint ring just north of the lander starts a clock; pass
+  stops 6, 8 and 9 in order (the next one is marked small on screen) and
+  come back through the ring. Best loop and top speed are kept.
+
 ## v4.55 / zion-sky-v424 — 2026-10-18
 - Lunar Rover sim:
   - Free roam from the start. A ring at stop 8, with its distance on
