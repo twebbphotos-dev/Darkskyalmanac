@@ -333,6 +333,7 @@ const DRIVES = [
   ['#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700], [805, -3003], [1294, -3036], [2200, -2950], [3012, -2599], [2500, -1900], [1735, -1228], [900, -600], [145, -39], [0, 0]]],
 ];
 const LMP = [-12, 4];      // where the lander stands here
+const COURSE = [];      // the loop's dots, flattened x, z: stray too far from them and the attempt ends
 const OBJ = { x: LMP[0] + 150 / SQ, z: LMP[1] - 170 / SQ, ring: null, line: null };      // the start and finish, on the route just north of the lander
 const CPS = [['stop 6', 805, -3003], ['stop 8', 3012, -2599], ['stop 9 · Van Serg', 1735, -1228]].map(([n, x, z]) => ({ n, x: LMP[0] + x / SQ, z: LMP[1] + z / SQ }));      // to pass in order
 function routeDots() {
@@ -346,14 +347,14 @@ function routeDots() {
       for (let k = 0; k < n; k++) { const t = k / n, x = cr(P(i - 1)[0], P(i)[0], P(i + 1)[0], P(i + 2)[0], t), z = cr(P(i - 1)[1], P(i)[1], P(i + 1)[1], P(i + 2)[1], t);
         if ((carry += L / n) < 3) continue; carry = 0;      // a dot every 3 m
         if (!inSq(x, z, 14)) continue;
-        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); }
+        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); COURSE.push(x, z); }
     }
   }
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
-  // 0.5 m dots, never smaller than 3 pixels: at their true size they vanished a few tens of metres ahead
-  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: DOT }, px: { value: 1 }, vh: { value: 800 } },
-    vertexShader: 'attribute vec3 color; varying vec3 vC; uniform float px, vh; void main() { vC = color; vec4 mv = modelViewMatrix * vec4( position, 1.0 ); gl_Position = projectionMatrix * mv; gl_PointSize = max( 3.0 * px, 0.5 * projectionMatrix[1][1] * 0.5 * vh / -mv.z ); }',
-    fragmentShader: 'uniform sampler2D map; varying vec3 vC; void main() { float a = texture2D( map, gl_PointCoord ).a; if ( a < 0.02 ) discard; gl_FragColor = vec4( vC, a * 0.9 ); }' });
+  // small, faint dots (0.3 m, never under 2 pixels, so the line still reads ahead); op fades the line in and out
+  const mat = new THREE.ShaderMaterial({ transparent: true, depthWrite: false, uniforms: { map: { value: DOT }, px: { value: 1 }, vh: { value: 800 }, op: { value: 0 } },
+    vertexShader: 'attribute vec3 color; varying vec3 vC; uniform float px, vh; void main() { vC = color; vec4 mv = modelViewMatrix * vec4( position, 1.0 ); gl_Position = projectionMatrix * mv; gl_PointSize = max( 2.0 * px, 0.3 * projectionMatrix[1][1] * 0.5 * vh / -mv.z ); }',
+    fragmentShader: 'uniform sampler2D map; uniform float op; varying vec3 vC; void main() { float a = texture2D( map, gl_PointCoord ).a; if ( a < 0.02 ) discard; gl_FragColor = vec4( vC, a * 0.45 * op ); }' });
   const m = new THREE.Points(g, mat), _vs = new THREE.Vector2(); m.frustumCulled = false; m.renderOrder = 2; m.visible = false; scene.add(m); OBJ.line = m;
   const ring = new THREE.Mesh(new THREE.RingGeometry(3.6, 3.85, 48), new THREE.MeshBasicMaterial({ color: 0x7CC7F2, transparent: true, opacity: 0.4, side: THREE.DoubleSide, depthWrite: false }));      // faint: a gate, not a beacon
   ring.rotation.x = -Math.PI / 2; ring.position.set(OBJ.x, groundBase(OBJ.x, OBJ.z) + 0.25, OBJ.z); scene.add(ring); OBJ.ring = ring;
@@ -487,7 +488,13 @@ function showRecords() {
 /* The time trial. Through the faint ring the clock starts and the loop appears; stops 6, 8 and 9 must be passed in that
    order (the next one is marked on screen with its distance), and back through the ring the clock stops. Best lap per
    speed setting; the top speed on the ground during a lap is kept too (Cernan's 18 km/h was driven, not flown). */
-const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false };
+const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false, warned: false };
+function offLine() { let m = 1e9; for (let i = 0; i < COURSE.length; i += 2) { const dx = COURSE[i] - car.p.x, dz = COURSE[i + 1] - car.p.z, d = dx * dx + dz * dz; if (d < m) m = d; } return Math.sqrt(m); }
+function lineFade(dt) {      // the line eases in when the clock starts and out when the attempt ends
+  const u = OBJ.line.material.uniforms.op, want = RUN.on ? 1 : 0;
+  u.value += Math.sign(want - u.value) * Math.min(Math.abs(want - u.value), dt / 1.5);
+  OBJ.line.visible = u.value > 0.001;
+}
 const fmtT = t => `${Math.floor(t / 60)}:${(t % 60).toFixed(1).padStart(4, '0')}`;
 function mark(x, z, label) {      // the small on-screen marker for the gate or the next checkpoint
   _tp.set(x, groundBase(x, z) + 2, z).project(camera);
@@ -498,7 +505,7 @@ function mark(x, z, label) {      // the small on-screen marker for the gate or 
 function speedRecord(kmh, grounded, dt) {
   const dG = Math.hypot(OBJ.x - car.p.x, OBJ.z - car.p.z);
   if (!RUN.on) {
-    if (dG < 4.5 && !RUN.away) { RUN.on = true; RUN.t = 0; RUN.cp = 0; RUN.peak = 0; RUN.away = true; OBJ.line.visible = true;
+    if (dG < 4.5 && !RUN.away) { RUN.on = true; RUN.t = 0; RUN.cp = 0; RUN.peak = 0; RUN.away = true; RUN.warned = false;
       toast("Clock running · stops 6, 8 and 9, then back here"); }
     if (dG > 8) RUN.away = false;      // after a lap, drive out of the ring before it can start again
     mark(OBJ.x, OBJ.z, dG > 25 ? `Time trial · ${Math.round(dG)} m` : 'Time trial'); $('clock').textContent = '';
@@ -506,6 +513,9 @@ function speedRecord(kmh, grounded, dt) {
   }
   RUN.t += dt;
   if (grounded && kmh > RUN.peak) RUN.peak = kmh;
+  const off = offLine();      // stray too far from the line and the attempt is over: the clock goes, the line fades away
+  if (off > 35) { RUN.on = false; RUN.away = false; $('clock').textContent = ''; toast('Too far from the route · time trial over'); return; }
+  if (off > 20 && !RUN.warned) { RUN.warned = true; toast('Back to the line, or the time trial ends'); } else if (off < 12) RUN.warned = false;
   const next = CPS[RUN.cp];
   if (next) {
     const d = Math.hypot(next.x - car.p.x, next.z - car.p.z);
@@ -514,7 +524,7 @@ function speedRecord(kmh, grounded, dt) {
   } else {
     mark(OBJ.x, OBJ.z, `Finish · ${Math.round(dG)} m`);
     if (dG < 4.5) {
-      RUN.on = false; RUN.away = true; OBJ.line.visible = false;
+      RUN.on = false; RUN.away = true;
       const lk = FAST ? 'lap2' : 'lap', vk = FAST ? 'v2' : 'v', best = !REC[lk] || RUN.t < REC[lk];
       if (best) REC[lk] = RUN.t;
       const vb = RUN.peak > REC[vk] + 0.05; if (vb) REC[vk] = RUN.peak;
@@ -608,7 +618,7 @@ function frame(now) {
   }
   if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);      // test hook
   sun.position.copy(car.p).addScaledVector(SUN, 120); sun.target.position.copy(car.p);
-  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt);
+  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
   renderer.render(scene, camera);

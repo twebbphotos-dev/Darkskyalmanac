@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.57 / zion-sky-v426 — 2026-10-18
+- Lunar Rover time trial: stray too far from the route (a warning at 20 m,
+  over at 35 m) and the clock disappears and the line fades away. The
+  route line is much fainter.
+
 ## v4.56 / zion-sky-v425 — 2026-10-18
 - Lunar Rover sim: the speed record attempt is a time trial round the whole
   third drive. A faint ring just north of the lander starts a clock; pass

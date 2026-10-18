@@ -85,3 +85,6 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
   the next one marked small on screen with its distance; back through the ring stops it. Best lap per speed setting
   (`lap`, `lap2` in `lrv-records`) and the lap's top speed on the ground (`v`, `v2`). Leave the ring before it can
   start again.
+- Straying (v4.57): more than 20 m from the line warns, more than 35 m ends the attempt; the clock clears and the
+  line fades out over 1.5 s (it fades in the same way when the clock starts). The line is faint: 0.3 m dots at 45%
+  opacity, never under 2 px.
