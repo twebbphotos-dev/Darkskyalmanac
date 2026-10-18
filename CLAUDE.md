@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v4.46, service-worker cache `zion-sky-v415`.**
-Next release: v4.47, cache `zion-sky-v416`.
+**Current release: v4.47, service-worker cache `zion-sky-v416`.**
+Next release: v4.48, cache `zion-sky-v417`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
