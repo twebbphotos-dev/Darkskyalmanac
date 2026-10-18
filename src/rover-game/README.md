@@ -600,6 +600,21 @@ the sine and cosine of your bank angle, scaled by how much air there is to push 
 `__game.edl.debug.sim(n)` steps the level without rendering, which is how it was tested:
 a scripted pilot flies it start to finish in the headless run.
 
+## Detail levels
+
+`src/detail.js` holds four tiers (low, medium, high, ultra), chosen in the
+Settings sheet and kept in `localStorage['jt-detail']`. Auto means Medium on a
+touch screen and Ultra otherwise. Each tier sets the pixel-ratio cap,
+antialiasing, shadow map size and radius, terrain grid spacing (`grid`
+multiplies FINE and MID), the rock-count multiplier, the draw distance per rock
+size (`reach`) and whether mid-size rocks use the photo scans (`scanMid`). The
+Lunar Rover reads the same setting; it does not scale its rocks, since they
+are part of the physics.
+
+All rock tiers are tiled (pebbles 45 m, the rest 90 m). `rockReach(x, z)` in
+terrain.js hides tiles beyond their reach; game.js calls it every tenth frame
+with the camera position. Changing a setting reloads the level.
+
 ## Obvious next steps
 
 - The differential bar and its links on the deck stay still; they are small, but they

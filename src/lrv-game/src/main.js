@@ -10,6 +10,7 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { createStick, buzz } from '../../rover-game/src/stick.js';
+import { DETAIL } from '../../rover-game/src/detail.js';      // the Mars simulator's detail setting, shared
 
 const $ = id => document.getElementById(id);
 const G = 1.62;                       // lunar surface gravity, m/s²
@@ -114,8 +115,8 @@ const _n = new THREE.Vector3();
 function normalAt(x, z) { const e = 0.35; return _n.set(ground(x - e, z) - ground(x + e, z), 2 * e, ground(x, z - e) - ground(x, z + e)).normalize(); }
 
 /* ── scene ───────────────────────────────────────────────────── */
-const renderer = new THREE.WebGLRenderer({ canvas: $('scene'), antialias: true });
-renderer.setPixelRatio(Math.min(2, devicePixelRatio));
+const renderer = new THREE.WebGLRenderer({ canvas: $('scene'), antialias: DETAIL.aa, powerPreference: 'high-performance' });
+renderer.setPixelRatio(Math.min(DETAIL.pr, devicePixelRatio));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.25;
 renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
@@ -127,7 +128,7 @@ addEventListener('resize', resize); resize();
 // a low morning Sun in the east, as on every Apollo landing; nothing but the ground itself to fill the shadows
 const SUN = new THREE.Vector3(Math.sin(95 * Math.PI / 180) * Math.cos(16 * Math.PI / 180), Math.sin(16 * Math.PI / 180), -Math.cos(95 * Math.PI / 180) * Math.cos(16 * Math.PI / 180)).normalize();
 const sun = new THREE.DirectionalLight(0xfffaf2, 3.4); sun.castShadow = true;
-sun.shadow.mapSize.set(2048, 2048); Object.assign(sun.shadow.camera, { left: -30, right: 30, top: 30, bottom: -30, near: 1, far: 200 }); sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
+sun.shadow.mapSize.set(DETAIL.shadow, DETAIL.shadow); { const r = 30 * DETAIL.shadowR; Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 1, far: 200 }); } sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
 scene.add(new THREE.HemisphereLight(0x000000, 0x6e6a64, 0.55));
 
@@ -170,7 +171,7 @@ function groundMesh() {
   const m = new THREE.Mesh(g, coarse); m.receiveShadow = true; scene.add(m);
 }
 // the fine patch: 96 m square at 0.4 m, rebuilt round the rover as it drives
-const PS = 0.4, PN = Math.round(2 * PATCH.half / PS) + 1;
+const PS = 0.4 * DETAIL.grid, PN = Math.round(2 * PATCH.half / PS) + 1;
 const patchGeo = new THREE.PlaneGeometry(2 * PATCH.half, 2 * PATCH.half, PN - 1, PN - 1); patchGeo.rotateX(-Math.PI / 2);
 patchGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(PN * PN * 3), 3));
 const patchMesh = new THREE.Mesh(patchGeo, soil); patchMesh.receiveShadow = true; patchMesh.frustumCulled = false;

@@ -8,6 +8,7 @@
    ────────────────────────────────────────────────────────────── */
 import * as THREE from 'three';
 import { rng, MARS, GRADE_GLSL, gradeColor } from './mars.js';
+import { DETAIL } from './detail.js';
 
 /* Year levels (?level=1, 2, ...): the real ground round one stretch of Perseverance's route, from the same HiRISE
    elevation and pictures as the Dark Sky Almanac's Perseverance map (src/jezero-crater/site.py; paths from
@@ -97,8 +98,8 @@ export const MESAS = SITE ? [] : [
   { x:  215, z:  170, R: 19, H: 14, ramp: -2.4 },
 ];
 
-const FINE = SITE ? SITE.fine : 1.6;                         // grid spacing where you can drive...
-const FINE_IN = 330, MID = SITE ? SITE.mid : 2.4;             // ...out to here, then a little coarser to the roaming edge
+const FINE = (SITE ? SITE.fine : 1.6) * DETAIL.grid;                         // grid spacing where you can drive...
+const FINE_IN = 330, MID = (SITE ? SITE.mid : 2.4) * DETAIL.grid;             // ...out to here, then a little coarser to the roaming edge
 const FINE_HALF = PLAY_R + 48;                  // ...out to here (just past the roaming edge), then the grid stretches
 const WIND = { x: 0.82, z: 0.57 };         // prevailing wind, sets the ripple grain
 const RIPPLE_L = 6.4;                      // large-ripple wavelength, metres
@@ -808,6 +809,10 @@ export function prepScan(mesh) {
   return { geo: g, mat };
 }
 
+const ROCK_TILES = [];
+export function rockReach(cx, cz) {      // hide rock tiles beyond the distance their rocks can be seen
+  for (const T of ROCK_TILES) { const dx = T.x - cx, dz = T.z - cz; T.m.visible = dx * dx + dz * dz < T.r * T.r; }
+}
 export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost = null, trail = null }) {      // boost(x, z): more or fewer blocks here
   const rand = rng(seed);
   const mat = rockMaterial();
@@ -820,7 +825,7 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
     [0, 1, 2, 3].map(i => ({ geo: boulderGeo(seed + 4000 + i * 311, 1), mat })),
     [0, 1, 2].map(i => ({ geo: boulderGeo(seed + 7000 + i * 173, 0), mat })),
   ];
-  const tiersM = [scans && scans.big.length ? scans.big : proc[0], scans && scans.mid.length ? scans.mid : proc[1], proc[2]];
+  const tiersM = [scans && scans.big.length ? scans.big : proc[0], scans && scans.mid.length && DETAIL.scanMid ? scans.mid : proc[1], proc[2]];      // on phones the mid-size rocks are simpler shapes: there are thousands of them
   const tiers = tiersM.map(t => t.map(e => e.geo));
   const lists = tiers.map(t => t.map(() => []));
 
@@ -851,21 +856,21 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
   };
 
   // boulders and blocks: power-law sizes, a handful genuinely large
-  for (let i = 0, g = 0; i < (boost ? 3600 : 2600) && g < 200000; g++) {      // counts scaled with the roaming area in 3.5
+  for (let i = 0, g = 0; i < (boost ? 3600 : 2600) * DETAIL.rocks && g < 200000; g++) {      // counts scaled with the roaming area in 3.5
     const a = rand() * Math.PI * 2, r = 9 + Math.sqrt(rand()) * (PLAY_R + 40);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (rand() > density(x, z) * (boost ? boost(x, z) : 1)) continue;
     place(x, z, Math.min(2.6, 0.36 * Math.pow(0.02 + rand() * 0.98, -0.55)), true); i++;
   }
   // cobbles: the ones the suspension has to walk over
-  for (let i = 0, g = 0; i < 21000 && g < 380000; g++) {
+  for (let i = 0, g = 0; i < 21000 * DETAIL.rocks && g < 380000; g++) {
     const a = rand() * Math.PI * 2, r = 4 + Math.sqrt(rand()) * (PLAY_R + 14);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     if (rand() > density(x, z)) continue;
     place(x, z, Math.min(0.34, 0.065 * Math.pow(0.035 + rand() * 0.965, -0.5)), false); i++;
   }
   // along a year level's route: pebbles and small cobbles, so the easy line looks like the ground round it
-  if (trail && trail.length) for (let i = 0; i < 9000; i++) {
+  if (trail && trail.length) for (let i = 0; i < 9000 * DETAIL.rocks; i++) {
     const [px, pz] = trail[(rand() * trail.length) | 0], a = rand() * Math.PI * 2, r = Math.sqrt(-2 * Math.log(1 - rand() * 0.999)) * 4.5;
     const x = px + Math.cos(a) * r, z = pz + Math.sin(a) * r;
     if (rand() > 0.35 + 0.65 * density(x, z)) continue;
@@ -873,7 +878,7 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
   }
   // rock gardens: patches strewn with blocks a wheel can just climb, 15–50 cm, the ground
   // the rover's drivers spent most of their time picking a way across
-  for (let i = 0, g = 0; i < 10000 && g < 290000; g++) {
+  for (let i = 0, g = 0; i < 10000 * DETAIL.rocks && g < 290000; g++) {
     const a = rand() * Math.PI * 2, r = 6 + Math.sqrt(rand()) * (PLAY_R - 4);
     const x = Math.cos(a) * r, z = Math.sin(a) * r;
     const field = smooth(0.05, 0.45, nRock(x / 46, z / 46) + nRough(x / 17, z / 17) * 0.25) * (1 - sandMask(x, z));
@@ -906,12 +911,12 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
   const dummy = new THREE.Object3D();
   // Rocks are batched in 90 m tiles (pebbles stay in one batch), so the camera and the shadow pass can skip
   // the tiles they cannot see instead of drawing every rock on the map every frame.
-  const TILEW = 90;
+  // Each tile is drawn only within the distance its rocks can still be made out (rockReach, every few frames).
   lists.forEach((tier, t) => tier.forEach((all, i) => {
     if (!all.length) return;
-    const groups = new Map();
-    for (const b of all) { const key = t === 2 ? 'all' : Math.floor(b.x / TILEW) + ',' + Math.floor(b.z / TILEW); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(b); }
-    for (const list of groups.values()) placeTile(t, i, list);
+    const W = t === 2 ? 45 : 90, groups = new Map();
+    for (const b of all) { const key = Math.floor(b.x / W) + ',' + Math.floor(b.z / W); if (!groups.has(key)) groups.set(key, []); groups.get(key).push(b); }
+    for (const [key, list] of groups) { const [gx, gz] = key.split(',').map(Number); ROCK_TILES.push({ m: placeTile(t, i, list), x: (gx + 0.5) * W, z: (gz + 0.5) * W, r: DETAIL.reach[t] + W * 0.72 }); }
   }));
   function placeTile(t, i, list) {
     const m = new THREE.InstancedMesh(tiers[t][i], tiersM[t][i].mat, list.length);
@@ -930,6 +935,7 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
     m.computeBoundingSphere();
     m.frustumCulled = true;
     scene.add(m);
+    return m;
   }
 
   return lists.map(t => t.reduce((a, l) => a + l.length, 0));     // rocks per tier

@@ -47,6 +47,17 @@
   .btn:hover{border-color:var(--gold);color:var(--hi)}
   .diff{display:flex;align-items:center;gap:6px;margin:16px 0 0;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66}
   .diff span{margin-right:4px}
+  #btn-set{pointer-events:auto;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--panel);color:var(--gold);font-size:17px;line-height:1;cursor:pointer;padding:0}
+  #settings{z-index:46}
+  #settings .card{max-width:440px}
+  .setrow{display:flex;align-items:center;gap:12px;margin:12px 0 0;flex-wrap:wrap}
+  .setrow>span{width:74px;font-size:9.5px;letter-spacing:.12em;text-transform:uppercase;color:#9A8A66}
+  .setrow>div{display:flex;flex-wrap:wrap;gap:6px}
+  .setrow button{font:inherit;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:#C9BD97;background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:999px;padding:6px 11px;cursor:pointer}
+  .setrow button.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#F2E4BE}
+  #set-note{margin:8px 0 0 86px}
+  .setgo{display:flex;gap:8px;margin-top:18px;flex-wrap:wrap}
+  @media(max-width:480px){ #set-note{margin-left:0} }
   .diff button{font:inherit;letter-spacing:inherit;text-transform:inherit;color:#C9BD97;background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:999px;padding:6px 12px;cursor:pointer}
   .diff button.on{background:rgba(203,168,90,.2);border-color:#CBA85A;color:#F2E4BE}
   .btn.primary{background:var(--gold);color:#0d0a18;border-color:var(--gold);padding:13px 26px;font-size:10.5px}
@@ -411,6 +422,7 @@
 
 <div id="top">
   <a id="back" href="../objects" aria-label="Back to Objects">&#8249;</a>
+  <button id="btn-set" aria-label="Settings">&#9881;</button>
   <div id="title">Perseverance Simulator<small>Mars rover · Jezero crater</small></div>
   <div class="stats">
     <div class="stat"><b id="logged">0 / 6</b><span id="total" hidden></span><span id="stat-label">Outcrops</span></div>
@@ -553,6 +565,17 @@
       <div id="real-credit"></div>
     </div>
     <button class="btn primary" id="card-ok">Log it</button>
+  </div>
+</div>
+
+<div class="sheet" id="settings">
+  <div class="card">
+    <h1>Settings</h1>
+    <div class="setrow"><span>Difficulty</span><div><button data-sd="easy">Easy</button><button data-sd="real">Realistic</button></div></div>
+    <div class="setrow"><span>Detail</span><div><button data-sq="auto">Auto</button><button data-sq="low">Low</button><button data-sq="medium">Medium</button><button data-sq="high">High</button><button data-sq="ultra">Ultra</button></div></div>
+    <p class="fine" id="set-note"></p>
+    <div class="setrow"><span>Camera</span><div><button data-sc="0">Chase</button><button data-sc="1">Wide</button><button data-sc="2">Rover</button></div></div>
+    <div class="setgo"><button class="btn primary" id="set-apply" hidden>Restart level to apply</button><button class="btn" id="set-done">Done</button></div>
   </div>
 </div>
 

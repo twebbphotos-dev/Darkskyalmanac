@@ -3,6 +3,18 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.34 / zion-sky-v403 — 2026-10-18
+- Mars and Moon rover sims: new Settings sheet (gear by the Back button) for
+  difficulty, level of detail (Auto, Low, Medium, High, Ultra) and camera.
+  Auto picks Medium on phones and Ultra on desktop. The tiers set pixel ratio,
+  antialiasing, shadow resolution, terrain mesh spacing, rock counts and draw
+  distance; Ultra adds denser rocks, sharper shadows and longer reach.
+- Why phones struggled: every rock tile was drawn wherever it was on the map,
+  about 4,500 draw calls and 12 M triangles a frame on level 3. Rock tiles are
+  now hidden beyond their tier's reach, pebbles are tiled too, and mid-size
+  rocks use light procedural shapes below High. Medium is now about 1,000 calls
+  and 2.5 M triangles.
+
 ## v4.33 / zion-sky-v402 — 2026-10-18
 - Forecast: the Hourly Cloud Cover heading now says the night at a glance
   before it is opened ("Clear 9 PM–1 AM", "Best 10 PM–1 AM · 25% cloud" or

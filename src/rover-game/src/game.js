@@ -12,12 +12,13 @@ import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { buildMars } from './mars.js';
-import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks, prepScan, findLanding, colliders,
+import { loadDTM, DTM, buildTerrain, buildHazardGrid, terrainFloor, scatterRocks, rockReach, prepScan, findLanding, colliders,
          height, groundHeight, cobbleHeight, normalAt, sandMask, paverMask, CRATERS, PLAY_R, START, OUTCROP_SITES, wheelGround, EXT, SITE } from './terrain.js';
 import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
 import { createEDL, difficulty, setDifficulty } from './edl.js';
 import { createStick, buzz } from './stick.js';
+import { DETAIL, DETAIL_NAME, detailChoice, setDetail } from './detail.js';
 
 /* ── tunables ─────────────────────────────────────────────────── */
 const CFG = {
@@ -100,14 +101,14 @@ const S = {
 
 /* ── renderer ─────────────────────────────────────────────────── */
 const canvas = document.getElementById('scene');
-const renderer = new THREE.WebGLRenderer({ canvas, antialias: true, powerPreference: 'high-performance' });
+const renderer = new THREE.WebGLRenderer({ canvas, antialias: DETAIL.aa, powerPreference: 'high-performance' });
 // Resolution adapts to the device: start at up to 1.5× and step down while frames run slow
 // The rover is the star: never drop below native resolution on a normal screen, and go
 // up to 2× on high-density ones while frames allow it.
-const PR_MAX = Math.min(devicePixelRatio || 1, 2);
+const PR_MAX = Math.min(devicePixelRatio || 1, DETAIL.pr);      // phones: 1.5× is sharp on a small screen and far lighter than 3×
 let pr = PR_MAX;
 renderer.setPixelRatio(pr);
-const perf = { t: 0, n: 0, lo: Math.min(1, PR_MAX) };
+const perf = { t: 0, n: 0, lo: Math.min(DETAIL_NAME === 'low' ? 0.75 : 1, PR_MAX) };
 function adaptRes(dt) {
   perf.t += dt; perf.n++;
   if (perf.t < 2) return;
@@ -117,7 +118,7 @@ function adaptRes(dt) {
   if (Math.abs(np - pr) > 0.01) { pr = np; renderer.setPixelRatio(pr); resize(); }
 }
 renderer.shadowMap.enabled = true;
-renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.type = THREE.PCFShadowMap;      // (PCFSoft is gone from three.js; it fell back to this anyway)
 
 const scene = new THREE.Scene();
 const camera = new THREE.PerspectiveCamera(52, 1, 0.1, 6000);
@@ -250,6 +251,7 @@ function scatter(scans) {
       Math.hypot(x - START.x, z - START.z) < (s > 0.36 ? 9 : 3.2) ||
       S.outcrops.some(o => Math.hypot(x - o.pos.x, z - o.pos.z) < 8.5) || routeClear(x, z, s),
   });
+  rockReach(START.x, START.z);
 }
 
 /* ── Ingenuity scan pulse ─────────────────────────────────────── */
@@ -1963,13 +1965,31 @@ function update(dt, now = performance.now()) {
   }
 
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
-  if ((frameN = (frameN + 1) % 10) === 0) hud();
+  if ((frameN = (frameN + 1) % 10) === 0) { hud(); rockReach(camera.position.x, camera.position.z); }      // rocks beyond this detail level's reach are not drawn
 }
 let frameN = 0;
 
 /* ── wiring ───────────────────────────────────────────────────── */
 // Back: the extensionless address, as every other page links it. The .html one redirects, and a redirected page from the offline cache fails to open.
-$('btn-pov').addEventListener('click', () => { S.pov = ((S.pov || 0) + 1) % 3; if (roverModel) roverModel.visible = true; $('btn-pov').textContent = ['Chase', 'Wide', 'Rover'][S.pov]; camInit = false; });
+function setPov(n) { S.pov = n; if (roverModel) roverModel.visible = true; $('btn-pov').textContent = ['Chase', 'Wide', 'Rover'][S.pov]; camInit = false; }
+$('btn-pov').addEventListener('click', () => setPov(((S.pov || 0) + 1) % 3));
+{ /* Settings: difficulty and detail take effect on a restart of the level; the camera changes at once */
+  const sh = $('settings'); let pd, pq;
+  const NAMES = { low: 'Low', medium: 'Medium', high: 'High', ultra: 'Ultra' };
+  const mark = () => {
+    sh.querySelectorAll('[data-sd]').forEach(b => b.classList.toggle('on', b.dataset.sd === pd));
+    sh.querySelectorAll('[data-sq]').forEach(b => b.classList.toggle('on', b.dataset.sq === pq));
+    sh.querySelectorAll('[data-sc]').forEach(b => b.classList.toggle('on', +b.dataset.sc === (S.pov || 0)));
+    $('set-note').textContent = (pq === 'auto' ? `Auto uses ${TOUCH ? 'Medium on phones and tablets' : 'Ultra on computers'}. ` : '') + `Now drawing at ${NAMES[DETAIL_NAME]}. Lower detail runs smoother; higher looks sharper.`;
+    $('set-apply').hidden = pd === difficulty() && pq === detailChoice();
+  };
+  $('btn-set').addEventListener('click', () => { pd = difficulty(); pq = detailChoice(); mark(); sh.classList.add('on'); });
+  sh.querySelectorAll('[data-sd]').forEach(b => b.addEventListener('click', () => { pd = b.dataset.sd; mark(); }));
+  sh.querySelectorAll('[data-sq]').forEach(b => b.addEventListener('click', () => { pq = b.dataset.sq; mark(); }));
+  sh.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', () => { setPov(+b.dataset.sc); mark(); }));
+  $('set-apply').addEventListener('click', () => { setDifficulty(pd); setDetail(pq); location.reload(); });
+  $('set-done').addEventListener('click', () => sh.classList.remove('on'));
+}
 { const go = e => {      // the game's own touch handling can swallow a plain link tap on iPhone
     e.preventDefault(); e.stopPropagation();
     if ($('brief').classList.contains('on')) { location.href = '../objects'; return; }      // from the menu, out to Objects

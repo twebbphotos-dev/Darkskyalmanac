@@ -6,6 +6,7 @@
    machinery the viewer needs.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from 'three';
+import { DETAIL } from './detail.js';
 
 export const MARS = {
   skyTop:      0x8a634a,      // the Almanac's 0x5a4436, lifted and cooled toward what Mastcam-Z sees
@@ -270,10 +271,10 @@ export function buildMars(scene, renderer) {
   const sun = new THREE.DirectionalLight(MARS.sunColor, 2.5);
   sun.position.copy(sunDir).multiplyScalar(120);
   sun.castShadow = true;
-  sun.shadow.mapSize.set(2048, 2048);
+  sun.shadow.mapSize.set(DETAIL.shadow, DETAIL.shadow);
   sun.shadow.camera.near = 1;
   sun.shadow.camera.far = 320;
-  const S = 38;
+  const S = 38 * DETAIL.shadowR;      // Ultra: sharper shadows over a wider area
   Object.assign(sun.shadow.camera, { left: -S, right: S, top: S, bottom: -S });
   sun.shadow.bias = -0.0009;
   sun.shadow.normalBias = 0.05;
