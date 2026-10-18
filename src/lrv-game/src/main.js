@@ -240,7 +240,7 @@ function place(x, z, yaw) { car.p.set(x, ground(x, z) + 0.8, z); car.v.set(0, 0,
 const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3(), _a = new THREE.Vector3(), _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _rt = new THREE.Vector3(),
       _vc = new THREE.Vector3(), _wf = new THREE.Vector3(), _ws = new THREE.Vector3(), _tmp = new THREE.Vector3(), _qi = new THREE.Quaternion(), _wb = new THREE.Vector3(), _L = new THREE.Vector3();
 const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true, spin: 0 };
-const REC = (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || { t: 0, d: 0, h: 0 }; } catch (e) { return { t: 0, d: 0, h: 0 }; } })();
+const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());      // v, v2: top speed in km/h, at real and at double speed
 let throttle = 0, steerIn = 0;
 function step(h) {
   _f.set(0, -G * MASS, 0); _t.set(0, 0, 0);
@@ -308,10 +308,45 @@ function step(h) {
   return touching;
 }
 
+/* ── the real drives: the stops were surveyed from orbit (Haase et al. 2019, as in the 3D viewer), in metres east and
+   south of the lander; between stops the line follows the general route. Only the stretches near the lander fall
+   inside the drivable square: each drive's start and its way home. ── */
+const DRIVES = [
+  ['#F3E9CC', [[0, 0], [-192, -36], [-40, 60], [150, 520], [423, 1031], [367, 566], [129, -27], [0, 0]]],
+  ['#F0A23C', [[0, 0], [-386, 57], [-1350, 400], [-2500, 760]]],
+  ['#F0A23C', [[-2100, -330], [-1297, 157], [-275, 72], [0, 0]]],
+  ['#7CC7F2', [[0, 0], [129, -27], [330, -1400], [460, -2700]]],
+  ['#7CC7F2', [[1735, -1228], [900, -600], [145, -39]]],
+];
+const LMP = [-12, 4];      // where the lander stands here
+function routeDots() {
+  const cr = (a, b, c, d, t) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
+  const pos = [], col = [], cc = new THREE.Color();
+  for (const [hex, raw] of DRIVES) {
+    const C = raw.map(q => [LMP[0] + q[0], LMP[1] + q[1]]), P = i => C[Math.max(0, Math.min(C.length - 1, i))]; cc.set(hex);
+    let carry = 0;
+    for (let i = 0; i < C.length - 1; i++) {
+      const L = Math.hypot(C[i + 1][0] - C[i][0], C[i + 1][1] - C[i][1]), n = Math.max(2, Math.ceil(L / 0.5));
+      for (let k = 0; k < n; k++) { const t = k / n, x = cr(P(i - 1)[0], P(i)[0], P(i + 1)[0], P(i + 2)[0], t), z = cr(P(i - 1)[1], P(i)[1], P(i + 1)[1], P(i + 2)[1], t);
+        if ((carry += L / n) < 3) continue; carry = 0;      // a dot every 3 m
+        if (Math.max(Math.abs(x), Math.abs(z)) > HALF - 14) continue;
+        pos.push(x, groundBase(x, z) + 0.12, z); col.push(cc.r, cc.g, cc.b); }
+    }
+  }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); g.setAttribute('color', new THREE.Float32BufferAttribute(col, 3));
+  const m = new THREE.Points(g, new THREE.PointsMaterial({ size: 0.4, map: DOT, vertexColors: true, transparent: true, opacity: 0.9, depthWrite: false })); m.frustumCulled = false; scene.add(m);
+}
+
 /* ── dust: thrown off the wheels, it flies in clean parabolas and falls straight back. There is no air to hold it up. ── */
 const DN = 1400, dpos = new Float32Array(DN * 3), dvel = new Float32Array(DN * 3), dlife = new Float32Array(DN);
 const dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
-const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0x8f8a82, size: 0.06, transparent: true, opacity: 0.75, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
+function softDot() {      // a round grain with a soft edge: bare points draw as hard squares
+  const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.45, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+  return new THREE.CanvasTexture(c);
+}
+const DOT = softDot();
+const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0x8f8a82, size: 0.04, map: DOT, transparent: true, opacity: 0.6, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
 let dnext = 0;
 function kick(dt) {
   for (const wl of WHEELS) {
@@ -420,13 +455,30 @@ function landed(a) {
   toast(`Airborne ${a.t.toFixed(1)} s · ${a.d.toFixed(1)} m · ${a.peak.toFixed(1)} m high${flip}${recs.length ? ' · new record' : ''}`);
   showRecords();
 }
-function showRecords() { $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—'; $('rec').textContent = REC.t ? `Records: ${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : ''; }
+function showRecords() {
+  $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—';
+  const top = FAST ? REC.v2 : REC.v; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
+  $('rec').textContent = REC.t ? `Records: ${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : '';
+}
+/* Top speed, on the ground only: Cernan's 18 km/h was driven, not flown. A new best is announced once the run is over. */
+const RUN = { peak: 0 };
+function speedRecord(kmh, grounded) {
+  if (grounded && kmh > RUN.peak) RUN.peak = kmh;
+  const key = FAST ? 'v2' : 'v';
+  if (RUN.peak > REC[key] + 0.05 && kmh < RUN.peak * 0.7) {
+    const old = REC[key]; REC[key] = RUN.peak;
+    toast(`Top speed ${RUN.peak.toFixed(1)} km/h` + (!FAST && RUN.peak > 18 && old <= 18 ? ' · faster than Cernan’s 18 km/h' : ' · new record'));
+    try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
+    showRecords();
+  }
+  if (kmh < RUN.peak * 0.7) RUN.peak = 0;
+}
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
 document.querySelectorAll('#speedpick button').forEach(b => {
   b.classList.toggle('on', (b.dataset.v === '2') === FAST);
-  b.addEventListener('click', () => { setSpeed(b.dataset.v === '2'); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
+  b.addEventListener('click', () => { setSpeed(b.dataset.v === '2'); showRecords(); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
 });
 $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); running = true; });
 { const go = e => { e.preventDefault(); location.href = '../moon'; }; $('back').addEventListener('click', go); }
@@ -463,7 +515,7 @@ function frame(now) {
   }
   if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);      // test hook
   sun.position.copy(car.p).addScaledVector(SUN, 120); sun.target.position.copy(car.p);
-  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1);
+  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
   renderer.render(scene, camera);
@@ -474,7 +526,7 @@ function frame(now) {
 (async () => {
   $('loadmsg').textContent = 'Shaping the valley…';
   await new Promise(r => setTimeout(r, 30));
-  buildGround(); indexRocks(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); showRecords();
+  buildGround(); indexRocks(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); routeDots(); showRecords();
   try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) farMesh(new Int16Array(await r.arrayBuffer())); } catch (e) { /* offline without it: the drivable square alone */ }
   place(0, 0, Math.atan2(-64, -30));      // facing the nearest fresh crater, the Sun behind
   $('loadmsg').textContent = 'Unloading the rover…';

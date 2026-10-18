@@ -43,3 +43,14 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
 - **Cameras**: Chase, Wide, Seat (rides with the rover at the driver's position).
 - **Records**: air time, distance and height in localStorage `lrv-records`; tumbling in the air is reported as a
   half or full roll.
+
+## Route, speed and dust (v4.51)
+
+- **The real drives**: dotted lines, one dot every 3 m, in the 3D viewer's colors (Drive 1 cream, 2 orange,
+  3 blue). Stops are Haase et al. 2019's surveyed positions, in metres east and south of the lander (the same
+  table as `src/spacecraft.js`); between stops a Catmull-Rom line follows the general route. Only the parts
+  near the lander fall in the square: each drive's start and its way home.
+- **Speed**: Real caps the motors at 5 m/s (18 km/h, Cernan's Apollo 17 record; about 17 km/h on the flat),
+  Double at 11.2 m/s with more grip and motor force (`lrv-speed`). Top speed on the ground is a record per mode
+  (`v`, `v2` in `lrv-records`), announced when the run slows below 70% of its peak.
+- **Dust**: soft round sprites, 4 cm.

@@ -3,6 +3,15 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.51 / zion-sky-v420 — 2026-10-18
+- Lunar Rover sim:
+  - The real Apollo 17 drives near the lander as dotted lines (stops surveyed
+    from orbit, Haase et al. 2019; the line between them follows the general
+    route).
+  - Top-speed record, kept separately for Real and Double speed, shown under
+    the speedometer; beating Cernan's 18 km/h at Real speed is called out.
+  - Dust grains are small soft dots instead of big hard squares.
+
 ## v4.50 / zion-sky-v419 — 2026-10-18
 - Cloud charts: bigger hour numbers and AM / PM labels; they were too small
   to read on a phone.
