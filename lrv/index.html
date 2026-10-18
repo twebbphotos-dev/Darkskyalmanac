@@ -40,6 +40,8 @@
     padding:11px 14px;cursor:pointer;border:1px solid var(--line);background:var(--panel);color:var(--gold)}
   .btn.primary{background:var(--gold);color:#0d0a18;border-color:var(--gold);padding:13px 26px;font-size:10.5px}
   #btn-recover{display:none}
+  #btn-pov{position:fixed;right:14px;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:21;padding:8px 12px}
+  #rec{font-size:9px;letter-spacing:.06em;color:var(--mute);margin-bottom:6px;max-width:300px;line-height:1.5}
   #btn-recover.on{display:block}
   .stick{margin-left:auto;position:relative;width:132px;height:132px;border-radius:50%;touch-action:none;pointer-events:auto;
     background:radial-gradient(circle,rgba(203,168,90,.10) 0 30%,rgba(13,10,24,.62) 31%);border:1px solid var(--line)}
@@ -74,10 +76,12 @@
   </div>
 </div>
 <div id="air"></div>
+<button class="btn" id="btn-pov" title="Camera: chase, wide, or from the driver's seat">Chase</button>
 <div id="toast"></div>
 
 <div id="bottom">
   <div>
+    <div id="rec"></div>
     <button class="btn" id="btn-recover">Back on its wheels · R</button>
     <div id="hint"><b>W S</b> drive and brake · <b>A D</b> steer · drag to look around · <b>R</b> to right the rover</div>
   </div>
@@ -95,7 +99,7 @@
       <span>Top speed</span><b>About 13 km/h on the level. Faster downhill, where gravity does the work</b>
       <span>Ground</span><b>The mountains are real, from NASA's terrain model of the site. The ground near the lander is generated: the model is too coarse for the craters underfoot</b>
     </div>
-    <p class="fine">Look for a fresh crater with a sharp rim, and drive off the edge.</p>
+    <p class="fine">Look for a fresh crater with a sharp rim, and drive off the edge. Earth hangs in the west-southwest, where it always is from here. The Seat camera puts you where Gene Cernan sat.</p>
     <button class="btn primary" id="btn-go">Start driving</button>
   </div>
 </div>

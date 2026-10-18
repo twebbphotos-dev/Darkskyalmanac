@@ -27,3 +27,19 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
   fresh rims drop away steeply inside, which launches the rover), five fresh ones placed near the start.
 - Rocks are bumps the wheels feel, under instanced rock meshes.
 - Beyond, NASA's 250 m terrain model of the site (64 km), with lunar curvature, for the real mountains.
+
+## Detail and extras (v4.32)
+
+- **Fine patch**: a 96 m square at 0.4 m follows the rover (rebuilt when it strays 14 m from the centre),
+  carrying `microRaw`: soil grain plus craterlets 0.25–1.5 m across on a hashed 3 m grid. The wheels feel it:
+  `ground()` adds the same relief, faded to zero at the patch edge. The coarse ground is discarded under it
+  (`uPatch` in a patched shader) and the patch draws with a polygon offset.
+- **Look**: a tiling normal map of pits and clods; fresh craters are brighter on their floors and rims
+  (vertex colors from each crater's freshness); fresh craters over 4 m have blocks thrown out round them.
+- **Tracks**: a ribbon per wheel with a chevron tread, 0.23 m wide, laid every 0.25 m while the wheel touches;
+  after a jump, two transparent joins bridge the gap. 1,400 points per wheel, oldest half dropped when full.
+- **Earth**: 54° up at azimuth 240° (from the site's selenographic position, ignoring libration), 1.9° across,
+  lit by the same Sun so its phase follows the Sun's place.
+- **Cameras**: Chase, Wide, Seat (rides with the rover at the driver's position).
+- **Records**: air time, distance and height in localStorage `lrv-records`; tumbling in the air is reported as a
+  half or full roll.

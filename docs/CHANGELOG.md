@@ -3,6 +3,14 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.32 / zion-sky-v401 — 2026-10-18
+- Lunar Rover: finer ground round the rover (0.4 m, with craterlets and grain
+  the wheels feel), a fine soil texture, bright rims on fresh craters, blocks
+  thrown out round them, chevron wheel tracks that stay, Earth in the sky at
+  its true place over Taurus–Littrow (lit by the same Sun, so its phase is
+  right), a driver's-seat camera (Chase / Wide / Seat), saved records for air
+  time, distance and height, and half or full rolls called out on landing.
+
 ## v4.31 / zion-sky-v400 — 2026-10-18
 - New: Lunar Rover · Apollo 17 (lrv/), a first version, linked from the
   Apollo 17 entry on the Moon page. Drive the LRV in Taurus–Littrow under

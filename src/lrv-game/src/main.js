@@ -32,7 +32,7 @@ const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
 const HALF = 420, CELL = 1.25, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 840 m across
 const craters = [], rocks = [];
 { const r = rng(1972);
-  const add = (x, z, R, fresh) => craters.push({ x, z, R, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
+  const add = (x, z, R, fresh) => craters.push({ x, z, R, fresh, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
   // a few fresh ones within reach of the start, the rims to aim for
   [[48, -18, 13, 1], [-30, 64, 17, .95], [96, 52, 21, .9], [20, 120, 11, 1], [-92, -40, 24, .85]].forEach(c => add(...c));
   for (let i = 0; i < 1500; i++) {
@@ -43,6 +43,11 @@ const craters = [], rocks = [];
   }
   for (let i = 0; i < 900; i++) { const x = (r() * 2 - 1) * (HALF - 6), z = (r() * 2 - 1) * (HALF - 6); if (Math.hypot(x, z) < 10) continue;
     rocks.push({ x, z, s: 0.12 + Math.pow(r(), 3) * 0.7, yaw: r() * 6.28, k: r() }); }
+  // a fresh crater digs through the soil into rock and throws blocks out over its rim; worn ones have lost theirs
+  for (const c of craters) { if (c.fresh < 0.55 || c.R < 4) continue; const n = Math.round(c.R * c.fresh * 2.2);
+    for (let i = 0; i < n; i++) { const a = r() * 6.2832, d = c.R * (0.85 + Math.pow(r(), 1.7) * 1.3), x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d;
+      if (Math.abs(x) > HALF - 6 || Math.abs(z) > HALF - 6 || Math.hypot(x, z) < 10) continue;
+      rocks.push({ x, z, s: 0.2 + Math.pow(r(), 2.2) * Math.min(1.6, c.R * 0.07), yaw: r() * 6.28, k: r() }); } }
 }
 const CG = 16, CRATER_GRID = new Map();      // craters by 16 m cell, so each point checks only its neighbors
 function indexCraters() { craters.forEach(c => { const e = c.R * 2.2; for (let a = Math.floor((c.x - e) / CG); a <= Math.floor((c.x + e) / CG); a++) for (let b = Math.floor((c.z - e) / CG); b <= Math.floor((c.z + e) / CG); b++) { const k = a + ',' + b; if (!CRATER_GRID.has(k)) CRATER_GRID.set(k, []); CRATER_GRID.get(k).push(c); } }); }
@@ -55,12 +60,18 @@ function craterH(x, z) {
   }
   return h;
 }
-const H = new Float32Array(N * N);
+const H = new Float32Array(N * N), B = new Float32Array(N * N);
+function brightness(x, z) {
+  let b = 0;
+  for (const c of CRATER_GRID.get(Math.floor(x / CG) + ',' + Math.floor(z / CG)) || []) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d < 2.1) b = Math.max(b, c.fresh * c.fresh * (d < 1 ? 0.55 : Math.exp(-(((d - 1) / 0.5) ** 2)))); }
+  return 0.9 + 0.2 * (fbm(x / 35 + 7, z / 35, 3) - .5) + 0.45 * b;
+}
 function buildGround() {
   indexCraters();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const x = -HALF + i * CELL, z = -HALF + j * CELL;
     H[j * N + i] = (fbm(x / 60, z / 60, 4) - .5) * 3 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35 + craterH(x, z);
+    B[j * N + i] = brightness(x, z);
   }
 }
 // rocks are small bumps the wheels feel, under the rock you see
@@ -72,10 +83,32 @@ function rockH(x, z) {
     for (const n of l) { const k = rocks[n], d2 = ((x - k.x) ** 2 + (z - k.z) ** 2) / (k.s * k.s); if (d2 < 1) h = Math.max(h, k.s * 0.55 * Math.sqrt(1 - d2)); } }
   return h;
 }
-function ground(x, z) {      // height of the drawn surface (bilinear on the grid), plus rocks
+/* Craterlets a few tens of centimeters to a meter or two across, and the grain of the soil: too small for the
+   1.25 m grid, so they live in a finer patch of ground that follows the rover. The wheels feel them too. */
+function hash2(i, j) { let h = Math.imul(i, 374761393) + Math.imul(j, 668265263); h = Math.imul(h ^ (h >>> 13), 1274126177); return ((h ^ (h >>> 16)) >>> 0) / 4294967296; }
+const MC = 3;
+function microRaw(x, z) {
+  let h = (vnoise(x / 1.7, z / 1.7) - .5) * 0.12 + (vnoise(x / 0.55 + 71, z / 0.55) - .5) * 0.04;
+  const ci = Math.floor(x / MC), cj = Math.floor(z / MC);
+  for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) {
+    const i = ci + a, j = cj + b, p = hash2(i, j); if (p > 0.42) continue;
+    const R = 0.25 / Math.sqrt(1 - hash2(i + 91, j) * (1 - (0.25 / 1.5) ** 2)), cx = (i + hash2(i, j + 57)) * MC, cz = (j + hash2(i + 13, j + 7)) * MC;
+    const d = Math.hypot(x - cx, z - cz) / R; if (d > 1.8) continue;
+    const dep = R * (0.06 + 0.12 * hash2(i + 5, j + 3)), rim = dep * 0.25;
+    h += d < 1 ? rim + (-dep - rim) * (1 - d * d) : rim * Math.exp(-(((d - 1) / 0.4) ** 2));
+  }
+  return h;
+}
+const PATCH = { cx: 0, cz: 0, half: 48 };
+function microFade(x, z) { return ss(PATCH.half, PATCH.half - 6, Math.max(Math.abs(x - PATCH.cx), Math.abs(z - PATCH.cz))); }
+function groundBase(x, z) {
   const u = Math.max(0, Math.min(N - 1.001, (x + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
   const a = H[j * N + i], b = H[j * N + i + 1], c = H[(j + 1) * N + i], d = H[(j + 1) * N + i + 1];
-  return a + (b - a) * fu + (c - a) * fv + (a - b - c + d) * fu * fv + rockH(x, z);
+  return a + (b - a) * fu + (c - a) * fv + (a - b - c + d) * fu * fv;
+}
+function ground(x, z) {      // height of the drawn surface, plus rocks
+  const f = microFade(x, z);
+  return groundBase(x, z) + (f > 0 ? microRaw(x, z) * f : 0) + rockH(x, z);
 }
 const _n = new THREE.Vector3();
 function normalAt(x, z) { const e = 0.35; return _n.set(ground(x - e, z) - ground(x + e, z), 2 * e, ground(x, z - e) - ground(x, z + e)).normalize(); }
@@ -85,7 +118,7 @@ const renderer = new THREE.WebGLRenderer({ canvas: $('scene'), antialias: true }
 renderer.setPixelRatio(Math.min(2, devicePixelRatio));
 renderer.outputColorSpace = THREE.SRGBColorSpace;
 renderer.toneMapping = THREE.ACESFilmicToneMapping; renderer.toneMappingExposure = 1.25;
-renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+renderer.shadowMap.enabled = true; renderer.shadowMap.type = THREE.PCFShadowMap;
 const scene = new THREE.Scene(); scene.background = new THREE.Color(0x000000);      // no air, so a black sky even in full sunlight
 const camera = new THREE.PerspectiveCamera(55, 1, 0.1, 80000);
 function resize() { renderer.setSize(innerWidth, innerHeight, false); camera.aspect = innerWidth / innerHeight; camera.updateProjectionMatrix(); }
@@ -104,15 +137,52 @@ function regolithTex() {
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const n = (fbm(i / 18, j / 18, 4) - .5) * 40 + (r() - .5) * 26, v = Math.max(0, Math.min(255, 128 + n)), o = (j * S + i) * 4; im.data[o] = im.data[o + 1] = im.data[o + 2] = v; im.data[o + 3] = 255; }
   x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; return t;
 }
-const soil = new THREE.MeshStandardMaterial({ color: 0x9a968f, roughness: 1, metalness: 0, map: regolithTex() });
-soil.map.repeat.set(1, 1);
+// fine relief for the soil surface, as a normal map: pits and clods a few centimeters across, which the low Sun picks out
+function grainNormal() {
+  const S = 256, h = new Float32Array(S * S), r = rng(29);
+  for (let k = 0; k < 900; k++) { const cx = r() * S, cy = r() * S, R = 1.5 + Math.pow(r(), 3) * 9, dep = (r() < .6 ? -1 : .6) * R * 0.25, e = Math.ceil(R * 1.6);
+    for (let dy = -e; dy <= e; dy++) for (let dx = -e; dx <= e; dx++) { const d = Math.hypot(dx, dy) / R; if (d > 1.6) continue; const px = ((Math.round(cx) + dx) % S + S) % S, py = ((Math.round(cy) + dy) % S + S) % S;
+      h[py * S + px] += d < 1 ? dep * (1 - d * d) : -dep * 0.2 * Math.exp(-(((d - 1) / 0.3) ** 2)); } }
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) h[j * S + i] += (fbm(i / 6, j / 6, 3) - .5) * 1.4;
+  const c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), im = x.createImageData(S, S);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const gx = h[j * S + (i + 1) % S] - h[j * S + (i + S - 1) % S], gy = h[((j + 1) % S) * S + i] - h[((j + S - 1) % S) * S + i], l = Math.hypot(gx, gy, 2), o = (j * S + i) * 4;
+    im.data[o] = 128 - gx / l * 127; im.data[o + 1] = 128 + gy / l * 127; im.data[o + 2] = 128 + 2 / l * 127; im.data[o + 3] = 255; }
+  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; return t;
+}
+const soil = new THREE.MeshStandardMaterial({ color: 0x9a968f, roughness: 1, metalness: 0, map: regolithTex(), normalMap: grainNormal(), vertexColors: true });
+soil.normalScale.set(0.5, 0.5);
+soil.polygonOffset = true; soil.polygonOffsetFactor = -1; soil.polygonOffsetUnits = -1;      // the fine patch wins where it overlaps the coarse ground
+const patchU = { value: new THREE.Vector4(0, 0, 0, 0) };      // the fine patch's centre and half-size: the coarse ground is not drawn there
+const coarse = soil.clone();
+coarse.onBeforeCompile = sh => {
+  sh.uniforms.uPatch = patchU;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz; uniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
+};
 
 function groundMesh() {
   const g = new THREE.PlaneGeometry(2 * HALF, 2 * HALF, N - 1, N - 1); g.rotateX(-Math.PI / 2);
   const p = g.attributes.position, uv = g.attributes.uv;
-  for (let k = 0; k < p.count; k++) { const i = Math.round((p.getX(k) + HALF) / CELL), j = Math.round((p.getZ(k) + HALF) / CELL); p.setY(k, H[j * N + i]); uv.setXY(k, p.getX(k) / 3.2, p.getZ(k) / 3.2); }
+  const col = new Float32Array(p.count * 3);
+  for (let k = 0; k < p.count; k++) { const i = Math.round((p.getX(k) + HALF) / CELL), j = Math.round((p.getZ(k) + HALF) / CELL); p.setY(k, H[j * N + i]); uv.setXY(k, p.getX(k) / 3.2, p.getZ(k) / 3.2); col.fill(B[j * N + i], k * 3, k * 3 + 3); }
+  g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
-  const m = new THREE.Mesh(g, soil); m.receiveShadow = true; scene.add(m);
+  const m = new THREE.Mesh(g, coarse); m.receiveShadow = true; scene.add(m);
+}
+// the fine patch: 96 m square at 0.4 m, rebuilt round the rover as it drives
+const PS = 0.4, PN = Math.round(2 * PATCH.half / PS) + 1;
+const patchGeo = new THREE.PlaneGeometry(2 * PATCH.half, 2 * PATCH.half, PN - 1, PN - 1); patchGeo.rotateX(-Math.PI / 2);
+patchGeo.setAttribute('color', new THREE.BufferAttribute(new Float32Array(PN * PN * 3), 3));
+const patchMesh = new THREE.Mesh(patchGeo, soil); patchMesh.receiveShadow = true; patchMesh.frustumCulled = false;
+function bilB(x, z) { const u = Math.max(0, Math.min(N - 1.001, (x + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j;
+  return B[j * N + i] * (1 - fu) * (1 - fv) + B[j * N + i + 1] * fu * (1 - fv) + B[(j + 1) * N + i] * (1 - fu) * fv + B[(j + 1) * N + i + 1] * fu * fv; }
+function buildPatch(cx, cz) {
+  PATCH.cx = Math.round(cx / PS) * PS; PATCH.cz = Math.round(cz / PS) * PS;
+  const p = patchGeo.attributes.position, uv = patchGeo.attributes.uv, col = patchGeo.attributes.color;
+  for (let j = 0; j < PN; j++) for (let i = 0; i < PN; i++) { const k = j * PN + i, x = PATCH.cx - PATCH.half + i * PS, z = PATCH.cz - PATCH.half + j * PS, f = microFade(x, z), m = f > 0 ? microRaw(x, z) * f : 0;
+    p.setXYZ(k, x, groundBase(x, z) + m, z); uv.setXY(k, x / 3.2, z / 3.2); const b = bilB(x, z) * (1 + Math.max(-0.08, Math.min(0.08, m * 0.6))); col.setXYZ(k, b, b, b); }
+  p.needsUpdate = uv.needsUpdate = col.needsUpdate = true; patchGeo.computeVertexNormals(); patchGeo.computeBoundingSphere();
+  patchU.value.set(PATCH.cx, PATCH.cz, PATCH.half - 1.0, 0);
 }
 // the valley and its mountains, from NASA's terrain model: 64 km square on a 250 m grid, heights in quarter-metres,
 // drawn at true size with the Moon's curvature; sunk just under the drivable square where the two overlap
@@ -134,7 +204,7 @@ function rockMeshes() {
   geo.computeVertexNormals();
   const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x77736d, roughness: .95, flatShading: true }), rocks.length);
   const o = new THREE.Object3D();
-  rocks.forEach((k, n) => { o.position.set(k.x, ground(k.x, k.z) - k.s * 0.62, k.z); o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(n, o.matrix); });
+  rocks.forEach((k, n) => { o.position.set(k.x, groundBase(k.x, k.z) + microRaw(k.x, k.z) - k.s * 0.62, k.z); o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(n, o.matrix); });
   im.castShadow = im.receiveShadow = true; scene.add(im);
 }
 
@@ -151,7 +221,8 @@ function place(x, z, yaw) { car.p.set(x, ground(x, z) + 0.8, z); car.v.set(0, 0,
 
 const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3(), _a = new THREE.Vector3(), _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _rt = new THREE.Vector3(),
       _vc = new THREE.Vector3(), _wf = new THREE.Vector3(), _ws = new THREE.Vector3(), _tmp = new THREE.Vector3(), _qi = new THREE.Quaternion(), _wb = new THREE.Vector3(), _L = new THREE.Vector3();
-const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true };
+const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true, spin: 0 };
+const REC = (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || { t: 0, d: 0, h: 0 }; } catch (e) { return { t: 0, d: 0, h: 0 }; } })();
 let throttle = 0, steerIn = 0;
 function step(h) {
   _f.set(0, -G * MASS, 0); _t.set(0, 0, 0);
@@ -209,11 +280,11 @@ function step(h) {
   const lim2 = HALF - 12; if (Math.abs(car.p.x) > lim2 || Math.abs(car.p.z) > lim2) { car.p.x = Math.max(-lim2, Math.min(lim2, car.p.x)); car.p.z = Math.max(-lim2, Math.min(lim2, car.p.z)); car.v.multiplyScalar(0.3); }
   // air time: off the ground with nothing touching
   if (touching === 0) {
-    if (AIR.grounded && AIR.t === 0) { AIR.start = car.p.clone(); AIR.peak = 0; }
-    AIR.t += h; AIR.peak = Math.max(AIR.peak, car.p.y - 0.78 - ground(car.p.x, car.p.z)); AIR.grounded = false;
+    if (AIR.grounded && AIR.t === 0) { AIR.start = car.p.clone(); AIR.peak = 0; AIR.spin = 0; }
+    AIR.t += h; AIR.spin += Math.hypot(car.w.x, car.w.z) * h; /* tumbling: roll and pitch, not the heading */ AIR.peak = Math.max(AIR.peak, car.p.y - 0.78 - ground(car.p.x, car.p.z)); AIR.grounded = false;
   } else if (!AIR.grounded) {
     AIR.grounded = true;
-    if (AIR.t > 0.45) { const d = Math.hypot(car.p.x - AIR.start.x, car.p.z - AIR.start.z); AIR.last = { t: AIR.t, d, peak: Math.max(0, AIR.peak) }; if (AIR.t > AIR.best) AIR.best = AIR.t; landed(AIR.last); }
+    if (AIR.t > 0.45) { const d = Math.hypot(car.p.x - AIR.start.x, car.p.z - AIR.start.z); AIR.last = { t: AIR.t, d, peak: Math.max(0, AIR.peak), spin: AIR.spin }; if (AIR.t > AIR.best) AIR.best = AIR.t; landed(AIR.last); }
     AIR.t = 0;
   }
   return touching;
@@ -222,7 +293,7 @@ function step(h) {
 /* ── dust: thrown off the wheels, it flies in clean parabolas and falls straight back. There is no air to hold it up. ── */
 const DN = 1400, dpos = new Float32Array(DN * 3), dvel = new Float32Array(DN * 3), dlife = new Float32Array(DN);
 const dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
-const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0xcdc7bc, size: 0.08, transparent: true, opacity: 0.85, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
+const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0x8f8a82, size: 0.06, transparent: true, opacity: 0.75, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
 let dnext = 0;
 function kick(dt) {
   for (const wl of WHEELS) {
@@ -242,6 +313,65 @@ function kick(dt) {
   dgeo.attributes.position.needsUpdate = true;
 }
 
+/* ── wheel tracks: the wire-mesh tires press a chevron tread into the soil, darker where the surface dust is
+   pushed aside. They stay: nothing on the Moon blows them away. ── */
+function trackTex() {
+  const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
+  x.fillStyle = 'rgba(30,29,27,.38)'; x.fillRect(S * .06, 0, S * .88, S);
+  x.strokeStyle = 'rgba(14,13,12,.55)'; x.lineWidth = S * .07; x.lineCap = 'round';
+  for (let k = -1; k < 5; k++) { const y = k * S / 4; x.beginPath(); x.moveTo(S * .12, y); x.lineTo(S * .5, y + S * .12); x.lineTo(S * .88, y); x.stroke(); }
+  x.fillStyle = 'rgba(205,200,190,.22)'; x.fillRect(0, 0, S * .06, S); x.fillRect(S * .94, 0, S * .06, S);
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+}
+const TRACK_MAX = 1400, trackMat = new THREE.MeshStandardMaterial({ map: trackTex(), transparent: true, depthWrite: false, roughness: 1, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
+const tracks = WHEELS.map(() => {
+  const pos = new Float32Array(TRACK_MAX * 2 * 3), uv = new Float32Array(TRACK_MAX * 2 * 2), col = new Float32Array(TRACK_MAX * 2 * 4), idx = new Uint32Array((TRACK_MAX - 1) * 6);
+  for (let i = 0; i < TRACK_MAX - 1; i++) { const o = i * 2; idx.set([o, o + 1, o + 2, o + 2, o + 1, o + 3], i * 6); }
+  const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.BufferAttribute(col, 4));
+  g.setIndex(new THREE.BufferAttribute(idx, 1)); g.setDrawRange(0, 0);
+  const m = new THREE.Mesh(g, trackMat); m.frustumCulled = false; m.receiveShadow = true; m.renderOrder = 1; scene.add(m);
+  return { g, pos, uv, col, n: 0, last: null, s: 0, gap: false };
+});
+const _tp = new THREE.Vector3();
+function pushTrack(T, x1, y1, z1, x2, y2, z2, alpha) {
+  if (T.n >= TRACK_MAX) {      // full: forget the oldest half
+    const keep = TRACK_MAX >> 1, from = TRACK_MAX - keep; T.pos.copyWithin(0, from * 6, TRACK_MAX * 6); T.uv.copyWithin(0, from * 4, TRACK_MAX * 4); T.col.copyWithin(0, from * 8, TRACK_MAX * 8); T.n = keep;
+  }
+  T.pos.set([x1, y1, z1, x2, y2, z2], T.n * 6); T.uv.set([0, T.s, 1, T.s], T.n * 4); T.col.set([1, 1, 1, alpha, 1, 1, 1, alpha], T.n * 8); T.n++;
+}
+function layTracks() {
+  WHEELS.forEach((wl, k) => {
+    const T = tracks[k];
+    if (!wl.contact) { if (T.n) T.gap = true; return; }
+    const a = _tp.copy(wl.at).applyQuaternion(car.q).add(car.p);
+    if (T.last && !T.gap && Math.hypot(a.x - T.last.x, a.z - T.last.z) < 0.25) return;
+    const dx = T.last && !T.gap ? a.x - T.last.x : _fw.x, dz = T.last && !T.gap ? a.z - T.last.z : _fw.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * 0.115, nz = dx / l * 0.115;
+    const x1 = a.x + nx, z1 = a.z + nz, x2 = a.x - nx, z2 = a.z - nz, y1 = ground(x1, z1) + 0.012, y2 = ground(x2, z2) + 0.012;
+    if (T.gap) {      // after a jump the tread starts again where the wheels came down: two see-through joins bridge the gap unseen
+      const o = (T.n - 1) * 6, q = T.pos.slice(o, o + 6); pushTrack(T, q[0], q[1], q[2], q[3], q[4], q[5], 0); pushTrack(T, x1, y1, z1, x2, y2, z2, 0); T.gap = false;
+    } else if (T.last) T.s += Math.hypot(a.x - T.last.x, a.z - T.last.z) / 0.5;
+    pushTrack(T, x1, y1, z1, x2, y2, z2, 1);
+    T.last = { x: a.x, z: a.z };
+    const G2 = T.g.attributes; G2.position.needsUpdate = G2.uv.needsUpdate = G2.color.needsUpdate = true; T.g.setDrawRange(0, Math.max(0, (T.n - 1) * 6));
+  });
+}
+
+/* ── Earth, where it really hangs over Taurus–Littrow: about 54° up in the west-southwest, almost still in the
+   sky because the Moon keeps one face to it. It is lit by the same Sun as the ground, so its phase comes out right
+   for the Sun's place in the sky. About 1.9° across, nearly four times the full Moon seen from Earth. ── */
+function earth() {
+  const S = 512, c = document.createElement('canvas'); c.width = S; c.height = S / 2; const x = c.getContext('2d'), im = x.createImageData(S, S / 2), r = rng(5);
+  for (let j = 0; j < S / 2; j++) for (let i = 0; i < S; i++) { const lat = Math.abs(j / (S / 2) - .5) * 2, land = fbm(i / 60, j / 60, 5) > 0.56, cloud = Math.max(0, fbm(i / 22 + 9, j / 14, 5) - 0.5) * 3.2 + (lat > 0.85 ? 1 : 0);
+    let R = land ? 120 : 22, G2 = land ? 105 : 58, Bc = land ? 70 : 128; const k = Math.min(1, cloud); R += (245 - R) * k; G2 += (245 - G2) * k; Bc += (250 - Bc) * k;
+    const o = (j * S + i) * 4; im.data[o] = R; im.data[o + 1] = G2; im.data[o + 2] = Bc; im.data[o + 3] = 255; }
+  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
+  const D = 60000, el = 54 * Math.PI / 180, az = 240 * Math.PI / 180, rad = D * Math.tan(0.95 * Math.PI / 180);
+  const m = new THREE.Mesh(new THREE.SphereGeometry(rad, 48, 24), new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, metalness: 0, fog: false }));
+  m.position.set(Math.sin(az) * Math.cos(el) * D, Math.sin(el) * D, -Math.cos(az) * Math.cos(el) * D);
+  return m;
+}
+const EARTH = earth(); scene.add(EARTH);
+
 /* ── rover and lander models ── */
 const rover = new THREE.Group(); scene.add(rover);
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
@@ -253,6 +383,8 @@ addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (e.key.t
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 const stick = createStick($('stick'));
 const ORB = { yaw: 0, pitch: 0.18, id: null, x: 0, y: 0, idle: 9 };
+let pov = 0;      // 0 chase, 1 wide, 2 the driver's seat
+$('btn-pov').addEventListener('click', () => { pov = (pov + 1) % 3; $('btn-pov').textContent = ['Chase', 'Wide', 'Seat'][pov]; camInit = false; rover.visible = true; });
 addEventListener('pointerdown', e => { if (e.target !== renderer.domElement) return; ORB.id = e.pointerId; ORB.x = e.clientX; ORB.y = e.clientY; });
 addEventListener('pointermove', e => { if (e.pointerId !== ORB.id) return; ORB.yaw -= (e.clientX - ORB.x) * 0.006; ORB.pitch = Math.max(-0.1, Math.min(1.1, ORB.pitch + (e.clientY - ORB.y) * 0.004)); ORB.x = e.clientX; ORB.y = e.clientY; ORB.idle = 0; });
 addEventListener('pointerup', e => { if (e.pointerId === ORB.id) ORB.id = null; });
@@ -263,9 +395,14 @@ let toastT = 0;
 function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.6; }
 function landed(a) {
   buzz(a.t > 1.2 ? 40 : 20);
-  toast(`Airborne ${a.t.toFixed(1)} s · ${a.d.toFixed(1)} m · ${a.peak.toFixed(1)} m high`);
-  $('best').textContent = AIR.best.toFixed(1) + ' s';
+  const recs = [];
+  if (a.t > REC.t) { REC.t = a.t; recs.push('air time'); } if (a.d > REC.d) { REC.d = a.d; recs.push('distance'); } if (a.peak > REC.h) { REC.h = a.peak; recs.push('height'); }
+  try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
+  const flip = a.spin > 5.4 ? ' · full roll!' : a.spin > 2.6 ? ' · half roll' : '';
+  toast(`Airborne ${a.t.toFixed(1)} s · ${a.d.toFixed(1)} m · ${a.peak.toFixed(1)} m high${flip}${recs.length ? ' · new record' : ''}`);
+  showRecords();
 }
+function showRecords() { $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—'; $('rec').textContent = REC.t ? `Records: ${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : ''; }
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
@@ -282,18 +419,27 @@ function frame(now) {
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
     for (let i = 0; i < n; i++) step(h);
-    kick(dt);
+    kick(dt); layTracks();
+    if (Math.max(Math.abs(car.p.x - PATCH.cx), Math.abs(car.p.z - PATCH.cz)) > 14) buildPatch(car.p.x, car.p.z);      // keep the fine ground under the rover
     upsideT = _up.y < 0.35 ? upsideT + dt : 0; $('btn-recover').classList.toggle('on', upsideT > 1.2);
   }
   rover.position.copy(car.p); rover.quaternion.copy(car.q);
   // chase camera, held a little above the ground
   ORB.idle += dt; if (ORB.idle > 2.5) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
-  const heading = Math.atan2(-_fw.z, _fw.x), yaw = heading + Math.PI + ORB.yaw, D = 7.5;
-  const want = _tmp.set(car.p.x + Math.cos(yaw) * Math.cos(ORB.pitch) * D, car.p.y + 1.6 + Math.sin(ORB.pitch) * D, car.p.z - Math.sin(yaw) * Math.cos(ORB.pitch) * D);
-  want.y = Math.max(want.y, ground(want.x, want.z) + 1.2);
-  if (!camInit) { camPos.copy(want); camTgt.copy(car.p); camInit = true; }
-  camPos.lerp(want, 1 - Math.exp(-dt * 4)); camTgt.lerp(_a.copy(car.p).add(_r.set(0, 0.6, 0)), 1 - Math.exp(-dt * 8));
-  camera.position.copy(camPos); camera.lookAt(camTgt);
+  _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q);
+  if (pov === 2) {      // Gene Cernan's seat: the camera rides with the rover, every bump included
+    camera.position.copy(_a.set(-0.62, 0.95, -0.32).applyQuaternion(car.q).add(car.p));
+    camera.up.copy(_up); camera.lookAt(_r.copy(camera.position).addScaledVector(_fw, 10).addScaledVector(_up, -1.4).add(_tmp.set(0, 0, 0)));
+    camera.up.set(0, 1, 0);
+  } else {
+    const heading = Math.atan2(-_fw.z, _fw.x), yaw = heading + Math.PI + ORB.yaw, D = pov === 1 ? 16 : 7.5, lift = pov === 1 ? 0.35 : 0;
+    const want = _tmp.set(car.p.x + Math.cos(yaw) * Math.cos(ORB.pitch + lift) * D, car.p.y + 1.6 + Math.sin(ORB.pitch + lift) * D, car.p.z - Math.sin(yaw) * Math.cos(ORB.pitch + lift) * D);
+    want.y = Math.max(want.y, ground(want.x, want.z) + 1.2);
+    if (!camInit) { camPos.copy(want); camTgt.copy(car.p); camInit = true; }
+    camPos.lerp(want, 1 - Math.exp(-dt * 4)); camTgt.lerp(_a.copy(car.p).add(_r.set(0, 0.6, 0)), 1 - Math.exp(-dt * 8));
+    camera.position.copy(camPos); camera.lookAt(camTgt);
+  }
+  if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);      // test hook
   sun.position.copy(car.p).addScaledVector(SUN, 120); sun.target.position.copy(car.p);
   const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
@@ -306,7 +452,7 @@ function frame(now) {
 (async () => {
   $('loadmsg').textContent = 'Shaping the valley…';
   await new Promise(r => setTimeout(r, 30));
-  buildGround(); indexRocks(); groundMesh(); rockMeshes();
+  buildGround(); indexRocks(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); showRecords();
   try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) farMesh(new Int16Array(await r.arrayBuffer())); } catch (e) { /* offline without it: the drivable square alone */ }
   place(0, 0, Math.atan2(-64, -30));      // facing the nearest fresh crater, the Sun behind
   $('loadmsg').textContent = 'Unloading the rover…';
@@ -317,4 +463,4 @@ function frame(now) {
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
