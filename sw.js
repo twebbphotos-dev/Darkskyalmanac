@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v392';
+const CACHE = 'zion-sky-v393';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -102,7 +102,7 @@ const OFFLINE3D = [
   'img/cmp/southern-ring-hubble.jpg', 'img/cmp/southern-ring-webb.jpg',
   'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg',
   // Mars rover game (rover/), opened from the Mars page: page, code, models,
-  // terrain, textures and photos (about 19 MB). Same rules as the 3D models.
+  // terrain, textures and photos (about 41 MB). Same rules as the 3D models.
   'rover/',
   'rover/dtm/area_4m.png', 'rover/dtm/site_1m.png', 'rover/img/jezero-region.jpg',
   'rover/dtm/y2023_site_1m.png', 'rover/dtm/y2023_area_4m.png', 'rover/img/y2023_hr.jpg', 'rover/img/y2023_area.jpg',
@@ -286,7 +286,11 @@ self.addEventListener('message', function(e){
 // hang. Every network wait below has a deadline; when it passes we serve
 // the cached copy (and let the network finish in the background to refresh
 // the cache for next time). Airplane mode and 1 bar now behave the same.
-const PAGE_WAIT = 2000, DATA_WAIT = 7000, ASSET_WAIT = 4000;
+const PAGE_WAIT = 2000, DATA_WAIT = 7000, ASSET_WAIT = 4000, CODE_WAIT = 8000;
+// When a page falls back to its saved copy, its code should too (see the 3D branch below).
+let weakUntil = 0;
+function fellBack(hit, page){ if(page) weakUntil = Date.now() + 60000; return hit; }
+function fresh(r, page){ if(page) weakUntil = 0; return r; }
 function deadline(p, ms){
   return new Promise(function(res, rej){
     const t = setTimeout(function(){ rej(new Error('timeout')); }, ms);
@@ -309,25 +313,24 @@ self.addEventListener('fetch', function(e){
   // Live satellite tiles (NASA GIBS): straight to the network, never stored.
   // A two-hour loop is a few hundred tiles that are stale within the hour.
   if(url.indexOf('earthdata.nasa.gov') !== -1) return;
-  // The 3D spacecraft viewers and the Mars rover game: models, three.js bundles,
-  // terrain and textures (about 40 MB) are
-  // only kept if the user chose "Download everything". If they did: offline
-  // we serve the saved copy; online we take the network (so an updated model
-  // is never mixed with an old one), refresh the saved copy, and fall back
-  // to it on a weak signal. If they didn't: plain network, nothing stored.
+  // The 3D spacecraft viewers and the Mars rover game (about 80 MB) are kept only if the
+  // user chose "Download everything". If they did, they behave like the rest of the app:
+  // online, the network's copy (and the saved copy is refreshed); on a weak signal, the saved
+  // copy after a few seconds; offline, the saved copy at once. Code follows its page: once a
+  // page has fallen back to its saved copy, the bundles come from the saved copy too, so an
+  // old page never runs new code or the reverse. Files not yet saved are added as they load.
+  // If the user never downloaded: plain network, nothing stored.
   if(/\/models\/|\.bundle\.js|\/rover\//.test(url)){
+    const code = /\.js(\?|$)|\/rover\/(index\.html)?(\?|#|$)/.test(url), page = req.mode === 'navigate' || req.destination === 'document';
     e.respondWith(caches.has(C3D).then(function(has){
       if(!has) return fetch(req);
       return caches.open(C3D).then(function(c){
         return c.match(req, { ignoreSearch:true }).then(function(hit){
-          if(!hit) return fetch(req);
-          if(self.navigator && self.navigator.onLine === false) return hit;
           const net = fetch(req).then(function(r){ if(r && r.status === 200) c.put(req, r.clone()); return r; });
           try{ e.waitUntil(net.catch(function(){})); }catch(err){}
-          // Code (the rover page and the bundles) waits for the network: on a weak signal a 4 s
-          // deadline served the saved copy, so the phone ran the previous release's game.
-          if(/\.js(\?|$)|\/rover\/(index\.html)?(\?|#|$)/.test(url)) return net.then(function(r){ return (r && r.ok) ? r : hit; }, function(){ return hit; });
-          return deadline(net, ASSET_WAIT).then(function(r){ return (r && r.ok) ? r : hit; }, function(){ return hit; });
+          if(!hit) return net;
+          if((self.navigator && self.navigator.onLine === false) || (code && !page && Date.now() < weakUntil)) return hit;
+          return deadline(net, code ? CODE_WAIT : ASSET_WAIT).then(function(r){ return (r && r.ok) ? fresh(r, page) : fellBack(hit, page); }, function(){ return fellBack(hit, page); });
         });
       });
     }));
@@ -382,8 +385,8 @@ self.addEventListener('fetch', function(e){
     e.respondWith(
       cachedPage(req, url).then(function(cached){
         if(!cached) return net.catch(function(){ return caches.match('index.html') || caches.match('./'); });
-        if(self.navigator && self.navigator.onLine === false) return cached;
-        return deadline(net, PAGE_WAIT).then(function(r){ return (r && r.ok) ? r : cached; }, function(){ return cached; });
+        if(self.navigator && self.navigator.onLine === false) return fellBack(cached, true);
+        return deadline(net, PAGE_WAIT).then(function(r){ return (r && r.ok) ? fresh(r, true) : fellBack(cached, true); }, function(){ return fellBack(cached, true); });
       })
     );
     return;

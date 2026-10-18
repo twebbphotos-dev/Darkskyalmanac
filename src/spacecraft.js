@@ -1515,7 +1515,7 @@ function moonCam() {      // one Moon scene runs from the driver's seat to 25 km
   const t = Math.max(0, Math.min(1, (camera.position.y - 150) / 2500)), up = t * t * (3 - 2 * t), u = world && world.userData, t2 = Math.max(0, Math.min(1, (camera.position.y - 4) / 50));
   renderer.toneMappingExposure = 1.08 * (1 + 1.4 * t2 * t2 * (3 - 2 * t2));      // seen from straight above, sunlit ground under a low Sun is dim: open up the exposure as the camera climbs…
   if (u && u.fill) u.fill.intensity = .62 - .37 * up;        // …and let the shadows deepen, so the mountains stand out
-  if (u && u.route) { const o = Math.max(0, Math.min(1, (camera.position.y - 700) / 1500)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.dp.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+  if (u && u.route) { const o = Math.max(0, Math.min(1, (camera.position.y - 700) / 1500)); u.route.U.op.value = o; u.route.dm.opacity = o; if (u.route.dp) u.route.dp.opacity = o; /* the Moon’s Apollo traverse has no year dots */ u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   if (u && u.soil) u.soil.bumpScale = .9 * (1 - .75 * Math.max(0, Math.min(1, (camera.position.y - 6) / 60)));      // the grain of the soil turns to noise seen from the air
   if (u && u.trail) u.trail.opacity = .34 * Math.max(0, Math.min(1, (camera.position.y - 12) / 50));
@@ -1587,7 +1587,7 @@ function marsCam() {      // after the controls move the camera, so the sky is n
   // at Jezero the real ground reaches the horizon, so the haze can thin out to show it
   if (scene.fog) { scene.fog.near = u.crater ? 250 + y * 1.2 : 25 + y * 1.2; scene.fog.far = u.crater ? 9000 + y * 6 : 220 + y * 6; const t = Math.max(0, Math.min(1, (y - 50) / 2000)); scene.fog.color.lerpColors(FOG_LOW, FOG_HIGH, t * t * (3 - 2 * t)); }      // from the air the distance fades into the dusty horizon of the sky dome
   // over the map the route stays on down to a few hundred metres
-  if (u.route) { const o = mapMode ? Math.max(0, Math.min(1, (y - 120) / 300)) : Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; u.route.dp.opacity = o; u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+  if (u.route) { const o = mapMode ? Math.max(0, Math.min(1, (y - 120) / 300)) : Math.max(0, Math.min(1, (y - 1500) / 3000)); u.route.U.op.value = o; u.route.dm.opacity = o; if (u.route.dp) u.route.dp.opacity = o; /* the Moon’s Apollo traverse has no year dots */ u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   if (u.crater) {      // the rover's patch of close-up ground (a repeating texture) fades out as the camera climbs, leaving the real crater
     u.crater.visible = true; HR_HOLE.value = y < 120 ? NEAR_R - 5 : 0; const f = Math.max(0, Math.min(1, (y - 40) / 80));

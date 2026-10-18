@@ -234,7 +234,7 @@ input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
         </div>
         <div class="zcl-set-note" id="zcl-set-persist" style="margin-top:8px"></div>
         <button class="zcl-set-reset" id="zcl-set-recache" style="margin-top:12px">Download everything for offline</button>
-        <div class="zcl-set-note">"Download everything for offline" saves every page, map and image now, so you're covered even if you didn't visit them all first. It also saves the Star ID catalog (about 6.5 MB), the 3D spacecraft models and the Mars rover game (about 40 MB together), which are otherwise only saved once you open them.</div>
+        <div class="zcl-set-note">"Download everything for offline" saves every page, map and image now, so you're covered even if you didn't visit them all first. It also saves the Star ID catalog (about 6.5 MB), the 3D spacecraft models and the Mars rover game (about 80 MB together), which otherwise load from the internet each time. Once saved, they work offline and update themselves when a new version comes out.</div>
       </div>
     </div>
 
@@ -714,9 +714,9 @@ input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
         }
         navigator.serviceWorker.addEventListener('message', onMsg);
         navigator.serviceWorker.controller.postMessage({ type:'zcl-recache' });
-        setTimeout(function(){
-          if(!done){ recacheBtn.textContent = 'Download everything for offline'; recacheBtn.disabled = false; queryCacheStatus() }
-        }, 8000);
+        // Saving the pages can take well over 8 s on a phone; the old 8 s limit gave up before the
+        // star catalog and 3D models ever started. Wait for it, and carry on regardless after 3 min.
+        setTimeout(function(){ if(!done) onMsg({ data:{ type:'zcl-recache-done' } }) }, 180000);
       });
     }
 

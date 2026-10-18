@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v4.23, service-worker cache `zion-sky-v392`.**
-Next release: v4.24, cache `zion-sky-v393`.
+**Current release: v4.24, service-worker cache `zion-sky-v393`.**
+Next release: v4.25, cache `zion-sky-v394`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -75,7 +75,7 @@ docs/                  handoff notes
 - `CACHE = 'zion-sky-vNNN'`: bumped every release (`tools/bump-cache.py`).
 - `CRITICAL`: precached on install. A single 404 rejects the whole `addAll` and kills offline mode. `verify-assets.py` checks every entry exists.
 - `ALIASES`: extensionless URLs mapped to their `.html` files.
-- `C3D = 'zion-sky-3d'` + `OFFLINE3D`: 3D models and the rover game, downloaded only when the user asks (Settings → Download everything). Every `*.bundle.js`, `models/*`, `img/cmp/*` and `rover/*` file must be listed (the rover page as `'rover/'`); the gate checks this. Never put `rover/` in `CRITICAL`.
+- `C3D = 'zion-sky-3d'` + `OFFLINE3D`: 3D models and the rover game, downloaded only when the user asks (Settings → Download everything). Every `*.bundle.js`, `models/*`, `img/cmp/*` and `rover/*` file must be listed (the rover page as `'rover/'`); the gate checks this. Never put `rover/` in `CRITICAL`. Once downloaded they behave like the pages: network first, the saved copy after 4 s (8 s for code), and a bundle follows its page (if the page fell back to its saved copy, so does its code, for 60 s). Missing files are saved as they load; `refresh3d()` updates changed ones on every release.
 - `CSOL = 'zion-sky-solver'` + `SOLVER`: Star ID code and catalog. It persists across releases (the catalog is about 6 MB).
   - `refreshSolverCode()` re-fetches the non-`.bin` solver files on every install.
   - `sameFile()` is strict: null headers do **not** count as equal. An older lenient version left stale solver code on phones.

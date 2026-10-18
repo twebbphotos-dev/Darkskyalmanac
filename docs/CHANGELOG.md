@@ -3,6 +3,24 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.24 / zion-sky-v393 — 2026-10-18
+- Download everything: the 3D models and the rover game now behave like the
+  rest of the app. Online, the newest copy if it arrives within a few seconds,
+  otherwise the saved one; offline, the saved one at once. A page's code
+  always matches the page (both fresh or both saved), files missing from the
+  download are saved as they load, and changed files update on each release.
+- Fix: on a phone, "Download everything" could stop before the star catalog
+  and 3D models. Why: the button gave the page-saving step 8 s, which a phone
+  easily exceeds, and then reset without downloading the rest. It now waits.
+- Fix: the Lunar Module and Lunar Rover 3D views threw an error every frame.
+  Why: the Moon's Apollo traverse has no year-dot layer, and the shared fade
+  code assumed the Mars route's. The error also skipped the rest of each
+  frame's updates (the star backdrop following the camera).
+- Sizes corrected: 3D models and the rover game are about 80 MB together
+  (the rover alone about 41 MB), not 40 MB and 19 MB.
+- Checked: after the download, every 3D view, Voyager and the rover levels
+  load with the network off, without errors.
+
 ## v4.23 / zion-sky-v392 — 2026-10-17
 - The blue-sunset photo is now the full 4884 × 958 px original. Why the last
   one was smaller: chat attachments are resized on the way in; this copy came
