@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v399';
+const CACHE = 'zion-sky-v400';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -119,7 +119,9 @@ const OFFLINE3D = [
   'rover/tex/regolith_diff.jpg', 'rover/tex/regolith_disp.jpg',
   'rover/tex/regolith_nor.jpg', 'rover/tex/sand_diff.jpg',
   'rover/tex/sand_disp.jpg', 'rover/tex/sand_nor.jpg',
-  'rover/tex/slab_diff.jpg', 'rover/tex/slab_disp.jpg', 'rover/tex/slab_nor.jpg'
+  'rover/tex/slab_diff.jpg', 'rover/tex/slab_disp.jpg', 'rover/tex/slab_nor.jpg',
+  // Apollo 17 lunar rover (lrv/): page and code; it shares models/lrv.glb, lm.glb and moon-a17.bin
+  'lrv/', 'lrv/lrv.bundle.js'
 ];
 // ── Star ID (solver/) ────────────────────────────────────
 // The plate solver and its star catalog (about 6.5 MB). Saved the first time
@@ -330,8 +332,8 @@ self.addEventListener('fetch', function(e){
   // page has fallen back to its saved copy, the bundles come from the saved copy too, so an
   // old page never runs new code or the reverse. Files not yet saved are added as they load.
   // If the user never downloaded: plain network, nothing stored.
-  if(/\/models\/|\.bundle\.js|\/rover\//.test(url)){
-    const code = /\.js(\?|$)|\/rover\/(index\.html)?(\?|#|$)/.test(url), page = req.mode === 'navigate' || req.destination === 'document';
+  if(/\/models\/|\.bundle\.js|\/rover\/|\/lrv\//.test(url)){
+    const code = /\.js(\?|$)|\/(rover|lrv)\/(index\.html)?(\?|#|$)/.test(url), page = req.mode === 'navigate' || req.destination === 'document';
     e.respondWith(caches.has(C3D).then(function(has){
       if(!has) return fetch(req);
       return caches.open(C3D).then(function(c){

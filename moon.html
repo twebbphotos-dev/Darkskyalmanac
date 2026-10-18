@@ -1313,7 +1313,8 @@ function renderDetail(){
       +'<div class="zcl-m-dbody">'+f.d+'</div>'
       +'<div class="zcl-m-dcoord">Selenographic '+Math.abs(f.lat)+'\u00B0 '+hemiNS+', '+Math.abs(f.lon)+'\u00B0 '+hemiEW+'</div>'
       +(litTxt?'<div class="zcl-m-dlit" style="color:'+litCol+'">'+litTxt+'</div>':'')
-      +((f.n==='Apollo 15'||f.n==='Apollo 17')?'<a class="zcl-m-3d" href="spacecraft?m=lrv">See the Lunar Rover in 3D \u203A</a>':'');
+      +((f.n==='Apollo 15'||f.n==='Apollo 17')?'<a class="zcl-m-3d" href="spacecraft?m=lrv">See the Lunar Rover in 3D \u203A</a>':'')
+      +(f.n==='Apollo 17'?'<a class="zcl-m-3d" style="margin-left:16px" href="lrv/">Drive the Lunar Rover \u203A</a>':'');
     det.className='zcl-m-detail open';
     return;
   }

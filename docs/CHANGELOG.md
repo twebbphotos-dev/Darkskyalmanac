@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.31 / zion-sky-v400 — 2026-10-18
+- New: Lunar Rover · Apollo 17 (lrv/), a first version, linked from the
+  Apollo 17 entry on the Moon page. Drive the LRV in Taurus–Littrow under
+  1.62 m/s²: four sprung wheels whose grip scales with their load, a body
+  that pitches, rolls and spins freely in the air, rollovers, and dust in
+  clean ballistic arcs. Drive off a fresh crater rim and it flies (about
+  1.8 s and 5 m off the first one at top speed); landings report air time,
+  distance and height. Real valley mountains from NASA's terrain model;
+  generated craters and rocks near the lander. Saved by Download everything.
+
 ## v4.30 / zion-sky-v399 — 2026-10-18
 - Mars page: the Blue Sunsets card now plays Curiosity's sunset over Gale
   Crater (PIA19401, sol 956, 15 April 2015) as a smooth 6-second loop
