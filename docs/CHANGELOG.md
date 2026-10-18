@@ -3,6 +3,11 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.40 / zion-sky-v409 — 2026-10-18
+- Mars rover sim: Reset progress in Settings. Two taps (the first asks "Tap
+  again to erase"), so a stray one cannot wipe it. Forgets completed levels and
+  objectives; difficulty, detail and camera are kept.
+
 ## v4.39 / zion-sky-v408 — 2026-10-18
 - Mars rover sim: the HiRISE ground pictures are back at full detail, with
   their relief and radiating texture. v4.38 blurred them to remove small dark

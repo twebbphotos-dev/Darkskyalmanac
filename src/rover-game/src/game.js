@@ -1991,7 +1991,14 @@ $('btn-pov').addEventListener('click', () => setPov(((S.pov || 0) + 1) % 3));
   sh.querySelectorAll('[data-sq]').forEach(b => b.addEventListener('click', () => { pq = b.dataset.sq; mark(); }));
   sh.querySelectorAll('[data-sc]').forEach(b => b.addEventListener('click', () => { setPov(+b.dataset.sc); mark(); }));
   $('set-apply').addEventListener('click', () => { setDifficulty(pd); setDetail(pq); location.reload(); });
-  $('set-done').addEventListener('click', () => sh.classList.remove('on'));
+  $('set-done').addEventListener('click', () => { sh.classList.remove('on'); rs.armed = false; rs.textContent = 'Reset progress'; });
+  // two taps, so a stray one cannot wipe the record: completed levels and objectives are forgotten, settings are kept
+  const rs = $('set-reset');
+  rs.addEventListener('click', () => {
+    if (!rs.armed) { rs.armed = true; rs.textContent = 'Tap again to erase'; return; }
+    try { localStorage.removeItem(PROG_KEY); } catch (e) { /* storage blocked */ }
+    location.href = './';
+  });
 }
 { const go = e => {      // the game's own touch handling can swallow a plain link tap on iPhone
     e.preventDefault(); e.stopPropagation();
