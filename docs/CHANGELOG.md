@@ -3,6 +3,12 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.43 / zion-sky-v412 — 2026-10-18
+- Lunar Rover sim is now easy to find: a "Drive on the Moon" card on Objects,
+  next to the Mars sim, and a Play card on the Moon page. Before, the only way
+  in was the Apollo 17 entry on the Moon map, shown only with the Apollo sites
+  layer on, which is off by default.
+
 ## v4.42 / zion-sky-v411 — 2026-10-18
 - Mars rover sim: cleaner, sharper dunes.
   - Crests: wind ripples have sharp crests and broad troughs, but the relief
