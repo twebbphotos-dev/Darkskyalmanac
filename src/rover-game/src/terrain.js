@@ -574,7 +574,7 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
         // with distance; the scanned grain below carries the detail from there.
         float tileNear = 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) );
         vec4 sampledDiffuseColor = texture2D( map, vMapUv );
-        sampledDiffuseColor.rgb = mix( textureLod( map, vMapUv, 10.0 ).rgb * 0.95, sampledDiffuseColor.rgb, 0.12 + 0.88 * tileNear );
+        sampledDiffuseColor.rgb = mix( textureLod( map, vMapUv, 10.0 ).rgb * 0.95, sampledDiffuseColor.rgb, 0.4 + 0.6 * tileNear );
         // broad light and dark over tens and hundreds of metres, from noise that never repeats
         sampledDiffuseColor.rgb *= clamp( ( 1.0 + fbm( vWPos.xz / 48.0 + 3.1 ) * 0.34 ) * ( 1.0 + fbm( vWPos.xz / 210.0 - 7.3 ) * 0.26 ), 0.62, 1.5 );
         sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vec3( 0.212, 0.099, 0.054 ), vSand * 0.82 );
@@ -636,17 +636,24 @@ ${SITE ? 'uniform sampler2D tHi, tHiA;' : ''}
         }
         ${SITE ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
           vec2 r = vWPos.xz * ${SQ.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
-          // Only the picture's broad light and dark: dunes, sand patches, the big shadows. Its finer
-          // detail (small ripples, each a dark crescent a few metres across) was magnified into marks
-          // scattered all over the ground, so it is blurred away below about 16 m, however close.
+          // The picture in two layers. Its broad light and dark (dunes, sand patches, the big shadows)
+          // at full strength, smoothed with a four-tap tent so it never shows texel blocks. Its fine
+          // detail at about half strength: at full strength each small ripple, a dark crescent a few
+          // metres across, was magnified into a mark on the ground.
           vec2 t1 = vec2( u1.x, 1.0 - u1.y ), t4 = vec2( u4.x, 1.0 - u4.y ), q1 = t1 * 2048.0, q4 = t4 * 2048.0;
-          float lod1 = max( 4.0, 0.5 * log2( max( dot( dFdx( q1 ), dFdx( q1 ) ), dot( dFdy( q1 ), dFdy( q1 ) ) ) ) );
-          float lod4 = max( 2.0, 0.5 * log2( max( dot( dFdx( q4 ), dFdx( q4 ) ), dot( dFdy( q4 ), dFdy( q4 ) ) ) ) );
-          float l1 = dot( textureLod( tHi, t1, lod1 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
-          float l4 = dot( textureLod( tHiA, t4, lod4 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
+          float lod1 = max( 3.0, 0.5 * log2( max( dot( dFdx( q1 ), dFdx( q1 ) ), dot( dFdy( q1 ), dFdy( q1 ) ) ) ) );
+          float lod4 = max( 1.0, 0.5 * log2( max( dot( dFdx( q4 ), dFdx( q4 ) ), dot( dFdy( q4 ), dFdy( q4 ) ) ) ) );
+          vec3 Y = vec3( 0.3, 0.55, 0.15 );
+          vec2 o1 = exp2( lod1 ) * 0.5 / vec2( 2048.0 ), o4 = exp2( lod4 ) * 0.5 / vec2( 2048.0 );
+          float b1 = 0.25 * dot( textureLod( tHi, t1 + o1, lod1 ).rgb + textureLod( tHi, t1 - o1, lod1 ).rgb + textureLod( tHi, t1 + vec2( o1.x, -o1.y ), lod1 ).rgb + textureLod( tHi, t1 - vec2( o1.x, -o1.y ), lod1 ).rgb, Y );
+          float b4 = 0.25 * dot( textureLod( tHiA, t4 + o4, lod4 ).rgb + textureLod( tHiA, t4 - o4, lod4 ).rgb + textureLod( tHiA, t4 + vec2( o4.x, -o4.y ), lod4 ).rgb + textureLod( tHiA, t4 - vec2( o4.x, -o4.y ), lod4 ).rgb, Y );
+          float m1 = max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, Y ) ), m4 = max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, Y ) );
+          float f1 = pow( clamp( dot( texture2D( tHi, t1 ).rgb, Y ) / max( 0.02, b1 ), 0.5, 1.6 ), 0.5 );
+          float f4 = pow( clamp( dot( texture2D( tHiA, t4 ).rgb, Y ) / max( 0.02, b4 ), 0.5, 1.6 ), 0.5 );
+          float l1 = b1 / m1 * f1, l4 = b4 / m4 * f4;
           float in1 = smoothstep( 0.5, 0.45, max( abs( u1.x - 0.5 ), abs( u1.y - 0.5 ) ) ), in4 = smoothstep( 0.5, 0.45, max( abs( u4.x - 0.5 ), abs( u4.y - 0.5 ) ) );
           float hl = mix( mix( 1.0, l4, in4 ), l1, in1 );
-          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.75, 0.3, 2.0 );      // more contrast than the picture: the blur and the game's own grain soften it
+          sampledDiffuseColor.rgb *= clamp( 1.0 + ( hl - 1.0 ) * 1.5, 0.3, 2.0 );      // a little more contrast than the picture: it is softened by the game's own grain
         }` : ''}
         diffuseColor *= sampledDiffuseColor;
       #endif`)
