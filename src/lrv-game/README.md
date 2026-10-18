@@ -95,3 +95,5 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
   corner give each wheel's centre (one radius for all four, the widest cluster's: 0.42 m), and every triangle wholly
   inside a wheel's cylinder is cut into its own mesh under a steer group (Y, from `car.steer`) and a spin group
   (Z, from each wheel's `spin` in the physics). If the clusters are not found the model is left whole.
+
+v4.59: the wheel rig fits each wheel's circle to the lower half of its tread (width at each height) and trims the cylinder to the tread's width, so the fenders, a few centimetres above the tire and overhanging its inboard side, stay on the body.

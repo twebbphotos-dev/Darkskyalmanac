@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.59 (zion-sky-v428)
+Lunar Rover: fenders no longer spin with the tires. The v4.58 wheel rig guessed each hub 5 cm too high, so its cut cylinder had to be oversized and swallowed the fenders that hug the tire tops. Each wheel is now a circle fitted to the lower half of its tread, with the cylinder trimmed to the tread's width, so only the tire turns.
+
 ## v4.58 / zion-sky-v427 — 2026-10-18
 - Lunar Rover sim: the wheels turn as you drive and steer, all four. The
   model is a scan with the wheels fused in, so they are found and cut out

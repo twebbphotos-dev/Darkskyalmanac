@@ -626,8 +626,10 @@ function frame(now) {
 }
 
 /* ── the wheels: the model is a scan of the museum's rover, with the wheels fused into the rest. Each wheel is found
-   from the geometry (the cluster of points low at each corner gives its centre and radius), and every triangle inside
-   its cylinder is cut out into its own part, pivoted at the hub, so it can turn with the physics and steer. ── */
+   from the geometry (the cluster of points low at each corner, then a circle fitted to the lower half of its tread),
+   and every triangle inside its cylinder is cut out into its own part, pivoted at the hub, so it can turn with the
+   physics and steer. The fender hugs the top of the tire, a few centimetres out and overhanging its inboard side,
+   so the cylinder is fitted tight: only the tire turns. ── */
 const WHEEL_PARTS = [];
 function rigWheels() {
   rover.updateMatrixWorld(true);
@@ -642,8 +644,22 @@ function rigWheels() {
     const b = box[(x > 0 ? 0 : 2) + (z > 0 ? 0 : 1)];      // the same order as WHEELS
     b.x0 = Math.min(b.x0, x); b.x1 = Math.max(b.x1, x); b.z0 = Math.min(b.z0, z); b.z1 = Math.max(b.z1, z); b.y0 = Math.min(b.y0, y); b.n++; }
   if (box.some(b => b.n < 100)) return;      // not the model expected: leave it whole
-  const R = Math.max(...box.map(b => (b.x1 - b.x0) / 2));      // all four wheels are the same size: the widest cluster is the least clipped by what stands next to it
-  const W = box.map(b => ({ c: new THREE.Vector3((b.x0 + b.x1) / 2, b.y0 + R, (b.z0 + b.z1) / 2), r: R * 1.02, hw: (b.z1 - b.z0) / 2 + 0.02 }));
+  const W = box.map(b => {
+    // The tread's width at each height up its lower half gives the circle (w² + y² is linear in y), clear of the
+    // fender, which only covers the top. Its width across, from the same lower tread, gives the cylinder's length.
+    const xg = (b.x0 + b.x1) / 2, zc = (b.z0 + b.z1) / 2, lo = new Float32Array(21).fill(1e9), hi = new Float32Array(21).fill(-1e9), zs = [];
+    for (const { f } of src) for (let i = 0; i < f.length; i += 3) { const x = f[i], y = f[i + 1], z = f[i + 2], j = Math.floor((y - b.y0) * 100) - 4;
+      if (Math.abs(z - zc) > (b.z1 - b.z0) / 2 + 0.05 || Math.abs(x - xg) > 0.5) continue;
+      if (j >= 0 && j < 21) { lo[j] = Math.min(lo[j], x); hi[j] = Math.max(hi[j], x); }
+      if (y < b.y0 + 0.12) zs.push(z); }
+    let n = 0, sx = 0, sy = 0, sv = 0, syy = 0, syv = 0;
+    lo.forEach((l, j) => { if (hi[j] < l) return; const y = b.y0 + (j + 4.5) / 100, h = (hi[j] - l) / 2, v = h * h + y * y; n++; sx += (hi[j] + l) / 2; sy += y; sv += v; syy += y * y; syv += y * v; });
+    const k = (n * syv - sy * sv) / (n * syy - sy * sy), cx = sx / n, cy = k / 2, r = Math.sqrt((sv - k * sy) / n + cy * cy);
+    zs.sort((a, c) => a - c);
+    const z0 = zs[Math.floor(zs.length * 0.01)] - 0.015, z1 = zs[Math.floor(zs.length * 0.99)] + 0.015;
+    return { c: new THREE.Vector3(cx, cy, (z0 + z1) / 2), r: r * 1.015, hw: (z1 - z0) / 2 };
+  });
+  if (W.some(w => !(w.r > 0.25 && w.r < 0.5 && w.hw > 0.05 && w.hw < 0.25))) return;      // the fit failed: leave the model whole
   const inside = (f, i) => { for (let k = 0; k < 4; k++) { const w = W[k], dx = f[i * 3] - w.c.x, dy = f[i * 3 + 1] - w.c.y, dz = f[i * 3 + 2] - w.c.z; if (dx * dx + dy * dy < w.r * w.r && Math.abs(dz) < w.hw) return k; } return -1; };
   W.forEach(w => { const steer = new THREE.Group(), spin = new THREE.Group(); steer.position.copy(w.c); steer.add(spin); rover.add(steer); w.steer = steer; w.spin = spin; });
   const nm = new THREE.Matrix3();
