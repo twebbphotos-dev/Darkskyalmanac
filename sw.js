@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v398';
+const CACHE = 'zion-sky-v399';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -45,7 +45,7 @@ const CRITICAL = [
   'zcl-season.js',
   // Planet & moon imagery
   'img/jupiter.jpg','img/io.jpg','img/europa.jpg','img/ganymede.jpg','img/callisto.jpg',
-  'img/mars.jpg','img/m20/first-sunset.jpg','img/saturn.jpg','img/earth.jpg','img/moon.jpg',
+  'img/mars.jpg','img/m20/curiosity-sunset.mp4','img/m20/curiosity-sunset.jpg','img/saturn.jpg','img/earth.jpg','img/moon.jpg',
   // PWA shell
   'manifest.json','icon-180.png','icon-192.png','icon-512.png','icon.svg','social.png',
   'robots.txt','sitemap.xml'
@@ -100,7 +100,7 @@ const OFFLINE3D = [
   'img/cmp/carina-hubble.jpg', 'img/cmp/carina-webb.jpg', 'img/cmp/deep-field-hubble.jpg',
   'img/cmp/deep-field-webb.jpg', 'img/cmp/pillars-hubble.jpg', 'img/cmp/pillars-webb.jpg',
   'img/cmp/southern-ring-hubble.jpg', 'img/cmp/southern-ring-webb.jpg',
-  'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg',
+  'img/a17-flag.jpg', 'img/m20/first-flight.jpg', 'img/m20/rochette.jpg', 'img/m20/depot.jpg', 'img/m20/cheyava-falls.jpg', 'img/m20/wildcat-ridge.jpg', 'img/m20/belva-crater.jpg', 'img/m20/lookout-hill.jpg', 'img/m20/crocodile-bridge-360.jpg', 'img/m20/sample-depot-portrait.jpg', 'img/m20/valinor-hills.jpg', 'img/m20/first-sunset.jpg',
   // Mars rover game (rover/), opened from the Mars page: page, code, models,
   // terrain, textures and photos (about 41 MB). Same rules as the 3D models.
   'rover/',
@@ -297,6 +297,16 @@ function deadline(p, ms){
     p.then(function(r){ clearTimeout(t); res(r); }, function(err){ clearTimeout(t); rej(err); });
   });
 }
+// Safari asks for video in byte ranges and will not play a whole-file answer, so a saved
+// video is sliced to the range asked for.
+function partial(res, range){
+  return res.arrayBuffer().then(function(buf){
+    const m = /bytes=(\d*)-(\d*)/.exec(range) || [], n = buf.byteLength;
+    let a = m[1] === '' || m[1] == null ? Math.max(0, n - (+m[2] || 0)) : +m[1], b = m[1] !== '' && m[2] ? Math.min(+m[2], n - 1) : n - 1;
+    if(a >= n) return new Response(null, { status:416, headers:{ 'Content-Range':'bytes */' + n } });
+    return new Response(buf.slice(a, b + 1), { status:206, headers:{ 'Content-Type': res.headers.get('Content-Type') || 'video/mp4', 'Content-Range':'bytes ' + a + '-' + b + '/' + n, 'Content-Length': String(b - a + 1), 'Accept-Ranges':'bytes' } });
+  });
+}
 function putLater(req, r){ if(r && (r.status === 200 || r.type === 'opaque')){ const c = r.clone(); caches.open(CACHE).then(function(cache){ cache.put(req, c); }); } return r; }
 function cachedPage(req, url){
   return caches.match(req, { ignoreSearch:true }).then(function(m){
@@ -398,6 +408,7 @@ self.addEventListener('fetch', function(e){
   // font stylesheet in particular blocks rendering until it answers.
   e.respondWith(
     caches.match(req, { ignoreSearch:true }).then(function(cached){
+      if(cached && req.headers.get('range')) return partial(cached, req.headers.get('range'));
       if(cached) return cached;
       const net = fetch(req).then(function(r){ return putLater(req, r); });
       try{ e.waitUntil(net.catch(function(){})); }catch(err){}

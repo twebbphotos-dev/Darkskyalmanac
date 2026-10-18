@@ -3,6 +3,18 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.30 / zion-sky-v399 — 2026-10-18
+- Mars page: the Blue Sunsets card now plays Curiosity's sunset over Gale
+  Crater (PIA19401, sol 956, 15 April 2015) as a smooth 6-second loop
+  (490 KB video). NASA's animation is four frames over 6 min 51 s; the frames
+  between them were made by crossfading the sky and sliding the Sun's disk
+  between its measured positions, clipped by the real hill line as it sets.
+  The caption says the motion is smoothed. The horizon viewer, made for the
+  wide Perseverance photo, is gone; that photo stays on the simulator card.
+- Offline video: Safari asks for video in byte ranges and won't play a
+  whole-file reply, so the service worker now slices saved files to the
+  range asked for.
+
 ## v4.29 / zion-sky-v398 — 2026-10-18
 - Fix: Mastcam-Z aiming was flipped and cramped. Why: dragging moved the
   view "grab the scene" style (drag right, look left), the opposite of the
