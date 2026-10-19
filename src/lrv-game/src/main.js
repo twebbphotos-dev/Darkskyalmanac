@@ -784,9 +784,29 @@ function showRecords() {
    order (the next one is marked on screen with its distance), and back through the ring the clock stops. Best lap per
    speed setting; the top speed on the ground during a lap is kept too (Cernan's 18 km/h was driven, not flown). */
 const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false, warned: false };
+/* Into the ring, the drive pauses for a short briefing in the letterbox, then the clock starts on "Go". Paused rather
+   than braked: on the Moon's weak grip a rover at full speed needs tens of meters to stop. Figures: Guinness World
+   Records (lunar speed record) and the Apollo 17 traverse record (third drive, 12.1 km). */
+const BRIEF = { on: false, t: 0, cap: '', go: false, lines: null };
+function startBrief() {
+  const lk = SPD > 1 ? 'lap' + SPD : 'lap';
+  BRIEF.lines = [
+    [0, 6.5, 'The time trial: Apollo 17’s third drive, north to Tracy’s Rock at stop 6, east to stop 8, and home past Van Serg crater. On the Moon it was 12.1 km; here the stops sit at a quarter of their true distances, so the loop is about 2.5 km.'],
+    [6.5, 12, 'The fastest anyone has driven on the Moon is about 18 km/h (11 mph): Gene Cernan, in this rover, downhill on the way back from that drive. It is still the lunar speed record.' + (REC[lk] ? ` Your best loop at this speed: ${fmtT(REC[lk])}.` : '')],
+    [12, 13.6, 'Timer started · Go!'],
+  ];
+  BRIEF.on = true; BRIEF.t = 0; BRIEF.go = false; running = false; document.body.classList.add('briefing');
+}
+function stepBrief(dt) {
+  const T = (BRIEF.t += dt);
+  if (T >= BRIEF.lines[2][0] && !BRIEF.go) { BRIEF.go = true; running = true; RUN.on = true; RUN.t = 0; RUN.cp = 0; RUN.peak = 0; RUN.warned = false; }
+  if (T >= BRIEF.lines[2][1]) { BRIEF.on = false; document.body.classList.remove('briefing'); }
+  let cap = ''; if (BRIEF.on) for (const [t0, t1, txt] of BRIEF.lines) if (T >= t0 && T < t1) cap = txt;
+  if (cap !== BRIEF.cap) { BRIEF.cap = cap; const el = $('cine-cap'); el.classList.remove('on'); if (cap) { el.textContent = cap; void el.offsetWidth; el.classList.add('on'); } }
+}
 function offLine() { let m = 1e9; for (let i = 0; i < COURSE.length; i += 2) { const dx = COURSE[i] - car.p.x, dz = COURSE[i + 1] - car.p.z, d = dx * dx + dz * dz; if (d < m) m = d; } return Math.sqrt(m); }
 function lineFade(dt) {      // the route stays faintly in view while you roam, and firms up when the clock starts
-  const u = OBJ.line.material.uniforms.op, want = RUN.on ? 1 : 0.65;
+  const u = OBJ.line.material.uniforms.op, want = !OBJ.live ? 0 : RUN.on ? 1 : 0.65;      // hidden until the drive is yours
   u.value += Math.sign(want - u.value) * Math.min(Math.abs(want - u.value), dt / 1.5);
   OBJ.line.visible = u.value > 0.001;
 }
@@ -800,8 +820,7 @@ function mark(x, z, label) {      // the small on-screen marker for the gate or 
 function speedRecord(kmh, grounded, dt) {
   const dG = Math.hypot(OBJ.x - car.p.x, OBJ.z - car.p.z);
   if (!RUN.on) {
-    if (dG < 4.5 && !RUN.away) { RUN.on = true; RUN.t = 0; RUN.cp = 0; RUN.peak = 0; RUN.away = true; RUN.warned = false;
-      toast("Clock running · stops 6, 8 and 9, then back here"); }
+    if (dG < 4.5 && !RUN.away) { RUN.away = true; startBrief(); return; }
     if (dG > 8) RUN.away = false;      // after a lap, drive out of the ring before it can start again
     mark(OBJ.x, OBJ.z, dG > 25 ? `Time trial · ${Math.round(dG)} m` : 'Time trial'); $('clock').textContent = '';
     return;
@@ -975,8 +994,8 @@ document.querySelectorAll('#speedpick button').forEach(b => {
   b.classList.toggle('on', +b.dataset.v === SPD);
   b.addEventListener('click', () => { setSpeed(+b.dataset.v); showRecords(); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
 });
-$('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else running = true; });
-$('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); });
+$('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else running = OBJ.live = true; });
+$('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); else if (BRIEF.on && BRIEF.t < BRIEF.lines[2][0]) BRIEF.t = BRIEF.lines[2][0]; });
 { const go = e => { e.preventDefault(); location.href = '../moon'; }; $('back').addEventListener('click', go); }
 
 /* ── loop ── */
@@ -984,6 +1003,7 @@ let running = false, last = performance.now();
 const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(); let camInit = false;
 function frame(now) {
   const dt = Math.min(0.05, (now - last) / 1000); last = now;
+  if (BRIEF.on) stepBrief(dt);
   if (running) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
@@ -1169,7 +1189,7 @@ const INTRO_CAPS = [
 ];
 const INTRO_LEN = 32.8, BACK = [27.4, 32.4];      // BACK: it reverses away from the lander and swings round to face the time trial's ring
 function startIntro() {
-  INTRO.on = true; INTRO.t = 0; document.body.classList.add('intro');
+  INTRO.on = true; INTRO.t = 0; document.body.classList.add('intro'); OBJ.ring.visible = OBJ.line.visible = false; OBJ.line.material.uniforms.op.value = 0;
   if (!INTRO.pts) { INTRO.pts = []; rover.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position, n = Math.min(60, p.count);      // a scatter of points on every part
     for (let i = 0; i < n; i++) INTRO.pts.push([o, new THREE.Vector3().fromBufferAttribute(p, Math.floor(i * p.count / n))]); }); }
   INTRO.d.set(1, 0, 1).normalize();      // Quadrant I: between the forward leg, under the hatch and the ladder, and the next leg round
@@ -1193,7 +1213,7 @@ function startIntro() {
   place(x0, z0, yaw);
 }
 function endIntro() {
-  INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on');
+  INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on'); OBJ.ring.visible = OBJ.live = true;
   foldPose(0, 0, 0, 0); SEC.kit.forEach(k => { k.m.visible = true; k.m.scale.setScalar(1); }); place(INTRO.end.x, INTRO.end.z, INTRO.end.yaw);
   camPos.copy(camera.position); camTgt.copy(car.p); camInit = true;      // the chase camera picks up from the last shot
   running = true;
