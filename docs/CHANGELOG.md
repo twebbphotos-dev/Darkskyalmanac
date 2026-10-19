@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.63 (zion-sky-v432)
+Lunar Rover: a crash breaks the real rover apart, and the lunar module is solid. The wreck used to be generic boxes and cylinders; it is now cut from the rover's own model (each wheel whole, the rest in chunks where they sat), and it fades away after 10 s. The lunar module had no collision at all, so the rover drove straight through it; its descent stage, footpads and legs now stop the rover.
+
 ## v4.62 (zion-sky-v431)
 Lunar Rover: each tire throws a ring of soil when it lands from a jump, bigger the harder it comes down. Landings used to raise only the fine driving dust, the same grey as the ground and too small to see. The blast uses coarser, lighter grains that fly in airless arcs and fall straight back.
 

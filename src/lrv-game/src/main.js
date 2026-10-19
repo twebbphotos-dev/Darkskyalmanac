@@ -295,6 +295,7 @@ let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on A
 function setSpeed(fast) { FAST = fast; MU = fast ? 0.85 : 0.62; VMAX = fast ? 11.2 : 5.0; try { localStorage.setItem('lrv-speed', fast ? '2' : '1'); } catch (e) { /* not remembered */ } }
 setSpeed(FAST);
 const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0, off: 0, hit: 0 }));      // off: time out of contact; hit: how hard it came down, for the dust
+const LM = { on: false, x: -12, z: 4, y: 0 };      // where the lunar module stands; measured from its model: footpads 4.1 m out along each axis, the descent stage 2.2 m round
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
 const car = { p: new THREE.Vector3(0, 0, 0), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), steer: 0 };
 function place(x, z, yaw) { car.p.set(x, ground(x, z) + 0.8, z); car.v.set(0, 0, 0); car.w.set(0, 0, 0); car.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw); car.steer = 0; }
@@ -349,6 +350,27 @@ function step(h) {
     const Fn = Math.max(0, 90000 * pen - 3000 * vn);
     _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.55 * Fn, vt * 3000) / vt);
     _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
+  }
+  if (LM.on) {      // the lunar module: its descent stage, footpads and legs are solid
+    _qi.copy(car.q).invert();
+    const hit = (sx, sy, sz, R, flat) => {      // a sphere (or, flat, a vertical cylinder at this height) against the chassis box
+      const b = _a.set(sx, sy, sz).sub(car.p).applyQuaternion(_qi);
+      const q = _r.set(Math.max(-1.5, Math.min(1.5, b.x)), Math.max(-0.3, Math.min(0.75, b.y)), Math.max(-1.0, Math.min(1.0, b.z))).applyQuaternion(car.q).add(car.p);
+      const n = _wb.copy(q).sub(_tmp.set(sx, flat ? q.y : sy, sz)); let d = n.length();
+      if (d >= R) return;
+      if (d < 1e-4) { n.copy(car.p).sub(_tmp.set(sx, car.p.y, sz)); n.y = 0; d = 0; } n.normalize();
+      const r = q.sub(car.p); _vc.copy(car.w).cross(r).add(car.v); const vn = _vc.dot(n);
+      const Fn = Math.max(0, 90000 * (R - d) - 3000 * vn);
+      _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.4 * Fn, vt * 3000) / vt);
+      _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp)); touching++;
+    };
+    if (Math.hypot(car.p.x - LM.x, car.p.z - LM.z) < 8) {
+      hit(LM.x, Math.max(LM.y + 0.3, Math.min(LM.y + 7, car.p.y)), LM.z, 2.2, true);
+      for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
+        hit(LM.x + dx * 4.1, LM.y + 0.25, LM.z + dz * 4.1, 0.5);      // the footpad
+        for (let k = 1; k <= 4; k++) { const t = k / 5, r = 4.1 - 1.9 * t; hit(LM.x + dx * r, LM.y + 0.4 + 2.2 * t, LM.z + dz * r, 0.2); }      // the leg, up to the stage
+      }
+    }
   }
   car.v.addScaledVector(_f, h / MASS);
   // turning: τ = I·dω/dt + ω × (Iω), worked in the body's own axes
@@ -604,22 +626,58 @@ function speedRecord(kmh, grounded, dt) {
 }
 /* A catastrophic crash, rolling onto the roof hard or tumbling at speed: the rover breaks apart, pieces fly in clean
    lunar arcs and bounce, and after a few seconds it is back on its wheels where it last drove safely. */
-const CRASH = { roof: 0, on: false, t: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, pieces: [] };
-const PIECE_MATS = [0xb9b6b0, 0x8a8782, 0xc89a3c, 0x3a3836].map(c => new THREE.MeshStandardMaterial({ color: c, roughness: 0.7, metalness: 0.3 }));
+const CRASH = { roof: 0, on: false, t: 0, fade: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, pieces: [] };
+/* The pieces are the rover itself: each wheel whole, and the rest cut into chunks by where they sit (a 4 × 2 × 2 grid
+   over the chassis), with their own textures. Built once, after the wheels are rigged. They fade out after 10 s. */
+const DEBRIS = [], DEBRIS_MATS = new Map();
+function buildDebris() {
+  rover.updateMatrixWorld(true);
+  const inv = rover.matrixWorld.clone().invert(), P = new THREE.Vector3(), nm = new THREE.Matrix3(), buckets = new Map();
+  const mat = m => { if (!DEBRIS_MATS.has(m)) DEBRIS_MATS.set(m, m.clone()); return DEBRIS_MATS.get(m); };
+  rover.traverse(o => {
+    if (!o.isMesh) return;
+    const wk = WHEEL_PARTS.findIndex(w => { for (let q = o; q; q = q.parent) if (q === w.spin) return true; return false; });
+    const M = inv.clone().multiply(o.matrixWorld), g = o.geometry, pos = g.attributes.position, idx = g.index ? g.index.array : null, nTri = (idx ? idx.length : pos.count) / 3;
+    nm.getNormalMatrix(M);
+    const f = new Float32Array(pos.count * 3); for (let i = 0; i < pos.count; i++) { P.fromBufferAttribute(pos, i).applyMatrix4(M); f[i * 3] = P.x; f[i * 3 + 1] = P.y; f[i * 3 + 2] = P.z; }
+    for (let t = 0; t < nTri; t++) {
+      const v = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k);
+      let key = 'w' + wk;
+      if (wk < 0) { const cx = (f[v[0] * 3] + f[v[1] * 3] + f[v[2] * 3]) / 3, cy = (f[v[0] * 3 + 1] + f[v[1] * 3 + 1] + f[v[2] * 3 + 1]) / 3, cz = (f[v[0] * 3 + 2] + f[v[1] * 3 + 2] + f[v[2] * 3 + 2]) / 3;
+        key = Math.max(0, Math.min(3, Math.floor((cx + 1.6) / 0.8))) + ',' + (cz > 0 ? 1 : 0) + ',' + (cy > 0.2 ? 1 : 0); }
+      if (!buckets.has(key)) buckets.set(key, new Map());
+      const b = buckets.get(key); if (!b.has(o)) b.set(o, { f, M: M.clone(), n: nm.clone(), list: [] });
+      b.get(o).list.push(...v);
+    }
+  });
+  for (const b of buckets.values()) {
+    const box = new THREE.Box3();
+    for (const { f, list } of b.values()) for (const v of list) box.expandByPoint(P.set(f[v * 3], f[v * 3 + 1], f[v * 3 + 2]));
+    const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3()), parts = [];
+    for (const [o, { f, n, list }] of b) {
+      const g = o.geometry, out = new THREE.BufferGeometry(), a = new Float32Array(list.length * 3);
+      list.forEach((v, i) => { a[i * 3] = f[v * 3] - c.x; a[i * 3 + 1] = f[v * 3 + 1] - c.y; a[i * 3 + 2] = f[v * 3 + 2] - c.z; });
+      out.setAttribute('position', new THREE.BufferAttribute(a, 3));
+      for (const name of Object.keys(g.attributes)) { if (name === 'position') continue; const at = g.attributes[name], s = at.itemSize, d = new Float32Array(list.length * s);
+        list.forEach((v, i) => { if (name === 'normal') { P.fromBufferAttribute(at, v).applyMatrix3(n).normalize(); d[i * 3] = P.x; d[i * 3 + 1] = P.y; d[i * 3 + 2] = P.z; return; }
+          d[i * s] = at.getX(v); if (s > 1) d[i * s + 1] = at.getY(v); if (s > 2) d[i * s + 2] = at.getZ(v); if (s > 3) d[i * s + 3] = at.getW(v); });
+        out.setAttribute(name, new THREE.BufferAttribute(d, s)); }
+      parts.push({ geo: out, mat: mat(o.material) });
+    }
+    DEBRIS.push({ c, r: Math.max(0.08, Math.min(0.4, Math.min(sz.x, sz.y, sz.z) / 2)), parts });
+  }
+}
 function breakApart() {
-  CRASH.on = true; CRASH.t = 0; rover.visible = false;
+  CRASH.on = true; CRASH.t = 0; CRASH.fade = 0; rover.visible = false;
   CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.pieces = [];
-  const shapes = [
-    ...[0, 1, 2, 3].map(() => [new THREE.CylinderGeometry(0.41, 0.41, 0.23, 18), 3]),      // the wire wheels
-    [new THREE.BoxGeometry(1.3, 0.12, 0.9), 0], [new THREE.BoxGeometry(1.1, 0.12, 0.8), 0], [new THREE.BoxGeometry(0.6, 0.35, 0.5), 1],      // chassis panels, a seat
-    [new THREE.ConeGeometry(0.5, 0.25, 16, 1, true), 0], [new THREE.BoxGeometry(0.5, 0.3, 0.35), 2], [new THREE.BoxGeometry(0.9, 0.08, 0.3), 2],      // the dish, a battery, a fender
-  ];
-  for (const [geo, mi] of shapes) {
-    const m = new THREE.Mesh(geo, PIECE_MATS[mi]); m.castShadow = true; scene.add(m);
-    const off = new THREE.Vector3((Math.random() - .5) * 2.4, Math.random() * 0.8, (Math.random() - .5) * 1.6).applyQuaternion(car.q);
-    m.position.copy(car.p).add(off); m.quaternion.copy(car.q);
-    const v = car.v.clone().multiplyScalar(0.6).add(new THREE.Vector3((Math.random() - .5) * 5, 1.5 + Math.random() * 4, (Math.random() - .5) * 5));
-    CRASH.pieces.push({ m, v, w: new THREE.Vector3((Math.random() - .5) * 9, (Math.random() - .5) * 9, (Math.random() - .5) * 9), r: 0.25 });
+  DEBRIS_MATS.forEach(m => { m.opacity = 1; m.transparent = false; m.needsUpdate = true; });
+  rover.updateMatrixWorld(true);
+  for (const d of DEBRIS) {
+    const m = new THREE.Group(); d.parts.forEach(({ geo, mat }) => { const n = new THREE.Mesh(geo, mat); n.castShadow = true; m.add(n); }); scene.add(m);
+    m.position.copy(d.c).applyMatrix4(rover.matrixWorld); m.quaternion.copy(car.q);
+    const out = d.c.clone().applyQuaternion(car.q).setY(0).normalize();      // flung outward from the middle of the rover
+    const v = car.v.clone().multiplyScalar(0.6).addScaledVector(out, 1 + Math.random() * 3).add(new THREE.Vector3((Math.random() - .5) * 2, 1.5 + Math.random() * 3.5, (Math.random() - .5) * 2));
+    CRASH.pieces.push({ m, v, w: new THREE.Vector3((Math.random() - .5) * 8, (Math.random() - .5) * 8, (Math.random() - .5) * 8), r: d.r });
   }
   for (let k = 0; k < 160; k++) { const i = dnext; dnext = (dnext + 1) % DN;      // a cloud of dust, falling straight back
     dpos[i * 3] = car.p.x + (Math.random() - .5) * 2; dpos[i * 3 + 1] = car.p.y; dpos[i * 3 + 2] = car.p.z + (Math.random() - .5) * 2;
@@ -634,6 +692,10 @@ function stepCrash(dt) {
     CRASH.roof = 0;
   } else if ((CRASH.t += dt) > 3.5) {
     CRASH.on = false; rover.visible = true; place(CRASH.safe.x, CRASH.safe.z, CRASH.safe.yaw); camInit = false; toast('A new rover · back where you last drove safely');
+  }
+  if (CRASH.pieces.length && (CRASH.fade += dt) > 10) {      // the wreck fades away after 10 s
+    const o = Math.max(0, 1 - (CRASH.fade - 10) / 1.5); DEBRIS_MATS.forEach(m => { if (!m.transparent) { m.transparent = true; m.needsUpdate = true; } m.opacity = o; });
+    if (o === 0) { CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.pieces = []; }
   }
   for (const p of CRASH.pieces) {
     p.v.y -= G * dt; p.m.position.addScaledVector(p.v, dt);
@@ -765,9 +827,9 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   place(0, 0, Math.atan2(350, 82));      // facing north, up the valley toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
-  if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); rigWheels(); }      // tires on the ground at the resting ride height
+  if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); rigWheels(); buildDebris(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
-  if (lm) { const o = lm.scene; dusty(o); const x = -12, z = 4; o.position.set(x, ground(x, z) - 0.15, z); o.rotation.y = -Math.PI / 2; scene.add(o); }
+  if (lm) { const o = lm.scene; dusty(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true; o.position.set(x, ground(x, z) - 0.15, z); o.rotation.y = -Math.PI / 2; scene.add(o); }
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
