@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.70 (zion-sky-v439)
+Perseverance Simulator: more of the view, less dashboard. The roll and pitch gauge moves to the top center and the map into the top-right corner; the objectives and flights counters are gone (the objectives list already says what is left), and the camera button is gone from the screen: Chase, Wide and Rover are chosen in Settings.
+
 ## v4.69 (zion-sky-v438)
 Lunar Rover: steadier steering, a faint route, gentler rollovers, a truer unloading. Steering lost its grip because its limit fell with forward speed, which itself shrinks in a slide, so the wheels stayed at full lock and fed the slide into a spin (46 to 55° of sideslip in tests); the limit now tracks what the tires can hold in lunar gravity (about 1 m/s² sideways), and the wheels turn a little faster. Slip is down to 8 to 23° and turns hold their speed. The third drive's route now shows faintly while you roam. A slow rollover crumples where it lies instead of exploding; the throw scales with how hard it hit. The unloading follows the real sequence more closely: stepwise pulls on the tapes, each chassis section and wheel snapping into its lock, the rear wheels touching down first while the front is still on its hinge, the front let down, and the rover pulled clear of the lander. Checked: a 5 m drop takes 2.45 s, against 2.48 s for lunar gravity (1.01 s on Earth).
 

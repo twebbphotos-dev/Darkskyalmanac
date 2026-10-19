@@ -31,7 +31,7 @@
     border:1px solid var(--line);background:var(--panel);color:var(--gold);font-size:22px;line-height:1;text-decoration:none;backdrop-filter:blur(10px)}
   #title{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--gold);font-weight:600}
   #title small{display:block;font-size:8.5px;letter-spacing:.1em;color:var(--mute);font-weight:400;margin-top:2px}
-  .stats{margin-left:auto;display:flex;gap:7px}
+  .stats{display:none}      /* the objectives list says what is left; the view gets the room */
   .stat{background:var(--panel);border:1px solid var(--line);border-radius:7px;
     padding:6px 11px;text-align:center;min-width:66px;backdrop-filter:blur(10px)}
   .stat b{display:block;font-size:15px;line-height:1.15;font-weight:600;font-variant-numeric:tabular-nums}
@@ -166,10 +166,10 @@
   #real-note{margin:0 0 8px;font-size:12px;line-height:1.6;color:#C9BD97;font-weight:300}
   #real-credit{font-size:8.5px;letter-spacing:.05em;color:var(--mute)}
 
-  #minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 66px);right:14px;z-index:21;width:150px;height:150px;
+  #minimap{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);right:14px;z-index:21;width:150px;height:150px;
     border-radius:50%;border:1px solid var(--line);box-shadow:0 4px 16px rgba(0,0,0,.45);cursor:pointer;background:#0c0913}
   body.edl #minimap,body.camview #minimap{display:none}
-  #attitude{position:fixed;top:calc(env(safe-area-inset-top,0px) + 224px);right:9px;z-index:21;width:160px;height:92px;
+  #attitude{position:fixed;top:calc(env(safe-area-inset-top,0px) + 10px);left:50%;transform:translateX(-50%);z-index:21;width:160px;height:92px;
     border-radius:10px;background:rgba(13,10,24,.72);border:1px solid var(--line);backdrop-filter:blur(8px);pointer-events:none}
   body.edl #attitude,body.camview #attitude,body.brief #attitude{display:none}
   #mapsheet .mapcard{max-width:620px}
@@ -215,8 +215,8 @@
   #loading.on{display:flex}
 
   @media(max-width:720px){
-    #minimap{width:86px;height:86px;top:calc(env(safe-area-inset-top,0px) + 54px);right:8px}
-    #attitude{width:86px;height:49px;top:calc(env(safe-area-inset-top,0px) + 146px);right:8px;background:rgba(13,10,24,.42);border:0}
+    #minimap{width:86px;height:86px;top:calc(env(safe-area-inset-top,0px) + 8px);right:8px}
+    #attitude{width:96px;height:55px;top:calc(env(safe-area-inset-top,0px) + 8px);background:rgba(13,10,24,.42);border:0}
     #hint{display:none} #title{display:none}
     #top{padding:calc(env(safe-area-inset-top,0px) + 8px) 10px 8px;background:none}
     .stat{min-width:46px;padding:4px 7px} .stat b{font-size:12px}
@@ -401,11 +401,11 @@
   #goals div.ok{color:var(--mute);text-decoration:line-through}
   #goals div.ok::before{content:'●';color:#6FCF7F;text-decoration:none}
   body.cinema #goals,body.camview #goals,body.edl #goals{display:none}
-  @media(max-width:720px){ #tl{top:calc(env(safe-area-inset-top,0px) + 48px);left:10px;max-width:calc(100vw - 116px)} #goals,#toast{font-size:9px} }
+  @media(max-width:720px){ #tl{top:calc(env(safe-area-inset-top,0px) + 70px);left:10px;max-width:calc(100vw - 116px)} #goals,#toast{font-size:9px} }
   .levels{display:grid;grid-template-columns:1fr;gap:8px}
   .levels .btn{width:100%;padding:13px 14px;font-size:10px;text-align:center}
   .levels .btn small{display:block;font-size:8.5px;letter-spacing:.08em;text-transform:none;opacity:.7;margin-top:3px;font-weight:500} .levels .btn small:empty{display:none} .levels .btn[hidden]{display:none}
-  #btn-pov{position:fixed;z-index:21;right:9px;top:calc(env(safe-area-inset-top,0px) + 324px);padding:6px 10px;font-size:8.5px;pointer-events:auto}
+  #btn-pov{display:none !important;position:fixed;z-index:21;right:9px;top:calc(env(safe-area-inset-top,0px) + 324px);padding:6px 10px;font-size:8.5px;pointer-events:auto}
   body.cinema #btn-pov,body.camview #btn-pov,body.edl #btn-pov,body.brief #btn-pov{display:none}
   @media(max-width:720px){ #btn-pov{top:calc(env(safe-area-inset-top,0px) + 200px);right:8px;padding:5px 9px;font-size:8px} }
   #rover-brief .pg2{display:none} #rover-brief.p2 .pg1{display:none} #rover-brief.p2 .pg2{display:block}
