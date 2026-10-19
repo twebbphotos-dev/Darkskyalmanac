@@ -90,12 +90,22 @@ function brightness(x, z) {
   for (const c of CRATER_GRID.get(Math.floor(x / CG) + ',' + Math.floor(z / CG)) || []) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d < 2.1) b = Math.max(b, c.fresh * c.fresh * (d < 1 ? 0.55 : Math.exp(-(((d - 1) / 0.5) ** 2)))); }
   return 0.9 + 0.2 * (fbm(x / 35 + 7, z / 35, 3) - .5) + 0.45 * b;
 }
+// The surface of the terrain model's inner ring exactly as drawn: flat triangles on its 20 m grid, sunk 0.15 m. Where
+// the slope curves, as at the foot of the North Massif, those triangles sag up to half a meter below the true shape.
+function ringSurf(x, z) {
+  const u = (x - CX + 2500) / 20, v = (z - CZ + 2500) / 20, i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, n = (a, b) => demGame(CX - 2500 + a * 20, CZ - 2500 + b * 20);
+  const ha = n(i, j), hb = n(i, j + 1), hd = n(i + 1, j);
+  if (fu + fv <= 1) return ha + (hd - ha) * fu + (hb - ha) * fv - 0.15;
+  const hc = n(i + 1, j + 1); return hc + (hb - hc) * (1 - fu) + (hd - hc) * (1 - fv) - 0.15;
+}
 function buildGround() {
   indexCraters();
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const x = CX - HALF + i * CELL, z = CZ - HALF + j * CELL;
     const edge = ss(0, 40, HALF - Math.max(Math.abs(x - CX), Math.abs(z - CZ)));      // the detail fades out at the edge, where the terrain model's ring takes over
-    HB[j * N + i] = demGame(x, z) + edge * ((fbm(x / 60, z / 60, 4) - .5) * 2.2 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35);
+    // and over the same 40 m the shape eases onto the ring's own surface, so the two meet without a ledge (it cast a shadow line along the edge)
+    const d = demGame(x, z), rs = edge < 1 ? ringSurf(x, z) : d;
+    HB[j * N + i] = rs + edge * (d - rs) + edge * ((fbm(x / 60, z / 60, 4) - .5) * 2.2 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35);
     H[j * N + i] = HB[j * N + i] + edge * craterH(x, z);
     B[j * N + i] = brightness(x, z);
   }
@@ -201,8 +211,11 @@ soil.polygonOffset = true; soil.polygonOffsetFactor = -1; soil.polygonOffsetUnit
 const patchU = { value: new THREE.Vector4(0, 0, 0, 0) };      // the fine patch's centre and half-size: the coarse ground is not drawn there
 const coarse = soil.clone();
 coarse.onBeforeCompile = sh => {
+  // the crater field's relief before the grain takes over its hook (the other way round, the grain replaced the line it
+  // looks for and the square got the field's tone but not its relief, so the textured ring showed a line at the edge);
+  // the square has its own craters, so the field's relief only fades in over its last 80 m, to match the ring at the edge
+  craterField(sh, CRATER_W, '#include <normal_fragment_maps>', `smoothstep( ${(HALF - 80).toFixed(1)}, ${HALF.toFixed(1)}, max( abs( vWxz.x - ${CX.toFixed(1)} ), abs( vWxz.y - ${CZ.toFixed(1)} ) ) )`);
   sh.fragmentShader = grainFade(sh); relief(sh);
-  craterField(sh, CRATER_W, '#include <normal_fragment_maps>');
   sh.uniforms.uPatch = patchU;
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
 };
@@ -231,7 +244,11 @@ function reliefMap() {
   }
   const D = new Uint8Array(TN * TN * 4);
   for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {
-    const gx = F[j * TN + Math.min(TN - 1, i + 1)] - F[j * TN + Math.max(0, i - 1)], gz = F[Math.min(TN - 1, j + 1) * TN + i] - F[Math.max(0, j - 1) * TN + i], l = Math.hypot(gx, 2 * TP, gz), o = (j * TN + i) * 4;
+    let gx = F[j * TN + Math.min(TN - 1, i + 1)] - F[j * TN + Math.max(0, i - 1)], gz = F[Math.min(TN - 1, j + 1) * TN + i] - F[Math.max(0, j - 1) * TN + i];
+    const x = X0 + (i + 0.5) * TP, z = Z0 + (j + 0.5) * TP, e = edge(x, z);
+    if (e < 1) { const k = TP / 10;      // near the edge, the terrain model's smooth slope, as the ring beyond is lit (vertex normals), not its flat triangles
+      gx = gx * e + (1 - e) * (demGame(x + 10, z) - demGame(x - 10, z)) * k; gz = gz * e + (1 - e) * (demGame(x, z + 10) - demGame(x, z - 10)) * k; }
+    const l = Math.hypot(gx, 2 * TP, gz), o = (j * TN + i) * 4;
     D[o] = 128 - gx / l * 127; D[o + 1] = 128 + 2 * TP / l * 127; D[o + 2] = 128 - gz / l * 127; D[o + 3] = 255;      // the world-space normal: x east, y up, z south
   }
   const t = new THREE.DataTexture(D, TN, TN); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
@@ -290,7 +307,7 @@ const CRATER_TILE = { value: null };
 // leaves no line (fading in by position, over its last 60 m, still showed one from afar); none near the rover
 const CRATER_W = 'smoothstep( 70.0, 260.0, length( vViewPosition ) )';
 // adds the crater field to a ground material's shader; w is a GLSL expression for how much of it to show (vWxz is the world xz)
-const craterField = (sh, w, after) => {
+const craterField = (sh, w, after, nw = '1.0') => {      // nw: how much of its relief, on top of w
   sh.uniforms.uCrT = CRATER_TILE;
   sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCN;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCN = normalize(mat3(modelMatrix) * objectNormal);');
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uCrT; varying vec3 vCN;')
@@ -298,7 +315,7 @@ const craterField = (sh, w, after) => {
       float crW = ( ${w} ) * ( 0.4 + 0.6 * smoothstep( 0.8, 0.96, normalize( vCN ).y ) ); vec4 crA = texture2D( uCrT, vWxz / 120.0 ), crB = texture2D( uCrT, vWxz / 620.0 + 0.37 );
       diffuseColor.rgb *= 1.0 + crW * ( ( crA.a - 0.5 ) * 0.22 + ( crB.a - 0.5 ) * 0.22 );`)
     .replace(after, `${after}
-      { vec2 t = ( crA.rg * 2.0 - 1.0 ) * 0.45 + ( crB.rg * 2.0 - 1.0 ) * 0.38; vec3 wn = normalize( vCN ), dw = vec3( t.x, 0.0, t.y ) * crW; dw -= wn * dot( wn, dw );
+      { vec2 t = ( crA.rg * 2.0 - 1.0 ) * 0.45 + ( crB.rg * 2.0 - 1.0 ) * 0.38; vec3 wn = normalize( vCN ), dw = vec3( t.x, 0.0, t.y ) * crW * ( ${nw} ); dw -= wn * dot( wn, dw );
         normal = normalize( normal + ( viewMatrix * vec4( dw, 0.0 ) ).xyz ); }`);
 };
 function ringMesh(half, seg, hole) {
@@ -314,6 +331,10 @@ function ringMesh(half, seg, hole) {
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('void main() {', `void main() {\n  if (max(abs(vWxz.x - ${CX.toFixed(1)}), abs(vWxz.y - ${CZ.toFixed(1)})) < ${(hole - 1).toFixed(1)}) discard;`);
     craterField(sh, CRATER_W, '#include <normal_fragment_begin>');
   };
+  // three.js reuses a compiled shader whenever onBeforeCompile's source text matches, and both rings share this one:
+  // without its own key the outer ring took the inner one's hole (470 m, not 2.5 km) and drew over it, its coarser
+  // 50 m triangles fighting the 20 m ones in patches all the way up the mountains
+  fm.customProgramCacheKey = () => 'ring' + hole;
   const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }
 function farMesh() { ringMesh(2500, 250, HALF); ringMesh(8000, 320, 2500); }
@@ -459,7 +480,7 @@ function rockMeshes() {
 const MASS = 700, I = new THREE.Vector3(MASS / 12 * (1.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 1.1 ** 2));
 // Speed, chosen on the briefing card: real (1), double (2), or triple (3, unlocked by finishing the time trial once),
 // the faster ones with stronger motors and grippier tires to get there
-const unlocked3 = () => !!(REC.lap || REC.lap2 || REC.lap3);
+const unlocked3 = () => true;      // open to everyone for now (it was unlocked by finishing a lap: !!(REC.lap || REC.lap2 || REC.lap3))
 let SPD = (() => { try { return +localStorage.getItem('lrv-speed') || 1; } catch (e) { return 1; } })();
 const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.6;
 let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
@@ -991,7 +1012,8 @@ function frame(now) {
     camPos.lerp(want, 1 - Math.exp(-dt * 4)); camTgt.lerp(_a.copy(car.p).add(_r.set(0, 0.6, 0)), 1 - Math.exp(-dt * 8));
     camera.position.copy(camPos); camera.lookAt(camTgt);
   }
-  if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);      // test hook
+  if (window.__lrv && window.__lrv.cam) camera.position.copy(window.__lrv.cam);      // test hooks
+  if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);
   sun.position.copy(car.p).addScaledVector(SUN, 120); sun.target.position.copy(car.p);
   const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
