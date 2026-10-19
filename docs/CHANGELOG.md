@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.74 (zion-sky-v443)
+Lunar Rover: a calmer, physical crash. The wreck used to burst outward, every piece flung from the middle with a random kick, and each piece was a ball that hovered, spun on the spot and skidded to a stop whatever its shape. Now the chassis stays one body, bent at its hinges by the blow, with wheels and pieces of the kit torn loose only by a harder hit (the rest left on, knocked askew); one end tears away only in the hardest crashes. Everything keeps the rover's own motion and spin, so it slides and tumbles on instead of exploding. Each piece is a rigid body falling at 1.62 m/s², meeting the ground at points on its outline with a stiff spring and regolith friction, so it lands, tips over, rolls (loose wheels roll on their tread) and comes to rest lying on the surface. The kit stands above the part of the hull that registers a crash, so it starts slightly in the ground; pieces are lifted clear first, which kept them from being fired out.
+
 ## v4.73 (zion-sky-v442)
 Lunar Rover: lined up for the time trial, held by its brakes, and clean wheels. After unloading, the rover now reverses away from the lander in a smooth arc, front and rear wheels steering opposite ways, and stops square on to the time trial's ring (a straight run at full throttle passes within a meter of its center). It used to start facing the lander, and on sloping ground it rolled off on its own because nothing held it: with no throttle the tires only damped motion, so it crept downhill. It is now held as if braked, by static friction at each tire, until the driver first touches the controls. Small scraps of fender inside each wheel's cut-out cylinder turned with the tire, out of step with the fender; triangles painted fender orange in the scan now stay with the body.
 
