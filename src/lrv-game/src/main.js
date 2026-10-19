@@ -273,6 +273,51 @@ function ringMesh(half, seg, hole) {
   const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }
 function farMesh() { ringMesh(2500, 250, HALF); ringMesh(8000, 320, 2500); }
+/* ── Tracy's Rock: the split boulder at stop 6 of the third drive, which Gene Cernan named for his daughter. It rolled
+   and bounced about a kilometer down the North Massif, leaving a trail still visible from orbit, and broke into five
+   pieces where it stopped. Put back together it would be about 18 × 10 × 6 m (LROC); the largest piece is some 10 m
+   across. Drawn at its true size (like the craters, it is not shrunk with the map), resting on the hillside beside
+   where the rover parked. Each piece is the same rough block, cut flat along the cracks between them and pushed a little apart. ── */
+const BOULDER = { x: 0, z: 0, cyl: [] };
+function splitBoulder() {
+  const st = CPS[0], A = [9, 4.4, 5], yaw = 0.35, SINK = 0.7;
+  BOULDER.x = st.x - 21; BOULDER.z = st.z - 3;      // along the slope from the stop, not up it: the hillside here is steep
+  const g0 = groundBase(BOULDER.x, BOULDER.z), e = 6;
+  const up = new THREE.Vector3(groundBase(BOULDER.x - e, BOULDER.z) - groundBase(BOULDER.x + e, BOULDER.z), 2 * e, groundBase(BOULDER.x, BOULDER.z - e) - groundBase(BOULDER.x, BOULDER.z + e)).normalize();
+  // the cracks, as planes n·p = d in the boulder's frame (x along its length)
+  const cuts = [[1, 0, 0.12, -1.0], [0.08, 0.1, 1, 1.0], [1, 0.05, -0.25, 4.4], [0.25, 0.15, 1, -1.4]].map(([x, y, z, d]) => { const n = new THREE.Vector3(x, y, z), l = n.length(); return { n: n.divideScalar(l), d: d / l }; });
+  const frags = [      // which side of which cracks each piece keeps, and how far it moved off
+    [[[0, -1], [1, 1]], [-1.1, 0, 0.7]], [[[0, -1], [1, -1]], [-0.8, -0.1, -0.6]],
+    [[[0, 1], [2, -1], [3, 1]], [0.2, 0, 0.55]], [[[0, 1], [2, -1], [3, -1]], [0.15, -0.05, -0.65]], [[[0, 1], [2, 1]], [1.2, -0.15, 0.1]],
+  ];
+  const grp = BOULDER.grp = new THREE.Group(); grp.position.set(BOULDER.x, g0 - SINK, BOULDER.z);      // bedded into the slope, its base along the hillside
+  grp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw)); scene.add(grp);
+  const mat = new THREE.MeshStandardMaterial({ color: 0x8c877f, roughness: 1, metalness: 0, flatShading: true });
+  const P = new THREE.Vector3(), cyl = [];
+  for (const [keep, push] of frags) {
+    const geo = new THREE.IcosahedronGeometry(1, 4), p = geo.attributes.position;
+    for (let i = 0; i < p.count; i++) {
+      P.fromBufferAttribute(p, i).normalize();
+      const n = fbm(P.x * 1.6 + P.y * 2.3 + 11, P.z * 1.6 - P.y * 1.3, 3), f = fbm(P.x * 7 + 3, P.z * 7 + P.y * 6, 3), g = fbm(P.x * 19 - 5, P.z * 19 + P.y * 17, 2);
+      const crag = 0.84 + 0.3 * n + 0.12 * f + 0.07 * g;      // big lumps, then a rough, broken surface
+      const peak = 1 + 0.35 * Math.max(0, P.y) * Math.exp(-((P.x - 0.15) ** 2 + (P.z + 0.1) ** 2) * 2.5);      // higher toward one end of the ridge, as in the photographs
+      const sq = v => Math.sign(v) * Math.pow(Math.abs(v), 0.55);      // a blocky, squared-off shape rather than an egg
+      P.set(sq(P.x) * A[0], sq(P.y) * A[1] * peak, sq(P.z) * A[2]).multiplyScalar(crag); if (P.y < -1) P.y = -1 + (P.y + 1) * 0.3;      // a flat base, bedded in the soil
+      for (const [ci, side] of keep) { const c = cuts[ci], dist = side * (c.n.dot(P) - c.d); if (dist < 0) P.addScaledVector(c.n, -dist * side); }      // cut flat along the crack
+      p.setXYZ(i, P.x + push[0], P.y + push[1], P.z + push[2]);
+    }
+    geo.computeVertexNormals();
+    const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; grp.add(m);
+    // its footprint, as a row of upright cylinders for the rover to run into
+    geo.computeBoundingBox(); const b = geo.boundingBox, lx = b.max.x - b.min.x, lz = b.max.z - b.min.z, along = lx > lz, short = Math.min(lx, lz), n = Math.max(1, Math.round(Math.max(lx, lz) / short));
+    for (let k = 0; k < n; k++) {
+      const t = (k + 0.5) / n, cx = along ? b.min.x + lx * t : (b.min.x + b.max.x) / 2, cz = along ? (b.min.z + b.max.z) / 2 : b.min.z + lz * t;
+      const w = new THREE.Vector3(cx, 1, cz).applyQuaternion(grp.quaternion);
+      cyl.push({ x: BOULDER.x + w.x, z: BOULDER.z + w.z, r: short / 2 * 0.85, top: g0 - SINK + b.max.y });
+    }
+  }
+  BOULDER.cyl = cyl;
+}
 function rockMeshes() {
   const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
   for (let k = 0; k < p.count; k++) { const s = 0.75 + r() * 0.4; p.setXYZ(k, p.getX(k) * s, p.getY(k) * s * 0.7, p.getZ(k) * s); }
@@ -298,7 +343,11 @@ const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15,
 const LM = { on: false, x: -12, z: 4, y: 0 };      // where the lunar module stands; measured from its model: footpads 4.1 m out along each axis, the descent stage 2.2 m round
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
 const car = { p: new THREE.Vector3(0, 0, 0), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), steer: 0 };
-function place(x, z, yaw) { car.p.set(x, ground(x, z) + 0.8, z); car.v.set(0, 0, 0); car.w.set(0, 0, 0); car.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw); car.steer = 0; }
+function place(x, z, yaw) {      // set down on the slope, not level: level on a hillside buried the uphill wheels, and the suspension threw it into the air
+  const e = 1.5, n = new THREE.Vector3(groundBase(x - e, z) - groundBase(x + e, z), 2 * e, groundBase(x, z - e) - groundBase(x, z + e)).normalize();
+  car.q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw));
+  car.p.set(x, ground(x, z), z).addScaledVector(n, 0.8); car.v.set(0, 0, 0); car.w.set(0, 0, 0); car.steer = 0;
+}
 
 const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3(), _a = new THREE.Vector3(), _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _rt = new THREE.Vector3(),
       _vc = new THREE.Vector3(), _wf = new THREE.Vector3(), _ws = new THREE.Vector3(), _tmp = new THREE.Vector3(), _qi = new THREE.Quaternion(), _wb = new THREE.Vector3(), _L = new THREE.Vector3();
@@ -351,7 +400,7 @@ function step(h) {
     _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.55 * Fn, vt * 3000) / vt);
     _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
   }
-  if (LM.on) {      // the lunar module: its descent stage, footpads and legs are solid
+  {
     _qi.copy(car.q).invert();
     const hit = (sx, sy, sz, R, flat) => {      // a sphere (or, flat, a vertical cylinder at this height) against the chassis box
       const b = _a.set(sx, sy, sz).sub(car.p).applyQuaternion(_qi);
@@ -364,13 +413,15 @@ function step(h) {
       _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.4 * Fn, vt * 3000) / vt);
       _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp)); touching++;
     };
-    if (Math.hypot(car.p.x - LM.x, car.p.z - LM.z) < 8) {
+    if (LM.on && Math.hypot(car.p.x - LM.x, car.p.z - LM.z) < 8) {      // the lunar module: its descent stage, footpads and legs are solid
       hit(LM.x, Math.max(LM.y + 0.3, Math.min(LM.y + 7, car.p.y)), LM.z, 2.2, true);
       for (const [dx, dz] of [[1, 0], [-1, 0], [0, 1], [0, -1]]) {
         hit(LM.x + dx * 4.1, LM.y + 0.25, LM.z + dz * 4.1, 0.5);      // the footpad
         for (let k = 1; k <= 4; k++) { const t = k / 5, r = 4.1 - 1.9 * t; hit(LM.x + dx * r, LM.y + 0.4 + 2.2 * t, LM.z + dz * r, 0.2); }      // the leg, up to the stage
       }
     }
+    if (BOULDER.cyl.length && Math.hypot(car.p.x - BOULDER.x, car.p.z - BOULDER.z) < 22)      // the split boulder at stop 6
+      for (const c of BOULDER.cyl) if (car.p.y < c.top + 0.6) hit(c.x, Math.min(c.top, car.p.y), c.z, c.r, true);
   }
   car.v.addScaledVector(_f, h / MASS);
   // turning: τ = I·dω/dt + ω × (Iω), worked in the body's own axes
@@ -405,7 +456,7 @@ const DRIVES = [
 const LMP = [-12, 4];      // where the lander stands here
 const COURSE = [];      // the loop's dots, flattened x, z: stray too far from them and the attempt ends
 const OBJ = { x: LMP[0] + 150 / SQ, z: LMP[1] - 170 / SQ, ring: null, line: null };      // the start and finish, on the route just north of the lander
-const CPS = [['stop 6', 805, -3003], ['stop 8', 3012, -2599], ['stop 9 · Van Serg', 1735, -1228]].map(([n, x, z]) => ({ n, x: LMP[0] + x / SQ, z: LMP[1] + z / SQ }));      // to pass in order
+const CPS = [['stop 6 · Tracy’s Rock', 805, -3003], ['stop 8', 3012, -2599], ['stop 9 · Van Serg', 1735, -1228]].map(([n, x, z]) => ({ n, x: LMP[0] + x / SQ, z: LMP[1] + z / SQ }));      // to pass in order
 function routeDots() {
   const cr = (a, b, c, d, t) => .5 * ((2 * b) + (-a + c) * t + (2 * a - 5 * b + 4 * c - d) * t * t + (-a + 3 * b - 3 * c + d) * t * t * t);
   const pos = [], col = [], cc = new THREE.Color();
@@ -923,7 +974,7 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loadmsg').textContent = 'Shaping the valley…';
   await new Promise(r => setTimeout(r, 30));
   try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) { DEM = new Int16Array(await r.arrayBuffer()); DEM0 = demRaw(0, 0); } } catch (e) { /* offline without it: flat ground, no mountains */ }
-  buildGround(); indexRocks(); reliefMap(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); routeDots(); showRecords();
+  buildGround(); indexRocks(); reliefMap(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); splitBoulder(); routeDots(); showRecords();
   if (DEM) farMesh();
   place(0, 0, Math.atan2(350, 82));      // facing north, up the valley toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';
@@ -934,4 +985,4 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, INTRO, SEC, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, INTRO, SEC, BOULDER, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };

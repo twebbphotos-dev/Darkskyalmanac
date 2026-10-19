@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.66 (zion-sky-v435)
+Lunar Rover: Tracy's Rock stands at stop 6. The split boulder Gene Cernan named for his daughter is drawn at true size, about 18 × 10 × 6 m in five pieces with dark cracks between them (LROC), resting on the North Massif's slope beside where the rover parked, and solid. Also fixed: placing or respawning the rover on a steep slope set it down level, burying its uphill wheels so the suspension threw it into the air; it is now set down along the slope.
+
 ## v4.65 (zion-sky-v434)
 Lunar Rover unloading: no more clipping through the lander. The folded rover still carried its seats, console, antennas and TV camera, sticking up from the deck and into the descent stage, and the package sat 0.4 m inside the stage wall. As on the real missions, the seats and console now ride folded away and the antennas, TV camera and radio relay unit are fitted only after the rover is on the ground (with a caption); the chassis ends fold under, away from the wall; and the package sits against the wall instead of inside it.
 
