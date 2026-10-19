@@ -441,12 +441,15 @@ const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3
 const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true, spin: 0 };
 const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0, lap: 0, lap2: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());      // v, v2: top speed in km/h, at real and at double speed
 let throttle = 0, steerIn = 0;
-const STEER_RATE = 0.3;      // rad/s at the wheel, about 17°/s: straight ahead to full lock in about 1.4 s (an estimate, not a documented figure)
+const STEER_RATE = 0.42;      // rad/s at the wheel, about 24°/s: straight ahead to full lock in about 1 s (an estimate, not a documented figure)
 function step(h) {
   _f.set(0, -G * MASS, 0); _t.set(0, 0, 0);
   _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q); _rt.set(0, 0, 1).applyQuaternion(car.q);
   const speed = car.v.dot(_fw);
-  const dmax = 0.42 / (1 + 0.12 * speed * speed);      // four-wheel steering, gentler at speed
+  // Four-wheel steering, limited at speed to about the sharpest turn the tires can hold: each grips a sixth as hard as on
+  // Earth, so the most sideways push is about MU·g ≈ 1 m/s². Turning tighter only slides, and the old limit (which fell off
+  // with forward speed, itself shrinking in a slide) left the wheels at full lock and fed the slide into a spin.
+  const vh = Math.hypot(car.v.x, car.v.z), dmax = Math.min(0.42, Math.atan(1.15 * 1.3 * MU * G / Math.max(0.01, vh * vh)));
   car.steer += Math.max(-STEER_RATE * h, Math.min(STEER_RATE * h, steerIn * dmax - car.steer));      // the steering motors turn the wheels at a steady rate, on the ground or off it
   let touching = 0;
   for (const wl of WHEELS) {
@@ -717,8 +720,8 @@ function showRecords() {
    speed setting; the top speed on the ground during a lap is kept too (Cernan's 18 km/h was driven, not flown). */
 const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false, warned: false };
 function offLine() { let m = 1e9; for (let i = 0; i < COURSE.length; i += 2) { const dx = COURSE[i] - car.p.x, dz = COURSE[i + 1] - car.p.z, d = dx * dx + dz * dz; if (d < m) m = d; } return Math.sqrt(m); }
-function lineFade(dt) {      // the line eases in when the clock starts and out when the attempt ends
-  const u = OBJ.line.material.uniforms.op, want = RUN.on ? 1 : 0;
+function lineFade(dt) {      // the route stays faintly in view while you roam, and firms up when the clock starts
+  const u = OBJ.line.material.uniforms.op, want = RUN.on ? 1 : 0.65;
   u.value += Math.sign(want - u.value) * Math.min(Math.abs(want - u.value), dt / 1.5);
   OBJ.line.visible = u.value > 0.001;
 }
@@ -805,7 +808,8 @@ function buildDebris() {
     DEBRIS.push({ c, r: Math.max(0.08, Math.min(0.4, Math.min(sz.x, sz.y, sz.z) / 2)), parts });
   }
 }
-function breakApart() {
+function breakApart(hit = 8) {      // hit: how hard, m/s. A slow roll crumples where it lies; a hard one throws pieces
+  const k = 0.12 + 0.88 * Math.max(0, Math.min(1, (hit - 3.5) / 7));
   CRASH.on = true; CRASH.t = 0; CRASH.fade = 0; rover.visible = false;
   CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.pieces = [];
   DEBRIS_MATS.forEach(m => { m.opacity = 1; m.transparent = false; m.needsUpdate = true; });
@@ -814,19 +818,19 @@ function breakApart() {
     const m = new THREE.Group(); d.parts.forEach(({ geo, mat }) => { const n = new THREE.Mesh(geo, mat); n.castShadow = true; m.add(n); }); scene.add(m);
     m.position.copy(d.c).applyMatrix4(rover.matrixWorld); m.quaternion.copy(car.q);
     const out = d.c.clone().applyQuaternion(car.q).setY(0).normalize();      // flung outward from the middle of the rover
-    const v = car.v.clone().multiplyScalar(0.6).addScaledVector(out, 1 + Math.random() * 3).add(new THREE.Vector3((Math.random() - .5) * 2, 1.5 + Math.random() * 3.5, (Math.random() - .5) * 2));
-    CRASH.pieces.push({ m, v, w: new THREE.Vector3((Math.random() - .5) * 8, (Math.random() - .5) * 8, (Math.random() - .5) * 8), r: d.r });
+    const v = car.v.clone().multiplyScalar(0.6).addScaledVector(out, (1 + Math.random() * 3) * k).add(new THREE.Vector3((Math.random() - .5) * 2 * k, (1.5 + Math.random() * 3.5) * k, (Math.random() - .5) * 2 * k));
+    CRASH.pieces.push({ m, v, w: new THREE.Vector3((Math.random() - .5) * 8, (Math.random() - .5) * 8, (Math.random() - .5) * 8).multiplyScalar(k), r: d.r });
   }
-  for (let k = 0; k < 160; k++) { const i = dnext; dnext = (dnext + 1) % DN;      // a cloud of dust, falling straight back
+  for (let j = 0, n = Math.round(40 + 120 * k); j < n; j++) { const i = dnext; dnext = (dnext + 1) % DN;      // a cloud of dust, falling straight back
     dpos[i * 3] = car.p.x + (Math.random() - .5) * 2; dpos[i * 3 + 1] = car.p.y; dpos[i * 3 + 2] = car.p.z + (Math.random() - .5) * 2;
-    dvel[i * 3] = (Math.random() - .5) * 6; dvel[i * 3 + 1] = Math.random() * 4; dvel[i * 3 + 2] = (Math.random() - .5) * 6; dlife[i] = 1; }
+    dvel[i * 3] = (Math.random() - .5) * 6 * k; dvel[i * 3 + 1] = Math.random() * 4 * k; dvel[i * 3 + 2] = (Math.random() - .5) * 6 * k; dlife[i] = 1; }
   car.v.set(0, 0, 0); car.w.set(0, 0, 0); AIR.t = 0; AIR.grounded = true;
-  toast('Crash · the rover breaks apart');
+  toast(k < 0.4 ? 'Rollover · the rover crumples' : 'Crash · the rover breaks apart');
 }
 function stepCrash(dt) {
   if (!CRASH.on) {      // remember where it last drove upright, to bring it back there
     if ((CRASH.safeT += dt) > 1 && _up.y > 0.85 && AIR.grounded) { CRASH.safeT = 0; CRASH.safe = { x: car.p.x, z: car.p.z, yaw: Math.atan2(-_fw.z, _fw.x) }; }
-    if (CRASH.roof > 3.5 || (_up.y < -0.2 && car.v.length() > 4)) breakApart();
+    if (CRASH.roof > 3.5 || (_up.y < -0.2 && car.v.length() > 4)) breakApart(Math.max(CRASH.roof, car.v.length()));
     CRASH.roof = 0;
   } else if ((CRASH.t += dt) > 3.5) {
     CRASH.on = false; rover.visible = true; place(CRASH.safe.x, CRASH.safe.z, CRASH.safe.yaw); camInit = false; toast('A new rover · back where you last drove safely');
@@ -1017,10 +1021,11 @@ function foldPose(fa, ff, wa, wf) {
 const INTRO = { on: false, t: 0, P: new THREE.Vector3(), d: new THREE.Vector3(), q: new THREE.Quaternion(), end: null, capT: '' };
 const INTRO_CAPS = [
   [0.6, 5.2, '11 December 1972, Taurus–Littrow. The rover rode to the Moon folded into a package on the side of the lunar module.'],
-  [5.4, 10.2, 'From the ladder, a D-ring releases the top of the package. It tilts out, hinged at the bottom of its bay.'],
-  [10.4, 14.8, 'Tapes paid out from the ground lower it further. The aft chassis swings open; its wheels spring out and lock.'],
-  [15.0, 18.6, 'Then the forward chassis and its wheels.'],
-  [18.8, 22.2, 'Released onto the surface. Its 210 kg weigh no more here than 35 kg on Earth.'],
+  [5.4, 8.6, 'From the ladder, a D-ring releases the top of the package. It tilts out, hinged at the bottom of its bay.'],
+  [8.8, 12.6, 'Tapes paid out from the ground lower it further. The aft chassis swings open; its wheels spring out and lock.'],
+  [12.8, 15.6, 'Then the forward chassis and its wheels.'],
+  [15.8, 19.6, 'Its rear wheels touch down, the front is let down, and the crew pull it clear of the lander.'],
+  [19.8, 22.4, 'Its 210 kg weigh no more here than 35 kg on Earth.'],
   [22.4, 27.6, 'The crew unfolds the seats and console, and fits the antennas, TV camera and radio relay unit.'],
 ];
 const INTRO_LEN = 28;
@@ -1043,15 +1048,25 @@ const _iq = new THREE.Quaternion(), _iz = new THREE.Vector3(0, 0, 1), _ip = new 
 function stepIntro(dt) {
   const T = (INTRO.t += dt), sm = (a, b) => ss(a, b, T);
   if (T >= INTRO_LEN) return endIntro();
-  // the chassis and wheels, in order
-  foldPose(1 - sm(7.5, 11.5), 1 - sm(13, 16.5), 1 - sm(9, 12.5), 1 - sm(14.5, 17.5));
+  // the chassis and wheels, each swinging out and snapping into its lock (a little past, then back)
+  const snap = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return u <= 0 ? 0 : 1 + 2.4 * Math.pow(u - 1, 3) + 1.4 * Math.pow(u - 1, 2); };
+  foldPose(1 - snap(8.6, 10.2), 1 - snap(12.6, 14.4), 1 - snap(9.8, 11.2), 1 - snap(14.0, 15.4));
   SEC.kit.forEach(k => { const u = Math.min(1, (T - k.t) / 0.22); k.m.visible = u > 0; if (u > 0) k.m.scale.setScalar(1 + 2.7 * Math.pow(u - 1, 3) + 1.7 * Math.pow(u - 1, 2)); });      // one piece after another, each popping out with a little overshoot
-  // tilt: nose-down and upright in the bay, then out about the hinge at the bottom; then lowered onto its wheels
-  const phi = (90 - 40 * sm(4.5, 9.5) - 26 * sm(10, 15.5)) * Math.PI / 180;
-  _ip.copy(INTRO.P).addScaledVector(INTRO.d, 0.6 * sm(11, 16.5)); _ip.y -= 0.75 * sm(11, 16.5);
+  // tilt: upright in the bay, nose down; the D-ring lets the top out a few degrees, then each pull on the tapes lowers it
+  // further about the hinge at the bottom of the bay, with a pause between pulls
+  let phi = 90 - 4 * sm(4.6, 5.3);
+  for (const [a, b, d] of [[6.0, 7.6, 16], [8.2, 9.8, 16], [10.6, 12.2, 14], [13.0, 15.0, 60]]) phi -= d * sm(a, b);
+  // until the rear wheels reach the ground; then they rest there while the hinge end is let down onto the front wheels,
+  // and the crew pull the rover clear of the lander (on to the pose the drive starts from)
+  _ip.copy(INTRO.P); _ip.y -= (INTRO.P.y - car.p.y + 0.4) * sm(15.8, 18.4);
+  const lift = _ip.y - ground(INTRO.P.x + INTRO.d.x * 1.5, INTRO.P.z + INTRO.d.z * 1.5);      // the hinge above the ground the rear wheels stand on
+  // the rear wheels' lowest point sits 1.48 m back and 0.38 m down from the hinge: on the ground when 1.48 sin φ − 0.38 cos φ = −lift
+  const touch = (Math.asin(Math.max(-1, Math.min(1, -lift / 1.528))) + Math.atan2(0.38, 1.48)) * 180 / Math.PI;
+  phi = Math.max(phi, touch, 0) * Math.PI / 180;
+  _ip.addScaledVector(INTRO.d, 0.77 * sm(18.6, 21.2));
   _iq.copy(INTRO.q).multiply(new THREE.Quaternion().setFromAxisAngle(_iz, -phi));
   const pos = _ic.copy(_ip).sub(_it.set(SEC.HF, SEC.HY, 0).applyQuaternion(_iq));
-  const k = sm(17, 21);      // set down: onto the pose the drive starts from
+  const k = sm(20.6, 21.6);      // settle onto the pose the drive starts from
   rover.position.copy(pos).lerp(car.p, k); rover.quaternion.copy(_iq).slerp(car.q, k);
   // three shots: the lander from out on the plain, alongside the bay, then round behind the rover
   const side = _ip.set(-INTRO.d.z, 0, INTRO.d.x), c = INTRO.P;
