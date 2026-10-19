@@ -894,17 +894,29 @@ function buildSections() {
   rover.traverse(o => { if (o.isMesh && !WHEEL_PARTS.some(w => { for (let q = o; q; q = q.parent) if (q === w.spin) return true; return false; })) list.push(o); });
   SEC.aft.position.set(SEC.HA, SEC.HY, 0); SEC.fwd.position.set(SEC.HF, SEC.HY, 0);
   const center = new THREE.Group(); rover.add(center, SEC.aft, SEC.fwd);
+  const cells = new Map();      // the kit above the deck, in half-meter cells, so it can come out piece by piece
   for (const o of list) {
     const M = inv.clone().multiply(o.matrixWorld), g = o.geometry, pos = g.attributes.position, idx = g.index ? g.index.array : null, nTri = (idx ? idx.length : pos.count) / 3;
     nm.getNormalMatrix(M);
     const f = new Float32Array(pos.count * 3); for (let i = 0; i < pos.count; i++) { P.fromBufferAttribute(pos, i).applyMatrix4(M); f[i * 3] = P.x; f[i * 3 + 1] = P.y; f[i * 3 + 2] = P.z; }
-    const parts = [[], [], [], [], [], []], hi = [0, 0, 0, 0, 0, 0];      // aft, center, forward; then the same above the deck
+    const parts = [[], [], []];      // aft, center, forward
     for (let t = 0; t < nTri; t++) { const v = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k), cx = (f[v[0] * 3] + f[v[1] * 3] + f[v[2] * 3]) / 3, cy = (f[v[0] * 3 + 1] + f[v[1] * 3 + 1] + f[v[2] * 3 + 1]) / 3;
-      const k = (cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1) + (cy > SEC.KIT ? 3 : 0); parts[k].push(...v); hi[k] = Math.max(hi[k], cy); }
-    parts.forEach((l, k) => { if (!l.length) return; const grp = [SEC.aft, center, SEC.fwd][k % 3], n = new THREE.Mesh(bakeGeo(g, f, nm, l, k % 3 === 1 ? zero : grp.position), o.material); n.castShadow = n.receiveShadow = true; grp.add(n);
-      if (k > 2) SEC.kit.push({ m: n, top: hi[k] }); });
+      const sec = cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1;
+      if (cy > SEC.KIT) { const cz = (f[v[0] * 3 + 2] + f[v[1] * 3 + 2] + f[v[2] * 3 + 2]) / 3, key = sec + '|' + Math.floor(cx / 0.45) + '|' + Math.floor(cy / 0.45) + '|' + Math.floor(cz / 0.45);
+        if (!cells.has(key)) cells.set(key, { sec, parts: new Map(), n: 0, x: 0, y: 0, z: 0 });
+        const c = cells.get(key); if (!c.parts.has(o)) c.parts.set(o, { f, nm: nm.clone(), l: [] }); c.parts.get(o).l.push(...v); c.n++; c.x += cx; c.y += cy; c.z += cz; }
+      else parts[sec].push(...v); }
+    parts.forEach((l, k) => { if (!l.length) return; const grp = [SEC.aft, center, SEC.fwd][k], n = new THREE.Mesh(bakeGeo(g, f, nm, l, k === 1 ? zero : grp.position), o.material); n.castShadow = n.receiveShadow = true; grp.add(n); });
     o.parent.remove(o);
   }
+  for (const c of cells.values()) {      // each cell its own little group, pivoted at its middle so it can pop out
+    const mid = new THREE.Vector3(c.x / c.n, c.y / c.n, c.z / c.n), grp = [SEC.aft, center, SEC.fwd][c.sec], g = new THREE.Group();
+    g.position.copy(mid).sub(c.sec === 1 ? zero : grp.position); grp.add(g);
+    for (const [o, { f, nm: m3, l }] of c.parts) { const n = new THREE.Mesh(bakeGeo(o.geometry, f, m3, l, mid), o.material); n.castShadow = n.receiveShadow = true; g.add(n); }
+    SEC.kit.push({ m: g, y: mid.y, x: mid.x });
+  }
+  SEC.kit.sort((a, b) => Math.floor(a.y / 0.45) - Math.floor(b.y / 0.45) || a.x - b.x);      // from the deck up: seats and console, then the masts and what sits on them
+  SEC.kit.forEach((k, i) => { k.t = 22.6 + i * Math.min(0.08, 4.2 / SEC.kit.length); });
   WHEEL_PARTS.forEach((w, k) => { (WHEELS[k].at.x > 0 ? SEC.fwd : SEC.aft).attach(w.steer); w.home = w.steer.position.clone(); });
   SEC.ok = true;
 }
@@ -935,7 +947,7 @@ function startIntro() {
 }
 function endIntro() {
   INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on');
-  foldPose(0, 0, 0, 0); SEC.kit.forEach(k => { k.m.visible = true; }); place(INTRO.end.x, INTRO.end.z, INTRO.end.yaw);
+  foldPose(0, 0, 0, 0); SEC.kit.forEach(k => { k.m.visible = true; k.m.scale.setScalar(1); }); place(INTRO.end.x, INTRO.end.z, INTRO.end.yaw);
   camPos.copy(camera.position); camTgt.copy(car.p); camInit = true;      // the chase camera picks up from the last shot
   running = true;
 }
@@ -945,7 +957,7 @@ function stepIntro(dt) {
   if (T >= INTRO_LEN) return endIntro();
   // the chassis and wheels, in order
   foldPose(1 - sm(7.5, 11.5), 1 - sm(13, 16.5), 1 - sm(9, 12.5), 1 - sm(14.5, 17.5));
-  SEC.kit.forEach(k => { k.m.visible = T > (k.top < 0.6 ? 23 : 24.8); });      // seats and console first, then the mast-top kit
+  SEC.kit.forEach(k => { const u = Math.min(1, (T - k.t) / 0.22); k.m.visible = u > 0; if (u > 0) k.m.scale.setScalar(1 + 2.7 * Math.pow(u - 1, 3) + 1.7 * Math.pow(u - 1, 2)); });      // one piece after another, each popping out with a little overshoot
   // tilt: nose-down and upright in the bay, then out about the hinge at the bottom; then lowered onto its wheels
   const phi = (90 - 40 * sm(4.5, 9.5) - 26 * sm(10, 15.5)) * Math.PI / 180;
   _ip.copy(INTRO.P).addScaledVector(INTRO.d, 0.6 * sm(11, 16.5)); _ip.y -= 0.75 * sm(11, 16.5);
