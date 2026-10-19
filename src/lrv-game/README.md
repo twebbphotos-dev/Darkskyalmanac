@@ -99,3 +99,5 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
 v4.59: the wheel rig fits each wheel's circle to the lower half of its tread (width at each height) and trims the cylinder to the tread's width, so the fenders, a few centimetres above the tire and overhanging its inboard side, stay on the body.
 
 v4.60: the wheel cut reaches 4 cm past the tread on the outboard side so the hub discs spin too; steering slews at STEER_RATE (0.3 rad/s at the wheel, an estimate) whether or not the wheels touch the ground.
+
+v4.61: reliefMap() bakes every crater, craterlet and the patch's 1.7 m lumps into a world-space normal map of the drivable square (2048 px, about 0.46 m; 1024 on Low), which lights the coarse ground. It is injected before three.js builds the grain normal map's tangent frame, since the normal-map chunk overwrites `normal`. The fine patch and ground() add craterFine(): the true crater shapes in place of the grid's bilinear ones, faded out with the patch's edge so it still meets the coarse ground.

@@ -77,7 +77,7 @@ function craterH(x, z) {
   }
   return h;
 }
-const H = new Float32Array(N * N), B = new Float32Array(N * N);
+const H = new Float32Array(N * N), B = new Float32Array(N * N), HB = new Float32Array(N * N);      // HB: the same ground without its craters, for the relief map
 function brightness(x, z) {
   let b = 0;
   for (const c of CRATER_GRID.get(Math.floor(x / CG) + ',' + Math.floor(z / CG)) || []) { const d = Math.hypot(x - c.x, z - c.z) / c.R; if (d < 2.1) b = Math.max(b, c.fresh * c.fresh * (d < 1 ? 0.55 : Math.exp(-(((d - 1) / 0.5) ** 2)))); }
@@ -88,7 +88,8 @@ function buildGround() {
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     const x = CX - HALF + i * CELL, z = CZ - HALF + j * CELL;
     const edge = ss(0, 40, HALF - Math.max(Math.abs(x - CX), Math.abs(z - CZ)));      // the detail fades out at the edge, where the terrain model's ring takes over
-    H[j * N + i] = demGame(x, z) + edge * ((fbm(x / 60, z / 60, 4) - .5) * 2.2 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35 + craterH(x, z));
+    HB[j * N + i] = demGame(x, z) + edge * ((fbm(x / 60, z / 60, 4) - .5) * 2.2 + (fbm(x / 9 + 40, z / 9, 3) - .5) * 0.35);
+    H[j * N + i] = HB[j * N + i] + edge * craterH(x, z);
     B[j * N + i] = brightness(x, z);
   }
 }
@@ -124,9 +125,15 @@ function groundBase(x, z) {
   const a = H[j * N + i], b = H[j * N + i + 1], c = H[(j + 1) * N + i], d = H[(j + 1) * N + i + 1];
   return a + (b - a) * fu + (c - a) * fv + (a - b - c + d) * fu * fv;
 }
+// the craters at full shape, where the 1.6 m grid rounds the small ones away: what the fine patch adds to the grid
+function craterFine(x, z) {
+  const u = Math.max(0, Math.min(N - 1.001, (x - CX + HALF) / CELL)), v = Math.max(0, Math.min(N - 1.001, (z - CZ + HALF) / CELL)), i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, o = j * N + i;
+  const hb = HB[o] + (HB[o + 1] - HB[o]) * fu + (HB[o + N] - HB[o]) * fv + (HB[o] - HB[o + 1] - HB[o + N] + HB[o + N + 1]) * fu * fv;
+  return hb + ss(0, 40, HALF - Math.max(Math.abs(x - CX), Math.abs(z - CZ))) * craterH(x, z) - groundBase(x, z);
+}
 function ground(x, z) {      // height of the drawn surface, plus rocks
   const f = microFade(x, z);
-  return groundBase(x, z) + (f > 0 ? microRaw(x, z) * f : 0) + rockH(x, z);
+  return groundBase(x, z) + (f > 0 ? (microRaw(x, z) + craterFine(x, z)) * f : 0) + rockH(x, z);
 }
 const _n = new THREE.Vector3();
 function normalAt(x, z) { const e = 0.35; return _n.set(ground(x - e, z) - ground(x + e, z), 2 * e, ground(x, z - e) - ground(x, z + e)).normalize(); }
@@ -172,17 +179,56 @@ const soil = new THREE.MeshStandardMaterial({ color: 0xa8a49d, roughness: 1, met
 soil.normalScale.set(0.34, 0.34);
 // the grain is for the ground at your feet: it tiles every 3.2 m, and further off it hammered the whole plain into one pattern
 const grainFade = sh => sh.fragmentShader.replace('#include <normal_fragment_maps>', THREE.ShaderChunk.normal_fragment_maps.replace('mapN.xy *= normalScale;', 'mapN.xy *= normalScale * ( 1.0 - smoothstep( 5.0, 22.0, length( vViewPosition ) ) );'));
+// the ground beyond the fine patch is lit by the relief map (reliefMap, below) rather than by the grid's own slopes, so the small craters show at any range
+const reliefU = { value: null };
+const relief = sh => {
+  sh.uniforms.uRelief = reliefU;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz; uniform sampler2D uRelief;')
+    .replace('#include <normal_fragment_begin>', THREE.ShaderChunk.normal_fragment_begin.replace('vec3 normal = normalize( vNormal );',      // before the grain's tangent frame is built on it
+      `vec3 normal = normalize( ( viewMatrix * vec4( texture2D( uRelief, ( vWxz - vec2( ${(CX - HALF).toFixed(1)}, ${(CZ - HALF).toFixed(1)} ) ) / ${(2 * HALF).toFixed(1)} ).xyz * 2.0 - 1.0, 0.0 ) ).xyz );`));
+};
 soil.onBeforeCompile = sh => { sh.fragmentShader = grainFade(sh); };
 soil.polygonOffset = true; soil.polygonOffsetFactor = -1; soil.polygonOffsetUnits = -1;      // the fine patch wins where it overlaps the coarse ground
 const patchU = { value: new THREE.Vector4(0, 0, 0, 0) };      // the fine patch's centre and half-size: the coarse ground is not drawn there
 const coarse = soil.clone();
 coarse.onBeforeCompile = sh => {
-  sh.fragmentShader = grainFade(sh);
+  sh.fragmentShader = grainFade(sh); relief(sh);
   sh.uniforms.uPatch = patchU;
-  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
-  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz; uniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
 };
 
+/* Most craters are 1 to 3 m across, too small for the 1.6 m grid: past the fine patch (which now draws them at full
+   shape) the plain went smooth until the big craters showed again. So every crater, and the craterlets and lumps of
+   the fine patch, is drawn into a relief map of the whole square at about half a meter, which the ground beyond the
+   patch is lit by. Its mipmaps average the small craters out smoothly with distance, where the grid dropped them. */
+function reliefMap() {
+  const TN = DETAIL.grid > 1.3 ? 1024 : 2048, TP = 2 * HALF / TN, X0 = CX - HALF, Z0 = CZ - HALF, F = new Float32Array(TN * TN);
+  const edge = (x, z) => ss(0, 40, HALF - Math.max(Math.abs(x - CX), Math.abs(z - CZ)));
+  for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {
+    const x = X0 + (i + 0.5) * TP, z = Z0 + (j + 0.5) * TP, u = Math.min(N - 1.001, (i + 0.5) * TP / CELL), v = Math.min(N - 1.001, (j + 0.5) * TP / CELL), a = Math.floor(u), b = Math.floor(v), fu = u - a, fv = v - b, o = b * N + a;
+    F[j * TN + i] = HB[o] + (HB[o + 1] - HB[o]) * fu + (HB[o + N] - HB[o]) * fv + (HB[o] - HB[o + 1] - HB[o + N] + HB[o + N + 1]) * fu * fv + edge(x, z) * (vnoise(x / 1.7, z / 1.7) - .5) * 0.12;
+  }
+  const stamp = (cx, cz, reach, prof) => {
+    const i0 = Math.max(0, Math.floor((cx - reach - X0) / TP)), i1 = Math.min(TN - 1, Math.ceil((cx + reach - X0) / TP)), j0 = Math.max(0, Math.floor((cz - reach - Z0) / TP)), j1 = Math.min(TN - 1, Math.ceil((cz + reach - Z0) / TP));
+    for (let j = j0; j <= j1; j++) { const z = Z0 + (j + 0.5) * TP; for (let i = i0; i <= i1; i++) { const x = X0 + (i + 0.5) * TP, d = Math.hypot(x - cx, z - cz); if (d < reach) F[j * TN + i] += edge(x, z) * prof(d); } }
+  };
+  for (const c of craters) stamp(c.x, c.z, c.R * 2.2, r => { const d = r / c.R; return d < 1 ? c.rim + (-c.depth - c.rim) * (1 - d * d) * (1 - d * d * 0.35) : c.rim * Math.exp(-(((d - 1) / 0.42) ** 2)); });
+  for (let ci = Math.floor(X0 / MC); ci <= Math.floor((X0 + 2 * HALF) / MC); ci++) for (let cj = Math.floor(Z0 / MC); cj <= Math.floor((Z0 + 2 * HALF) / MC); cj++) {      // the craterlets, as microRaw draws them
+    if (hash2(ci, cj) > 0.26) continue;
+    const R = 0.25 / Math.sqrt(1 - hash2(ci + 91, cj) * (1 - (0.25 / 1.5) ** 2)); if (R < 0.4) continue;      // smaller ones are under a pixel
+    const dep = R * (0.05 + 0.09 * hash2(ci + 5, cj + 3)), rim = dep * 0.25;
+    stamp((ci + hash2(ci, cj + 57)) * MC, (cj + hash2(ci + 13, cj + 7)) * MC, R * 1.8, r => { const d = r / R; return d < 1 ? rim + (-dep - rim) * (1 - d * d) : rim * Math.exp(-(((d - 1) / 0.4) ** 2)); });
+  }
+  const D = new Uint8Array(TN * TN * 4);
+  for (let j = 0; j < TN; j++) for (let i = 0; i < TN; i++) {
+    const gx = F[j * TN + Math.min(TN - 1, i + 1)] - F[j * TN + Math.max(0, i - 1)], gz = F[Math.min(TN - 1, j + 1) * TN + i] - F[Math.max(0, j - 1) * TN + i], l = Math.hypot(gx, 2 * TP, gz), o = (j * TN + i) * 4;
+    D[o] = 128 - gx / l * 127; D[o + 1] = 128 + 2 * TP / l * 127; D[o + 2] = 128 - gz / l * 127; D[o + 3] = 255;      // the world-space normal: x east, y up, z south
+  }
+  const t = new THREE.DataTexture(D, TN, TN); t.generateMipmaps = true; t.minFilter = THREE.LinearMipmapLinearFilter; t.magFilter = THREE.LinearFilter;
+  t.anisotropy = renderer.capabilities.getMaxAnisotropy(); t.needsUpdate = true;
+  reliefU.value = t;
+}
 function groundMesh() {
   const g = new THREE.PlaneGeometry(2 * HALF, 2 * HALF, N - 1, N - 1); g.rotateX(-Math.PI / 2); g.translate(CX, 0, CZ);
   const p = g.attributes.position, uv = g.attributes.uv;
@@ -203,7 +249,7 @@ function buildPatch(cx, cz) {
   PATCH.cx = Math.round(cx / PS) * PS; PATCH.cz = Math.round(cz / PS) * PS;
   const p = patchGeo.attributes.position, uv = patchGeo.attributes.uv, col = patchGeo.attributes.color;
   for (let j = 0; j < PN; j++) for (let i = 0; i < PN; i++) { const k = j * PN + i, x = PATCH.cx - PATCH.half + i * PS, z = PATCH.cz - PATCH.half + j * PS, f = microFade(x, z), m = f > 0 ? microRaw(x, z) * f : 0;
-    p.setXYZ(k, x, groundBase(x, z) + m, z); uv.setXY(k, x / 3.2, z / 3.2); const b = bilB(x, z) * (1 + Math.max(-0.08, Math.min(0.08, m * 0.6))); col.setXYZ(k, b, b, b); }
+    p.setXYZ(k, x, groundBase(x, z) + m + (f > 0 ? craterFine(x, z) * f : 0), z); uv.setXY(k, x / 3.2, z / 3.2); const b = bilB(x, z) * (1 + Math.max(-0.08, Math.min(0.08, m * 0.6))); col.setXYZ(k, b, b, b); }
   p.needsUpdate = uv.needsUpdate = col.needsUpdate = true; patchGeo.computeVertexNormals(); patchGeo.computeBoundingSphere();
   patchU.value.set(PATCH.cx, PATCH.cz, PATCH.half - 1.0, 0);
 }
@@ -694,7 +740,7 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loadmsg').textContent = 'Shaping the valley…';
   await new Promise(r => setTimeout(r, 30));
   try { const r = await fetch('../models/moon-a17.bin'); if (r.ok) { DEM = new Int16Array(await r.arrayBuffer()); DEM0 = demRaw(0, 0); } } catch (e) { /* offline without it: flat ground, no mountains */ }
-  buildGround(); indexRocks(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); routeDots(); showRecords();
+  buildGround(); indexRocks(); reliefMap(); groundMesh(); buildPatch(0, 0); scene.add(patchMesh); rockMeshes(); routeDots(); showRecords();
   if (DEM) farMesh();
   place(0, 0, Math.atan2(350, 82));      // facing north, up the valley toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';

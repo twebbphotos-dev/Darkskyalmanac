@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.61 (zion-sky-v430)
+Lunar Rover: the plain keeps its small craters at every distance. Most craters are 1 to 3 m across, too small for the 1.6 m terrain grid that both the mid-range ground and the fine patch round the rover took their craters from, so the plain went smooth from a few tens of meters out until the big craters showed again far off. The fine patch now draws every crater at full shape (and the wheels feel them), and the ground beyond it is lit by a half-meter relief map of all the craters, whose mipmaps fade them smoothly with distance.
+
 ## v4.60 (zion-sky-v429)
 Lunar Rover: the hubs spin with the tires, and the wheels steer at a steady rate. The hub's disc stands 1–3 cm proud of the tread on the outboard side, just past v4.59's tight cut, so it stayed with the body; the cut now reaches 4 cm further outboard only (the fender's skirt is inboard). Steering used to snap toward the stick almost at once; the wheels now turn at about 17°/s (an estimate), on the ground or in the air.
 
