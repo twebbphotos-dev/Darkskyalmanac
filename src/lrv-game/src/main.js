@@ -471,8 +471,9 @@ const car = { p: new THREE.Vector3(0, 0, 0), v: new THREE.Vector3(), q: new THRE
 function place(x, z, yaw) {      // set down on the slope, not level: level on a hillside buried the uphill wheels, and the suspension threw it into the air
   const e = 1.5, n = new THREE.Vector3(groundBase(x - e, z) - groundBase(x + e, z), 2 * e, groundBase(x, z - e) - groundBase(x, z + e)).normalize();
   car.q.setFromUnitVectors(new THREE.Vector3(0, 1, 0), n).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw));
-  car.p.set(x, ground(x, z), z).addScaledVector(n, 0.8); car.v.set(0, 0, 0); car.w.set(0, 0, 0); car.steer = 0;
+  car.p.set(x, ground(x, z), z).addScaledVector(n, 0.8); car.v.set(0, 0, 0); car.w.set(0, 0, 0); car.steer = 0; parked = true; WHEELS.forEach(w => { w.hx = w.hy = 0; });
 }
+let parked = true;      // set down, the brakes hold it, even on a slope, until the driver first touches the controls
 
 const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3(), _a = new THREE.Vector3(), _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _rt = new THREE.Vector3(),
       _vc = new THREE.Vector3(), _wf = new THREE.Vector3(), _ws = new THREE.Vector3(), _tmp = new THREE.Vector3(), _qi = new THREE.Quaternion(), _wb = new THREE.Vector3(), _L = new THREE.Vector3();
@@ -514,6 +515,10 @@ function step(h) {
     else Fl = 0;
     Fl -= Math.sign(vf) * Math.min(Math.abs(vf) * 400, CRR * Fn);                             // soft soil drags at the wheels
     let Fs = -vs * 1600;
+    if (parked) {      // parked: the brakes and the tread's grip hold the tire where it stands, as static friction, until the slope is too much for it
+      wl.hx += vf * h; wl.hy += vs * h; Fl = -(vf * 12000 + wl.hx * 30000); Fs = -(vs * 12000 + wl.hy * 30000);
+      const g = Math.hypot(Fl, Fs); if (g > lim) { wl.hx *= lim / g; wl.hy *= lim / g; }      // slipping: the hold gives way with it
+    }
     const tot = Math.hypot(Fl, Fs); if (tot > lim) { Fl *= lim / tot; Fs *= lim / tot; }        // the friction circle: grip is shared
     _tmp.copy(_up).multiplyScalar(Fn).addScaledVector(_wf, Fl).addScaledVector(_ws, Fs);
     _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
@@ -911,6 +916,7 @@ function frame(now) {
   if (running) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
+    if (Math.abs(throttle) > 0.02 || Math.abs(steerIn) > 0.02) parked = false;
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
     if (!CRASH.on) for (let i = 0; i < n; i++) step(h);
     _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q); stepCrash(dt);
@@ -986,8 +992,15 @@ function rigWheels() {
   for (const { m, M, f } of src) {
     const g = m.geometry, idx = g.index ? g.index.array : null, nTri = (idx ? idx.length : g.attributes.position.count) / 3, vi = (t, k) => idx ? idx[t * 3 + k] : t * 3 + k;
     const keep = [[], [], [], [], []];      // triangles' vertex lists: wheels 0-3, then the rest
+    // The fenders are painted orange in the scan and the tires are not: scraps of fender inside the cylinder (its edge
+    // hugs the tread) stay on the body by their color, or they turned with the wheel.
+    const map = m.material.map, img = map && map.image, uv = g.attributes.uv;
+    let px = null; if (img && img.width && uv) { try { const cv = document.createElement('canvas'); cv.width = img.width; cv.height = img.height; const cx2 = cv.getContext('2d'); cx2.drawImage(img, 0, 0); px = cx2.getImageData(0, 0, img.width, img.height).data; } catch (e) { px = null; } }
+    const orange = (a, b, c) => { if (!px) return false; let u = (uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, v = (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3; if (map.flipY) v = 1 - v;
+      const X = Math.min(img.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * img.width))), Y = Math.min(img.height - 1, Math.max(0, Math.floor((v - Math.floor(v)) * img.height))), o = (Y * img.width + X) * 4;
+      return px[o] - px[o + 2] > 60 && px[o] > 90; };
     for (let t = 0; t < nTri; t++) { const a = vi(t, 0), b = vi(t, 1), c = vi(t, 2), ka = inside(f, a);
-      keep[ka >= 0 && inside(f, b) === ka && inside(f, c) === ka ? ka : 4].push(a, b, c); }
+      keep[ka >= 0 && inside(f, b) === ka && inside(f, c) === ka && !orange(a, b, c) ? ka : 4].push(a, b, c); }
     if (keep[4].length === nTri * 3) continue;      // nothing of a wheel in this part
     nm.getNormalMatrix(M);
     const build = (list, off) => {
@@ -1079,9 +1092,10 @@ const INTRO_CAPS = [
   [12.6, 16.4, 'With the rear wheels on the ground, a second tape lets the front down. The rover moves out from the lander as the forward chassis and its wheels unfold.'],
   [16.6, 19.8, 'On all four wheels at last, it is disconnected from the lander and pulled clear.'],
   [20.0, 22.4, 'Its 210 kg weigh no more here than 35 kg on Earth.'],
-  [22.4, 27.6, 'The crew unfolds the seats and console, and fits the antennas, TV camera and radio relay unit.'],
+  [22.4, 27.4, 'The crew unfolds the seats and console, and fits the antennas, TV camera and radio relay unit.'],
+  [27.6, 32.6, 'With front and rear wheels both steering, it could turn in a circle about 3 m in radius.'],
 ];
-const INTRO_LEN = 28;
+const INTRO_LEN = 32.8, BACK = [27.4, 32.4];      // BACK: it reverses away from the lander and swings round to face the time trial's ring
 function startIntro() {
   INTRO.on = true; INTRO.t = 0; document.body.classList.add('intro');
   if (!INTRO.pts) { INTRO.pts = []; rover.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position, n = Math.min(60, p.count);      // a scatter of points on every part
@@ -1090,8 +1104,21 @@ function startIntro() {
   INTRO.P.set(LM.x + INTRO.d.x * INTRO.R0, LM.y + 1.35, LM.z + INTRO.d.z * INTRO.R0);      // the pivot at the bottom of the bay, on the package's outer face: its inner side then stands just off the stage wall, 2.1 m out
   const yaw = Math.atan2(INTRO.d.z, -INTRO.d.x);      // nose toward the lander: it comes out tail first
   INTRO.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-  INTRO.end = { x: LM.x + INTRO.d.x * (INTRO.R0 + SEC.HF + 0.9), z: LM.z + INTRO.d.z * (INTRO.R0 + SEC.HF + 0.9), yaw };      // pulled 0.9 m clear of where it came down
-  place(INTRO.end.x, INTRO.end.z, yaw);
+  const x0 = LM.x + INTRO.d.x * (INTRO.R0 + SEC.HF + 0.9), z0 = LM.z + INTRO.d.z * (INTRO.R0 + SEC.HF + 0.9);      // pulled 0.9 m clear of where it came down
+  // Then it backs out: straight for a meter, wheels steering into a smooth arc and back out of it, stopping square on to
+  // the ring. Heading ψ along the reversing distance s: dψ/ds = κ, κ rising and falling as sin², at most 0.36 (2.8 m radius).
+  // The total turn that leaves it pointing at the ring depends on where it ends, so it is found by a few passes.
+  const A = 1.0, B = 0.6, n = 160, kap = (s, K, L) => s < A || s > L - B ? 0 : K * Math.sin(Math.PI * (s - A) / (L - A - B)) ** 2;
+  let turn = 0, path = null, L = 9;
+  for (let it = 0; it < 8; it++) {
+    L = A + B + Math.max(2, 2 * Math.abs(turn) / 0.36); const K = 2 * turn / (L - A - B), ds = L / n;
+    let x = x0, z = z0, psi = yaw; path = [[x, z, psi, 0]];
+    for (let i = 1; i <= n; i++) { const k = kap((i - 0.5) * ds, K, L); psi += k * ds / 2; x -= Math.cos(psi) * ds; z += Math.sin(psi) * ds; psi += k * ds / 2; path.push([x, z, psi, kap(i * ds, K, L)]); }
+    const want = Math.atan2(-(OBJ.z - z), OBJ.x - x); let dd = want - psi; dd = Math.atan2(Math.sin(dd), Math.cos(dd)); turn += dd;
+  }
+  INTRO.path = path; INTRO.L = L;
+  const e = path[n]; INTRO.end = { x: e[0], z: e[1], yaw: e[2] };
+  place(x0, z0, yaw);
 }
 function endIntro() {
   INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on');
@@ -1123,6 +1150,12 @@ function stepIntro(dt) {
   _iq.copy(INTRO.q).multiply(new THREE.Quaternion().setFromAxisAngle(_iz, -phi));
   const pos = _ic.copy(_ip).sub(_it.set(SEC.HF, SEC.HB, 0).applyQuaternion(_iq));
   const k = sm(19.0, 20.0);      // settle onto the pose the drive starts from
+  if (T > BACK[0]) {      // reversing round to face the ring, front and rear wheels steering opposite ways
+    const u = Math.min(1, (T - BACK[0]) / (BACK[1] - BACK[0])), sNow = INTRO.L * u * u * u * (u * (6 * u - 15) + 10), P = INTRO.path, n = P.length - 1;
+    const f = Math.min(n, sNow / INTRO.L * n), i = Math.min(n - 1, Math.floor(f)), w = f - i, at = j => P[i][j] + (P[i + 1][j] - P[i][j]) * w;
+    place(at(0), at(1), at(2)); car.steer = Math.atan(1.15 * at(3));
+    const dS = sNow - (INTRO.s || 0); INTRO.s = sNow; WHEELS.forEach(wl => { wl.spin -= dS / WHEEL_R; });
+  } else INTRO.s = 0;
   rover.position.copy(pos).lerp(car.p, k); rover.quaternion.copy(_iq).slerp(car.q, k);
   // nothing goes into the ground: whatever part of the rover is lowest is kept on or above it
   rover.updateMatrixWorld(true);
@@ -1136,6 +1169,14 @@ function stepIntro(dt) {
   camera.position.copy(a).lerp(b, kb);
   const cE = new THREE.Vector3(car.p.x + INTRO.d.x * 6 - side.x * 3, car.p.y + 2.2, car.p.z + INTRO.d.z * 6 - side.z * 3);
   camera.position.lerp(cE, sm(17, 23.5));
+  if (T > BACK[0] - 0.6) {      // up and off to the side for the turn, away from the lander, then down behind it for the start
+    const P = INTRO.path, m = P[P.length >> 1], e = P[P.length - 1], fx = Math.cos(e[2]), fz = -Math.sin(e[2]);
+    let sx = -fz, sz = fx; if ((m[0] - LM.x) * sx + (m[1] - LM.z) * sz < 0) { sx = -sx; sz = -sz; }
+    const H = _tmp.set(m[0] + sx * 9 - fx * 3, groundBase(m[0], m[1]) + 5, m[1] + sz * 9 - fz * 3);
+    camera.position.lerp(H, sm(BACK[0] - 0.6, BACK[0] + 1.6));
+    const D = pov === 1 ? 16 : 7.5, lift = pov === 1 ? 0.35 : 0, pc = Math.cos(ORB.pitch + lift) * D;
+    camera.position.lerp(_tmp.set(e[0] - fx * pc, ground(e[0], e[1]) + 0.8 + 1.6 + Math.sin(ORB.pitch + lift) * D, e[1] - fz * pc), sm(BACK[1] - 1.8, INTRO_LEN));
+  }
   camera.position.y = Math.max(camera.position.y, ground(camera.position.x, camera.position.z) + 1.2);
   camera.lookAt(_ip.copy(c).add(_it.set(0, 1.0 - 0.4 * sm(4, 10), 0)).lerp(_tmp.copy(rover.position).add(_it.set(0, 0.4, 0)), sm(6, 12)));
   sun.position.copy(rover.position).addScaledVector(SUN, 120); sun.target.position.copy(rover.position);
@@ -1193,4 +1234,4 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, INTRO, SEC, BOULDER, SLAB, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, INTRO, SEC, BOULDER, SLAB, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; parked = false; }, craters };

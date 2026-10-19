@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.73 (zion-sky-v442)
+Lunar Rover: lined up for the time trial, held by its brakes, and clean wheels. After unloading, the rover now reverses away from the lander in a smooth arc, front and rear wheels steering opposite ways, and stops square on to the time trial's ring (a straight run at full throttle passes within a meter of its center). It used to start facing the lander, and on sloping ground it rolled off on its own because nothing held it: with no throttle the tires only damped motion, so it crept downhill. It is now held as if braked, by static friction at each tire, until the driver first touches the controls. Small scraps of fender inside each wheel's cut-out cylinder turned with the tire, out of step with the fender; triangles painted fender orange in the scan now stay with the body.
+
 ## v4.72 (zion-sky-v441)
 Lunar Rover: no line on the mountains at the edge of the drivable area. The crater texture faded in over the square's last 60 m, which from afar still read as a line, and it darkened the ground slightly on average, so the two sides differed in tone. It now fades in by distance from the eye, the same on both sides of the edge, and its shading is centered so it no longer shifts the ground's brightness.
 
