@@ -822,8 +822,10 @@ function rigWheels() {
    package tilted out, hinged at the bottom of the bay, and as tapes were paid out from the ground the aft chassis
    swung open and its wheels sprang out and locked, then the forward chassis and its wheels, and the rover was set
    down on its wheels. Here the scanned model is cut into those three chassis sections at their hinges (the center
-   one carries the seats) and folded the same way. ── */
-const SEC = { ok: false, aft: new THREE.Group(), fwd: new THREE.Group(), HA: -0.55, HF: 0.45, HY: -0.4 };
+   one carries the seats) and folded the same way. The seats and console rode folded flat, and the antennas, TV
+   camera and radio relay unit were not on it at all: the crew fitted them once it stood on the surface. So
+   everything above the chassis deck is hidden while it is stowed and comes back after it is set down. ── */
+const SEC = { ok: false, aft: new THREE.Group(), fwd: new THREE.Group(), HA: -0.55, HF: 0.45, HY: -0.4, KIT: 0.05, kit: [] };      // kit: everything above the chassis deck
 function bakeGeo(g, f, nm, list, off) {      // the triangles in list, in rover space (f), less off
   const P = new THREE.Vector3(), out = new THREE.BufferGeometry(), a = new Float32Array(list.length * 3);
   list.forEach((v, i) => { a[i * 3] = f[v * 3] - off.x; a[i * 3 + 1] = f[v * 3 + 1] - off.y; a[i * 3 + 2] = f[v * 3 + 2] - off.z; });
@@ -845,17 +847,19 @@ function buildSections() {
     const M = inv.clone().multiply(o.matrixWorld), g = o.geometry, pos = g.attributes.position, idx = g.index ? g.index.array : null, nTri = (idx ? idx.length : pos.count) / 3;
     nm.getNormalMatrix(M);
     const f = new Float32Array(pos.count * 3); for (let i = 0; i < pos.count; i++) { P.fromBufferAttribute(pos, i).applyMatrix4(M); f[i * 3] = P.x; f[i * 3 + 1] = P.y; f[i * 3 + 2] = P.z; }
-    const parts = [[], [], []];
-    for (let t = 0; t < nTri; t++) { const v = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k), cx = (f[v[0] * 3] + f[v[1] * 3] + f[v[2] * 3]) / 3; parts[cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1].push(...v); }
-    parts.forEach((l, k) => { if (!l.length) return; const grp = [SEC.aft, center, SEC.fwd][k], n = new THREE.Mesh(bakeGeo(g, f, nm, l, k === 1 ? zero : grp.position), o.material); n.castShadow = n.receiveShadow = true; grp.add(n); });
+    const parts = [[], [], [], [], [], []], hi = [0, 0, 0, 0, 0, 0];      // aft, center, forward; then the same above the deck
+    for (let t = 0; t < nTri; t++) { const v = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k), cx = (f[v[0] * 3] + f[v[1] * 3] + f[v[2] * 3]) / 3, cy = (f[v[0] * 3 + 1] + f[v[1] * 3 + 1] + f[v[2] * 3 + 1]) / 3;
+      const k = (cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1) + (cy > SEC.KIT ? 3 : 0); parts[k].push(...v); hi[k] = Math.max(hi[k], cy); }
+    parts.forEach((l, k) => { if (!l.length) return; const grp = [SEC.aft, center, SEC.fwd][k % 3], n = new THREE.Mesh(bakeGeo(g, f, nm, l, k % 3 === 1 ? zero : grp.position), o.material); n.castShadow = n.receiveShadow = true; grp.add(n);
+      if (k > 2) SEC.kit.push({ m: n, top: hi[k] }); });
     o.parent.remove(o);
   }
   WHEEL_PARTS.forEach((w, k) => { (WHEELS[k].at.x > 0 ? SEC.fwd : SEC.aft).attach(w.steer); w.home = w.steer.position.clone(); });
   SEC.ok = true;
 }
-// 0 unfolded .. 1 folded: the aft and forward chassis over the center one, each pair of wheels turned flat against its section
+// 0 unfolded .. 1 folded: the aft and forward chassis under the center one, each pair of wheels turned flat against its section
 function foldPose(fa, ff, wa, wf) {
-  SEC.aft.rotation.z = -2.9 * fa; SEC.fwd.rotation.z = 2.9 * ff;
+  SEC.aft.rotation.z = 2.9 * fa; SEC.fwd.rotation.z = -2.9 * ff;      // folded under the center section, away from the lander's wall
   WHEEL_PARTS.forEach((w, k) => { const t = WHEELS[k].at.x > 0 ? wf : wa, side = Math.sign(w.home.z);
     w.steer.rotation.x = side * 1.45 * t; w.steer.position.copy(w.home).add(_tmp.set(0, 0.28 * t, -side * 0.32 * t)); });
 }
@@ -865,13 +869,14 @@ const INTRO_CAPS = [
   [5.4, 10.2, 'From the ladder, a D-ring releases the top of the package. It tilts out, hinged at the bottom of its bay.'],
   [10.4, 14.8, 'Tapes paid out from the ground lower it further. The aft chassis swings open; its wheels spring out and lock.'],
   [15.0, 18.6, 'Then the forward chassis and its wheels.'],
-  [18.8, 23.6, 'Released onto the surface. Its 210 kg weigh no more here than 35 kg on Earth.'],
+  [18.8, 22.2, 'Released onto the surface. Its 210 kg weigh no more here than 35 kg on Earth.'],
+  [22.4, 27.6, 'The crew unfolds the seats and console, and fits the antennas, TV camera and radio relay unit.'],
 ];
-const INTRO_LEN = 24;
+const INTRO_LEN = 28;
 function startIntro() {
   INTRO.on = true; INTRO.t = 0; document.body.classList.add('intro');
   INTRO.d.set(1, 0, 1).normalize();      // Quadrant I: between the forward leg, under the hatch and the ladder, and the next leg round
-  INTRO.P.set(LM.x + INTRO.d.x * 2.3, LM.y + 1.35, LM.z + INTRO.d.z * 2.3);      // the hinge at the bottom of the bay
+  INTRO.P.set(LM.x + INTRO.d.x * 2.78, LM.y + 1.35, LM.z + INTRO.d.z * 2.78);      // the hinge at the bottom of the bay, on the package's outer face: its deck side then lies against the stage wall, 2.1 m out
   const yaw = Math.atan2(INTRO.d.z, -INTRO.d.x);      // nose toward the lander: it comes out tail first
   INTRO.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
   INTRO.end = { x: LM.x + INTRO.d.x * 4.0, z: LM.z + INTRO.d.z * 4.0, yaw };
@@ -879,7 +884,7 @@ function startIntro() {
 }
 function endIntro() {
   INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on');
-  foldPose(0, 0, 0, 0); place(INTRO.end.x, INTRO.end.z, INTRO.end.yaw);
+  foldPose(0, 0, 0, 0); SEC.kit.forEach(k => { k.m.visible = true; }); place(INTRO.end.x, INTRO.end.z, INTRO.end.yaw);
   camPos.copy(camera.position); camTgt.copy(car.p); camInit = true;      // the chase camera picks up from the last shot
   running = true;
 }
@@ -889,9 +894,10 @@ function stepIntro(dt) {
   if (T >= INTRO_LEN) return endIntro();
   // the chassis and wheels, in order
   foldPose(1 - sm(7.5, 11.5), 1 - sm(13, 16.5), 1 - sm(9, 12.5), 1 - sm(14.5, 17.5));
+  SEC.kit.forEach(k => { k.m.visible = T > (k.top < 0.6 ? 23 : 24.8); });      // seats and console first, then the mast-top kit
   // tilt: nose-down and upright in the bay, then out about the hinge at the bottom; then lowered onto its wheels
   const phi = (90 - 40 * sm(4.5, 9.5) - 26 * sm(10, 15.5)) * Math.PI / 180;
-  _ip.copy(INTRO.P).addScaledVector(INTRO.d, 0.9 * sm(11, 16.5)); _ip.y -= 0.75 * sm(11, 16.5);
+  _ip.copy(INTRO.P).addScaledVector(INTRO.d, 0.6 * sm(11, 16.5)); _ip.y -= 0.75 * sm(11, 16.5);
   _iq.copy(INTRO.q).multiply(new THREE.Quaternion().setFromAxisAngle(_iz, -phi));
   const pos = _ic.copy(_ip).sub(_it.set(SEC.HF, SEC.HY, 0).applyQuaternion(_iq));
   const k = sm(17, 21);      // set down: onto the pose the drive starts from
@@ -903,7 +909,7 @@ function stepIntro(dt) {
   const kb = sm(4, 8);
   camera.position.copy(a).lerp(b, kb);
   const cE = new THREE.Vector3(car.p.x + INTRO.d.x * 6 - side.x * 3, car.p.y + 2.2, car.p.z + INTRO.d.z * 6 - side.z * 3);
-  camera.position.lerp(cE, sm(17, 23));
+  camera.position.lerp(cE, sm(17, 23.5));
   camera.position.y = Math.max(camera.position.y, ground(camera.position.x, camera.position.z) + 1.2);
   camera.lookAt(_ip.copy(c).add(_it.set(0, 1.0 - 0.4 * sm(4, 10), 0)).lerp(_tmp.copy(rover.position).add(_it.set(0, 0.4, 0)), sm(6, 12)));
   sun.position.copy(rover.position).addScaledVector(SUN, 120); sun.target.position.copy(rover.position);

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.65 (zion-sky-v434)
+Lunar Rover unloading: no more clipping through the lander. The folded rover still carried its seats, console, antennas and TV camera, sticking up from the deck and into the descent stage, and the package sat 0.4 m inside the stage wall. As on the real missions, the seats and console now ride folded away and the antennas, TV camera and radio relay unit are fitted only after the rover is on the ground (with a caption); the chassis ends fold under, away from the wall; and the package sits against the wall instead of inside it.
+
 ## v4.64 (zion-sky-v433)
 Mars landing: a narrated, hands-off way to watch it. "Watch it, narrated" on the landing briefing flies the whole entry, descent and landing on autopilot, a little faster than the game, while captions explain what the flight software did: bank-angle guidance inherited from Apollo, bank reversals, the backshell thrusters, the Range Trigger for the parachute, Terrain-Relative Navigation and its divert, the sky crane. Lunar Rover: the drive now opens with the rover being unloaded from the lunar module as on Apollo 17, folded in its bay, tilting out, the aft and then the forward chassis and wheels unfolding, set down on the surface (skippable).
 
