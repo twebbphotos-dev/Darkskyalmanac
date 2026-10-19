@@ -173,7 +173,7 @@ const SUN = new THREE.Vector3(Math.sin(95 * Math.PI / 180) * Math.cos(16 * Math.
 const sun = new THREE.DirectionalLight(0xfffaf2, 3.4); sun.castShadow = true;
 sun.shadow.mapSize.set(DETAIL.shadow, DETAIL.shadow); { const r = 30 * DETAIL.shadowR; Object.assign(sun.shadow.camera, { left: -r, right: r, top: r, bottom: -r, near: 1, far: 200 }); } sun.shadow.bias = -0.0006; sun.shadow.normalBias = 0.04;
 scene.add(sun, sun.target);
-scene.add(new THREE.HemisphereLight(0x000000, 0x6e6a64, 0.55));
+scene.add(new THREE.HemisphereLight(0x000000, 0x6e6a64, 0.75));      // light thrown back up by the sunlit ground, which keeps the shadows from going quite black
 
 // regolith: a fine grey with a little noise, drawn at close range. Centred near white: a mid-grey map
 // (128, about 0.22 once linear) darkened the near ground to a quarter of the mountains' brightness
@@ -688,13 +688,14 @@ function kick(dt) {
 
 /* ── wheel tracks: the wire-mesh tires press a chevron tread into the soil, darker where the surface dust is
    pushed aside. They stay: nothing on the Moon blows them away. ── */
-function trackTex() {
+function trackTex() {      // soft-edged: a shallow, slightly darker groove, the chevrons pressed in faintly (blurred by layering, which every browser draws)
   const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
-  x.fillStyle = 'rgba(40,39,37,.2)'; x.fillRect(S * .06, 0, S * .88, S);      // a shade darker than the dust, as in the Apollo photographs, not a painted stripe
-  x.strokeStyle = 'rgba(24,23,22,.3)'; x.lineWidth = S * .07; x.lineCap = 'round';
-  for (let k = -1; k < 5; k++) { const y = k * S / 4; x.beginPath(); x.moveTo(S * .12, y); x.lineTo(S * .5, y + S * .12); x.lineTo(S * .88, y); x.stroke(); }
-  x.fillStyle = 'rgba(205,200,190,.22)'; x.fillRect(0, 0, S * .06, S); x.fillRect(S * .94, 0, S * .06, S);
-  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
+  const g = x.createLinearGradient(0, 0, S, 0); g.addColorStop(0, 'rgba(58,56,53,0)'); g.addColorStop(0.22, 'rgba(58,56,53,.13)'); g.addColorStop(0.78, 'rgba(58,56,53,.13)'); g.addColorStop(1, 'rgba(58,56,53,0)');
+  x.fillStyle = g; x.fillRect(0, 0, S, S);
+  x.lineCap = 'round'; x.lineJoin = 'round';
+  for (const [w, a] of [[S * .2, .025], [S * .14, .04], [S * .08, .06]]) { x.strokeStyle = `rgba(40,38,36,${a})`; x.lineWidth = w;
+    for (let k = -1; k < 5; k++) { const y = k * S / 4; x.beginPath(); x.moveTo(S * .16, y); x.lineTo(S * .5, y + S * .11); x.lineTo(S * .84, y); x.stroke(); } }
+  const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
 const TRACK_MAX = 1400, trackMat = new THREE.MeshStandardMaterial({ map: trackTex(), transparent: true, depthWrite: false, roughness: 1, vertexColors: true, flatShading: true,      // flat: lit by its own facets (the ribbon carries no normals)
   polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });

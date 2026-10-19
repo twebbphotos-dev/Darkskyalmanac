@@ -26,6 +26,7 @@
    the ground you then drive on.
    ────────────────────────────────────────────────────────────── */
 import * as THREE from 'three';
+import { RoundedBoxGeometry } from 'three/examples/jsm/geometries/RoundedBoxGeometry.js';
 import { rng, MARS, GRADE, LIGHT_CAST, applyGrade } from './mars.js';
 import { createStick, buzz } from './stick.js';
 import * as U from './units.js';
@@ -275,6 +276,33 @@ function chuteTexture() {
 }
 
 /* ── the hardware, built from published dimensions ────────────── */
+/* The backshell's skin: SLA-561V, a cork-and-silica ablator packed into a honeycomb, pale buff, laid on in panels.
+   Drawn in the lathe's own wrap (across: round the shell; down: along its profile), with a matching bump map. */
+function backshellTex() {
+  const W = 1024, H = 256, c = canvasOf(W, H), x = c.getContext('2d'), r = rng(2020);
+  x.fillStyle = '#d4cab6'; x.fillRect(0, 0, W, H);
+  for (let k = 0; k < 9000; k++) { const v = 150 + r() * 70 | 0; x.fillStyle = `rgba(${v},${v - 8},${v - 22},${0.05 + r() * 0.08})`; x.fillRect(r() * W, r() * H, 1 + r() * 2.5, 1 + r() * 2.5); }      // the cork's grain
+  for (let k = 0; k < 40; k++) { const g = x.createRadialGradient(0, 0, 0, 0, 0, 1); g.addColorStop(0, 'rgba(120,104,84,0.07)'); g.addColorStop(1, 'rgba(120,104,84,0)');      // faint mottling between batches
+    x.save(); x.translate(r() * W, r() * H); x.scale(30 + r() * 80, 12 + r() * 30); x.fillStyle = g; x.beginPath(); x.arc(0, 0, 1, 0, 6.3); x.fill(); x.restore(); }
+  x.strokeStyle = 'rgba(92,82,68,0.55)'; x.lineWidth = 1.6;
+  for (let k = 0; k <= 16; k++) { const u = k * W / 16; x.beginPath(); x.moveTo(u, H * 0.02); x.lineTo(u, H * 0.84); x.stroke(); }      // panel seams, round the cone
+  for (const v of [0.02, 0.2, 0.42, 0.62, 0.84]) { x.beginPath(); x.moveTo(0, v * H); x.lineTo(W, v * H); x.stroke(); }
+  x.fillStyle = 'rgba(110,98,82,0.28)';
+  for (let k = 0; k < 16; k++) for (const v of [0.11, 0.31, 0.52, 0.73]) { x.beginPath(); x.arc((k + 0.5) * W / 16, v * H, 1.3, 0, 6.3); x.fill(); }      // filled fastener holes
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = THREE.RepeatWrapping; t.anisotropy = 8;
+  const b = new THREE.CanvasTexture(c); b.wrapS = THREE.RepeatWrapping;
+  return { map: t, bump: b };
+}
+/* the descent stage's thermal blankets: layered film, creased where it was folded round the structure */
+function blanketTex() {
+  const S = 256, c = canvasOf(S), x = c.getContext('2d'), r = rng(77);
+  x.fillStyle = '#d2cbbd'; x.fillRect(0, 0, S, S);
+  for (let k = 0; k < 140; k++) { const x0 = r() * S, y0 = r() * S, a = r() * 6.3, l = 10 + r() * 50, w = r() < 0.5 ? 'rgba(255,252,244,0.22)' : 'rgba(110,100,86,0.18)';
+    x.strokeStyle = w; x.lineWidth = 0.8 + r() * 1.4; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }
+  x.strokeStyle = 'rgba(96,88,76,0.4)'; x.lineWidth = 1.2; for (let k = 0; k <= 4; k++) { x.beginPath(); x.moveTo(k * S / 4, 0); x.lineTo(k * S / 4, S); x.stroke(); }      // stitched blanket edges
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  return t;
+}
 function buildAeroshell() {
   const g = new THREE.Group();
 
@@ -292,7 +320,8 @@ function buildAeroshell() {
 
   // backshell: biconic, white, with the parachute can on top
   const bs = [[2.25, 0.04], [2.22, 0.12], [1.55, 1.25], [0.78, 1.95], [0.44, 2.02], [0.44, 2.55], [0, 2.55]].map(p => new THREE.Vector2(p[0], p[1]));
-  const backMat = new THREE.MeshStandardMaterial({ color: 0xd9d2c2, roughness: 0.78, metalness: 0.05, side: THREE.DoubleSide, emissive: 0xff5a14, emissiveIntensity: 0 });
+  const skin = backshellTex();
+  const backMat = new THREE.MeshStandardMaterial({ color: 0xffffff, map: skin.map, bumpMap: skin.bump, bumpScale: 1.5, roughness: 0.85, metalness: 0.02, side: THREE.DoubleSide, emissive: 0xff5a14, emissiveIntensity: 0 });
   const back = new THREE.Mesh(new THREE.LatheGeometry(bs, 48), backMat);
   const dark = new THREE.MeshStandardMaterial({ color: 0x2a2623, roughness: 0.7 });
   for (let i = 0; i < 8; i++) {                                           // reaction-control thruster ports
@@ -334,7 +363,7 @@ function buildCruiseStage() {
 function buildMasses(n, r, y, size) {
   const mat = new THREE.MeshStandardMaterial({ color: 0x5d5b58, roughness: 0.45, metalness: 0.8 });
   return Array.from({ length: n }, (_, i) => {
-    const m = new THREE.Mesh(new THREE.BoxGeometry(size, size * 0.7, size * 1.5), mat), a = (i / n) * Math.PI * 2 + 0.2;
+    const m = new THREE.Mesh(new RoundedBoxGeometry(size, size * 0.7, size * 1.5, 3, size * 0.12), mat), a = (i / n) * Math.PI * 2 + 0.2;      // cast blocks: edges rounded, not knife-sharp
     m.position.set(Math.cos(a) * r, y, Math.sin(a) * r); m.lookAt(0, y, 0);
     m.userData = { home: m.position.clone(), homeQ: m.quaternion.clone(), a };
     return m;
@@ -369,7 +398,7 @@ function buildDescentStage() {
   const g = new THREE.Group();
   const frame = new THREE.MeshStandardMaterial({ color: 0x3a3632, roughness: 0.6, metalness: 0.4 });
   const gold = new THREE.MeshStandardMaterial({ color: 0xb8893a, roughness: 0.45, metalness: 0.65 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xcfc8ba, roughness: 0.7 });
+  const white = new THREE.MeshStandardMaterial({ color: 0xffffff, map: blanketTex(), roughness: 0.6, metalness: 0.1 });
 
   const deck = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.6, 0.34, 6), frame); deck.position.y = 0.5; g.add(deck);
   const core = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.7, 0.62, 12), white); core.position.y = 0.42; g.add(core);
@@ -440,6 +469,7 @@ export function createEDL(ctx) {
     // drawn first and never written to depth, so whatever terrain there is always sits on top of it
     mat.depthWrite = false;
     m.position.y = ctx.plainY ?? ctx.floor - 6; m.frustumCulled = false; m.renderOrder = -0.5;
+    m.visible = false;      // the landing's only: left in the scene, it showed through the drive's own terrain wherever that dips below it
     scene.add(m);
     if (ctx.ext) fetch('../models/jezero.bin').then(r => r.ok ? r.arrayBuffer() : null).then(b => { if (b) relief(m, new Int16Array(b)); }).catch(() => {});
     return m;
@@ -816,6 +846,7 @@ export function createEDL(ctx) {
   }
 
   function begin(from = 'entry', cine) {
+    plain.visible = true;
     if (cine !== undefined) E.cine = cine;
     document.body.classList.toggle('cine', !!E.cine);
     E.cues = {}; NQ.length = 0; nT = 0; E.bankS = 0;
@@ -930,6 +961,7 @@ export function createEDL(ctx) {
     [craft, stage.group, heatDrop].forEach(o => o.parent && o.parent.remove(o));
     bridles.visible = aimRing.visible = goalRing.visible = false;
     if (hazard.mesh) hazard.mesh.visible = false;
+    plain.visible = false;
     camera.near = 0.1; camera.far = 6000; camera.fov = 52; camera.updateProjectionMatrix();
     scene.fog.near = ctx.fog.near; scene.fog.far = ctx.fog.far;
     renderer.setClearColor(0x000000, 1);
