@@ -202,7 +202,7 @@ const patchU = { value: new THREE.Vector4(0, 0, 0, 0) };      // the fine patch'
 const coarse = soil.clone();
 coarse.onBeforeCompile = sh => {
   sh.fragmentShader = grainFade(sh); relief(sh);
-  craterField(sh, `1.0 - smoothstep( 0.0, 60.0, ${HALF.toFixed(1)} - max( abs( vWxz.x - ${CX.toFixed(1)} ), abs( vWxz.y - ${CZ.toFixed(1)} ) ) )`, '#include <normal_fragment_maps>');      // fading in toward the edge, to meet the valley beyond
+  craterField(sh, CRATER_W, '#include <normal_fragment_maps>');
   sh.uniforms.uPatch = patchU;
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
 };
@@ -279,12 +279,16 @@ function craterTile() {
     for (let dy = -e; dy <= e; dy++) for (let dx = -e; dx <= e; dx++) { const d = Math.hypot(dx, dy) / R0; if (d > 2) continue;
       const o = (((Math.round(cy) + dy) % S + S) % S) * S + ((Math.round(cx) + dx) % S + S) % S;
       h[o] += d < 1 ? rim - (dep + rim) * (1 - d * d) : rim * Math.exp(-(((d - 1) / 0.45) ** 2)); } }
+  let mean = 0; for (const v of h) mean += v; mean /= h.length;      // the tone is centered, so the texture shades the ground without darkening it overall
   const c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), im = x.createImageData(S, S);
   for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const gx = (h[j * S + (i + 1) % S] - h[j * S + (i + S - 1) % S]) / 2, gz = (h[((j + 1) % S) * S + i] - h[((j + S - 1) % S) * S + i]) / 2, o = (j * S + i) * 4;
-    im.data[o] = 128 + Math.max(-127, Math.min(127, -gx * 160)); im.data[o + 1] = 128 + Math.max(-127, Math.min(127, -gz * 160)); im.data[o + 2] = 128; im.data[o + 3] = 128 + Math.max(-110, Math.min(110, h[j * S + i] * 30)); }
+    im.data[o] = 128 + Math.max(-127, Math.min(127, -gx * 160)); im.data[o + 1] = 128 + Math.max(-127, Math.min(127, -gz * 160)); im.data[o + 2] = 128; im.data[o + 3] = 128 + Math.max(-110, Math.min(110, (h[j * S + i] - mean) * 30)); }
   x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.NoColorSpace; t.premultiplyAlpha = false; return t;
 }
 const CRATER_TILE = { value: null };
+// how much of it: by distance from the eye alone, the same on both sides of the drivable square's edge, so the edge
+// leaves no line (fading in by position, over its last 60 m, still showed one from afar); none near the rover
+const CRATER_W = 'smoothstep( 70.0, 260.0, length( vViewPosition ) )';
 // adds the crater field to a ground material's shader; w is a GLSL expression for how much of it to show (vWxz is the world xz)
 const craterField = (sh, w, after) => {
   sh.uniforms.uCrT = CRATER_TILE;
@@ -308,7 +312,7 @@ function ringMesh(half, seg, hole) {
   fm.onBeforeCompile = sh => {      // not drawn where the next ring in is (sunk under it instead, it showed through every dip)
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('void main() {', `void main() {\n  if (max(abs(vWxz.x - ${CX.toFixed(1)}), abs(vWxz.y - ${CZ.toFixed(1)})) < ${(hole - 1).toFixed(1)}) discard;`);
-    craterField(sh, '1.0', '#include <normal_fragment_begin>');
+    craterField(sh, CRATER_W, '#include <normal_fragment_begin>');
   };
   const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }

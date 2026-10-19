@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.72 (zion-sky-v441)
+Lunar Rover: no line on the mountains at the edge of the drivable area. The crater texture faded in over the square's last 60 m, which from afar still read as a line, and it darkened the ground slightly on average, so the two sides differed in tone. It now fades in by distance from the eye, the same on both sides of the edge, and its shading is centered so it no longer shifts the ground's brightness.
+
 ## v4.71 (zion-sky-v440)
 Lunar Rover: a truer fold and unloading, craters out to the mountains, crashes on landing only, and Triple speed. The rover was cut into equal thirds, so its two ends could only fold through each other; it is now split as the real chassis was (a 1.5 m center, 0.7 and 0.8 m ends), and stowed as the Apollo 15 records describe: both ends folded back over the center, each pair of wheels swung in flat on its own section, the bottom of the chassis facing out, standing just off the stage wall. Unloading follows the same records: the aft chassis and rear wheels spring open partway over, the rear wheels touch down, and the forward chassis unfolds as the rover moves out while the front is let down; nothing dips into the ground any more (it did when the hinge end came down onto sloping ground). Beyond the drivable square the valley had only the terrain model's smooth shape, so the square's edge showed as a line up the North Massif; a tiling crater texture now covers it, fainter on the steep massif slopes, which the Apollo photographs show worn smooth. A rover rolling in the air no longer breaks apart until it hits the ground, and the chassis now breaks only at its hinges (in one piece for a gentle roll). Finishing the time trial once unlocks a Triple speed setting.
 
