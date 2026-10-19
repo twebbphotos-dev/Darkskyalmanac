@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.60 (zion-sky-v429)
+Lunar Rover: the hubs spin with the tires, and the wheels steer at a steady rate. The hub's disc stands 1–3 cm proud of the tread on the outboard side, just past v4.59's tight cut, so it stayed with the body; the cut now reaches 4 cm further outboard only (the fender's skirt is inboard). Steering used to snap toward the stick almost at once; the wheels now turn at about 17°/s (an estimate), on the ground or in the air.
+
 ## v4.59 (zion-sky-v428)
 Lunar Rover: fenders no longer spin with the tires. The v4.58 wheel rig guessed each hub 5 cm too high, so its cut cylinder had to be oversized and swallowed the fenders that hug the tire tops. Each wheel is now a circle fitted to the lower half of its tread, with the cylinder trimmed to the tread's width, so only the tire turns.
 

@@ -97,3 +97,5 @@ Build (from the repo root, with three.js installed somewhere on NODE_PATH):
   (Z, from each wheel's `spin` in the physics). If the clusters are not found the model is left whole.
 
 v4.59: the wheel rig fits each wheel's circle to the lower half of its tread (width at each height) and trims the cylinder to the tread's width, so the fenders, a few centimetres above the tire and overhanging its inboard side, stay on the body.
+
+v4.60: the wheel cut reaches 4 cm past the tread on the outboard side so the hub discs spin too; steering slews at STEER_RATE (0.3 rad/s at the wheel, an estimate) whether or not the wheels touch the ground.

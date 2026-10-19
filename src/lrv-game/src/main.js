@@ -258,12 +258,13 @@ const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3
 const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true, spin: 0 };
 const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0, lap: 0, lap2: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());      // v, v2: top speed in km/h, at real and at double speed
 let throttle = 0, steerIn = 0;
+const STEER_RATE = 0.3;      // rad/s at the wheel, about 17°/s: straight ahead to full lock in about 1.4 s (an estimate, not a documented figure)
 function step(h) {
   _f.set(0, -G * MASS, 0); _t.set(0, 0, 0);
   _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q); _rt.set(0, 0, 1).applyQuaternion(car.q);
   const speed = car.v.dot(_fw);
   const dmax = 0.42 / (1 + 0.12 * speed * speed);      // four-wheel steering, gentler at speed
-  car.steer += (steerIn * dmax - car.steer) * Math.min(1, h * 6);
+  car.steer += Math.max(-STEER_RATE * h, Math.min(STEER_RATE * h, steerIn * dmax - car.steer));      // the steering motors turn the wheels at a steady rate, on the ground or off it
   let touching = 0;
   for (const wl of WHEELS) {
     const a = _a.copy(wl.at).applyQuaternion(car.q).add(car.p);      // the top of the suspension, in the world
@@ -628,8 +629,8 @@ function frame(now) {
 /* ── the wheels: the model is a scan of the museum's rover, with the wheels fused into the rest. Each wheel is found
    from the geometry (the cluster of points low at each corner, then a circle fitted to the lower half of its tread),
    and every triangle inside its cylinder is cut out into its own part, pivoted at the hub, so it can turn with the
-   physics and steer. The fender hugs the top of the tire, a few centimetres out and overhanging its inboard side,
-   so the cylinder is fitted tight: only the tire turns. ── */
+   physics and steer. The fender hugs the top of the tire, a few centimeters out and overhanging its inboard side,
+   so the cylinder is fitted tight, reaching past the tread only outboard, where the hub's disc stands proud. ── */
 const WHEEL_PARTS = [];
 function rigWheels() {
   rover.updateMatrixWorld(true);
@@ -656,11 +657,11 @@ function rigWheels() {
     lo.forEach((l, j) => { if (hi[j] < l) return; const y = b.y0 + (j + 4.5) / 100, h = (hi[j] - l) / 2, v = h * h + y * y; n++; sx += (hi[j] + l) / 2; sy += y; sv += v; syy += y * y; syv += y * v; });
     const k = (n * syv - sy * sv) / (n * syy - sy * sy), cx = sx / n, cy = k / 2, r = Math.sqrt((sv - k * sy) / n + cy * cy);
     zs.sort((a, c) => a - c);
-    const z0 = zs[Math.floor(zs.length * 0.01)] - 0.015, z1 = zs[Math.floor(zs.length * 0.99)] + 0.015;
-    return { c: new THREE.Vector3(cx, cy, (z0 + z1) / 2), r: r * 1.015, hw: (z1 - z0) / 2 };
+    const z0 = zs[Math.floor(zs.length * 0.01)] - 0.015, z1 = zs[Math.floor(zs.length * 0.99)] + 0.015, out = zc > 0 ? 0.04 : -0.04;      // the hub's disc stands proud of the tread on the outboard side
+    return { c: new THREE.Vector3(cx, cy, (z0 + z1) / 2), r: r * 1.015, hw: (z1 - z0) / 2, z0: z0 - (z0 + z1) / 2 + Math.min(0, out), z1: z1 - (z0 + z1) / 2 + Math.max(0, out) };
   });
   if (W.some(w => !(w.r > 0.25 && w.r < 0.5 && w.hw > 0.05 && w.hw < 0.25))) return;      // the fit failed: leave the model whole
-  const inside = (f, i) => { for (let k = 0; k < 4; k++) { const w = W[k], dx = f[i * 3] - w.c.x, dy = f[i * 3 + 1] - w.c.y, dz = f[i * 3 + 2] - w.c.z; if (dx * dx + dy * dy < w.r * w.r && Math.abs(dz) < w.hw) return k; } return -1; };
+  const inside = (f, i) => { for (let k = 0; k < 4; k++) { const w = W[k], dx = f[i * 3] - w.c.x, dy = f[i * 3 + 1] - w.c.y, dz = f[i * 3 + 2] - w.c.z; if (dx * dx + dy * dy < w.r * w.r && dz > w.z0 && dz < w.z1) return k; } return -1; };
   W.forEach(w => { const steer = new THREE.Group(), spin = new THREE.Group(); steer.position.copy(w.c); steer.add(spin); rover.add(steer); w.steer = steer; w.spin = spin; });
   const nm = new THREE.Matrix3();
   for (const { m, M, f } of src) {
