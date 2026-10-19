@@ -19,6 +19,7 @@ import { buildSuspension, WHEEL_R } from './suspension.js';
 import { makeOutcrop } from './outcrop.js';
 import { createEDL, difficulty, setDifficulty } from './edl.js';
 import { createStick, buzz } from './stick.js';
+import * as U from './units.js';
 import { DETAIL, DETAIL_NAME, detailChoice, setDetail, TOUCHY } from './detail.js';
 
 /* ── tunables ─────────────────────────────────────────────────── */
@@ -1663,7 +1664,7 @@ function updateFraming() {
   ret.classList.toggle('on', !!best);
   if (best) {
     $('ret-name').textContent = best.type === 'photo' ? 'INGENUITY' : 'LAYERED TARGET';
-    $('ret-dist').textContent = Math.round(S.rover.pos.distanceTo(best.pos)) + ' m';
+    $('ret-dist').textContent = U.far(S.rover.pos.distanceTo(best.pos));
     if (!best.found) reveal(best, false);
   }
 }
@@ -1881,7 +1882,7 @@ function stepMarks() {
     if (dist > 14 && _p.z < 1 && x > -40 && x < innerWidth + 40 && y > -40 && y < innerHeight + 40) {
       show = true;
       heliMark.style.transform = `translate(${x}px,${y}px)`;
-      heliMark.querySelector('b').textContent = 'Ingenuity ' + Math.round(dist) + ' m';
+      heliMark.querySelector('b').textContent = 'Ingenuity ' + U.far(dist);
     }
   }
   heliMark.style.display = show ? 'block' : 'none';
@@ -1896,7 +1897,7 @@ function stepMarks() {
     if (x < -60 || x > innerWidth + 60 || y < -60 || y > innerHeight + 60) { el.style.display = 'none'; return; }
     el.style.display = 'block';
     el.style.transform = `translate(${x}px,${y}px)`;
-    el.querySelector('b').textContent = Math.round(S.rover.pos.distanceTo(o.pos)) + ' m';
+    el.querySelector('b').textContent = U.far(S.rover.pos.distanceTo(o.pos));
   });
 }
 

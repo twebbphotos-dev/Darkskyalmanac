@@ -291,6 +291,13 @@ input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
           </div>
           <div class="zcl-set-switch" id="zcl-set-night"><div class="zcl-set-knob"></div></div>
         </div>
+        <div class="zcl-set-row" style="margin-top:14px">
+          <div class="zcl-set-rowtext">
+            <div class="zcl-set-rowtitle">US Units in the Rover Games</div>
+            <div class="zcl-set-rowdesc">The Mars and Lunar rover games show speeds in miles per hour, distances in feet and miles, weights in pounds and temperatures in °F. Off, they use metric.</div>
+          </div>
+          <div class="zcl-set-switch" id="zcl-set-units"><div class="zcl-set-knob"></div></div>
+        </div>
       </div>
     </div>
 
@@ -385,6 +392,11 @@ input,select,textarea{accent-color:#CBA85A;caret-color:#CBA85A}
   }
   applyNight(nightIsOn());
   $('zcl-set-night').addEventListener('click', function(){ applyNight(!nightIsOn()) });
+
+  // ── Units in the rover games (read by src/rover-game/src/units.js) ──
+  function unitsUS(){ try{ return localStorage.getItem('dsa-game-units')==='us' }catch(e){ return false } }
+  $('zcl-set-units').classList.toggle('on', unitsUS());
+  $('zcl-set-units').addEventListener('click', function(){ var on=!unitsUS(); try{ localStorage.setItem('dsa-game-units', on?'us':'metric') }catch(e){} this.classList.toggle('on', on); });
   var gear=$('pwa-night-btn');
   if(gear) gear.addEventListener('click', function(e){ e.preventDefault(); applyNight(!nightIsOn()) });
 

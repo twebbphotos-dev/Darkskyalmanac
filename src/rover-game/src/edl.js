@@ -28,6 +28,7 @@
 import * as THREE from 'three';
 import { rng, MARS, GRADE, LIGHT_CAST, applyGrade } from './mars.js';
 import { createStick, buzz } from './stick.js';
+import * as U from './units.js';
 
 export const FACTS = {
   entryAlt: 125, entrySpeed: 5330,          // km, m/s  (about 19,500 km/h)
@@ -912,8 +913,8 @@ export function createEDL(ctx) {
   function finish() {
     const T = ctx.target, miss = Math.hypot(E.pos.x - T.x, E.pos.z - T.z);
     E.result = { miss, fuel: E.fuel, x: E.pos.x, z: E.pos.z };
-    $('edl-miss').textContent = miss < 10 ? miss.toFixed(1) + ' m' : Math.round(miss) + ' m';
-    $('edl-fuel-left').textContent = Math.round(E.fuel) + ' kg';
+    $('edl-miss').textContent = U.m(miss, miss < 10 ? 1 : 0);
+    $('edl-fuel-left').textContent = U.kg(E.fuel);
     $('edl-clock').textContent = clock(E.t);
     $('edl-verdict').textContent = miss < 15 ? 'On the spot. The real one touched down about 5 m from the point its navigation had picked.'
       : miss < 60 ? 'Well inside the ellipse, on safe ground.' : 'Safe ground, a fair walk from the middle of the ellipse.';
@@ -1237,7 +1238,7 @@ export function createEDL(ctx) {
       $('edl-fpm').style.transform = `translate(${fx}px,${fy}px) rotate(${E.roll}deg)`;
       $('edl-tgt').style.transform = `translate(${gx}px,${gy}px)`;
       $('edl-tgt').classList.toggle('lock', Math.abs(gx - fx) < 22);
-      $('edl-tgt-d').textContent = `Jezero ${Math.round(rem)} km`;
+      $('edl-tgt-d').textContent = `Jezero ${U.km(rem)}`;
     }
     stars.material.opacity = smooth(35, 85, alt) * 0.9;
     const sky = smooth(70, 14, alt);
@@ -1409,10 +1410,10 @@ export function createEDL(ctx) {
   const scope = $('edl-scope').getContext('2d'), att = $('edl-att').getContext('2d');
   function hudHigh(alt, v, g, heat) {
     $('edl-t').textContent = clock(E.t);
-    $('edl-alt').textContent = alt.toFixed(1) + ' km';
-    $('edl-vel').textContent = Math.round(v * 3.6).toLocaleString('en-US') + ' km/h';
+    $('edl-alt').textContent = U.km(alt, 1);
+    $('edl-vel').textContent = U.kmh(v * 3.6);
     $('edl-g').textContent = g.toFixed(1) + ' g';
-    $('edl-heat').textContent = Math.round(20 + heat * (FACTS.peakHeatC - 20)).toLocaleString('en-US') + ' °C';
+    $('edl-heat').textContent = U.degC(20 + heat * (FACTS.peakHeatC - 20));
 
     // landing map: a small top-down view — the target ellipse, where you will come down
     // if nothing changes (the dot), which way that point is moving (the arrow), and one
@@ -1443,7 +1444,7 @@ export function createEDL(ctx) {
     scope.fillStyle = inEll ? '#6FCF7F' : '#7FD4E0'; scope.beginPath(); scope.arc(X, Y, 5, 0, 6.3); scope.fill();
     scope.strokeStyle = '#0d0a18'; scope.lineWidth = 1.5; scope.stroke();
     $('edl-miss-now').textContent = inEll && Math.hypot(E.cross, dn) < 1 ? 'On target'
-      : `${Math.abs(dn).toFixed(1)} km ${dn > 0 ? 'long' : 'short'} · ${Math.abs(E.cross).toFixed(1)} km ${E.cross > 0 ? 'right' : 'left'}`;
+      : `${U.km(Math.abs(dn), 1)} ${dn > 0 ? 'long' : 'short'} · ${U.km(Math.abs(E.cross), 1)} ${E.cross > 0 ? 'right' : 'left'}`;
     // the one thing to do about it
     let tip = '';
     if (E.stage === 'entry') {
@@ -1485,14 +1486,14 @@ export function createEDL(ctx) {
   }
   function hudLow(a, vs, hs) {
     $('edl-t').textContent = clock(E.t);
-    $('edl-alt').textContent = a > 999 ? (a / 1000).toFixed(2) + ' km' : Math.round(a) + ' m';
-    $('edl-vel').textContent = vs.toFixed(vs < 10 ? 1 : 0) + ' m/s down';
-    $('edl-g').textContent = hs.toFixed(1) + ' m/s across';
-    $('edl-heat').textContent = Math.round(E.fuel) + ' kg';
+    $('edl-alt').textContent = U.US ? (a * 3.28084 > 9999 ? U.km(a / 1000, 2) : U.m(a)) : a > 999 ? U.km(a / 1000, 2) : U.m(a);
+    $('edl-vel').textContent = U.ms(vs, vs < 10 ? 1 : 0) + ' down';
+    $('edl-g').textContent = U.ms(hs, 1) + ' across';
+    $('edl-heat').textContent = U.kg(E.fuel);
     $('edl-fuel-bar').style.width = (E.fuel / FACTS.fuel * 100) + '%';
     $('edl-fuel').classList.toggle('low', E.fuel < 60);
     const T = ctx.target;
-    $('edl-miss-now').textContent = `${Math.round(Math.hypot(E.pos.x - T.x, E.pos.z - T.z))} m from the centre of the ellipse`;
+    $('edl-miss-now').textContent = `${U.m(Math.hypot(E.pos.x - T.x, E.pos.z - T.z))} from the center of the ellipse`;
   }
 
   /* ── frame ──────────────────────────────────────────────────── */

@@ -12,6 +12,7 @@ import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.j
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createStick, buzz } from '../../rover-game/src/stick.js';
 import { DETAIL } from '../../rover-game/src/detail.js';      // the Mars simulator's detail setting, shared
+import * as U from '../../rover-game/src/units.js';      // metric or US, from Settings, shared too
 
 const $ = id => document.getElementById(id);
 const G = 1.62;                       // lunar surface gravity, m/s²
@@ -771,14 +772,14 @@ function landed(a) {
   if (a.t > REC.t) { REC.t = a.t; recs.push('air time'); } if (a.d > REC.d) { REC.d = a.d; recs.push('distance'); } if (a.peak > REC.h) { REC.h = a.peak; recs.push('height'); }
   try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
   const flip = a.spin > 5.4 ? ' · full roll!' : a.spin > 2.6 ? ' · half roll' : '';
-  toast(`Airborne ${a.t.toFixed(1)} s · ${a.d.toFixed(1)} m · ${a.peak.toFixed(1)} m high${flip}${recs.length ? ' · new record' : ''}`);
+  toast(`Airborne ${a.t.toFixed(1)} s · ${U.m(a.d, 1)} · ${U.m(a.peak, 1)} high${flip}${recs.length ? ' · new record' : ''}`);
   showRecords();
 }
 function showRecords() {
   $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—';
-  const top = REC[SPD > 1 ? 'v' + SPD : 'v']; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
+  const top = REC[SPD > 1 ? 'v' + SPD : 'v']; $('topv').textContent = top ? U.SPEED + ' · best ' + U.speed(top).toFixed(1) : U.SPEED;
   const lap = REC[SPD > 1 ? 'lap' + SPD : 'lap'];
-  $('rec').textContent = [lap ? `Best loop ${Math.floor(lap / 60)}:${(lap % 60).toFixed(1).padStart(4, '0')}` : '', REC.t ? `${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : ''].filter(Boolean).join(' · ');
+  $('rec').textContent = [lap ? `Best loop ${Math.floor(lap / 60)}:${(lap % 60).toFixed(1).padStart(4, '0')}` : '', REC.t ? `${REC.t.toFixed(1)} s in the air · ${U.m(REC.d, 1)} · ${U.m(REC.h, 1)} high` : ''].filter(Boolean).join(' · ');
 }
 /* The time trial. Through the faint ring the clock starts and the loop appears; stops 6, 8 and 9 must be passed in that
    order (the next one is marked on screen with its distance), and back through the ring the clock stops. Best lap per
@@ -791,8 +792,8 @@ const BRIEF = { on: false, t: 0, cap: '', go: false, lines: null };
 function startBrief() {
   const lk = SPD > 1 ? 'lap' + SPD : 'lap';
   BRIEF.lines = [
-    [0, 6.5, 'The time trial: Apollo 17’s third drive, north to Tracy’s Rock at stop 6, east to stop 8, and home past Van Serg crater. On the Moon it was 12.1 km; here the stops sit at a quarter of their true distances, so the loop is about 2.5 km.'],
-    [6.5, 12, 'The fastest anyone has driven on the Moon is about 18 km/h (11 mph): Gene Cernan, in this rover, downhill on the way back from that drive. It is still the lunar speed record.' + (REC[lk] ? ` Your best loop at this speed: ${fmtT(REC[lk])}.` : '')],
+    [0, 6.5, 'The time trial: Apollo 17’s third drive, north to Tracy’s Rock at stop 6, east to stop 8, and home past Van Serg crater. On the Moon it was ' + (U.US ? '7.5 mi (12.1 km)' : '12.1 km') + '; here the stops sit at a quarter of their true distances, so the loop is about ' + (U.US ? '1.5 mi' : '2.5 km') + '.'],
+    [6.5, 12, 'The fastest anyone has driven on the Moon is about ' + (U.US ? '11 mph (18 km/h)' : '18 km/h (11 mph)') + ': Gene Cernan, in this rover, downhill on the way back from that drive. It is still the lunar speed record.' + (REC[lk] ? ` Your best loop at this speed: ${fmtT(REC[lk])}.` : '')],
     [12, 13.6, 'Timer started · Go!'],
   ];
   BRIEF.on = true; BRIEF.t = 0; BRIEF.go = false; running = false; document.body.classList.add('briefing');
@@ -822,7 +823,7 @@ function speedRecord(kmh, grounded, dt) {
   if (!RUN.on) {
     if (dG < 4.5 && !RUN.away) { RUN.away = true; startBrief(); return; }
     if (dG > 8) RUN.away = false;      // after a lap, drive out of the ring before it can start again
-    mark(OBJ.x, OBJ.z, dG > 25 ? `Time trial · ${Math.round(dG)} m` : 'Time trial'); $('clock').textContent = '';
+    mark(OBJ.x, OBJ.z, dG > 25 ? `Time trial · ${U.far(dG)}` : 'Time trial'); $('clock').textContent = '';
     return;
   }
   RUN.t += dt;
@@ -834,15 +835,15 @@ function speedRecord(kmh, grounded, dt) {
   if (next) {
     const d = Math.hypot(next.x - car.p.x, next.z - car.p.z);
     if (d < 14) { RUN.cp++; toast(`${next.n[0].toUpperCase() + next.n.slice(1)} · ${fmtT(RUN.t)}`); }
-    mark(next.x, next.z, `${next.n} · ${Math.round(d)} m`);
+    mark(next.x, next.z, `${next.n} · ${U.far(d)}`);
   } else {
-    mark(OBJ.x, OBJ.z, `Finish · ${Math.round(dG)} m`);
+    mark(OBJ.x, OBJ.z, `Finish · ${U.far(dG)}`);
     if (dG < 4.5) {
       RUN.on = false; RUN.away = true;
       const first = !unlocked3(), lk = SPD > 1 ? 'lap' + SPD : 'lap', vk = SPD > 1 ? 'v' + SPD : 'v', best = !REC[lk] || RUN.t < REC[lk];
       if (best) REC[lk] = RUN.t;
       const vb = RUN.peak > REC[vk] + 0.05; if (vb) REC[vk] = RUN.peak;
-      toast(`Loop ${fmtT(RUN.t)}${best ? ' · best lap' : ''} · top speed ${RUN.peak.toFixed(1)} km/h${SPD === 1 && RUN.peak > 18 ? ' · faster than Cernan’s 18' : ''}${first ? ' · Triple speed unlocked: choose it on the start card' : ''}`);
+      toast(`Loop ${fmtT(RUN.t)}${best ? ' · best lap' : ''} · top speed ${U.kmh(RUN.peak, 1)}${SPD === 1 && RUN.peak > 18 ? ' · faster than Cernan’s ' + U.kmh(18) : ''}${first ? ' · Triple speed unlocked: choose it on the start card' : ''}`);
       try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
       showRecords();
     }
@@ -989,6 +990,12 @@ function stepCrash(dt) {
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
+if (U.US) {      // the start card, in US units
+  document.querySelectorAll('#speedpick button').forEach(b => { b.textContent = ['Real', 'Double', 'Triple'][b.dataset.v - 1] + ' · ' + U.kmh(18 * b.dataset.v); });
+  $('spec-rover').textContent = 'About 1,540 lb loaded with crew; 10 ft long; four wire-mesh wheels, each with its own motor; front and rear steering';
+  $('fine-rec').textContent = '11 mph';
+  $('spec-top').textContent = '11 mph, the record Gene Cernan set on Apollo 17 (it was built for about 8 mph on the level). Faster downhill, where gravity does the work';
+}
 document.querySelectorAll('#speedpick button').forEach(b => {
   if (b.dataset.v === '3') b.hidden = !unlocked3();
   b.classList.toggle('on', +b.dataset.v === SPD);
@@ -1035,7 +1042,7 @@ function frame(now) {
   if (window.__lrv && window.__lrv.cam) camera.position.copy(window.__lrv.cam);      // test hooks
   if (window.__lrv && window.__lrv.look) camera.lookAt(window.__lrv.look);
   sun.position.copy(car.p).addScaledVector(SUN, 120); sun.target.position.copy(car.p);
-  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
+  const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = U.speed(kmh).toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
   siteMarks();

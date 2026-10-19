@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.77 (zion-sky-v446)
+US units for the rover games. A new switch in Settings → Display ("US Units in the Rover Games", stored as dsa-game-units) makes the Mars and Lunar rover games show miles per hour, feet and miles, pounds and °F; off, they stay metric. Both games read it through one shared helper (src/rover-game/src/units.js), and only what is shown is converted: the physics, records and saved bests stay metric, so switching never changes a record. Lunar Rover: speedometer, best speed, jump toasts and records, distances to the ring and stops, lap toast, the start card (speed buttons, top speed, rover size) and the time trial briefing (11 mph (18 km/h); 7.5 mi (12.1 km); about 1.5 mi here). Mars: the landing readouts (altitude, speed, heat shield temperature, fuel, miss distance, distance to Jezero) and the distances to targets and Ingenuity. The narration and info cards keep their metric figures.
+
 ## v4.76 (zion-sky-v445)
 Lunar Rover: the route stays hidden through the unloading, and the time trial opens with a briefing. The route line faded in on the start card, before the drive began, and the unloading scene never touched it, so it showed through the whole animation; it and the ring now appear when the drive is handed over. Driving into the ring now pauses the drive (paused, not braked: on the Moon's weak grip a fast rover needs tens of meters to stop) for a short briefing in the letterbox: the real third drive (12.1 km, per the Apollo 17 traverse record; about 2.5 km here at quarter scale), the lunar speed record (about 18 km/h, Gene Cernan downhill on the way back from that drive, per Guinness World Records), and your best loop at that speed, then "Timer started · Go!" and the clock runs. Skip jumps to Go.
 
