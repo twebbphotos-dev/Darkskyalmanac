@@ -3,7 +3,10 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
-## v4.77 (zion-sky-v446)
+## v4.78 (zion-sky-v447)
+Lunar Rover: wheel tracks you can see. The rover has laid tracks since the first version, but none ever showed, for two reasons. Each tread ribbon was wound so its triangles faced the ground, and the material draws front faces only, so all of it was culled; and it was laid 1.2 cm above the smooth terrain formula, while the ground drawn near the rover is flat 0.4 m triangles over craterlets a few centimeters deep, which covered it almost everywhere. The ribbon now faces up, is lit by its own facets (it carries no normals), and follows the drawn ground's triangles 2 cm up. The tread is the wire-mesh tire's chevron print, a shade darker than the dust as in the Apollo photographs, and like the real ones the tracks stay.
+
+ (zion-sky-v446)
 US units for the rover games. A new switch in Settings → Display ("US Units in the Rover Games", stored as dsa-game-units) makes the Mars and Lunar rover games show miles per hour, feet and miles, pounds and °F; off, they stay metric. Both games read it through one shared helper (src/rover-game/src/units.js), and only what is shown is converted: the physics, records and saved bests stay metric, so switching never changes a record. Lunar Rover: speedometer, best speed, jump toasts and records, distances to the ring and stops, lap toast, the start card (speed buttons, top speed, rover size) and the time trial briefing (11 mph (18 km/h); 7.5 mi (12.1 km); about 1.5 mi here). Mars: the landing readouts (altitude, speed, heat shield temperature, fuel, miss distance, distance to Jezero) and the distances to targets and Ingenuity. The narration and info cards keep their metric figures.
 
 ## v4.76 (zion-sky-v445)

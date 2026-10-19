@@ -690,22 +690,33 @@ function kick(dt) {
    pushed aside. They stay: nothing on the Moon blows them away. ── */
 function trackTex() {
   const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
-  x.fillStyle = 'rgba(30,29,27,.38)'; x.fillRect(S * .06, 0, S * .88, S);
-  x.strokeStyle = 'rgba(14,13,12,.55)'; x.lineWidth = S * .07; x.lineCap = 'round';
+  x.fillStyle = 'rgba(40,39,37,.2)'; x.fillRect(S * .06, 0, S * .88, S);      // a shade darker than the dust, as in the Apollo photographs, not a painted stripe
+  x.strokeStyle = 'rgba(24,23,22,.3)'; x.lineWidth = S * .07; x.lineCap = 'round';
   for (let k = -1; k < 5; k++) { const y = k * S / 4; x.beginPath(); x.moveTo(S * .12, y); x.lineTo(S * .5, y + S * .12); x.lineTo(S * .88, y); x.stroke(); }
   x.fillStyle = 'rgba(205,200,190,.22)'; x.fillRect(0, 0, S * .06, S); x.fillRect(S * .94, 0, S * .06, S);
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; return t;
 }
-const TRACK_MAX = 1400, trackMat = new THREE.MeshStandardMaterial({ map: trackTex(), transparent: true, depthWrite: false, roughness: 1, vertexColors: true, polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
+const TRACK_MAX = 1400, trackMat = new THREE.MeshStandardMaterial({ map: trackTex(), transparent: true, depthWrite: false, roughness: 1, vertexColors: true, flatShading: true,      // flat: lit by its own facets (the ribbon carries no normals)
+  polygonOffset: true, polygonOffsetFactor: -3, polygonOffsetUnits: -6 });
 const tracks = WHEELS.map(() => {
   const pos = new Float32Array(TRACK_MAX * 2 * 3), uv = new Float32Array(TRACK_MAX * 2 * 2), col = new Float32Array(TRACK_MAX * 2 * 4), idx = new Uint32Array((TRACK_MAX - 1) * 6);
-  for (let i = 0; i < TRACK_MAX - 1; i++) { const o = i * 2; idx.set([o, o + 1, o + 2, o + 2, o + 1, o + 3], i * 6); }
+  for (let i = 0; i < TRACK_MAX - 1; i++) { const o = i * 2; idx.set([o, o + 2, o + 1, o + 2, o + 3, o + 1], i * 6); }      // wound to face up: the other way round they faced the ground and were culled, so no track ever showed
   const g = new THREE.BufferGeometry(); g.setAttribute('position', new THREE.BufferAttribute(pos, 3)); g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); g.setAttribute('color', new THREE.BufferAttribute(col, 4));
   g.setIndex(new THREE.BufferAttribute(idx, 1)); g.setDrawRange(0, 0);
   const m = new THREE.Mesh(g, trackMat); m.frustumCulled = false; m.receiveShadow = true; m.renderOrder = 1; scene.add(m);
   return { g, pos, uv, col, n: 0, last: null, s: 0, gap: false };
 });
 const _tp = new THREE.Vector3();
+// The ground as drawn, not the smooth formula: the fine patch is flat triangles 0.4 m across over craterlets a few
+// centimeters deep, and a tread laid on the formula sank under them almost everywhere, so no track ever showed.
+function drawnH(x, z) {
+  const u = (x - PATCH.cx + PATCH.half) / PS, v = (z - PATCH.cz + PATCH.half) / PS;
+  if (!(u >= 0 && v >= 0 && u < PN - 1 && v < PN - 1)) return groundBase(x, z);
+  const i = Math.floor(u), j = Math.floor(v), fu = u - i, fv = v - j, P = patchGeo.attributes.position, h = (a, b) => P.getY(b * PN + a);
+  const ha = h(i, j), hb = h(i, j + 1), hd = h(i + 1, j);      // the patch's two triangles per cell, split from (i, j+1) to (i+1, j)
+  if (fu + fv <= 1) return ha + (hd - ha) * fu + (hb - ha) * fv;
+  const hc = h(i + 1, j + 1); return hc + (hb - hc) * (1 - fu) + (hd - hc) * (1 - fv);
+}
 function pushTrack(T, x1, y1, z1, x2, y2, z2, alpha) {
   if (T.n >= TRACK_MAX) {      // full: forget the oldest half
     const keep = TRACK_MAX >> 1, from = TRACK_MAX - keep; T.pos.copyWithin(0, from * 6, TRACK_MAX * 6); T.uv.copyWithin(0, from * 4, TRACK_MAX * 4); T.col.copyWithin(0, from * 8, TRACK_MAX * 8); T.n = keep;
@@ -719,7 +730,7 @@ function layTracks() {
     const a = _tp.copy(wl.at).applyQuaternion(car.q).add(car.p);
     if (T.last && !T.gap && Math.hypot(a.x - T.last.x, a.z - T.last.z) < 0.25) return;
     const dx = T.last && !T.gap ? a.x - T.last.x : _fw.x, dz = T.last && !T.gap ? a.z - T.last.z : _fw.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * 0.115, nz = dx / l * 0.115;
-    const x1 = a.x + nx, z1 = a.z + nz, x2 = a.x - nx, z2 = a.z - nz, y1 = ground(x1, z1) + 0.012, y2 = ground(x2, z2) + 0.012;
+    const x1 = a.x + nx, z1 = a.z + nz, x2 = a.x - nx, z2 = a.z - nz, yc = drawnH(a.x, a.z), y1 = Math.max(drawnH(x1, z1), yc) + 0.02, y2 = Math.max(drawnH(x2, z2), yc) + 0.02;
     if (T.gap) {      // after a jump the tread starts again where the wheels came down: two see-through joins bridge the gap unseen
       const o = (T.n - 1) * 6, q = T.pos.slice(o, o + 6); pushTrack(T, q[0], q[1], q[2], q[3], q[4], q[5], 0); pushTrack(T, x1, y1, z1, x2, y2, z2, 0); T.gap = false;
     } else if (T.last) T.s += Math.hypot(a.x - T.last.x, a.z - T.last.z) / 0.5;
