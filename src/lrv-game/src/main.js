@@ -202,6 +202,7 @@ const patchU = { value: new THREE.Vector4(0, 0, 0, 0) };      // the fine patch'
 const coarse = soil.clone();
 coarse.onBeforeCompile = sh => {
   sh.fragmentShader = grainFade(sh); relief(sh);
+  craterField(sh, `1.0 - smoothstep( 0.0, 60.0, ${HALF.toFixed(1)} - max( abs( vWxz.x - ${CX.toFixed(1)} ), abs( vWxz.y - ${CZ.toFixed(1)} ) ) )`, '#include <normal_fragment_maps>');      // fading in toward the edge, to meet the valley beyond
   sh.uniforms.uPatch = patchU;
   sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform vec4 uPatch;').replace('void main() {', 'void main() {\n  if (abs(vWxz.x - uPatch.x) < uPatch.z && abs(vWxz.y - uPatch.y) < uPatch.z) discard;');
 };
@@ -266,6 +267,36 @@ function buildPatch(cx, cz) {
 // The valley and its mountains, from NASA's terrain model at the same half scale as the drivable square, in two rings:
 // a fine one 5 km across at 20 m, so that where it meets the drivable square the two follow the same shape (the coarse
 // ring alone, at 167 m, sagged metres below it on the slopes and left a step), and one at 50 m out to 16 km.
+/* The valley beyond the drivable square has only the terrain model's shape, 20 to 50 m apart: smooth, where the square
+   is pocked with craters, so the square's edge showed as a line halfway up the North Massif. These slopes are out of
+   reach, so a texture does: a tiling field of craters (bowl and raised rim, many small and few large, wrapping at the
+   edges), its slopes in rg and a shading tone in alpha, laid on at two scales by world position. It is fainter on the
+   steep slopes: on the massifs, soil creeping downhill wears craters away, and the Apollo photographs show them smooth. */
+function craterTile() {
+  const S = 512, h = new Float32Array(S * S), r = rng(8017);
+  for (let k = 0; k < 1500; k++) {
+    const R0 = 2 / Math.sqrt(1 - r() * (1 - (2 / 46) ** 2)), cx = r() * S, cy = r() * S, dep = R0 * (0.12 + 0.18 * r()), rim = dep * 0.3, e = Math.ceil(R0 * 2);
+    for (let dy = -e; dy <= e; dy++) for (let dx = -e; dx <= e; dx++) { const d = Math.hypot(dx, dy) / R0; if (d > 2) continue;
+      const o = (((Math.round(cy) + dy) % S + S) % S) * S + ((Math.round(cx) + dx) % S + S) % S;
+      h[o] += d < 1 ? rim - (dep + rim) * (1 - d * d) : rim * Math.exp(-(((d - 1) / 0.45) ** 2)); } }
+  const c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), im = x.createImageData(S, S);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const gx = (h[j * S + (i + 1) % S] - h[j * S + (i + S - 1) % S]) / 2, gz = (h[((j + 1) % S) * S + i] - h[((j + S - 1) % S) * S + i]) / 2, o = (j * S + i) * 4;
+    im.data[o] = 128 + Math.max(-127, Math.min(127, -gx * 160)); im.data[o + 1] = 128 + Math.max(-127, Math.min(127, -gz * 160)); im.data[o + 2] = 128; im.data[o + 3] = 128 + Math.max(-110, Math.min(110, h[j * S + i] * 30)); }
+  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.NoColorSpace; t.premultiplyAlpha = false; return t;
+}
+const CRATER_TILE = { value: null };
+// adds the crater field to a ground material's shader; w is a GLSL expression for how much of it to show (vWxz is the world xz)
+const craterField = (sh, w, after) => {
+  sh.uniforms.uCrT = CRATER_TILE;
+  sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vCN;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvCN = normalize(mat3(modelMatrix) * objectNormal);');
+  sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D uCrT; varying vec3 vCN;')
+    .replace('#include <color_fragment>', `#include <color_fragment>
+      float crW = ( ${w} ) * ( 0.4 + 0.6 * smoothstep( 0.8, 0.96, normalize( vCN ).y ) ); vec4 crA = texture2D( uCrT, vWxz / 120.0 ), crB = texture2D( uCrT, vWxz / 620.0 + 0.37 );
+      diffuseColor.rgb *= 1.0 + crW * ( ( crA.a - 0.5 ) * 0.22 + ( crB.a - 0.5 ) * 0.22 );`)
+    .replace(after, `${after}
+      { vec2 t = ( crA.rg * 2.0 - 1.0 ) * 0.45 + ( crB.rg * 2.0 - 1.0 ) * 0.38; vec3 wn = normalize( vCN ), dw = vec3( t.x, 0.0, t.y ) * crW; dw -= wn * dot( wn, dw );
+        normal = normalize( normal + ( viewMatrix * vec4( dw, 0.0 ) ).xyz ); }`);
+};
 function ringMesh(half, seg, hole) {
   const g = new THREE.PlaneGeometry(2 * half, 2 * half, seg, seg); g.rotateX(-Math.PI / 2); g.translate(CX, 0, CZ);
   const p = g.attributes.position;
@@ -277,10 +308,12 @@ function ringMesh(half, seg, hole) {
   fm.onBeforeCompile = sh => {      // not drawn where the next ring in is (sunk under it instead, it showed through every dip)
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvWxz = (modelMatrix * vec4(transformed, 1.0)).xz;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('void main() {', `void main() {\n  if (max(abs(vWxz.x - ${CX.toFixed(1)}), abs(vWxz.y - ${CZ.toFixed(1)})) < ${(hole - 1).toFixed(1)}) discard;`);
+    craterField(sh, '1.0', '#include <normal_fragment_begin>');
   };
   const m = new THREE.Mesh(g, fm); m.receiveShadow = true; scene.add(m);
 }
 function farMesh() { ringMesh(2500, 250, HALF); ringMesh(8000, 320, 2500); }
+CRATER_TILE.value = craterTile();
 /* ── Tracy's Rock: the split boulder at stop 6 of the third drive, which Gene Cernan named for his daughter. It rolled
    and bounced about a kilometer down the North Massif, leaving a trail still visible from orbit, and broke into five
    pieces where it stopped. Put back together it would be about 18 × 10 × 6 m (LROC); the largest piece is some 10 m
@@ -420,12 +453,13 @@ function rockMeshes() {
    3.1 m long and 2.06 m wide. On the Moon each wheel carries a sixth of what it would on Earth, so it grips
    a sixth as hard: the rover skids, bounces, and leaves the ground easily. */
 const MASS = 700, I = new THREE.Vector3(MASS / 12 * (1.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 2.06 ** 2), MASS / 12 * (3.1 ** 2 + 1.1 ** 2));
-// Double speed, chosen on the briefing card: twice the top speed, with stronger motors and grippier tires to get there
-let FAST = (() => { try { return localStorage.getItem('lrv-speed') === '2'; } catch (e) { return false; } })();
+// Speed, chosen on the briefing card: real (1), double (2), or triple (3, unlocked by finishing the time trial once),
+// the faster ones with stronger motors and grippier tires to get there
+const unlocked3 = () => !!(REC.lap || REC.lap2 || REC.lap3);
+let SPD = (() => { try { return +localStorage.getItem('lrv-speed') || 1; } catch (e) { return 1; } })();
 const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.6;
 let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
-function setSpeed(fast) { FAST = fast; MU = fast ? 0.85 : 0.62; VMAX = fast ? 11.2 : 5.0; try { localStorage.setItem('lrv-speed', fast ? '2' : '1'); } catch (e) { /* not remembered */ } }
-setSpeed(FAST);
+function setSpeed(n) { SPD = n === 3 && unlocked3() ? 3 : n === 2 || n === 3 ? 2 : 1; MU = [0.62, 0.85, 1.0][SPD - 1]; VMAX = [5.0, 11.2, 15.0][SPD - 1]; try { localStorage.setItem('lrv-speed', String(SPD)); } catch (e) { /* not remembered */ } }
 const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0, off: 0, hit: 0 }));      // off: time out of contact; hit: how hard it came down, for the dust
 const LM = { on: false, x: -12, z: 4, y: 0 };      // where the lunar module stands; measured from its model: footpads 4.1 m out along each axis, the descent stage 2.2 m round
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
@@ -439,7 +473,8 @@ function place(x, z, yaw) {      // set down on the slope, not level: level on a
 const _f = new THREE.Vector3(), _t = new THREE.Vector3(), _r = new THREE.Vector3(), _a = new THREE.Vector3(), _up = new THREE.Vector3(), _fw = new THREE.Vector3(), _rt = new THREE.Vector3(),
       _vc = new THREE.Vector3(), _wf = new THREE.Vector3(), _ws = new THREE.Vector3(), _tmp = new THREE.Vector3(), _qi = new THREE.Quaternion(), _wb = new THREE.Vector3(), _L = new THREE.Vector3();
 const AIR = { t: 0, start: null, peak: 0, last: null, best: 0, grounded: true, spin: 0 };
-const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0, lap: 0, lap2: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());      // v, v2: top speed in km/h, at real and at double speed
+const REC = Object.assign({ t: 0, d: 0, h: 0, v: 0, v2: 0, v3: 0, lap: 0, lap2: 0, lap3: 0 }, (() => { try { return JSON.parse(localStorage.getItem('lrv-records')) || {}; } catch (e) { return {}; } })());
+setSpeed(SPD);      // v, v2: top speed in km/h, at real and at double speed
 let throttle = 0, steerIn = 0;
 const STEER_RATE = 0.42;      // rad/s at the wheel, about 24°/s: straight ahead to full lock in about 1 s (an estimate, not a documented figure)
 function step(h) {
@@ -469,7 +504,7 @@ function step(h) {
     _ws.copy(n).cross(_wf).normalize();
     const vf = _vc.dot(_wf), vs = _vc.dot(_ws), lim = MU * Fn;
     let Fl;
-    if (throttle > 0.02 && vf > -0.3) Fl = throttle * (FAST ? 900 : 520) * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
+    if (throttle > 0.02 && vf > -0.3) Fl = throttle * [520, 900, 1300][SPD - 1] * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
     else if (throttle < -0.02 && vf < 0.3) Fl = throttle * 300 * Math.max(0, 1 + vf / VREV);
     else if (Math.abs(throttle) > 0.02) Fl = -Math.sign(vf) * lim;                            // driving against the motion is braking
     else Fl = 0;
@@ -485,7 +520,7 @@ function step(h) {
     if (pen <= 0) continue;
     touching++;
     const r = _r.copy(a).sub(car.p); _vc.copy(car.w).cross(r).add(car.v); const n = normalAt(a.x, a.z), vn = _vc.dot(n);
-    if (c.y > 0) CRASH.roof = Math.max(CRASH.roof, -vn);      // the top of the rover hitting the ground: how hard
+    if (c.y > 0) { CRASH.roof = Math.max(CRASH.roof, -vn); CRASH.topDown = true; }      // the top of the rover hitting the ground: how hard
     const Fn = Math.max(0, 90000 * pen - 3000 * vn);
     _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.55 * Fn, vt * 3000) / vt);
     _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
@@ -711,8 +746,8 @@ function landed(a) {
 }
 function showRecords() {
   $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—';
-  const top = FAST ? REC.v2 : REC.v; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
-  const lap = FAST ? REC.lap2 : REC.lap;
+  const top = REC[SPD > 1 ? 'v' + SPD : 'v']; $('topv').textContent = top ? 'km/h · best ' + top.toFixed(1) : 'km/h';
+  const lap = REC[SPD > 1 ? 'lap' + SPD : 'lap'];
   $('rec').textContent = [lap ? `Best loop ${Math.floor(lap / 60)}:${(lap % 60).toFixed(1).padStart(4, '0')}` : '', REC.t ? `${REC.t.toFixed(1)} s in the air · ${REC.d.toFixed(1)} m · ${REC.h.toFixed(1)} m high` : ''].filter(Boolean).join(' · ');
 }
 /* The time trial. Through the faint ring the clock starts and the loop appears; stops 6, 8 and 9 must be passed in that
@@ -755,10 +790,10 @@ function speedRecord(kmh, grounded, dt) {
     mark(OBJ.x, OBJ.z, `Finish · ${Math.round(dG)} m`);
     if (dG < 4.5) {
       RUN.on = false; RUN.away = true;
-      const lk = FAST ? 'lap2' : 'lap', vk = FAST ? 'v2' : 'v', best = !REC[lk] || RUN.t < REC[lk];
+      const first = !unlocked3(), lk = SPD > 1 ? 'lap' + SPD : 'lap', vk = SPD > 1 ? 'v' + SPD : 'v', best = !REC[lk] || RUN.t < REC[lk];
       if (best) REC[lk] = RUN.t;
       const vb = RUN.peak > REC[vk] + 0.05; if (vb) REC[vk] = RUN.peak;
-      toast(`Loop ${fmtT(RUN.t)}${best ? ' · best lap' : ''} · top speed ${RUN.peak.toFixed(1)} km/h${!FAST && RUN.peak > 18 ? ' · faster than Cernan’s 18' : ''}`);
+      toast(`Loop ${fmtT(RUN.t)}${best ? ' · best lap' : ''} · top speed ${RUN.peak.toFixed(1)} km/h${SPD === 1 && RUN.peak > 18 ? ' · faster than Cernan’s 18' : ''}${first ? ' · Triple speed unlocked: choose it on the start card' : ''}`);
       try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
       showRecords();
     }
@@ -785,13 +820,14 @@ function buildDebris() {
       const v = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k);
       let key = 'w' + wk;
       if (wk < 0) { const cx = (f[v[0] * 3] + f[v[1] * 3] + f[v[2] * 3]) / 3, cy = (f[v[0] * 3 + 1] + f[v[1] * 3 + 1] + f[v[2] * 3 + 1]) / 3, cz = (f[v[0] * 3 + 2] + f[v[1] * 3 + 2] + f[v[2] * 3 + 2]) / 3;
-        key = Math.max(0, Math.min(3, Math.floor((cx + 1.6) / 0.8))) + ',' + (cz > 0 ? 1 : 0) + ',' + (cy > 0.2 ? 1 : 0); }
+        if (cy > SEC.KIT) key = 'k' + (cx > -0.1 ? 1 : 0) + (cz > 0 ? 1 : 0);      // the kit on top: four pieces
+        else { let sec = cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1; for (const w of WHEEL_PARTS) if (Math.abs(cz) > 0.42 && cy > -0.9 && Math.abs(cx - w.c.x) < 0.56) sec = w.c.x > 0 ? 2 : 0; key = 'c' + sec; } }      // the chassis breaks only at its hinges
       if (!buckets.has(key)) buckets.set(key, new Map());
       const b = buckets.get(key); if (!b.has(o)) b.set(o, { f, M: M.clone(), n: nm.clone(), list: [] });
       b.get(o).list.push(...v);
     }
   });
-  for (const b of buckets.values()) {
+  for (const [key, b] of buckets) {
     const box = new THREE.Box3();
     for (const { f, list } of b.values()) for (const v of list) box.expandByPoint(P.set(f[v * 3], f[v * 3 + 1], f[v * 3 + 2]));
     const c = box.getCenter(new THREE.Vector3()), sz = box.getSize(new THREE.Vector3()), parts = [];
@@ -805,7 +841,7 @@ function buildDebris() {
         out.setAttribute(name, new THREE.BufferAttribute(d, s)); }
       parts.push({ geo: out, mat: mat(o.material) });
     }
-    DEBRIS.push({ c, r: Math.max(0.08, Math.min(0.4, Math.min(sz.x, sz.y, sz.z) / 2)), parts });
+    DEBRIS.push({ c, r: Math.max(0.08, Math.min(0.4, Math.min(sz.x, sz.y, sz.z) / 2)), parts, kind: key[0] });
   }
 }
 function breakApart(hit = 8) {      // hit: how hard, m/s. A slow roll crumples where it lies; a hard one throws pieces
@@ -814,8 +850,12 @@ function breakApart(hit = 8) {      // hit: how hard, m/s. A slow roll crumples 
   CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.pieces = [];
   DEBRIS_MATS.forEach(m => { m.opacity = 1; m.transparent = false; m.needsUpdate = true; });
   rover.updateMatrixWorld(true);
-  for (const d of DEBRIS) {
-    const m = new THREE.Group(); d.parts.forEach(({ geo, mat }) => { const n = new THREE.Mesh(geo, mat); n.castShadow = true; m.add(n); }); scene.add(m);
+  // a gentle roll leaves the chassis in one piece, only the wheels and the kit coming loose; a hard one breaks it at its hinges
+  let bodies = DEBRIS;
+  if (k < 0.45) { const ch = DEBRIS.filter(d => d.kind === 'c'), c = new THREE.Vector3(); ch.forEach(d => c.add(d.c)); c.divideScalar(Math.max(1, ch.length));
+    bodies = DEBRIS.filter(d => d.kind !== 'c').concat(ch.length ? [{ c, r: 0.35, parts: ch.flatMap(d => d.parts.map(p => ({ ...p, off: d.c.clone().sub(c) }))) }] : []); }
+  for (const d of bodies) {
+    const m = new THREE.Group(); d.parts.forEach(({ geo, mat, off }) => { const n = new THREE.Mesh(geo, mat); n.castShadow = true; if (off) n.position.copy(off); m.add(n); }); scene.add(m);
     m.position.copy(d.c).applyMatrix4(rover.matrixWorld); m.quaternion.copy(car.q);
     const out = d.c.clone().applyQuaternion(car.q).setY(0).normalize();      // flung outward from the middle of the rover
     const v = car.v.clone().multiplyScalar(0.6).addScaledVector(out, (1 + Math.random() * 3) * k).add(new THREE.Vector3((Math.random() - .5) * 2 * k, (1.5 + Math.random() * 3.5) * k, (Math.random() - .5) * 2 * k));
@@ -830,7 +870,8 @@ function breakApart(hit = 8) {      // hit: how hard, m/s. A slow roll crumples 
 function stepCrash(dt) {
   if (!CRASH.on) {      // remember where it last drove upright, to bring it back there
     if ((CRASH.safeT += dt) > 1 && _up.y > 0.85 && AIR.grounded) { CRASH.safeT = 0; CRASH.safe = { x: car.p.x, z: car.p.z, yaw: Math.atan2(-_fw.z, _fw.x) }; }
-    if (CRASH.roof > 3.5 || (_up.y < -0.2 && car.v.length() > 4)) breakApart(Math.max(CRASH.roof, car.v.length()));
+    if (CRASH.roof > 3.5 || (_up.y < -0.2 && CRASH.topDown && car.v.length() > 4)) breakApart(Math.max(CRASH.roof, car.v.length()));      // only on landing upside down: a roll in the air is not yet a crash
+    CRASH.topDown = false;
     CRASH.roof = 0;
   } else if ((CRASH.t += dt) > 3.5) {
     CRASH.on = false; rover.visible = true; place(CRASH.safe.x, CRASH.safe.z, CRASH.safe.yaw); camInit = false; toast('A new rover · back where you last drove safely');
@@ -850,8 +891,9 @@ let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
 document.querySelectorAll('#speedpick button').forEach(b => {
-  b.classList.toggle('on', (b.dataset.v === '2') === FAST);
-  b.addEventListener('click', () => { setSpeed(b.dataset.v === '2'); showRecords(); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
+  if (b.dataset.v === '3') b.hidden = !unlocked3();
+  b.classList.toggle('on', +b.dataset.v === SPD);
+  b.addEventListener('click', () => { setSpeed(+b.dataset.v); showRecords(); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
 });
 $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else running = true; });
 $('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); });
@@ -968,7 +1010,10 @@ function rigWheels() {
    one carries the seats) and folded the same way. The seats and console rode folded flat, and the antennas, TV
    camera and radio relay unit were not on it at all: the crew fitted them once it stood on the surface. So
    everything above the chassis deck is hidden while it is stowed and comes back after it is set down. ── */
-const SEC = { ok: false, aft: new THREE.Group(), fwd: new THREE.Group(), HA: -0.55, HF: 0.45, HY: -0.4, KIT: 0.05, kit: [] };      // kit: everything above the chassis deck
+// HA, HF: the hinges, splitting the model into an aft (0.7 m), center (1.5 m) and forward (0.8 m) chassis, so the two ends fold
+// back over the center side by side, as the real package did (it stood 1.5 m tall); HY: the fold line, at the top of the
+// chassis (everything above it is the kit, stowed separately); HB: the bottom of the chassis, the package's pivot in its bay
+const SEC = { ok: false, aft: new THREE.Group(), fwd: new THREE.Group(), HA: -0.8, HF: 0.7, HY: 0.05, HB: -0.4, KIT: 0.05, kit: [] };
 function bakeGeo(g, f, nm, list, off) {      // the triangles in list, in rover space (f), less off
   const P = new THREE.Vector3(), out = new THREE.BufferGeometry(), a = new Float32Array(list.length * 3);
   list.forEach((v, i) => { a[i * 3] = f[v * 3] - off.x; a[i * 3 + 1] = f[v * 3 + 1] - off.y; a[i * 3 + 2] = f[v * 3 + 2] - off.z; });
@@ -993,8 +1038,9 @@ function buildSections() {
     const f = new Float32Array(pos.count * 3); for (let i = 0; i < pos.count; i++) { P.fromBufferAttribute(pos, i).applyMatrix4(M); f[i * 3] = P.x; f[i * 3 + 1] = P.y; f[i * 3 + 2] = P.z; }
     const parts = [[], [], []];      // aft, center, forward
     for (let t = 0; t < nTri; t++) { const v = [0, 1, 2].map(k => idx ? idx[t * 3 + k] : t * 3 + k), cx = (f[v[0] * 3] + f[v[1] * 3] + f[v[2] * 3]) / 3, cy = (f[v[0] * 3 + 1] + f[v[1] * 3 + 1] + f[v[2] * 3 + 1]) / 3;
-      const sec = cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1;
-      if (cy > SEC.KIT) { const cz = (f[v[0] * 3 + 2] + f[v[1] * 3 + 2] + f[v[2] * 3 + 2]) / 3, key = sec + '|' + Math.floor(cx / 0.45) + '|' + Math.floor(cy / 0.45) + '|' + Math.floor(cz / 0.45);
+      let sec = cx < SEC.HA ? 0 : cx > SEC.HF ? 2 : 1; const cz = (f[v[0] * 3 + 2] + f[v[1] * 3 + 2] + f[v[2] * 3 + 2]) / 3;
+      for (const w of WHEEL_PARTS) if (Math.abs(cz) > 0.42 && cy > -0.9 && cy <= SEC.KIT && Math.abs(cx - w.c.x) < 0.56) sec = w.c.x > 0 ? 2 : 0;      // a wheel's fender and suspension go with its section
+      if (cy > SEC.KIT) { const key = sec + '|' + Math.floor(cx / 0.45) + '|' + Math.floor(cy / 0.45) + '|' + Math.floor(cz / 0.45);
         if (!cells.has(key)) cells.set(key, { sec, parts: new Map(), n: 0, x: 0, y: 0, z: 0 });
         const c = cells.get(key); if (!c.parts.has(o)) c.parts.set(o, { f, nm: nm.clone(), l: [] }); c.parts.get(o).l.push(...v); c.n++; c.x += cx; c.y += cy; c.z += cz; }
       else parts[sec].push(...v); }
@@ -1013,29 +1059,34 @@ function buildSections() {
   SEC.ok = true;
 }
 // 0 unfolded .. 1 folded: the aft and forward chassis under the center one, each pair of wheels turned flat against its section
+// 0 unfolded .. 1 folded: the aft and forward chassis folded back over the center one, each pair of wheels swung in on
+// its suspension to lie flat on the underside of its own section, side by side
 function foldPose(fa, ff, wa, wf) {
-  SEC.aft.rotation.z = 2.9 * fa; SEC.fwd.rotation.z = -2.9 * ff;      // folded under the center section, away from the lander's wall
-  WHEEL_PARTS.forEach((w, k) => { const t = WHEELS[k].at.x > 0 ? wf : wa, side = Math.sign(w.home.z);
-    w.steer.rotation.x = side * 1.45 * t; w.steer.position.copy(w.home).add(_tmp.set(0, 0.28 * t, -side * 0.32 * t)); });
+  SEC.aft.rotation.z = -Math.PI * fa; SEC.fwd.rotation.z = Math.PI * ff;
+  WHEEL_PARTS.forEach((w, k) => { const front = WHEELS[k].at.x > 0, t = front ? wf : wa, side = Math.sign(w.home.z);
+    w.steer.rotation.x = side * Math.PI / 2 * t;
+    w.steer.position.set(w.home.x + ((front ? 0.4 : -0.35) - w.home.x) * t, w.home.y + (-0.5 - w.home.y) * t, w.home.z + (side * 0.37 - w.home.z) * t); });
 }
-const INTRO = { on: false, t: 0, P: new THREE.Vector3(), d: new THREE.Vector3(), q: new THREE.Quaternion(), end: null, capT: '' };
+const INTRO = { on: false, t: 0, R0: 3.42, P: new THREE.Vector3(), d: new THREE.Vector3(), q: new THREE.Quaternion(), end: null, capT: '', pts: null };
 const INTRO_CAPS = [
   [0.6, 5.2, '11 December 1972, Taurus–Littrow. The rover rode to the Moon folded into a package on the side of the lunar module.'],
-  [5.4, 8.6, 'From the ladder, a D-ring releases the top of the package. It tilts out, hinged at the bottom of its bay.'],
-  [8.8, 12.6, 'Tapes paid out from the ground lower it further. The aft chassis swings open; its wheels spring out and lock.'],
-  [12.8, 15.6, 'Then the forward chassis and its wheels.'],
-  [15.8, 19.6, 'Its rear wheels touch down, the front is let down, and the crew pull it clear of the lander.'],
-  [19.8, 22.4, 'Its 210 kg weigh no more here than 35 kg on Earth.'],
+  [5.4, 8.8, 'From the ladder, a D-handle releases the package. A tape pulled from the ground tilts it out, hinged at the bottom of its bay.'],
+  [9.0, 12.4, 'Partway over, the aft chassis swings open on its springs and locks, and the rear wheels spring into place.'],
+  [12.6, 16.4, 'With the rear wheels on the ground, a second tape lets the front down. The rover moves out from the lander as the forward chassis and its wheels unfold.'],
+  [16.6, 19.8, 'On all four wheels at last, it is disconnected from the lander and pulled clear.'],
+  [20.0, 22.4, 'Its 210 kg weigh no more here than 35 kg on Earth.'],
   [22.4, 27.6, 'The crew unfolds the seats and console, and fits the antennas, TV camera and radio relay unit.'],
 ];
 const INTRO_LEN = 28;
 function startIntro() {
   INTRO.on = true; INTRO.t = 0; document.body.classList.add('intro');
+  if (!INTRO.pts) { INTRO.pts = []; rover.traverse(o => { if (!o.isMesh) return; const p = o.geometry.attributes.position, n = Math.min(60, p.count);      // a scatter of points on every part
+    for (let i = 0; i < n; i++) INTRO.pts.push([o, new THREE.Vector3().fromBufferAttribute(p, Math.floor(i * p.count / n))]); }); }
   INTRO.d.set(1, 0, 1).normalize();      // Quadrant I: between the forward leg, under the hatch and the ladder, and the next leg round
-  INTRO.P.set(LM.x + INTRO.d.x * 2.78, LM.y + 1.35, LM.z + INTRO.d.z * 2.78);      // the hinge at the bottom of the bay, on the package's outer face: its deck side then lies against the stage wall, 2.1 m out
+  INTRO.P.set(LM.x + INTRO.d.x * INTRO.R0, LM.y + 1.35, LM.z + INTRO.d.z * INTRO.R0);      // the pivot at the bottom of the bay, on the package's outer face: its inner side then stands just off the stage wall, 2.1 m out
   const yaw = Math.atan2(INTRO.d.z, -INTRO.d.x);      // nose toward the lander: it comes out tail first
   INTRO.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw);
-  INTRO.end = { x: LM.x + INTRO.d.x * 4.0, z: LM.z + INTRO.d.z * 4.0, yaw };
+  INTRO.end = { x: LM.x + INTRO.d.x * (INTRO.R0 + SEC.HF + 0.9), z: LM.z + INTRO.d.z * (INTRO.R0 + SEC.HF + 0.9), yaw };      // pulled 0.9 m clear of where it came down
   place(INTRO.end.x, INTRO.end.z, yaw);
 }
 function endIntro() {
@@ -1049,25 +1100,30 @@ function stepIntro(dt) {
   const T = (INTRO.t += dt), sm = (a, b) => ss(a, b, T);
   if (T >= INTRO_LEN) return endIntro();
   // the chassis and wheels, each swinging out and snapping into its lock (a little past, then back)
-  const snap = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return u <= 0 ? 0 : 1 + 2.4 * Math.pow(u - 1, 3) + 1.4 * Math.pow(u - 1, 2); };
-  foldPose(1 - snap(8.6, 10.2), 1 - snap(12.6, 14.4), 1 - snap(9.8, 11.2), 1 - snap(14.0, 15.4));
+  const snap = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return u <= 0 ? 0 : 1 + 2.2 * Math.pow(u - 1, 3) + 1.2 * Math.pow(u - 1, 2); };
+  foldPose(1 - snap(9.0, 10.4), 1 - snap(13.6, 15.2), 1 - snap(10.0, 11.0), 1 - snap(14.8, 15.8));
   SEC.kit.forEach(k => { const u = Math.min(1, (T - k.t) / 0.22); k.m.visible = u > 0; if (u > 0) k.m.scale.setScalar(1 + 2.7 * Math.pow(u - 1, 3) + 1.7 * Math.pow(u - 1, 2)); });      // one piece after another, each popping out with a little overshoot
-  // tilt: upright in the bay, nose down; the D-ring lets the top out a few degrees, then each pull on the tapes lowers it
-  // further about the hinge at the bottom of the bay, with a pause between pulls
+  // Tilt (degrees from level, 90 upright in the bay, nose down): the D-handle lets the top out a few degrees, then each
+  // pull on the first tape rotates it further about its pivot at the bottom of the bay, with pauses between pulls.
   let phi = 90 - 4 * sm(4.6, 5.3);
-  for (const [a, b, d] of [[6.0, 7.6, 16], [8.2, 9.8, 16], [10.6, 12.2, 14], [13.0, 15.0, 60]]) phi -= d * sm(a, b);
-  // until the rear wheels reach the ground; then they rest there while the hinge end is let down onto the front wheels,
-  // and the crew pull the rover clear of the lander (on to the pose the drive starts from)
-  _ip.copy(INTRO.P); _ip.y -= (INTRO.P.y - car.p.y + 0.4) * sm(15.8, 18.4);
-  const lift = _ip.y - ground(INTRO.P.x + INTRO.d.x * 1.5, INTRO.P.z + INTRO.d.z * 1.5);      // the hinge above the ground the rear wheels stand on
-  // the rear wheels' lowest point sits 1.48 m back and 0.38 m down from the hinge: on the ground when 1.48 sin φ − 0.38 cos φ = −lift
-  const touch = (Math.asin(Math.max(-1, Math.min(1, -lift / 1.528))) + Math.atan2(0.38, 1.48)) * 180 / Math.PI;
+  for (const [a, b, d] of [[6.0, 7.4, 18], [8.0, 9.4, 20], [10.4, 11.8, 16], [12.6, 16.6, 40]]) phi -= d * sm(a, b);
+  // Once the rear wheels are down they stay on the ground, and the second tape lets the pivot end down to its wheels;
+  // meanwhile the rover moves out from the lander, then it is pulled the rest of the way clear.
+  const lower = sm(12.6, 16.6);
+  _ip.copy(INTRO.P).addScaledVector(INTRO.d, 0.6 * sm(12.8, 16.6) + 0.3 * sm(17.0, 19.0));
+  _ip.y += (car.p.y + SEC.HB - INTRO.P.y) * lower;
+  const rx = _ip.x + INTRO.d.x * 1.75, rz = _ip.z + INTRO.d.z * 1.75, lift = _ip.y - ground(rx, rz);      // the pivot above the ground the rear wheels stand on
+  // the rear wheels' lowest point sits 1.73 m back and 0.38 m down from the pivot: on the ground when 1.73 sin φ − 0.38 cos φ = −lift
+  const touch = (Math.asin(Math.max(-1, Math.min(1, -lift / 1.771))) + Math.atan2(0.38, 1.73)) * 180 / Math.PI;
   phi = Math.max(phi, touch, 0) * Math.PI / 180;
-  _ip.addScaledVector(INTRO.d, 0.77 * sm(18.6, 21.2));
   _iq.copy(INTRO.q).multiply(new THREE.Quaternion().setFromAxisAngle(_iz, -phi));
-  const pos = _ic.copy(_ip).sub(_it.set(SEC.HF, SEC.HY, 0).applyQuaternion(_iq));
-  const k = sm(20.6, 21.6);      // settle onto the pose the drive starts from
+  const pos = _ic.copy(_ip).sub(_it.set(SEC.HF, SEC.HB, 0).applyQuaternion(_iq));
+  const k = sm(19.0, 20.0);      // settle onto the pose the drive starts from
   rover.position.copy(pos).lerp(car.p, k); rover.quaternion.copy(_iq).slerp(car.q, k);
+  // nothing goes into the ground: whatever part of the rover is lowest is kept on or above it
+  rover.updateMatrixWorld(true);
+  let low = 1e9; for (const [m, v] of INTRO.pts) { _tmp.copy(v).applyMatrix4(m.matrixWorld); low = Math.min(low, _tmp.y - ground(_tmp.x, _tmp.z)); }
+  if (low < 0.02) rover.position.y += 0.02 - low;
   // three shots: the lander from out on the plain, alongside the bay, then round behind the rover
   const side = _ip.set(-INTRO.d.z, 0, INTRO.d.x), c = INTRO.P;
   const a = _ic.set(c.x + INTRO.d.x * 13 + side.x * 6, c.y + 3.2, c.z + INTRO.d.z * 13 + side.z * 6);
