@@ -677,3 +677,5 @@ relief fades by pixel footprint, not distance, so far crests do not alias.
 - **A surprise** (v4.54): the sunset objective is held back (`SURPRISE`): no ring, no list entry, no marker, not
   counted and not named in the briefing, until the first objective is logged; `revealSurprise()` (from `hud()`) then
   adds it with its ring and a "New objective" toast.
+
+v4.64: cinematic landing (edl.js, E.cine). begin('intro', true) from the briefing's "Watch it, narrated". autoBank() flies bank angle for range and reverses at a cross-range corridor that narrows with time; attitude() damps the swing with a PD law; the parachute fires on a Range Trigger (as soon as the speed is safe if long, when the predicted miss reaches zero if short); the backshell goes at 2.1 km; autoDivert() flies to the safe point nearest the target. cineWarp() runs the clock a little faster than the game and slows it while captions are queued. say() and prompt() are silent; cineCues() queues the narration.

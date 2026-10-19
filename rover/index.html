@@ -378,6 +378,9 @@
   body[data-edl=intro] #edl-steps,body[data-edl=intro] #edl-tele,body[data-edl=intro] #edl-guide,
   body[data-edl=intro] #edl-prompt,body[data-edl=intro] #edl-call,body[data-edl=intro] #edl-pad{display:none !important}
   html.touch #edl-pad{display:flex}
+  /* cinematic: the autopilot flies; no controls, a narrator in the letterbox */
+  body.cine #edl-guide,body.cine #edl-pad,body.cine #edl-prompt,body.cine #edl-call,body.cine #edl-fpm,body.cine #edl-tgt{display:none !important}
+  body.cine #edl-bars i:last-child{height:9vh}
   @media(max-width:720px){
     #edl-att{height:34px}
     #edl-steps i:not(.on){display:none}
@@ -668,7 +671,8 @@
       <li><em>20 m</em><b>Sky crane</b><span><kbd class="kbi">Space</kbd><kbd class="tci">Deploy</kbd> lowers the rover on three 7.6 m nylon bridles. Touchdown at 0.75 m/s.</span></li>
     </ol>
     <div class="two">
-      <button class="btn primary" id="edl-begin">Begin entry</button>
+      <button class="btn primary" id="edl-begin">Fly the landing</button>
+      <button class="btn" id="edl-watch">Watch it, narrated</button>
       <button class="btn" id="edl-back">Back</button>
     </div>
   </div>

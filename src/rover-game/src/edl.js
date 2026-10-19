@@ -711,7 +711,7 @@ export function createEDL(ctx) {
   const axX = () => expo(IN.x, AX.x.expo);
   const axZ = () => expo(IN.z, AX.z.expo);
 
-  const say = (m, hold = 3.2) => { E.msg = m; E.msgT = hold; $('edl-call').textContent = m; $('edl-call').classList.add('on'); };
+  const say = (m, hold = 3.2) => { if (E.cine) return; E.msg = m; E.msgT = hold; $('edl-call').textContent = m; $('edl-call').classList.add('on'); };
 
   /* ── stage control ──────────────────────────────────────────── */
   const ORDER = ['entry', 'chute', 'descent', 'powered', 'crane', 'down'];
@@ -735,6 +735,7 @@ export function createEDL(ctx) {
   };
   let promptT = 0;
   function prompt(html) {      // an instruction shows for a few seconds, then fades out of the way
+    if (E.cine) html = '';
     const p = $('edl-prompt'); p.innerHTML = html; p.classList.remove('gone'); clearTimeout(promptT);
     if (html) promptT = setTimeout(() => p.classList.add('gone'), 7000);
   }
@@ -753,7 +754,70 @@ export function createEDL(ctx) {
     document.body.dataset.edl = s;
   }
 
-  function begin(from = 'entry') {
+  /* ── cinematic: the flight software flies, as it did on the day, and a narrator says what it is doing ──
+     Nothing in a real Mars landing is flown from Earth: the light takes 11 minutes each way. So in this mode the
+     same guidance the player stands in for runs on its own: bank angle for range, bank reversals for cross-range,
+     the Range Trigger for the parachute, Terrain-Relative Navigation's divert to safe ground. The clock runs a
+     little faster than the game's, and waits while a caption is still queued. */
+  const NQ = []; let nT = 0;
+  function stepNarration(dt) {
+    if (E.stage === 'intro') return;
+    nT -= dt;
+    if (nT > 0) return;
+    const el = $('edl-cap');
+    if (NQ.length) { const txt = NQ.shift(); el.classList.remove('on'); el.textContent = txt; void el.offsetWidth; el.classList.add('on'); nT = 1.5 + txt.split(' ').length * 0.25; }
+    else el.classList.remove('on');
+  }
+  const cue = (id, txt) => { if (!E.cues[id]) { E.cues[id] = true; NQ.push(txt); } };
+  const CW = { entry: 1.4, chute: 1.2, descent: 0.85, powered: 1.25, crane: 1 };
+  const cineWarp = () => E.cine ? (CW[E.stage] || 1) * (NQ.length > 1 ? 0.55 : 1) : 1;
+  function cineCues() {
+    const s = E.stage, t = E.t;
+    if (s === 'entry') {
+      cue('e1', 'From here on, everything is automatic. Mars is 11 light-minutes away: no one on Earth can steer.');
+      if (t > 18) cue('e2', 'Tilted 16° to the airflow, the heat shield makes lift. Guidance steers by rolling that lift, as Apollo did.');
+      if (t > 45) cue('e3', 'Lift up stretches the flight; lift rolled to the side brings it down sooner. The bank angle sets the range.');
+      if (t > 72) cue('e4', 'Peak heating: about 1,300 °C on the shield. Braking peaks near 10 g.');
+      if (t > 110) cue('e5', 'Eight hydrazine thrusters on the backshell roll the capsule and damp its swings.');
+    } else if (s === 'chute') {
+      cue('c1', 'Six 25 kg weights are thrown off. The capsule stops flying with lift and steadies for the parachute.');
+      if (E.chuteT > 0) cue('c2', 'Range Trigger, new on this mission: the parachute fires when navigation says the target is the right distance ahead.');
+      if (E.shieldT > 0) cue('c3', 'Heat shield away. The radar measures height and speed; the cameras see the ground.');
+    } else if (s === 'descent') {
+      cue('d1', 'Terrain-Relative Navigation matches camera images to a map made from orbit, fixing its position as it falls.');
+      cue('d2', 'It checks a hazard map loaded before launch and picks the safest spot it can reach.');
+    } else if (s === 'powered') {
+      cue('p1', 'Backshell separation at 2.1 km. Eight throttleable engines light.');
+      if (E.st > 3) cue('p2', 'A divert carries it sideways to the chosen spot, clear of the falling backshell and parachute.');
+    } else if (s === 'crane') cue('k1', 'Twenty meters up: sky crane. Three 7.6 m nylon bridles lower the rover.');
+    else if (s === 'down') cue('t1', 'Touchdown at 0.75 m/s. The bridles are cut; the descent stage flies off to crash a safe distance away.');
+  }
+  // entry guidance: the bank angle's size for range (lift up carries farther), its side for cross-range, reversed at the edge of a corridor that narrows as the speed goes
+  function autoBank() {
+    const rem = Math.max(25, 226 - E.t), need = -2 * E.down / (0.52 * 0.7 * rem);
+    const mag = Math.acos(clamp(0.53 + need, 0.12, 0.97)) / DEG;
+    const db = 0.3 + 2.2 * clamp(rem / 226, 0, 1);
+    if (!E.bankS) E.bankS = E.cross > 0 ? -1 : 1;
+    if (E.cross * E.bankS > db) { E.bankS = -E.bankS; cue('rev', 'Bank reversal: the lift rolls to the other side, keeping the sideways error inside a narrowing corridor.'); }
+    return clamp((E.bankS * mag - E.bank) / 15, -1, 1);
+  }
+  // powered descent: fly to the safe spot nearest the target, as Terrain-Relative Navigation's safe-target selection did
+  function autoDivert() {
+    if (!E.goal) {
+      const T = ctx.target, g = hazard.grid;
+      const safe = (x, z) => [[0, 0], [3, 0], [-3, 0], [0, 3], [0, -3]].every(([ox, oz]) => !g.hazardAt(x + ox, z + oz));
+      E.goal = { x: T.x, z: T.z };
+      search: for (let r = 0; r <= 90; r += 3) { const n = Math.max(1, Math.round(r * 1.5)); for (let k = 0; k < n; k++) { const an = k / n * 6.2832, x = T.x + Math.cos(an) * r, z = T.z + Math.sin(an) * r; if (safe(x, z)) { E.goal = { x, z }; break search; } } }
+    }
+    const a = E.pos.y - height(E.pos.x, E.pos.z), vmax = lerp(0.8, 14, smooth(25, 600, a));
+    const vx = clamp((E.goal.x - E.pos.x) * 0.15, -vmax, vmax), vz = clamp((E.goal.z - E.pos.z) * 0.15, -vmax, vmax);
+    return [clamp((vx - E.vel.x) * 0.5, -1, 1), clamp((vz - E.vel.z) * 0.5, -1, 1)];
+  }
+
+  function begin(from = 'entry', cine) {
+    if (cine !== undefined) E.cine = cine;
+    document.body.classList.toggle('cine', !!E.cine);
+    E.cues = {}; NQ.length = 0; nT = 0; E.bankS = 0;
     ['edl-fpm', 'edl-tgt'].forEach(id => { $(id).style.display = 'none'; });
     E.active = true; E.result = null; E.camInit = false; E.shake = 0; E.flash = 0;
     E.saidHeat = E.saidG = E.saidSt = E.saidTRN = E.saidDry = E.lower = E.saidSep = false; E.engines = 0; E.drop = 0;
@@ -814,7 +878,7 @@ export function createEDL(ctx) {
     E.pos.y = height(E.pos.x, E.pos.z) + 8000;
     E.vel.set(12, -100, 1);
     E.wind.set((Math.random() - 0.5) * 3.6, (Math.random() - 0.5) * 3.6);
-    E.saidTRN = E.saidDry = E.lower = false;
+    E.saidTRN = E.saidDry = E.lower = false; E.goal = null;
     E.fuel = FACTS.fuel; E.drop = 0; E.engines = 0; E.inflate = 1; E.camInit = false;
 
     scene.add(craft); craft.rotation.set(0, 0, 0); craft.quaternion.identity();
@@ -832,7 +896,7 @@ export function createEDL(ctx) {
   }
 
   function die(kind, title, why) {
-    if (E.dying) return;
+    if (E.dying || E.cine) return;
     buzz([200, 60, 300]);
     E.dying = { kind, rt: 0, title, why, axis: new THREE.Vector3(Math.random() - 0.5, Math.random() - 0.5, Math.random() - 0.5).normalize() };
     E.shake = 1.6; say(kind === 'burn' ? 'Backshell temperature critical!' : kind === 'load' ? 'Structural load exceeded!' : 'Loss of attitude control — tumbling!', 3);
@@ -859,7 +923,7 @@ export function createEDL(ctx) {
   function leave() {
     ['edl-fpm', 'edl-tgt'].forEach(id => { $(id).style.display = 'none'; });
     E.active = false;
-    document.body.classList.remove('edl'); delete document.body.dataset.edl;
+    document.body.classList.remove('edl', 'cine'); delete document.body.dataset.edl;
     ['edl', 'edl-fail', 'edl-done'].forEach(id => $(id).classList.remove('on'));
     $('edl-glow').style.opacity = 0;
     [craft, stage.group, heatDrop].forEach(o => o.parent && o.parent.remove(o));
@@ -892,8 +956,8 @@ export function createEDL(ctx) {
     const t = E.t, qbar = clamp(gAt(t) / 9.5, 0, 1), late = smooth(160, 228, t);
     const w = 0.9 + 2.6 * Math.sqrt(qbar);
     const c = 0.15 + 0.9 * Math.sqrt(qbar) - 0.95 * late;
-    const u = E.rcs > 0 ? -axZ() * D.pitch : 0;                         // realistic: W raises the angle of attack; easy: W raises the nose as you see it
-    if (u) { E.rcs = Math.max(0, E.rcs - D.rcs * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
+    const u = E.rcs > 0 ? (E.cine ? clamp(-(6 * E.aoa + 4 * E.q) / 38, -1, 1) : -axZ() * D.pitch) : 0;      // realistic: W raises the angle of attack; easy: W raises the nose as you see it. Cinematic: the autopilot damps the swing
+    if (u) { E.rcs = Math.max(E.cine ? 40 : 0, E.rcs - D.rcs * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
     if (Math.random() < dt * D.gust * (0.25 + 0.9 * qbar + 0.7 * late))
       E.q += (Math.random() < 0.5 ? -1 : 1) * (D.gustA + Math.random() * D.gustB) * (0.3 + 1.25 * qbar + 0.6 * late);
     for (const sh of E.shears) if (!sh.done && t >= sh.t) {
@@ -1001,9 +1065,9 @@ export function createEDL(ctx) {
       E.dying.rt += dt;
       if (E.dying.rt > 2.2) { const d = E.dying; E.dying = null; return fail(d.title, d.why, 'entry'); }
     } else if (s === 'entry') {
-      E.warp = 6.4;
+      E.warp = 6.4 * cineWarp();
       const b0 = E.bank;
-      E.bank = E.rcs > 0 ? clamp(E.bank + axX() * 48 * dt, -85, 85) : E.bank;          // was 62°/s: slower, smoother banking
+      E.bank = E.rcs > 0 ? clamp(E.bank + (E.cine ? autoBank() : axX()) * 48 * dt, -85, 85) : E.bank;          // was 62°/s: slower, smoother banking
       const db = Math.abs(E.bank - b0);
       if (db > 0) { E.rcs = Math.max(0, E.rcs - db * D.bankRcs); fire(0.4); E.q += (E.bank - b0) * 0.14 * Math.sign(Math.sin(E.t * 0.7) + 0.3); }   // a hard roll knocks the pitch about
       const dm = dt * E.warp, b = E.bank * DEG, lift = clamp(1 + E.aoa / 25, 0.6, 1.4), a = authAt(E.t) * lift;
@@ -1030,7 +1094,7 @@ export function createEDL(ctx) {
         say('Straighten up and fly right: six more weights away, the capsule rolls level. Parachute armed — keep it steady.', 5);
       }
     } else if (s === 'chute') {
-      E.warp = E.chuteT < 0 ? 2.6 : 2.2;                 // slow enough after deploy to watch it
+      E.warp = (E.chuteT < 0 ? 2.6 : 2.2) * cineWarp();                 // slow enough after deploy to watch it
       E.bank += (0 - E.bank) * Math.min(1, dt * 1.5);
       const dm = dt * E.warp;
       E.t += dm;
@@ -1038,10 +1102,10 @@ export function createEDL(ctx) {
       if (E.chuteT < 0) {
         attitude(dt);
         const v = velAt(E.t);
-        if (!E.dying && (action || v < 352)) {
+        if (!E.dying && (action || v < 352 || (E.cine && v < D.chuteV - 15 && (downNow() >= 0 || v < 400)))) {      // cinematic: the Range Trigger, firing when the landing point comes onto the target
           action = false;
           if (v > D.chuteV) return fail('Parachute lost', `It was fired at ${Math.round(v)} m/s, well over what the canopy is built to take. The real one was deployed at about 420 m/s and loaded to some 30 tonnes even so.`, 'entry');
-          if (Math.abs(E.aoa) > D.chuteAoa) return fail('Parachute fouled', `It went out with the capsule swinging ${Math.round(Math.abs(E.aoa))}° off line, and the lines wrapped the backshell. Damp the swing first, then fire.`, 'entry');
+          if (!E.cine && Math.abs(E.aoa) > D.chuteAoa) return fail('Parachute fouled', `It went out with the capsule swinging ${Math.round(Math.abs(E.aoa))}° off line, and the lines wrapped the backshell. Damp the swing first, then fire.`, 'entry');
           E.down = downNow(); E.chuteT = E.t; E.chuteV = v; E.flash = 1; E.shake = 1.4; E.rt = 0; buzz([90, 40, 160]);
           chute.group.visible = true;
           say(v < 356 ? 'Fired late, on the backup trigger. You have flown long.' : `Parachute out at ${Math.round(v)} m/s. ${FACTS.chuteDia} m of canopy, open in under a second.`, 4);
@@ -1196,7 +1260,7 @@ export function createEDL(ctx) {
     let a = E.pos.y - ground;                          // height of the rover's wheels above the ground
 
     if (s === 'descent') {
-      E.warp = 7;
+      E.warp = 7 * cineWarp();
       const dm = dt * E.warp;
       E.vel.x += (E.wind.x - E.vel.x) * Math.min(1, dm * 0.05);
       E.vel.z += (E.wind.y - E.vel.z) * Math.min(1, dm * 0.05);
@@ -1205,7 +1269,7 @@ export function createEDL(ctx) {
       hazard.mesh.material.opacity = Math.min(1, E.st / 2.5);
       if (!E.saidTRN && E.st > 4.2) { E.saidTRN = true; say('Red is rock, slope, sand or crater. Green is where a rover can stand.', 4); }
       if (a < 2500 && !E.saidSep) { E.saidSep = true; prompt(TOUCH ? 'Tap <b>DEPLOY</b> to drop free of the backshell.' : '<b>SPACE</b> drops free of the backshell.'); }
-      if ((action && a < 2500) || a < 1500) {
+      if ((action && a < 2500) || a < 1500 || (E.cine && a < 2100)) {
         const late = a < 1500;
         action = false; E.sepAlt = a;
         // let the backshell and parachute go: they stay behind and drift off
@@ -1217,12 +1281,12 @@ export function createEDL(ctx) {
         say(late ? 'Separated late on the backup trigger. That cost fuel.' : `Backshell separation at ${Math.round(a)} m. Eight engines lit.`, 3.5);
       }
     } else if (s === 'powered' || s === 'crane') {
-      E.warp = s === 'powered' ? lerp(1.0, 1.8, smooth(60, 400, a)) : 1.6;
+      E.warp = (s === 'powered' ? lerp(1.0, 1.8, smooth(60, 400, a)) : 1.6) * cineWarp();
       const dm = dt * E.warp;
       E.engines = Math.min(1, E.engines + dt * 2.2);
 
       // sideways: your thrust, or guidance quietly killing the drift
-      const ix = axX(), iz = axZ(), hs = Math.hypot(E.vel.x, E.vel.z);
+      const [ix, iz] = E.cine ? autoDivert() : [axX(), axZ()], hs = Math.hypot(E.vel.x, E.vel.z);
       let ax = ix * 3.6, az = iz * 3.6;
       if (!ix) ax = -clamp(E.vel.x * 0.9, -2.4, 2.4);
       if (!iz) az = -clamp(E.vel.z * 0.9, -2.4, 2.4);
@@ -1558,7 +1622,8 @@ export function createEDL(ctx) {
     drawBrief();
     $('edl-brief').classList.add('on');
   }
-  $('edl-begin').onclick = () => { $('edl-brief').classList.remove('on'); begin('intro'); };
+  $('edl-begin').onclick = () => { $('edl-brief').classList.remove('on'); begin('intro', false); };
+  $('edl-watch').onclick = () => { $('edl-brief').classList.remove('on'); begin('intro', true); };
   $('edl-skipintro').onclick = () => { if (E.stage === 'intro') endIntro(); };
   $('edl-back').onclick = () => { $('edl-brief').classList.remove('on'); ctx.onBack && ctx.onBack(); };
 
@@ -1568,6 +1633,7 @@ export function createEDL(ctx) {
     if (E.msgT > 0) { E.msgT -= dt; if (E.msgT <= 0) $('edl-call').classList.remove('on'); }
     stepInput(dt);
     if (E.high) stepHigh(dt); else stepLow(dt);
+    if (E.cine && E.active) { cineCues(); stepNarration(dt); }
   }
   function render() {
     if (E.high) {

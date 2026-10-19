@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.64 (zion-sky-v433)
+Mars landing: a narrated, hands-off way to watch it. "Watch it, narrated" on the landing briefing flies the whole entry, descent and landing on autopilot, a little faster than the game, while captions explain what the flight software did: bank-angle guidance inherited from Apollo, bank reversals, the backshell thrusters, the Range Trigger for the parachute, Terrain-Relative Navigation and its divert, the sky crane. Lunar Rover: the drive now opens with the rover being unloaded from the lunar module as on Apollo 17, folded in its bay, tilting out, the aft and then the forward chassis and wheels unfolding, set down on the surface (skippable).
+
 ## v4.63 (zion-sky-v432)
 Lunar Rover: a crash breaks the real rover apart, and the lunar module is solid. The wreck used to be generic boxes and cylinders; it is now cut from the rover's own model (each wheel whole, the rest in chunks where they sat), and it fades away after 10 s. The lunar module had no collision at all, so the rover drove straight through it; its descent stage, footpads and legs now stop the rover.
 
