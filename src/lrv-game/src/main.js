@@ -784,7 +784,7 @@ function landed(a) {
   try { localStorage.setItem('lrv-records', JSON.stringify(REC)); } catch (e) { /* not remembered */ }
   const flip = a.spin > 5.4 ? ' · full roll!' : a.spin > 2.6 ? ' · half roll' : '';
   toast(`Airborne ${a.t.toFixed(1)} s · ${U.m(a.d, 1)} · ${U.m(a.peak, 1)} high${flip}${recs.length ? ' · new record' : ''}`);
-  showRecords();
+  showRecords(); offerReplay(a);
 }
 function showRecords() {
   $('best').textContent = REC.t ? REC.t.toFixed(1) + ' s' : '—';
@@ -953,7 +953,7 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
     (host || body).add(g); }
   body.position.copy(C).applyMatrix4(rover.matrixWorld); body.quaternion.copy(car.q); scene.add(body);
   const rr = body.position.clone().sub(car.p);
-  CRASH.pieces.push(Object.assign({ m: body, v: car.v.clone().add(car.w.clone().cross(rr)), w: car.w.clone() }, debrisBody(body)));
+  CRASH.pieces.push(Object.assign({ m: body, main: true, v: car.v.clone().add(car.w.clone().cross(rr)), w: car.w.clone() }, debrisBody(body)));
   for (let j = 0, n = Math.round(30 + 70 * k); j < n; j++) { const i = dnext; dnext = (dnext + 1) % DN;      // a puff of dust, falling straight back
     dpos[i * 3] = car.p.x + (R() - .5) * 2; dpos[i * 3 + 1] = car.p.y; dpos[i * 3 + 2] = car.p.z + (R() - .5) * 2;
     dvel[i * 3] = car.v.x * 0.5 + (R() - .5) * 3 * (0.3 + k); dvel[i * 3 + 1] = R() * 2.5 * (0.3 + k); dvel[i * 3 + 2] = car.v.z * 0.5 + (R() - .5) * 3 * (0.3 + k); dlife[i] = 1; }
@@ -989,7 +989,7 @@ function stepCrash(dt) {
     if (CRASH.roof > 3.5 || (_up.y < -0.2 && CRASH.topDown && car.v.length() > 4)) breakApart(Math.max(CRASH.roof, car.v.length()));      // only on landing upside down: a roll in the air is not yet a crash
     CRASH.topDown = false;
     CRASH.roof = 0;
-  } else if ((CRASH.t += dt) > 3.5) {
+  } else if ((CRASH.t += dt) > 4.5) {
     CRASH.on = false; rover.visible = true; place(CRASH.safe.x, CRASH.safe.z, CRASH.safe.yaw); camInit = false; toast('A new rover · back where you last drove safely');
   }
   if (CRASH.pieces.length && (CRASH.fade += dt) > 10) {      // the wreck fades away after 10 s
@@ -1016,6 +1016,54 @@ $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on');
 $('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); else if (BRIEF.on && BRIEF.t < BRIEF.lines[2][0]) BRIEF.t = BRIEF.lines[2][0]; });
 { const go = e => { e.preventDefault(); location.href = '../moon'; }; $('back').addEventListener('click', go); }
 
+/* ── replay: the last 20 s of the rover's pose, kept every frame. After a long jump over a crater, a button offers it
+   again in slow motion from a fixed camera low beside the jump, the crater rim in view. ── */
+const HIST = [], REPLAY = { on: false, t: 0, end: 0, cam: new THREE.Vector3(), jump: null, offerT: 0, save: null };
+let simT = 0;
+function record() {
+  HIST.push([simT, car.p.x, car.p.y, car.p.z, car.q.x, car.q.y, car.q.z, car.q.w, car.steer, ...WHEELS.map(w => w.spin)]);
+  while (HIST.length && HIST[0][0] < simT - 20) HIST.shift();
+}
+function offerReplay(a) {      // called on landing: a long jump, taking off from or passing over a crater 3 m or more across
+  if (!(a.t >= 1.5 || a.d >= 12) || !AIR.start) return;
+  const S = AIR.start, E = car.p, dx = E.x - S.x, dz = E.z - S.z, L2 = dx * dx + dz * dz || 1;
+  const over = craters.find(c => { if (c.R < 1.5) return false; const u = Math.max(0, Math.min(1, ((c.x - S.x) * dx + (c.z - S.z) * dz) / L2)); return Math.hypot(S.x + dx * u - c.x, S.z + dz * u - c.z) < c.R * 1.15; });
+  if (!over) return;
+  REPLAY.jump = { t0: simT - a.t, t1: simT, S: S.clone(), E: E.clone(), c: over, a }; REPLAY.offerT = 6; $('btn-replay').classList.add('on');
+}
+function startReplay() {
+  const J = REPLAY.jump; if (!J || REPLAY.on || CRASH.on) return;
+  $('btn-replay').classList.remove('on'); REPLAY.offerT = 0;
+  REPLAY.save = { run: running, steer: car.steer, spin: WHEELS.map(w => w.spin) };
+  REPLAY.fov = camera.fov; REPLAY.on = true; REPLAY.t = J.t0 - 1.2; REPLAY.end = Math.min(simT, J.t1 + 1.8); running = false; document.body.classList.add('replay');
+  // the camera: beside the middle of the jump, on the side away from the crater's center, low to the ground
+  const mx = (J.S.x + J.E.x) / 2, mz = (J.S.z + J.E.z) / 2, d = Math.max(1, Math.hypot(J.E.x - J.S.x, J.E.z - J.S.z)), ux = (J.E.x - J.S.x) / d, uz = (J.E.z - J.S.z) / d;
+  let nx = -uz, nz = ux; if ((mx - J.c.x) * nx + (mz - J.c.z) * nz < 0) { nx = -nx; nz = -nz; }
+  const D = Math.max(9, Math.min(30, d * 0.7 + 6)), cx = mx + nx * D - ux * d * 0.2, cz = mz + nz * D - uz * d * 0.2;
+  REPLAY.cam.set(cx, ground(cx, cz) + 1.3, cz);
+  const el = $('cine-cap'); el.textContent = `Replay · ${J.a.t.toFixed(1)} s in the air · ${U.m(J.a.d, 1)} · ${U.m(J.a.peak, 1)} high`; void el.offsetWidth; el.classList.add('on');
+}
+function endReplay() {
+  if (!REPLAY.on) return;
+  REPLAY.on = false; document.body.classList.remove('replay'); camera.fov = REPLAY.fov; camera.updateProjectionMatrix(); $('cine-cap').classList.remove('on');
+  car.steer = REPLAY.save.steer; WHEELS.forEach((w, k) => { w.spin = REPLAY.save.spin[k]; }); running = REPLAY.save.run; camInit = false;
+}
+function stepReplay(dt) {
+  REPLAY.t += dt * 0.55;      // slow motion
+  if (REPLAY.t >= REPLAY.end) { endReplay(); return false; }
+  let i = HIST.findIndex(h => h[0] > REPLAY.t); if (i < 1) i = i < 0 ? HIST.length - 1 : 1;
+  const A = HIST[i - 1], B = HIST[i], w = Math.max(0, Math.min(1, (REPLAY.t - A[0]) / Math.max(1e-6, B[0] - A[0])));
+  rover.position.set(A[1] + (B[1] - A[1]) * w, A[2] + (B[2] - A[2]) * w, A[3] + (B[3] - A[3]) * w);
+  rover.quaternion.set(A[4], A[5], A[6], A[7]).slerp(_qi.set(B[4], B[5], B[6], B[7]), w);
+  car.steer = A[8] + (B[8] - A[8]) * w; WHEELS.forEach((wl, k) => { wl.spin = A[9 + k] + (B[9 + k] - A[9 + k]) * w; }); turnWheels();
+  camera.position.copy(REPLAY.cam); camera.lookAt(_tmp.copy(rover.position).add(_r.set(0, 0.3, 0)));
+  camera.fov = Math.max(14, Math.min(REPLAY.fov, 2 * Math.atan(7 / camera.position.distanceTo(rover.position)) * 180 / Math.PI)); camera.updateProjectionMatrix();      // a long lens: the rover and some ground round it fill the frame
+  sun.position.copy(rover.position).addScaledVector(SUN, 120); sun.target.position.copy(rover.position);
+  return true;
+}
+$('btn-replay').addEventListener('click', startReplay);
+$('cine-skip').addEventListener('click', () => { if (REPLAY.on) endReplay(); });
+
 /* ── loop ── */
 let running = false, last = performance.now();
 const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3(); let camInit = false;
@@ -1032,13 +1080,22 @@ function frame(now) {
     kick(dt); layTracks();
     if (Math.max(Math.abs(car.p.x - PATCH.cx), Math.abs(car.p.z - PATCH.cz)) > 14) buildPatch(car.p.x, car.p.z);      // keep the fine ground under the rover
     upsideT = _up.y < 0.35 ? upsideT + dt : 0; $('btn-recover').classList.toggle('on', upsideT > 1.2);
+    simT += dt; if (!CRASH.on) record();
+    if (REPLAY.offerT > 0 && (REPLAY.offerT -= dt) <= 0 || CRASH.on) { REPLAY.offerT = 0; $('btn-replay').classList.remove('on'); }
   }
+  if (REPLAY.on && stepReplay(dt)) { renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   rover.position.copy(car.p); rover.quaternion.copy(car.q); turnWheels();
   if (INTRO.on) { stepIntro(dt); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   // chase camera, held a little above the ground
   ORB.idle += dt; if (ORB.idle > 2.5) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
   _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q);
-  if (pov === 2) {      // Gene Cernan's seat: the camera rides with the rover, every bump included
+  const wreck = CRASH.on && CRASH.pieces.find(p => p.main);
+  if (wreck) {      // the crash: follow the biggest piece, the chassis, rising to look almost straight down on the wreck
+    const k = ss(0, 2.2, CRASH.t), heading = Math.atan2(-_fw.z, _fw.x) + Math.PI, D = 8 - k, H = 2.5 + 18 * k, t = wreck.m.position;
+    const want = _tmp.set(t.x + Math.cos(heading) * D, t.y + H, t.z - Math.sin(heading) * D); want.y = Math.max(want.y, ground(want.x, want.z) + 1.5);
+    camPos.lerp(want, 1 - Math.exp(-dt * 3)); camTgt.lerp(t, 1 - Math.exp(-dt * 6));
+    camera.position.copy(camPos); camera.lookAt(camTgt);
+  } else if (pov === 2) {      // Gene Cernan's seat: the camera rides with the rover, every bump included
     camera.position.copy(_a.set(-0.62, 0.95, -0.32).applyQuaternion(car.q).add(car.p));
     camera.up.copy(_up); camera.lookAt(_r.copy(camera.position).addScaledVector(_fw, 10).addScaledVector(_up, -1.4).add(_tmp.set(0, 0, 0)));
     camera.up.set(0, 1, 0);

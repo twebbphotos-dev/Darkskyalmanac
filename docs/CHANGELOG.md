@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.79 (zion-sky-v448)
+Lunar Rover: a crash camera and jump replays. In a crash the camera now follows the biggest piece, the chassis, and rises over about two seconds to look almost straight down on the wreck (it used to stay on the spot where the rover broke up); the new rover arrives after 4.5 s instead of 3.5 so there is time to see it. The game now keeps the last 20 s of the rover's pose, and after a long jump (1.5 s in the air or 12 m) that takes off from or passes over a crater, a "Replay the jump" button appears for 6 s. The replay runs in slow motion in the letterbox from a fixed camera low beside the jump, on the side away from the crater's center so the rim is in frame, with a long lens that keeps the rover filling the picture; Skip ends it.
+
 ## v4.78 (zion-sky-v447)
 Lunar Rover: wheel tracks you can see. The rover has laid tracks since the first version, but none ever showed, for two reasons. Each tread ribbon was wound so its triangles faced the ground, and the material draws front faces only, so all of it was culled; and it was laid 1.2 cm above the smooth terrain formula, while the ground drawn near the rover is flat 0.4 m triangles over craterlets a few centimeters deep, which covered it almost everywhere. The ribbon now faces up, is lit by its own facets (it carries no normals), and follows the drawn ground's triangles 2 cm up. The tread is the wire-mesh tire's chevron print, a shade darker than the dust as in the Apollo photographs, and like the real ones the tracks stay.
 
