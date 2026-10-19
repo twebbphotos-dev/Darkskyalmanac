@@ -101,3 +101,5 @@ v4.59: the wheel rig fits each wheel's circle to the lower half of its tread (wi
 v4.60: the wheel cut reaches 4 cm past the tread on the outboard side so the hub discs spin too; steering slews at STEER_RATE (0.3 rad/s at the wheel, an estimate) whether or not the wheels touch the ground.
 
 v4.61: reliefMap() bakes every crater, craterlet and the patch's 1.7 m lumps into a world-space normal map of the drivable square (2048 px, about 0.46 m; 1024 on Low), which lights the coarse ground. It is injected before three.js builds the grain normal map's tangent frame, since the normal-map chunk overwrites `normal`. The fine patch and ground() add craterFine(): the true crater shapes in place of the grid's bilinear ones, faded out with the patch's edge so it still meets the coarse ground.
+
+v4.62: landing dust. step() times each wheel out of contact (wl.off); touching down after more than 0.12 s records the downward speed (wl.hit), and kick() turns it into a ring of up to 260 grains in a separate, coarser point pool (puff, size 0.085, lighter grey).

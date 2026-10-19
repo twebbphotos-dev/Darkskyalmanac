@@ -294,7 +294,7 @@ const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.
 let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
 function setSpeed(fast) { FAST = fast; MU = fast ? 0.85 : 0.62; VMAX = fast ? 11.2 : 5.0; try { localStorage.setItem('lrv-speed', fast ? '2' : '1'); } catch (e) { /* not remembered */ } }
 setSpeed(FAST);
-const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0 }));
+const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0, off: 0, hit: 0 }));      // off: time out of contact; hit: how hard it came down, for the dust
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
 const car = { p: new THREE.Vector3(0, 0, 0), v: new THREE.Vector3(), q: new THREE.Quaternion(), w: new THREE.Vector3(), steer: 0 };
 function place(x, z, yaw) { car.p.set(x, ground(x, z) + 0.8, z); car.v.set(0, 0, 0); car.w.set(0, 0, 0); car.q.setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw); car.steer = 0; }
@@ -316,8 +316,9 @@ function step(h) {
     const a = _a.copy(wl.at).applyQuaternion(car.q).add(car.p);      // the top of the suspension, in the world
     let t = (a.y - ground(a.x, a.z)) / Math.max(0.3, _up.y);           // distance down the strut to the ground
     const x = REST + WHEEL_R - t;
-    if (x <= 0) { wl.contact = false; wl.comp = 0; continue; }
-    wl.contact = true; touching++;
+    if (x <= 0) { wl.contact = false; wl.comp = 0; wl.off += h; continue; }
+    if (wl.off > 0.12) wl.hit = Math.max(wl.hit, -car.v.y + 0.5);      // touching down after a hop
+    wl.off = 0; wl.contact = true; touching++;
     const xd = (x - wl.comp) / h; wl.comp = x;
     let Fn = K * Math.min(x, REST) + C_DAMP * xd + (x > REST ? 60000 * (x - REST) : 0);      // spring, damper, and the bump stop
     if (Fn <= 0) continue;
@@ -419,6 +420,11 @@ function softDot() {      // a round grain with a soft edge: bare points draw as
 const DOT = softDot();
 const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0x8f8a82, size: 0.04, map: DOT, transparent: true, opacity: 0.6, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
 let dnext = 0;
+// the blast of a landing: coarser, lighter grains (a fresh, unweathered spray of soil catches the Sun), the same airless arcs
+const PN2 = 1600, ppos = new Float32Array(PN2 * 3), pvel = new Float32Array(PN2 * 3), plife = new Float32Array(PN2);
+const pgeo = new THREE.BufferGeometry(); pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
+const puff = new THREE.Points(pgeo, new THREE.PointsMaterial({ color: 0xbdb7ad, size: 0.085, map: DOT, transparent: true, opacity: 0.55, depthWrite: false })); puff.frustumCulled = false; scene.add(puff);
+let pnext = 0;
 function kick(dt) {
   for (const wl of WHEELS) {
     if (!wl.contact) continue;
@@ -428,6 +434,14 @@ function kick(dt) {
       const up = 0.8 + Math.random() * 1.6 * Math.min(1, sp / 3);       // flung up and back off the turning wire mesh
       dvel[i * 3] = -_fw.x * sp * (0.25 + Math.random() * .5) + (Math.random() - .5) * .6; dvel[i * 3 + 1] = up; dvel[i * 3 + 2] = -_fw.z * sp * (0.25 + Math.random() * .5) + (Math.random() - .5) * .6;
       dlife[i] = 1; }
+    if (wl.hit > 0) {      // coming down from a jump, the tire blasts a ring of soil out sideways, low and fast, that falls back in the same clean arcs
+      const g = ground(a.x, a.z), m = Math.min(260, Math.round(90 * wl.hit)), k0 = Math.min(3, wl.hit);
+      for (let k = 0; k < m; k++) { const i = pnext, ang = Math.random() * 6.2832, out = (0.4 + Math.random() * 1.0) * k0; pnext = (pnext + 1) % PN2;
+        ppos[i * 3] = a.x + Math.cos(ang) * 0.25; ppos[i * 3 + 1] = g + 0.04; ppos[i * 3 + 2] = a.z + Math.sin(ang) * 0.25;
+        pvel[i * 3] = Math.cos(ang) * out + car.v.x * 0.4; pvel[i * 3 + 1] = (0.2 + Math.random() * 0.6) * k0; pvel[i * 3 + 2] = Math.sin(ang) * out + car.v.z * 0.4;
+        plife[i] = 1; }
+      wl.hit = 0;
+    }
   }
   for (let i = 0; i < DN; i++) {
     if (dlife[i] <= 0) { dpos[i * 3 + 1] = -9999; continue; }
@@ -435,6 +449,12 @@ function kick(dt) {
     if (dpos[i * 3 + 1] < ground(dpos[i * 3], dpos[i * 3 + 2])) dlife[i] = 0;      // lands and stays: no puff, no drift
   }
   dgeo.attributes.position.needsUpdate = true;
+  for (let i = 0; i < PN2; i++) {
+    if (plife[i] <= 0) { ppos[i * 3 + 1] = -9999; continue; }
+    pvel[i * 3 + 1] -= G * dt; ppos[i * 3] += pvel[i * 3] * dt; ppos[i * 3 + 1] += pvel[i * 3 + 1] * dt; ppos[i * 3 + 2] += pvel[i * 3 + 2] * dt;
+    if (ppos[i * 3 + 1] < ground(ppos[i * 3], ppos[i * 3 + 2])) plife[i] = 0;
+  }
+  pgeo.attributes.position.needsUpdate = true;
 }
 
 /* ── wheel tracks: the wire-mesh tires press a chevron tread into the soil, darker where the surface dust is
