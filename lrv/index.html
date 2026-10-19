@@ -69,6 +69,13 @@
   .pick span{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-right:6px}
   .pick button{font:inherit;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:999px;padding:7px 12px;cursor:pointer}
   .pick button.on{color:#0d0a18;background:var(--gold);border-color:var(--gold);font-weight:600}
+  /* site cards: markers in the view, a card when tapped */
+  .site{position:fixed;left:0;top:0;z-index:17;display:none;align-items:center;gap:6px;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;
+    font-family:inherit;font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);white-space:nowrap;
+    background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 11px}
+  .site i{width:7px;height:7px;background:var(--gold);transform:rotate(45deg)}
+  body.intro #sites{display:none}
+  #sitecard .card p b{color:var(--gold)}
   /* unloading the rover: letterbox and captions */
   #cine{position:fixed;inset:0;z-index:30;display:none;pointer-events:none}
   body.intro #cine{display:block}
@@ -124,6 +131,16 @@
     <p class="fine">Roam where you like. For a time trial, drive through the faint ring just north of the lander: the clock starts and a dotted line marks the real third drive as a loop, north to the split boulder at stop 6 (Tracy’s Rock, which Gene Cernan named for his daughter), east to stop 8 and home past Van Serg crater (stop 9). Pass each stop in turn and come back through the ring to stop the clock. Your best loop and your top speed are kept; to beat Cernan’s 18 km/h you will need a downhill stretch, since on the flat the motors top out just under it. Roll it hard and it breaks apart, and a new rover waits where you last drove safely. Look for a fresh crater with a sharp rim, and drive off the edge. Earth hangs in the west-southwest, where it always is from here. The Seat camera puts you where Gene Cernan sat.</p>
     <div class="pick" id="speedpick"><span>Speed</span><button data-v="1">Real · 18 km/h</button><button data-v="2">Double · 36 km/h</button></div>
     <button class="btn primary" id="btn-go">Start driving</button>
+  </div>
+</div>
+
+<div id="sites"></div>
+<div class="sheet" id="sitecard">
+  <div class="card">
+    <h1 id="sc-t"></h1>
+    <h2 id="sc-s"></h2>
+    <div id="sc-b"></div>
+    <button class="btn primary" id="sc-close">Back to driving</button>
   </div>
 </div>
 

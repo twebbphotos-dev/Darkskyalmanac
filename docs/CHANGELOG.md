@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.68 (zion-sky-v437)
+Lunar Rover: site cards, Van Serg crater, a more realistic Tracy's Rock, and a ramp. Tappable markers at the lander, Tracy's Rock and Van Serg open short cards on what happened there (the mission's records, the fender repair, troctolite 76535 and the evidence it gave for an early lunar magnetic field, Van Serg's ejecta and regolith breccia), every figure from NASA, LROC or the published papers. Van Serg is now a real crater about 100 m across at stop 9, its rim strewn with angular blocks sized as reported (mostly under 30 cm, a few up to about 2 m). Tracy's Rock was flat-shaded and looked low-poly: it now has a finer, smooth-shaded surface with a pitted rock texture and dusted color. One of its five pieces now lies tilted as a ramp below the boulder, driven as ground: run down the slope onto it and off its lip.
+
 ## v4.67 (zion-sky-v436)
 Lunar Rover unloading: the seats, console, antennas and camera now pop out one piece at a time, from the deck up, over about 2.6 s, each with a small overshoot, instead of appearing in two blocks at once.
 

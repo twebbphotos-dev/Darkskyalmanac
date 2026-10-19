@@ -9,6 +9,7 @@
 import * as THREE from 'three';
 import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
+import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createStick, buzz } from '../../rover-game/src/stick.js';
 import { DETAIL } from '../../rover-game/src/detail.js';      // the Mars simulator's detail setting, shared
 
@@ -47,7 +48,7 @@ function demRaw(X, Z) {      // metres, at X east and Z south of the lander in r
 }
 let DEM0 = 0;
 function demGame(x, z) { const X = x * SQ, Z = z * SQ; return (demRaw(X, Z) - DEM0) * SV - (X * X + Z * Z) / (2 * RM) * SV; }
-const craters = [], rocks = [];
+const craters = [], rocks = [], VAN = { x: 0, z: 0 };
 { const r = rng(1972);
   const add = (x, z, R, fresh) => craters.push({ x, z, R, fresh, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
   // a few fresh ones within reach of the start, the rims to aim for
@@ -65,6 +66,12 @@ const craters = [], rocks = [];
     for (let i = 0; i < n; i++) { const a = r() * 6.2832, d = c.R * (0.85 + Math.pow(r(), 1.7) * 1.3), x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d;
       if (!inSq(x, z, 6) || Math.hypot(x, z) < 10) continue;
       rocks.push({ x, z, s: 0.2 + Math.pow(r(), 2.2) * Math.min(1.6, c.R * 0.07), yaw: r() * 6.28, k: r() }); } }
+  // Van Serg, stop 9: a real crater about 100 m across, true size, beside where the rover parked (stop 9 is at 1735 m east,
+  // 1228 m south of the lander, so 421.75, -303 here), set just off the route. Its rim is strewn with angular blocks, mostly
+  // under 30 cm, a few up to about 2 m (the Apollo 17 Preliminary Science Report). Its own random numbers, so nothing else moves.
+  { const v = rng(17), x = 421.75 + 38, z = -303 + 44; add(x, z, 50, 0.5); VAN.x = x; VAN.z = z;
+    for (let i = 0; i < 170; i++) { const a = v() * 6.2832, d = 50 * (0.86 + Math.pow(v(), 1.5) * 1.1);
+      rocks.push({ x: x + Math.cos(a) * d, z: z + Math.sin(a) * d, s: 0.07 + Math.pow(v(), 4) * 0.95, yaw: v() * 6.28, k: v() }); } }
 }
 const CG = 16, CRATER_GRID = new Map();      // craters by 16 m cell, so each point checks only its neighbors
 function indexCraters() { craters.forEach(c => { const e = c.R * 2.2; for (let a = Math.floor((c.x - e) / CG); a <= Math.floor((c.x + e) / CG); a++) for (let b = Math.floor((c.z - e) / CG); b <= Math.floor((c.z + e) / CG); b++) { const k = a + ',' + b; if (!CRATER_GRID.has(k)) CRATER_GRID.set(k, []); CRATER_GRID.get(k).push(c); } }); }
@@ -133,7 +140,8 @@ function craterFine(x, z) {
 }
 function ground(x, z) {      // height of the drawn surface, plus rocks
   const f = microFade(x, z);
-  return groundBase(x, z) + (f > 0 ? (microRaw(x, z) + craterFine(x, z)) * f : 0) + rockH(x, z);
+  const h = groundBase(x, z) + (f > 0 ? (microRaw(x, z) + craterFine(x, z)) * f : 0) + rockH(x, z);
+  return SLAB.on && Math.abs(x - SLAB.x) < 8 && Math.abs(z - SLAB.z) < 8 ? Math.max(h, slabAt(x, z)) : h;
 }
 const _n = new THREE.Vector3();
 function normalAt(x, z) { const e = 0.35; return _n.set(ground(x - e, z) - ground(x + e, z), 2 * e, ground(x, z - e) - ground(x, z + e)).normalize(); }
@@ -279,6 +287,70 @@ function farMesh() { ringMesh(2500, 250, HALF); ringMesh(8000, 320, 2500); }
    across. Drawn at its true size (like the craters, it is not shrunk with the map), resting on the hillside beside
    where the rover parked. Each piece is the same rough block, cut flat along the cracks between them and pushed a little apart. ── */
 const BOULDER = { x: 0, z: 0, cyl: [] };
+// the ramp: one of the five pieces lies tilted, one end bedded in the soil and the other raised, its long face a ramp
+// you can drive. Its surface is ground for the wheels (slabAt, in ground()), and the same function shapes its mesh.
+const SLAB = { on: false, x: 0, z: 0, c: 1, s: 0, L: 10, W: 4.6, H: 2.4 };
+function slabRel(u, v) {      // height above the hillside at u along (0 at the bedded end, L at the raised lip) and v across
+  const { L, W, H } = SLAB;
+  if (u < -0.6 || u > L + 1.2 || Math.abs(v) > W / 2 + 1.4) return -9;
+  const hw = W / 2 * (0.86 + 0.28 * fbm(u * 0.45 + 7, 3.3, 3)), le = L + 0.8 * (fbm(v * 0.6 + 2, 8.1, 3) - 0.5);      // a ragged outline, not a box
+  const top = H * Math.max(0, u) / L - 0.12 + (0.1 * (fbm(u * 0.9 + 4, v * 0.9, 3) - 0.5) + 0.035 * (fbm(u * 4 + 1, v * 4 - 3, 2) - 0.5)) * Math.min(1, Math.max(0, u));
+  const side = ss(hw + 0.6, hw - 0.9, Math.abs(v)), lip = ss(le + 0.5, le - 0.45, u);      // sides that fall away in a broken curve, a snapped-off lip
+  return top * side * lip - 1.2 * (1 - side * lip);
+}
+function slabAt(x, z) {
+  const dx = x - SLAB.x, dz = z - SLAB.z, u = dx * SLAB.c + dz * SLAB.s + SLAB.L / 2, v = -dx * SLAB.s + dz * SLAB.c, r = slabRel(u, v);
+  return r < -8 ? -1e9 : groundBase(x, z) + r;
+}
+/* Rock surface, for Tracy's Rock and its ramp: a tiling height field of lumps, cracks and pits (alpha) and its normals
+   (rgb), laid on from three sides by world position (triplanar), so it needs no texture coordinates and never stretches. */
+function rockSurface() {
+  const S = 256, h = new Float32Array(S * S), r = rng(76535);
+  const pn = (x, y, P) => { const i = Math.floor(x), j = Math.floor(y), fx = x - i, fy = y - j, u = fx * fx * (3 - 2 * fx), v = fy * fy * (3 - 2 * fy);      // value noise that wraps every P cells
+    const H = (a, b) => hash2(((a % P) + P) % P, ((b % P) + P) % P); return H(i, j) * (1 - u) * (1 - v) + H(i + 1, j) * u * (1 - v) + H(i, j + 1) * (1 - u) * v + H(i + 1, j + 1) * u * v; };
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { let v = 0, a = 0.5; for (const P of [4, 8, 16, 32, 64]) { v += a * pn(i / S * P, j / S * P, P); a *= 0.55; } h[j * S + i] = v * 2.2; }
+  for (let k = 0; k < 420; k++) { const cx = r() * S, cy = r() * S, R0 = 1.2 + Math.pow(r(), 3) * 7, e = Math.ceil(R0 * 1.5);      // pits: small impacts and vesicles
+    for (let dy = -e; dy <= e; dy++) for (let dx = -e; dx <= e; dx++) { const d = Math.hypot(dx, dy) / R0; if (d > 1.5) continue; const o = (((Math.round(cy) + dy) % S + S) % S) * S + ((Math.round(cx) + dx) % S + S) % S; h[o] -= d < 1 ? 0.22 * (1 - d * d) : -0.03 * (1.5 - d); } }
+  const c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), im = x.createImageData(S, S);
+  let lo = 1e9, hi = -1e9; for (const v of h) { lo = Math.min(lo, v); hi = Math.max(hi, v); }
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) { const gx = h[j * S + (i + 1) % S] - h[j * S + (i + S - 1) % S], gy = h[((j + 1) % S) * S + i] - h[((j + S - 1) % S) * S + i], k = 0.09, l = Math.hypot(gx, gy, k), o = (j * S + i) * 4;
+    im.data[o] = 128 - gx / l * 127; im.data[o + 1] = 128 - gy / l * 127; im.data[o + 2] = 128 + k / l * 127; im.data[o + 3] = 255 * (h[j * S + i] - lo) / (hi - lo); }
+  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 8; t.colorSpace = THREE.NoColorSpace; t.premultiplyAlpha = false; return t;
+}
+function rockMaterial() {
+  const m = new THREE.MeshStandardMaterial({ color: 0xffffff, vertexColors: true, roughness: 1, metalness: 0 }), tex = rockSurface();
+  m.onBeforeCompile = sh => {
+    sh.uniforms.rockN = { value: tex };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRP; varying vec3 vRN;')
+      .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRP = (modelMatrix * vec4(transformed, 1.0)).xyz; vRN = normalize(mat3(modelMatrix) * objectNormal);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      uniform sampler2D rockN; varying vec3 vRP; varying vec3 vRN;
+      vec4 tri( vec3 p, vec3 w ) { return texture2D( rockN, p.zy ) * w.x + texture2D( rockN, p.xz ) * w.y + texture2D( rockN, p.xy ) * w.z; }
+      vec3 triN( vec3 p, vec3 n, vec3 w ) {      // UDN blend of the three projections' normals onto the surface normal
+        vec2 a = texture2D( rockN, p.zy ).xy * 2.0 - 1.0, b = texture2D( rockN, p.xz ).xy * 2.0 - 1.0, c = texture2D( rockN, p.xy ).xy * 2.0 - 1.0;
+        return vec3( 0.0, a.y, a.x ) * w.x + vec3( b.x, 0.0, b.y ) * w.y + vec3( c.x, c.y, 0.0 ) * w.z; }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+      vec3 rw = pow( abs( normalize( vRN ) ), vec3( 4.0 ) ); rw /= rw.x + rw.y + rw.z;
+      float pits = tri( vRP / 1.7, rw ).a * 0.6 + tri( vRP / 0.45, rw ).a * 0.4;
+      diffuseColor.rgb *= 0.72 + 0.5 * pits;`)
+      .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
+      { vec3 wn = normalize( vRN ); vec3 w = pow( abs( wn ), vec3( 4.0 ) ); w /= w.x + w.y + w.z;
+        vec3 d = triN( vRP / 1.7, wn, w ) * 0.9 + triN( vRP / 0.45, wn, w ) * 0.55 * ( 1.0 - smoothstep( 8.0, 30.0, length( vViewPosition ) ) );
+        normal = normalize( ( viewMatrix * vec4( normalize( wn + d ), 0.0 ) ).xyz ); }`);
+  };
+  return m;
+}
+/* Rock color: a mid grey that varies over the surface, dusted lighter where it faces up, darker in hollows (the photographs). */
+function rockColors(geo, seed) {
+  const p = geo.attributes.position, n = geo.attributes.normal, c = new Float32Array(p.count * 3), W = new THREE.Vector3();
+  for (let i = 0; i < p.count; i++) {
+    const x = p.getX(i), y = p.getY(i), z = p.getZ(i);
+    let v = 0.5 + 0.13 * (fbm(x * 0.35 + seed, z * 0.35 + y * 0.3, 3) - 0.5) + 0.08 * (fbm(x * 2.1 - y, z * 2.1 + seed, 2) - 0.5);
+    W.set(n.getX(i), n.getY(i), n.getZ(i)); v += 0.07 * ss(0.45, 0.95, W.y) - 0.05 * ss(-0.1, -0.7, W.y);
+    v = Math.pow(Math.max(0.05, v), 2.2); c[i * 3] = v; c[i * 3 + 1] = v * 0.985; c[i * 3 + 2] = v * 0.96;
+  }
+  geo.setAttribute('color', new THREE.BufferAttribute(c, 3));
+}
 function splitBoulder() {
   const st = CPS[0], A = [9, 4.4, 5], yaw = 0.35, SINK = 0.7;
   BOULDER.x = st.x - 21; BOULDER.z = st.z - 3;      // along the slope from the stop, not up it: the hillside here is steep
@@ -286,27 +358,29 @@ function splitBoulder() {
   const up = new THREE.Vector3(groundBase(BOULDER.x - e, BOULDER.z) - groundBase(BOULDER.x + e, BOULDER.z), 2 * e, groundBase(BOULDER.x, BOULDER.z - e) - groundBase(BOULDER.x, BOULDER.z + e)).normalize();
   // the cracks, as planes n·p = d in the boulder's frame (x along its length)
   const cuts = [[1, 0, 0.12, -1.0], [0.08, 0.1, 1, 1.0], [1, 0.05, -0.25, 4.4], [0.25, 0.15, 1, -1.4]].map(([x, y, z, d]) => { const n = new THREE.Vector3(x, y, z), l = n.length(); return { n: n.divideScalar(l), d: d / l }; });
-  const frags = [      // which side of which cracks each piece keeps, and how far it moved off
+  const frags = [      // which side of which cracks each piece keeps, and how far it moved off (the fifth is the ramp)
     [[[0, -1], [1, 1]], [-1.1, 0, 0.7]], [[[0, -1], [1, -1]], [-0.8, -0.1, -0.6]],
-    [[[0, 1], [2, -1], [3, 1]], [0.2, 0, 0.55]], [[[0, 1], [2, -1], [3, -1]], [0.15, -0.05, -0.65]], [[[0, 1], [2, 1]], [1.2, -0.15, 0.1]],
+    [[[0, 1], [2, -1], [3, 1]], [0.2, 0, 0.55]], [[[0, 1], [2, -1], [3, -1]], [0.15, -0.05, -0.65]],
   ];
   const grp = BOULDER.grp = new THREE.Group(); grp.position.set(BOULDER.x, g0 - SINK, BOULDER.z);      // bedded into the slope, its base along the hillside
   grp.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), up).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), yaw)); scene.add(grp);
-  const mat = new THREE.MeshStandardMaterial({ color: 0x8c877f, roughness: 1, metalness: 0, flatShading: true });
+  const mat = rockMaterial();
   const P = new THREE.Vector3(), cyl = [];
+  const base = new THREE.IcosahedronGeometry(1, 5); base.deleteAttribute('normal'); base.deleteAttribute('uv');
+  const sphere = mergeVertices(base);      // one vertex per point, so the surface shades smoothly and each point is shaped once
   for (const [keep, push] of frags) {
-    const geo = new THREE.IcosahedronGeometry(1, 4), p = geo.attributes.position;
+    const geo = sphere.clone(), p = geo.attributes.position;
     for (let i = 0; i < p.count; i++) {
       P.fromBufferAttribute(p, i).normalize();
-      const n = fbm(P.x * 1.6 + P.y * 2.3 + 11, P.z * 1.6 - P.y * 1.3, 3), f = fbm(P.x * 7 + 3, P.z * 7 + P.y * 6, 3), g = fbm(P.x * 19 - 5, P.z * 19 + P.y * 17, 2);
-      const crag = 0.84 + 0.3 * n + 0.12 * f + 0.07 * g;      // big lumps, then a rough, broken surface
+      const n = fbm(P.x * 1.6 + P.y * 2.3 + 11, P.z * 1.6 - P.y * 1.3, 3), f = fbm(P.x * 7 + 3, P.z * 7 + P.y * 6, 3), g = fbm(P.x * 19 - 5, P.z * 19 + P.y * 17, 2), h = fbm(P.x * 48 + 9, P.z * 48 - P.y * 41, 2);
+      const crag = 0.84 + 0.3 * n + 0.12 * f + 0.06 * g + 0.025 * h;      // big lumps, a rough broken surface, then a fine pitted one
       const peak = 1 + 0.35 * Math.max(0, P.y) * Math.exp(-((P.x - 0.15) ** 2 + (P.z + 0.1) ** 2) * 2.5);      // higher toward one end of the ridge, as in the photographs
       const sq = v => Math.sign(v) * Math.pow(Math.abs(v), 0.55);      // a blocky, squared-off shape rather than an egg
       P.set(sq(P.x) * A[0], sq(P.y) * A[1] * peak, sq(P.z) * A[2]).multiplyScalar(crag); if (P.y < -1) P.y = -1 + (P.y + 1) * 0.3;      // a flat base, bedded in the soil
       for (const [ci, side] of keep) { const c = cuts[ci], dist = side * (c.n.dot(P) - c.d); if (dist < 0) P.addScaledVector(c.n, -dist * side); }      // cut flat along the crack
       p.setXYZ(i, P.x + push[0], P.y + push[1], P.z + push[2]);
     }
-    geo.computeVertexNormals();
+    geo.computeVertexNormals(); rockColors(geo, cyl.length * 3.1);
     const m = new THREE.Mesh(geo, mat); m.castShadow = m.receiveShadow = true; grp.add(m);
     // its footprint, as a row of upright cylinders for the rover to run into
     geo.computeBoundingBox(); const b = geo.boundingBox, lx = b.max.x - b.min.x, lz = b.max.z - b.min.z, along = lx > lz, short = Math.min(lx, lz), n = Math.max(1, Math.round(Math.max(lx, lz) / short));
@@ -317,6 +391,19 @@ function splitBoulder() {
     }
   }
   BOULDER.cyl = cyl;
+  // the fifth piece, the ramp: below the boulder on its downhill side, running down the slope, its lip at the lower end
+  const a = Math.PI / 2 - 0.15;      // its long axis, from the bedded end to the lip: south, a little east
+  Object.assign(SLAB, { x: BOULDER.x + 9, z: BOULDER.z + 13, c: Math.cos(a), s: Math.sin(a), on: true });
+  const NU = 70, NV = 36, U0 = -0.5, U1 = SLAB.L + 1.1, V0 = -SLAB.W / 2 - 1.3, pos = [], idx = [];
+  for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
+    const u = U0 + (U1 - U0) * i / NU, v = V0 + (-2 * V0) * j / NV, x = SLAB.x + (u - SLAB.L / 2) * SLAB.c - v * SLAB.s, z = SLAB.z + (u - SLAB.L / 2) * SLAB.s + v * SLAB.c;
+    const r = slabRel(u, v); pos.push(x, groundBase(x, z) + (r < -8 ? -1.2 : r), z);
+  }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const k = j * (NU + 1) + i; idx.push(k, k + NU + 1, k + 1, k + 1, k + NU + 1, k + NU + 2); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals();
+  if (sg.attributes.normal.getY(0) < 0) { idx.reverse(); sg.setIndex(idx); sg.computeVertexNormals(); }
+  rockColors(sg, 21.7);
+  const sm = new THREE.Mesh(sg, mat); sm.castShadow = sm.receiveShadow = true; scene.add(sm);
 }
 function rockMeshes() {
   const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
@@ -803,6 +890,7 @@ function frame(now) {
   const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = kmh.toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
+  siteMarks();
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -979,6 +1067,39 @@ function stepIntro(dt) {
   let cap = ''; for (const [t0, t1, txt] of INTRO_CAPS) if (T >= t0 && T < t1) cap = txt;
   if (cap !== INTRO.capT) { INTRO.capT = cap; const el = $('cine-cap'); el.classList.remove('on'); if (cap) { el.textContent = cap; void el.offsetWidth; el.classList.add('on'); } }
 }
+/* ── site cards: a few places worth stopping, marked in the view; tap one for what happened there. Every figure is
+   from NASA (the Apollo 17 Lunar Surface Journal and Preliminary Science Report), LROC, or the papers named. ── */
+const SITES = [
+  { at: () => [LM.x, LM.z, 8.5], name: 'Challenger', sub: 'Apollo 17 landing site · 11 December 1972', body: [
+    'Gene Cernan and Harrison Schmitt landed here in the lunar module Challenger, less than 200 m from their target, while Ronald Evans circled overhead in the command module America.',
+    'They stayed about 75 hours, longer than any other Apollo crew, and spent more than 22 hours outside on three moonwalks. With the rover they covered about 35 km and brought home about 110 kg of rock and soil, more than any other mission.',
+    'On the first moonwalk part of a rear fender was knocked off, and the wheels sprayed the crew and the rover with dust. Overnight they made a new one from laminated maps, duct tape and clamps.',
+    'It was the last of the Apollo landings.'] },
+  { at: () => [BOULDER.x, BOULDER.z, 7.5], name: 'Tracy’s Rock', sub: 'Stop 6 · the foot of the North Massif', body: [
+    'This boulder broke loose high on the North Massif and rolled and bounced about a kilometer down the slope, leaving a trail still visible from orbit, then split into five pieces where it stopped. Put back together it would be about 18 by 10 by 6 m. Gene Cernan named it for his daughter, Tracy.',
+    '<b>Troctolite 76535.</b> Among the rock fragments the crew raked from the soil here was a coarse-grained crystalline rock about 4.2 to 4.3 billion years old. It formed slowly, deep in the young Moon’s crust, and was later dug out by impacts.',
+    'In 2009 researchers at MIT found that it is weakly magnetized, and that its magnetism dates from when it crystallized. That points to a molten, churning core that gave the young Moon a magnetic field, as Earth’s core does today. A 2016 study supported the result.'] },
+  { at: () => [VAN.x, VAN.z, 5], name: 'Van Serg crater', sub: 'Stop 9 · the last drive', body: [
+    'A crater about 100 m across, blasted through the dark soil that covers the valley floor. The crew came here on the third moonwalk to work out how it formed and to sample the dark material and what lies beneath it.',
+    'Its rim is strewn with angular blocks thrown out by the impact, mostly smaller than 30 cm, with a few boulders up to about 2 m across. A piece they broke from a boulder on the rim, sample 79115, turned out to be regolith breccia: loose lunar soil welded into rock by the shock of an impact.'] },
+];
+const _sp = new THREE.Vector3();
+let siteRun = false;
+function openSite(st) {
+  $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub; $('sc-b').innerHTML = st.body.map(t => `<p>${t}</p>`).join('');
+  $('sitecard').classList.add('on'); siteRun = running; running = false;
+}
+$('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; });
+SITES.forEach(st => { const b = document.createElement('button'); b.className = 'site'; b.innerHTML = `<i></i>${st.name}`; b.addEventListener('click', () => openSite(st)); $('sites').appendChild(b); st.el = b; });
+function siteMarks() {
+  for (const st of SITES) {
+    const [x, z, h] = st.at(), d = Math.hypot(x - camera.position.x, z - camera.position.z);
+    _sp.set(x, ground(x, z) + h, z).project(camera);
+    const show = d < 320 && _sp.z < 1 && Math.abs(_sp.x) < 1.05 && Math.abs(_sp.y) < 1.05;
+    st.el.style.display = show ? 'flex' : 'none';
+    if (show) { st.el.style.left = ((_sp.x + 1) / 2 * innerWidth).toFixed(1) + 'px'; st.el.style.top = ((1 - _sp.y) / 2 * innerHeight).toFixed(1) + 'px'; st.el.style.opacity = d < 60 ? 1 : 0.7; }
+  }
+}
 function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -car.steer * WHEELS[k].steer; w.spin.rotation.z = -WHEELS[k].spin; }); }
 
 /* ── start ── */
@@ -997,4 +1118,4 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, INTRO, SEC, BOULDER, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
+window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, INTRO, SEC, BOULDER, SLAB, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; }, craters };
