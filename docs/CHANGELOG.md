@@ -3,6 +3,16 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.81 (zion-sky-v450)
+Lunar Rover: tracks under the tires, a ramp jump on the route, a way back after straying, and more on Van Serg. Mars: an easier end of entry, a clearer parachute button, and the hazard map only briefly in the narrated landing.
+- Tracks were laid at the suspension mounts, 0.915 m out from the centerline, while the tires sit at 0.78 m, so they ran 13 cm outboard of the wheels; they now follow each tire's measured center and width, and are a little bolder.
+- The tilted ramp slab moved from Tracy's Rock to the near rim of the 15 m crater the route crosses about 80 m before stop 8, pointing across it along the route at a gentle 8°; at about 36 km/h it carries the rover over the crater. Tracy's Rock keeps its fifth piece, now lying low beside the others.
+- Straying too far ends the time trial as before, but a "Back to the route" button now puts the rover at the last place it was on the line (saved about every second) with the clock as it was there.
+- Van Serg card: what the crew found (Schmitt's call of a fresh, blocky-rimmed impact crater; benches and a central mound; nearly all the samples dark regolith breccia, the valley soil hardened and thrown out by the impact, per the station 9 geology report) and the name (Hugh McKinstry, the Harvard professor who wrote satires as Nicholas Vanserg, per the Apollo 17 Lunar Surface Journal).
+- Mars entry: slowing through Mach 3 the capsule's swing feeds itself while the air holding it weakens, but the thrusters kept full authority, so every correction overshot. Pitch authority now eases to 45% as it slows, and in easy mode the self-feeding swing is a little more than half as strong.
+- The parachute button reads PARACHUTE in that stage, is larger, and pulses once speed and swing are both inside the limits.
+- Narrated landing: the hazard map shows while it is explained (about 11 s into the descent) and then goes; it no longer comes back for the powered descent.
+
 ## v4.80 (zion-sky-v449)
 Mars landing cleanup, a textured capsule, and softer lunar tracks and shadows. The landing's far plain (the orbital photograph laid over a 90 km relief of the crater with its heights doubled, built for the view from high up) was added to the scene whenever the game loaded and never taken away, so after the landing, in the drive that follows, it was still there, poking through the real terrain wherever that dipped below it; it is now shown only during the landing. The backshell has its SLA-561V skin (pale buff, cork grain, panel seams and filled fastener holes, with a matching bump map) instead of flat off-white, and the descent stage's white parts are creased thermal blankets; the tungsten balance masses are subdivided blocks with rounded edges. Lunar Rover: the tracks are a soft, shallow groove a shade darker than the dust, with the chevrons pressed in faintly (drawn with layered strokes, since canvas blur filters are not supported everywhere), and the light thrown back up by the sunlit ground is a little stronger (0.55 to 0.75), so shadows are not quite so black.
 

@@ -988,7 +988,7 @@ export function createEDL(ctx) {
   function attitude(dt) {
     const t = E.t, qbar = clamp(gAt(t) / 9.5, 0, 1), late = smooth(160, 228, t);
     const w = 0.9 + 2.6 * Math.sqrt(qbar);
-    const c = 0.15 + 0.9 * Math.sqrt(qbar) - 0.95 * late;
+    const c = 0.15 + 0.9 * Math.sqrt(qbar) - 0.95 * late * (MODE === 'real' ? 1 : 0.55);      // slowing through Mach 3 the swing feeds itself; less so in easy mode
     const u = E.rcs > 0 ? (E.cine ? clamp(-(6 * E.aoa + 4 * E.q) / 38, -1, 1) : -axZ() * D.pitch) : 0;      // realistic: W raises the angle of attack; easy: W raises the nose as you see it. Cinematic: the autopilot damps the swing
     if (u) { E.rcs = Math.max(E.cine ? 40 : 0, E.rcs - D.rcs * Math.abs(u) * dt); if (Math.abs(u) > 0.08) fire(0.6); }   // a light touch burns less
     if (Math.random() < dt * D.gust * (0.25 + 0.9 * qbar + 0.7 * late))
@@ -998,7 +998,7 @@ export function createEDL(ctx) {
       say('Density shear! Catch the swing — W / S.', 2.6);
     }
     for (let i = 0, n = 4, h = dt / 4; i < n; i++) {
-      const acc = -w * w * E.aoa - c * E.q + u * 38 + (Math.random() - 0.5) * 10 * qbar;
+      const acc = -w * w * E.aoa - c * E.q + u * 38 * (1 - 0.55 * late) + (Math.random() - 0.5) * 10 * qbar;      // late, with little air to hold it, full thrust overshot: the pulses are gentler
       E.q += acc * h; E.aoa += E.q * h;
     }
     E.att.push(E.aoa); if (E.att.length > 200) E.att.shift();
@@ -1299,7 +1299,8 @@ export function createEDL(ctx) {
       E.vel.z += (E.wind.y - E.vel.z) * Math.min(1, dm * 0.05);
       E.vel.y = -lerp(FACTS.chuteTerminal, 100, smooth(2000, 8000, a));
       E.pos.addScaledVector(E.vel, dm); E.t += dm;
-      hazard.mesh.material.opacity = Math.min(1, E.st / 2.5);
+      hazard.mesh.material.opacity = Math.min(1, E.st / 2.5) * (E.cine ? 1 - smooth(8, 11, E.st) : 1);      // narrated: shown while it is explained, then gone
+      hazard.mesh.visible = hazard.mesh.material.opacity > 0.005;
       if (!E.saidTRN && E.st > 4.2) { E.saidTRN = true; say('Red is rock, slope, sand or crater. Green is where a rover can stand.', 4); }
       if (a < 2500 && !E.saidSep) { E.saidSep = true; prompt(TOUCH ? 'Tap <b>DEPLOY</b> to drop free of the backshell.' : '<b>SPACE</b> drops free of the backshell.'); }
       if ((action && a < 2500) || a < 1500 || (E.cine && a < 2100)) {
@@ -1346,7 +1347,8 @@ export function createEDL(ctx) {
       aimRing.scale.setScalar(big); goalRing.scale.setScalar(big * 0.8);
       const bad = hazard.grid.hazardAt(px, pz);
       aimRing.material.color.setHex(bad ? 0xffd9cf : 0x7fd4e0);   // pale when over a hazard: red on red would vanish
-      const fadeMap = smooth(22, 70, a);
+      const fadeMap = E.cine ? 0 : smooth(22, 70, a);
+      hazard.mesh.visible = fadeMap > 0.005;
       hazard.mesh.material.opacity = fadeMap; aimRing.material.opacity = 0.95 * fadeMap; goalRing.material.opacity = 0.9 * fadeMap;
 
       a = E.pos.y - height(E.pos.x, E.pos.z);
@@ -1494,6 +1496,10 @@ export function createEDL(ctx) {
       $('edl-range-pin').style.left = clamp(50 + dn * 7, 2, 98) + '%';
       $('edl-speed').classList.toggle('ok', v <= D.chuteV && v >= 352);
     }
+    // the parachute button says what it does, and grows and pulses once it is safe to fire
+    const go = document.querySelector('#edl-pad .p-go'), pre = E.stage === 'chute' && E.chuteT < 0;
+    go.textContent = pre ? 'PARACHUTE' : 'DEPLOY';
+    go.classList.toggle('ready', pre && v <= D.chuteV && v >= 352 && Math.abs(E.aoa) <= D.chuteAoa);
     if (E.flash > 0) { E.flash = Math.max(0, E.flash - 0.05); $('edl-flash').style.opacity = E.flash; }
 
     // attitude: a running trace of the swing, against the bands that matter

@@ -152,7 +152,7 @@ function craterFine(x, z) {
 function ground(x, z) {      // height of the drawn surface, plus rocks
   const f = microFade(x, z);
   const h = groundBase(x, z) + (f > 0 ? (microRaw(x, z) + craterFine(x, z)) * f : 0) + rockH(x, z);
-  return SLAB.on && Math.abs(x - SLAB.x) < 8 && Math.abs(z - SLAB.z) < 8 ? Math.max(h, slabAt(x, z)) : h;
+  return SLABS.length ? Math.max(h, slabAt(x, z)) : h;
 }
 const _n = new THREE.Vector3();
 function normalAt(x, z) { const e = 0.35; return _n.set(ground(x - e, z) - ground(x + e, z), 2 * e, ground(x, z - e) - ground(x, z + e)).normalize(); }
@@ -346,11 +346,15 @@ CRATER_TILE.value = craterTile();
    across. Drawn at its true size (like the craters, it is not shrunk with the map), resting on the hillside beside
    where the rover parked. Each piece is the same rough block, cut flat along the cracks between them and pushed a little apart. ── */
 const BOULDER = { x: 0, z: 0, cyl: [] };
-// the ramp: one of the five pieces lies tilted, one end bedded in the soil and the other raised, its long face a ramp
-// you can drive. Its surface is ground for the wheels (slabAt, in ground()), and the same function shapes its mesh.
-const SLAB = { on: false, x: 0, z: 0, c: 1, s: 0, L: 10, W: 4.6, H: 2.4 };
-function slabRel(u, v) {      // height above the hillside at u along (0 at the bedded end, L at the raised lip) and v across
-  const { L, W, H } = SLAB;
+// the crater the route crosses about 80 m before stop 8, about 15 m across (one of the generated craters, picked by place)
+const RAMP_CRATER = craters.reduce((b, c) => Math.hypot(c.x - 677.6, c.z + 699.9) < Math.hypot(b.x - 677.6, b.z + 699.9) ? c : b);
+// Tilted slabs of rock, one end bedded in the soil and the other raised, their long faces ramps you can drive: the fifth
+// piece of Tracy's Rock, lying low beside the others, and a slab on the near rim of a crater the route crosses before
+// stop 8, a jump straight along the route. Each surface is ground for the wheels (slabAt, in ground()), and the same
+// function shapes its mesh. c, s: the direction from the bedded end to the lip.
+const SLABS = [];
+function slabRel(S, u, v) {      // height above the hillside at u along (0 at the bedded end, L at the raised lip) and v across
+  const { L, W, H } = S;
   if (u < -0.6 || u > L + 1.2 || Math.abs(v) > W / 2 + 1.4) return -9;
   const hw = W / 2 * (0.86 + 0.28 * fbm(u * 0.45 + 7, 3.3, 3)), le = L + 0.8 * (fbm(v * 0.6 + 2, 8.1, 3) - 0.5);      // a ragged outline, not a box
   const top = H * Math.max(0, u) / L - 0.12 + (0.1 * (fbm(u * 0.9 + 4, v * 0.9, 3) - 0.5) + 0.035 * (fbm(u * 4 + 1, v * 4 - 3, 2) - 0.5)) * Math.min(1, Math.max(0, u));
@@ -358,8 +362,26 @@ function slabRel(u, v) {      // height above the hillside at u along (0 at the 
   return top * side * lip - 1.2 * (1 - side * lip);
 }
 function slabAt(x, z) {
-  const dx = x - SLAB.x, dz = z - SLAB.z, u = dx * SLAB.c + dz * SLAB.s + SLAB.L / 2, v = -dx * SLAB.s + dz * SLAB.c, r = slabRel(u, v);
-  return r < -8 ? -1e9 : groundBase(x, z) + r;
+  let best = -1e9;
+  for (const S of SLABS) {
+    const dx = x - S.x, dz = z - S.z; if (Math.abs(dx) > S.L || Math.abs(dz) > S.L) continue;
+    const u = dx * S.c + dz * S.s + S.L / 2, v = -dx * S.s + dz * S.c, r = slabRel(S, u, v);
+    if (r > -8) best = Math.max(best, groundBase(x, z) + r);
+  }
+  return best;
+}
+function buildSlab(S, mat, tone) {      // the slab's mesh, from the same surface the wheels drive
+  SLABS.push(S);
+  const NU = 70, NV = 36, U0 = -0.5, U1 = S.L + 1.1, V0 = -S.W / 2 - 1.3, pos = [], idx = [];
+  for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
+    const u = U0 + (U1 - U0) * i / NU, v = V0 + (-2 * V0) * j / NV, x = S.x + (u - S.L / 2) * S.c - v * S.s, z = S.z + (u - S.L / 2) * S.s + v * S.c;
+    const r = slabRel(S, u, v); pos.push(x, groundBase(x, z) + (r < -8 ? -1.2 : r), z);
+  }
+  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const k = j * (NU + 1) + i; idx.push(k, k + NU + 1, k + 1, k + 1, k + NU + 1, k + NU + 2); }
+  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals();
+  if (sg.attributes.normal.getY(0) < 0) { idx.reverse(); sg.setIndex(idx); sg.computeVertexNormals(); }
+  rockColors(sg, tone);
+  const sm = new THREE.Mesh(sg, mat); sm.castShadow = sm.receiveShadow = true; scene.add(sm);
 }
 /* Rock surface, for Tracy's Rock and its ramp: a tiling height field of lumps, cracks and pits (alpha) and its normals
    (rgb), laid on from three sides by world position (triplanar), so it needs no texture coordinates and never stretches. */
@@ -450,19 +472,13 @@ function splitBoulder() {
     }
   }
   BOULDER.cyl = cyl;
-  // the fifth piece, the ramp: below the boulder on its downhill side, running down the slope, its lip at the lower end
-  const a = Math.PI / 2 - 0.15;      // its long axis, from the bedded end to the lip: south, a little east
-  Object.assign(SLAB, { x: BOULDER.x + 9, z: BOULDER.z + 13, c: Math.cos(a), s: Math.sin(a), on: true });
-  const NU = 70, NV = 36, U0 = -0.5, U1 = SLAB.L + 1.1, V0 = -SLAB.W / 2 - 1.3, pos = [], idx = [];
-  for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
-    const u = U0 + (U1 - U0) * i / NU, v = V0 + (-2 * V0) * j / NV, x = SLAB.x + (u - SLAB.L / 2) * SLAB.c - v * SLAB.s, z = SLAB.z + (u - SLAB.L / 2) * SLAB.s + v * SLAB.c;
-    const r = slabRel(u, v); pos.push(x, groundBase(x, z) + (r < -8 ? -1.2 : r), z);
-  }
-  for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const k = j * (NU + 1) + i; idx.push(k, k + NU + 1, k + 1, k + 1, k + NU + 1, k + NU + 2); }
-  const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals();
-  if (sg.attributes.normal.getY(0) < 0) { idx.reverse(); sg.setIndex(idx); sg.computeVertexNormals(); }
-  rockColors(sg, 21.7);
-  const sm = new THREE.Mesh(sg, mat); sm.castShadow = sm.receiveShadow = true; scene.add(sm);
+  // the fifth piece, below the boulder on its downhill side, lying low
+  const a = Math.PI / 2 - 0.15;
+  buildSlab({ x: BOULDER.x + 9, z: BOULDER.z + 13, c: Math.cos(a), s: Math.sin(a), L: 8, W: 4.2, H: 0.7 }, mat, 21.7);
+  // the ramp: on the near rim of the crater the route crosses 80 m before stop 8 (15 m across), pointing across it along
+  // the route, a gentle 8° so it reads as a slab of rock, not a launcher; its lip a meter short of the rim
+  const C = RAMP_CRATER, ra = Math.atan2(0.358, 0.934), dc = Math.cos(ra), ds = Math.sin(ra), back = C.R + 1 + 5;
+  buildSlab({ x: C.x - dc * back, z: C.z - ds * back, c: dc, s: ds, L: 10, W: 4.4, H: 1.5 }, mat, 13.1);
 }
 function rockMeshes() {
   const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
@@ -690,10 +706,10 @@ function kick(dt) {
    pushed aside. They stay: nothing on the Moon blows them away. ── */
 function trackTex() {      // soft-edged: a shallow, slightly darker groove, the chevrons pressed in faintly (blurred by layering, which every browser draws)
   const S = 64, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d');
-  const g = x.createLinearGradient(0, 0, S, 0); g.addColorStop(0, 'rgba(58,56,53,0)'); g.addColorStop(0.22, 'rgba(58,56,53,.13)'); g.addColorStop(0.78, 'rgba(58,56,53,.13)'); g.addColorStop(1, 'rgba(58,56,53,0)');
+  const g = x.createLinearGradient(0, 0, S, 0); g.addColorStop(0, 'rgba(58,56,53,0)'); g.addColorStop(0.16, 'rgba(56,54,51,.22)'); g.addColorStop(0.84, 'rgba(56,54,51,.22)'); g.addColorStop(1, 'rgba(58,56,53,0)');
   x.fillStyle = g; x.fillRect(0, 0, S, S);
   x.lineCap = 'round'; x.lineJoin = 'round';
-  for (const [w, a] of [[S * .2, .025], [S * .14, .04], [S * .08, .06]]) { x.strokeStyle = `rgba(40,38,36,${a})`; x.lineWidth = w;
+  for (const [w, a] of [[S * .2, .04], [S * .14, .065], [S * .08, .1]]) { x.strokeStyle = `rgba(40,38,36,${a})`; x.lineWidth = w;
     for (let k = -1; k < 5; k++) { const y = k * S / 4; x.beginPath(); x.moveTo(S * .16, y); x.lineTo(S * .5, y + S * .11); x.lineTo(S * .84, y); x.stroke(); } }
   const t = new THREE.CanvasTexture(c); t.wrapS = t.wrapT = THREE.RepeatWrapping; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; return t;
 }
@@ -728,9 +744,9 @@ function layTracks() {
   WHEELS.forEach((wl, k) => {
     const T = tracks[k];
     if (!wl.contact) { if (T.n) T.gap = true; return; }
-    const a = _tp.copy(wl.at).applyQuaternion(car.q).add(car.p);
+    const W = WHEEL_PARTS[k], a = (W ? _tp.set(W.c.x, wl.at.y, W.c.z) : _tp.copy(wl.at)).applyQuaternion(car.q).add(car.p);      // under the tire itself: the suspension mount is 13 cm further out
     if (T.last && !T.gap && Math.hypot(a.x - T.last.x, a.z - T.last.z) < 0.25) return;
-    const dx = T.last && !T.gap ? a.x - T.last.x : _fw.x, dz = T.last && !T.gap ? a.z - T.last.z : _fw.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * 0.115, nz = dx / l * 0.115;
+    const hw = W ? W.hw : 0.115, dx = T.last && !T.gap ? a.x - T.last.x : _fw.x, dz = T.last && !T.gap ? a.z - T.last.z : _fw.z, l = Math.hypot(dx, dz) || 1, nx = -dz / l * hw, nz = dx / l * hw;
     const x1 = a.x + nx, z1 = a.z + nz, x2 = a.x - nx, z2 = a.z - nz, yc = drawnH(a.x, a.z), y1 = Math.max(drawnH(x1, z1), yc) + 0.02, y2 = Math.max(drawnH(x2, z2), yc) + 0.02;
     if (T.gap) {      // after a jump the tread starts again where the wheels came down: two see-through joins bridge the gap unseen
       const o = (T.n - 1) * 6, q = T.pos.slice(o, o + 6); pushTrack(T, q[0], q[1], q[2], q[3], q[4], q[5], 0); pushTrack(T, x1, y1, z1, x2, y2, z2, 0); T.gap = false;
@@ -796,7 +812,15 @@ function showRecords() {
 /* The time trial. Through the faint ring the clock starts and the loop appears; stops 6, 8 and 9 must be passed in that
    order (the next one is marked on screen with its distance), and back through the ring the clock stops. Best lap per
    speed setting; the top speed on the ground during a lap is kept too (Cernan's 18 km/h was driven, not flown). */
-const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false, warned: false };
+const RUN = { on: false, t: 0, cp: 0, peak: 0, away: false, warned: false, save: null };
+// Strayed off the route: put back at the last place on it, with the clock as it was there, and carry on
+const REJOIN = { t: 0 };
+function rejoin() {
+  const S = RUN.save; $('btn-rejoin').classList.remove('on'); REJOIN.t = 0; if (!S || CRASH.on) return;
+  place(S.x, S.z, S.yaw); camInit = false;
+  Object.assign(RUN, { on: true, t: S.t, cp: S.cp, peak: S.peak, warned: false, away: true });
+  toast(`Back on the route · the clock resumes at ${fmtT(S.t)}`);
+}
 /* Into the ring, the drive pauses for a short briefing in the letterbox, then the clock starts on "Go". Paused rather
    than braked: on the Moon's weak grip a rover at full speed needs tens of meters to stop. Figures: Guinness World
    Records (lunar speed record) and the Apollo 17 traverse record (third drive, 12.1 km). */
@@ -841,7 +865,10 @@ function speedRecord(kmh, grounded, dt) {
   RUN.t += dt;
   if (grounded && kmh > RUN.peak) RUN.peak = kmh;
   const off = offLine();      // stray too far from the line and the attempt is over: the clock goes, the line fades away
-  if (off > 35) { RUN.on = false; RUN.away = false; $('clock').textContent = ''; toast('Too far from the route · time trial over'); return; }
+  if (off < 8 && AIR.grounded && _up.y > 0.85 && (RUN.saveT = (RUN.saveT || 0) + dt) > 1) {      // where to put you back if you stray: the last place on the line, about a second ago
+    RUN.saveT = 0; RUN.save = { x: car.p.x, z: car.p.z, yaw: Math.atan2(-_fw.z, _fw.x), t: RUN.t, cp: RUN.cp, peak: RUN.peak }; }
+  if (off > 35) { RUN.on = false; RUN.away = false; $('clock').textContent = ''; toast('Too far from the route · time trial over');
+    if (RUN.save) { REJOIN.t = 10; $('btn-rejoin').classList.add('on'); } return; }
   if (off > 20 && !RUN.warned) { RUN.warned = true; toast('Back to the line, or the time trial ends'); } else if (off < 12) RUN.warned = false;
   const next = CPS[RUN.cp];
   if (next) {
@@ -1063,6 +1090,7 @@ function stepReplay(dt) {
   return true;
 }
 $('btn-replay').addEventListener('click', startReplay);
+$('btn-rejoin').addEventListener('click', rejoin);
 $('cine-skip').addEventListener('click', () => { if (REPLAY.on) endReplay(); });
 
 /* ── loop ── */
@@ -1083,6 +1111,7 @@ function frame(now) {
     upsideT = _up.y < 0.35 ? upsideT + dt : 0; $('btn-recover').classList.toggle('on', upsideT > 1.2);
     simT += dt; if (!CRASH.on) record();
     if (REPLAY.offerT > 0 && (REPLAY.offerT -= dt) <= 0 || CRASH.on) { REPLAY.offerT = 0; $('btn-replay').classList.remove('on'); }
+    if (REJOIN.t > 0 && ((REJOIN.t -= dt) <= 0 || RUN.on)) { REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); }
   }
   if (REPLAY.on && stepReplay(dt)) { renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   rover.position.copy(car.p); rover.quaternion.copy(car.q); turnWheels();
@@ -1365,7 +1394,9 @@ const SITES = [
     'In 2009 researchers at MIT found that it is weakly magnetized, and that its magnetism dates from when it crystallized. That points to a molten, churning core that gave the young Moon a magnetic field, as Earth’s core does today. A 2016 study supported the result.'] },
   { at: () => [VAN.x, VAN.z, 5], name: 'Van Serg crater', sub: 'Stop 9 · the last drive', body: [
     'A crater about 100 m across, blasted through the dark soil that covers the valley floor. The crew came here on the third moonwalk to work out how it formed and to sample the dark material and what lies beneath it.',
-    'Its rim is strewn with angular blocks thrown out by the impact, mostly smaller than 30 cm, with a few boulders up to about 2 m across. A piece they broke from a boulder on the rim, sample 79115, turned out to be regolith breccia: loose lunar soil welded into rock by the shock of an impact.'] },
+    'Its rim is strewn with angular blocks thrown out by the impact, mostly smaller than 30 cm, with a few boulders up to about 2 m across. A piece they broke from a boulder on the rim, sample 79115, turned out to be regolith breccia: loose lunar soil welded into rock by the shock of an impact.',
+    '<b>What they found.</b> Harrison Schmitt called it a fresh impact crater with a blocky rim as soon as they arrived. Its shape bears that out: a raised rim of blocks, benches stepping down the inner walls, and a mound of blocks on the floor. Nearly every rock they sampled was the same dark, crumbly breccia, which the geologists read as the valley floor’s own soil, hardened into rock by the impact and thrown out of the crater.',
+    '<b>The name.</b> Schmitt named it for Hugh McKinstry (1896–1961), a Harvard geology professor who wrote scientific satires under the pen name Nicholas Vanserg.'] },
 ];
 const _sp = new THREE.Vector3();
 let siteRun = false;
@@ -1402,4 +1433,4 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, stepDebris, INTRO, SEC, BOULDER, SLAB, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; parked = false; }, craters };
+window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, stepDebris, INTRO, SEC, BOULDER, SLABS, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; parked = false; }, craters };
