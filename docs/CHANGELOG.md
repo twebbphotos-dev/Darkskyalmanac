@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.89 (zion-sky-v458)
+Lunar Rover: in a crash the astronauts tumble out as floppy rag dolls. Each suit stays in one piece (torso, arms, thighs and shins joined by soft joints at the shoulders, hips and knees); only the backpack sometimes breaks loose. Thrown gently and slowed in the air, so it reads as slapstick, not violence.
+
 ## v4.88 (zion-sky-v457)
 Lunar Rover: a crew aboard, thrown clear in a crash, and every rollover a wreck. Gene Cernan (left seat, the commander's red stripes) and Harrison Schmitt (right) ride the rover, from NASA's astronaut model (NASA 3D Resources, public domain; the Smithsonian's scan of Neil Armstrong's suit is not released for reuse, so it was not used). Its suit texture was given the weave of Beta cloth and a warmer off-white, gray dust works up the boots and lower legs, and the standing figure is bent at the knees, hips and shoulders into a seat with its hands forward to the controls. They come aboard for the reverse out of the unloading, and the driver's-seat camera hides Cernan so you see through his eyes. In a crash both are thrown clear as loose bodies that tumble and come to rest with the wreck. A roll onto the roof now wrecks the rover however slowly it happens (it used to need more than 4 m/s), since the antennas, camera and seats on top cannot take it: even a slow roll tears some of that kit away and crushes the rest flat.
 

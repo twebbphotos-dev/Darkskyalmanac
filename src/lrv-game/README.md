@@ -141,3 +141,5 @@ v4.83: SITES entries with kind 'find' are discovery pins (.site.find, label) ope
 v4.84: SITE_IMGS maps a card's name to [file, caption] pairs (lrv/img/, NASA photographs); the first leads the card, the rest follow the text. Listed in OFFLINE3D.
 
 v4.86: MAP (trail in localStorage lrv-trail, opened samples in lrv-found), reliefCanvas() from groundBase, drawMap(canvas, cx, cz, span, big), mapTick each running frame (minimap redrawn every 0.2 s). Names: MAP_NAMES, MAP_EDGE.
+
+v4.89: crew rag dolls. buildCrew tags each vertex with a segment (0 torso, 1-2 thighs, 3-4 shins, 5-6 arms, 7 backpack) and fills CREW_SEG (centers, sizes) and CREW_JOINTS. breakApart makes 7 THREE.Bones as debris pieces, one SkinnedMesh per suit part (CRASH.extra), and soft joints (CRASH.joints, stepJoints at ~200 Hz). The backpack detaches half the time as its own piece.
