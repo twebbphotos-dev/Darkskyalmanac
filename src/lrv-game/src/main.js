@@ -1004,45 +1004,37 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
     if (!wheel) g.scale.set(1, 0.5 + 0.25 * R(), 1);      // what stays on is crushed flat against the ground it landed on
     (host || body).add(g); }
   body.position.copy(C).applyMatrix4(rover.matrixWorld); body.quaternion.copy(car.q); scene.add(body);
-  // The crew, thrown clear as rag dolls: each suit stays one skinned mesh, bent by seven bones (torso, arms, thighs,
-  // shins) that are rigid bodies on the ground, held together at the shoulders, hips and knees by soft joints, so the
-  // limbs flop and the suit creases but nothing comes apart. Only the backpack may break loose. Thrown gently and
-  // slowed in the air: more slapstick than violent.
+  // The crew, thrown clear as rag dolls: each suit stays one skinned mesh on its ten bones, which become rigid bodies on the
+  // ground, held together at the shoulders, elbows, hips and knees by soft joints, so the limbs flop and the suit creases
+  // but nothing comes apart. Only the backpack may break loose. Each starts from the pose he was riding in. Thrown gently
+  // and slowed in the air: more slapstick than violent.
   for (const h of CREW) {
     if (!h.visible) continue;
-    h.updateMatrixWorld(true); const M = h.matrixWorld, hq = h.getWorldQuaternion(new THREE.Quaternion()), parts = h.userData.parts, pack = R() < 0.5;
+    h.updateMatrixWorld(true); const seat = h.userData.bones, pack = R() < 0.5, tq = new THREE.Quaternion(), tp = new THREE.Vector3(), ts = new THREE.Vector3();
     const pop = new THREE.Vector3((R() - 0.5) * 1.2, 0.8 + 1.2 * k + R() * 0.6, (R() - 0.5) * 1.2), spin = new THREE.Vector3(R() - .5, R() - .5, R() - .5).multiplyScalar(1.5 + 2 * k);
     const bones = [], segP = [];
-    for (let sg = 0; sg < 7; sg++) {
-      const S = CREW_SEG[sg] || { c: new THREE.Vector3(), size: new THREE.Vector3(0.2, 0.2, 0.2) }, bone = new THREE.Bone();
-      bone.position.copy(S.c).applyMatrix4(M); bone.quaternion.copy(hq); scene.add(bone); bone.updateMatrixWorld(true); bones.push(bone);
-      const hs = S.size.clone().multiplyScalar(0.5).max(new THREE.Vector3(0.06, 0.06, 0.06)), pts = [];
+    for (let b = 0; b < 10; b++) {
+      if (b === 7 && !pack) { bones.push(bones[0]); segP.push(null); continue; }
+      const S = CREW_SEG[b], bone = new THREE.Bone();
+      seat[b].matrixWorld.decompose(tp, tq, ts);      // where the seat's bone is now (the backpack's is the torso's)
+      bone.position.copy(S.c).sub(CREW_SEG[b === 7 ? 0 : b].c).applyQuaternion(tq).add(tp); bone.quaternion.copy(tq); scene.add(bone); bones.push(bone);
+      const hs = S.size.clone().multiplyScalar(0.5).max(new THREE.Vector3(0.05, 0.05, 0.05)), pts = [];
       for (let i = 0; i < 8; i++) pts.push(new THREE.Vector3(i & 1 ? hs.x : -hs.x, i & 2 ? hs.y : -hs.y, i & 4 ? hs.z : -hs.z));
       const d = hs.clone().multiplyScalar(2), rr = bone.position.clone().sub(car.p);
-      const piece = { m: bone, v: car.v.clone().add(car.w.clone().cross(rr)).add(pop), w: car.w.clone().add(spin), inv: sg ? 1 : 0.3, airDamp: 0.9, pts, R: hs.length(),
+      const piece = { m: bone, v: car.v.clone().add(car.w.clone().cross(rr)).add(pop), w: car.w.clone().add(spin), inv: b ? 1 : 0.3, airDamp: 0.9, pts, R: hs.length(),
         I: new THREE.Vector3((d.y * d.y + d.z * d.z) / 12, (d.x * d.x + d.z * d.z) / 12, (d.x * d.x + d.y * d.y) / 12), still: 0, rest: false };
+      if (b === 7) { piece.v.add(new THREE.Vector3(R() - 0.5, R(), R() - 0.5)); piece.w.multiplyScalar(1.5); }      // the backpack, torn off its straps, goes its own way
       CRASH.pieces.push(piece); segP.push(piece);
     }
-    let low = 0; for (const P of segP) for (const v of P.pts) { const w = v.clone().applyQuaternion(P.m.quaternion).add(P.m.position); low = Math.max(low, ground(w.x, w.z) - w.y); }
-    bones.forEach(b2 => { b2.position.y += low; b2.updateMatrixWorld(true); });      // out of the ground, all together
-    const skel = new THREE.Skeleton(bones);
-    for (const [g, m, segs, seg] of parts) {
-      const geo = g.clone(); geo.applyMatrix4(M); geo.translate(0, low, 0);
-      const n = geo.attributes.position.count, si = new Uint16Array(n * 4), sw = new Float32Array(n * 4);
-      for (let i = 0; i < n; i++) { si[i * 4] = seg[i] === 7 ? 0 : seg[i]; sw[i * 4] = 1; }      // each vertex rides its part's bone (the backpack, while on, the torso's)
-      geo.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); geo.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
-      if (pack) geo.setIndex(segs.slice(0, 7).flat());      // a backpack that breaks loose goes its own way, below
+    let low = 0; for (const P of segP) if (P) for (const v of P.pts) { const w = v.clone().applyQuaternion(P.m.quaternion).add(P.m.position); low = Math.max(low, ground(w.x, w.z) - w.y); }
+    segP.forEach(P => { if (P) { P.m.position.y += low; P.m.updateMatrixWorld(true); } });      // out of the ground, all together
+    const skel = new THREE.Skeleton(bones, crewInverses(pack));
+    for (const [g, m, loose] of h.userData.parts) {
       const mat = DEBRIS_MATS.get(m) || (DEBRIS_MATS.set(m, m.clone()), DEBRIS_MATS.get(m));
-      const sk = new THREE.SkinnedMesh(geo, mat); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel); scene.add(sk); CRASH.extra.push(sk);
+      let geo = g; if (pack) { geo = new THREE.BufferGeometry(); for (const a in g.attributes) geo.setAttribute(a, g.attributes[a]); geo.setIndex(loose); }
+      const sk = new THREE.SkinnedMesh(geo, mat); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); scene.add(sk); CRASH.extra.push(sk);
     }
     for (const [a, b2, at] of CREW_JOINTS) CRASH.joints.push({ A: segP[a], B: segP[b2], la: at.clone().sub(CREW_SEG[a].c), lb: at.clone().sub(CREW_SEG[b2].c) });
-    if (pack && CREW_SEG[7]) {      // the backpack, torn off its straps
-      const S = CREW_SEG[7], grp = new THREE.Group(), inner = new THREE.Group(); inner.userData.part = true; grp.add(inner);
-      for (const [g, m, segs] of parts) if (segs[7].length) { const sub = new THREE.BufferGeometry(); for (const k2 in g.attributes) sub.setAttribute(k2, g.attributes[k2]); sub.setIndex(segs[7]);
-        const mesh = new THREE.Mesh(sub, DEBRIS_MATS.get(m)); mesh.castShadow = true; mesh.position.copy(S.c).negate(); inner.add(mesh); }
-      grp.position.copy(S.c).applyMatrix4(M); grp.quaternion.copy(hq); scene.add(grp);
-      CRASH.pieces.push(Object.assign({ m: grp, v: car.v.clone().add(pop).add(new THREE.Vector3(R() - 0.5, R(), R() - 0.5)), w: spin.clone().multiplyScalar(1.5) }, debrisBody(grp)));
-    }
   }
 
 
@@ -1060,7 +1052,7 @@ function stepJoints(h) {      // the rag dolls' joints: a soft spring and damper
     const A = J.A, B = J.B, ra = _ja.copy(J.la).applyQuaternion(A.m.quaternion), rb = _jb.copy(J.lb).applyQuaternion(B.m.quaternion);
     const e = _je.copy(B.m.position).add(rb).sub(A.m.position).sub(ra);
     const dv = _jv.copy(B.w).cross(rb).add(B.v).sub(_jt.copy(A.w).cross(ra)).sub(A.v);
-    const F = e.multiplyScalar(-700).addScaledVector(dv, -22).multiplyScalar(h);      // the impulse on B; A takes the opposite
+    const F = e.multiplyScalar(-1600).addScaledVector(dv, -32).multiplyScalar(h);      // the impulse on B; A takes the opposite
     if (F.lengthSq() > 1e-7) { A.rest = B.rest = false; }      // a tug wakes a part that had come to rest
     B.v.addScaledVector(F, B.inv); A.v.addScaledVector(F, -A.inv);
     const iB = 3 / (B.I.x + B.I.y + B.I.z), iA = 3 / (A.I.x + A.I.y + A.I.z);
@@ -1194,7 +1186,7 @@ function frame(now) {
     if (REJOIN.t > 0 && ((REJOIN.t -= dt) <= 0 || RUN.on)) { REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); }
   }
   if (REPLAY.on && stepReplay(dt)) { renderer.render(scene, camera); requestAnimationFrame(frame); return; }
-  rover.position.copy(car.p); rover.quaternion.copy(car.q); turnWheels();
+  rover.position.copy(car.p); rover.quaternion.copy(car.q); turnWheels(); stepCrew(dt);
   if (INTRO.on) { stepIntro(dt); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   // chase camera, held a little above the ground
   ORB.idle += dt; if (ORB.idle > 2.5) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
@@ -1587,63 +1579,144 @@ function siteMarks() {      // shown when near, or when looked at fairly directl
 function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -car.steer * WHEELS[k].steer; w.spin.rotation.z = -WHEELS[k].spin; }); }
 
 /* ── the crew: NASA's astronaut model (NASA 3D Resources, public domain), its suit texture given the weave of Beta cloth
-   (models/astronaut.glb, rebuilt by src/lrv-game/astronaut.md). The scan stands with its arms out; here it is bent into a
-   seat: the shins folded back at the knee, then everything below the hip swung forward, the arms lowered from the
-   shoulder and brought forward to the hand controller and the console. Each bend is blended over a few centimeters, the
-   way a pressure suit creases. Gray lunar dust works up the boots and lower legs. Gene Cernan drives from the left seat
-   (his suit carries the commander's red stripes); Harrison Schmitt rides on the right. ── */
+   (models/astronaut.glb, rebuilt by src/lrv-game/astronaut.md). The scan stands with its arms out; here its legs are bent
+   into a seat (the shins folded back at the knee, then everything below the hip swung forward, each bend blended over a
+   few centimeters, the way a pressure suit creases) and the rest is a skinned mesh on ten bones: torso, thighs, shins,
+   upper arms, forearms and the backpack. Gray lunar dust works up the boots and lower legs. Gene Cernan drives from the
+   left seat (his suit carries the commander's red stripes), his right hand always on the T-handle of the hand controller
+   between the seats, his left on the edge of his seat; Harrison Schmitt rides on the right, holding on to his seat with
+   both hands. Each rides the bumps on his own: the torso a soft, damped pendulum that tries to stay upright when the rover
+   tilts, the body lifting off the seat cushion over a hard bump until the seat belt holds it. ── */
 const CREW = [], CREW_JOINTS = [], CREW_SEG = [];      // CREW_JOINTS: [parent segment, child segment, where they meet]
 const CREW_SEATS = [[-0.66, 0.16, -0.33], [-0.66, 0.16, 0.33]];      // where each seat is, rover frame (x forward, z to the right)
+const HAND_CTRL = new THREE.Vector3(-0.3, 0.4, 0);      // the grip of the hand controller, rover frame
+// Segments: 0 torso and head, 1 2 thighs, 3 4 shins, 5 6 upper arms, 7 backpack, 8 9 forearms (odd-even: right, left).
+// The arm's joints in the scan's standing frame, relative to the seat: shoulder, elbow, the middle of the glove.
+const ARM = { S: new THREE.Vector3(0.26, 0.435, 0.085), E: new THREE.Vector3(0.54, 0.405, 0.095), H: new THREE.Vector3(0.81, 0.37, 0.11) };
+const armBones = sd => sd < 0 ? [5, 8] : [6, 9];
 function buildCrew(src) {
   src.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(src), k = 1.85 / (box.max.y - box.min.y), V = new THREE.Vector3(), Q = new THREE.Quaternion(), E = new THREE.Euler();
-  const hipY = 0.93, kneeY = 0.5, shY = 1.42, shX = 0.2, cz = (box.min.z + box.max.z) / 2 * k;
+  const hipY = 0.93, kneeY = 0.5, cz = (box.min.z + box.max.z) / 2 * k;
   const rotAbout = (v, piv, e) => v.sub(piv).applyQuaternion(Q.setFromEuler(E.set(e[0], e[1], e[2]))).add(piv);
-  const parts = [];
+  const parts = [], segOf = [];
   src.traverse(o => {
     if (!o.isMesh) return;
     const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); g.translate(-(box.min.x + box.max.x) / 2, -box.min.y, 0); g.scale(k, k, k);
-    const p = g.attributes.position, col = new Float32Array(p.count * 3), seg = new Uint8Array(p.count);
+    const p = g.attributes.position, col = new Float32Array(p.count * 3), seg = new Uint8Array(p.count), si = new Uint16Array(p.count * 4), sw = new Float32Array(p.count * 4);
     for (let i = 0; i < p.count; i++) {
-      V.fromBufferAttribute(p, i); const y0 = V.y, side = Math.sign(V.x) || 1;
-      seg[i] = y0 < hipY - 0.03 ? (y0 > kneeY ? 1 : 3) + (side < 0 ? 0 : 1) : Math.abs(V.x) > shX + 0.05 && y0 > shY - 0.3 ? 5 + (side < 0 ? 0 : 1)
-        : V.z < cz - 0.14 && y0 > hipY + 0.05 ? 7 : 0;      // torso, thighs, shins, arms, and the backpack
+      V.fromBufferAttribute(p, i); const y0 = V.y, ax = Math.abs(V.x), r = V.x < 0 ? 0 : 1;
+      const w = [];      // [bone, weight]: blended across the waist, knees, shoulders and elbows, so the suit bends instead of breaking
+      if (V.z < cz - 0.14 && y0 > hipY + 0.05 && ax < 0.3) w.push([7, 1]);
+      else if (y0 > 1.15 && ax > 0.24) {
+        const wa = Math.max(ss(0.24, 0.4, ax) * ss(1.15, 1.3, y0), ss(0.36, 0.42, ax)), wf = ss(0.5, 0.58, ax);      // past the armpit it is all arm, the drooping fingertips too
+        w.push([0, 1 - wa], [5 + r, wa * (1 - wf)], [8 + r, wa * wf]);
+      } else {
+        const wt = ss(hipY - 0.06, hipY + 0.1, y0), wk = ss(kneeY - 0.05, kneeY + 0.05, y0);
+        w.push([0, wt], [1 + r, (1 - wt) * wk], [3 + r, (1 - wt) * (1 - wk)]);
+      }
+      let best = 0; w.forEach(([b, x], j) => { si[i * 4 + j] = b; sw[i * 4 + j] = x; if (x > w[best][1]) best = j; }); seg[i] = w[best][0];
       const dust = ss(0.62, 0.08, y0);      // gray regolith: up the boots and lower legs
       col.set([1 - 0.3 * dust, 1 - 0.31 * dust, 1 - 0.33 * dust], i * 3);
       const wKnee = ss(kneeY + 0.06, kneeY - 0.06, y0), wHip = ss(hipY + 0.07, hipY - 0.09, y0);
-      const wArm = ss(shX - 0.04, shX + 0.12, Math.abs(V.x)) * ss(shY - 0.32, shY - 0.18, y0);
-      if (wKnee > 0) rotAbout(V, new THREE.Vector3(V.x, kneeY, cz), [Math.PI / 2 * wKnee, 0, 0]);       // shin back
-      if (wHip > 0) rotAbout(V, new THREE.Vector3(V.x, hipY, cz), [-Math.PI / 2 * wHip, 0, 0]);         // thigh forward, shin now down
-      if (wArm > 0) {
-        rotAbout(V, new THREE.Vector3(side * shX, shY, cz), [0, 0, -side * 1.15 * wArm]);       // arm lowered
-        rotAbout(V, new THREE.Vector3(side * shX, shY, cz), [-0.75 * wArm, 0, 0]);       // and brought forward
+      if (seg[i] !== 7 && !(y0 > 1.15 && ax > 0.24)) {
+        if (wKnee > 0) rotAbout(V, new THREE.Vector3(V.x, kneeY, cz), [Math.PI / 2 * wKnee, 0, 0]);       // shin back
+        if (wHip > 0) rotAbout(V, new THREE.Vector3(V.x, hipY, cz), [-Math.PI / 2 * wHip, 0, 0]);         // thigh forward, shin now down
       }
-      p.setXYZ(i, V.x, V.y - (hipY), V.z);      // the seat, under the hips, is the origin
+      p.setXYZ(i, V.x, V.y - hipY, V.z);      // the seat, under the hips, is the origin
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
+    g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
     const m = o.material.clone(); m.vertexColors = true;
-    const idx = g.index ? g.index.array : Array.from({ length: p.count }, (_, i) => i), segs = Array.from({ length: 8 }, () => []);
-    for (let t = 0; t < idx.length; t += 3) segs[seg[idx[t]]].push(idx[t], idx[t + 1], idx[t + 2]);      // each triangle goes with its first corner
-    parts.push([g, m, segs, seg]);
+    const idx = g.index ? g.index.array : Array.from({ length: p.count }, (_, i) => i), loose = [];
+    for (let t = 0; t < idx.length; t += 3) { const n = (seg[idx[t]] === 7) + (seg[idx[t + 1]] === 7) + (seg[idx[t + 2]] === 7); if (n === 0 || n === 3) loose.push(idx[t], idx[t + 1], idx[t + 2]); }
+    parts.push([g, m, loose]); segOf.push(seg);      // loose: the triangles left once the backpack tears away, none stretched across the seam
   });
-  // the joints of the seated figure (the seat is the origin; the thighs reach forward, +z): shoulders, hips, knees
-  const cz0 = cz, leg = hipY - kneeY;
+  const leg = hipY - kneeY;
   CREW_JOINTS.length = 0;
-  for (const sd of [-1, 1]) { const j = sd < 0 ? 0 : 1;
-    CREW_JOINTS.push([0, 5 + j, new THREE.Vector3(sd * shX, shY - hipY, cz0)], [0, 1 + j, new THREE.Vector3(sd * 0.1, 0, cz0)], [1 + j, 3 + j, new THREE.Vector3(sd * 0.1, 0, cz0 + leg)]); }
-  CREW_SEG.length = 0;      // each body part's center and box in the seated figure, for its rigid body in a crash
-  for (let sg = 0; sg < 8; sg++) { const b = new THREE.Box3(); let any = false;
-    for (const [g, , segs] of parts) for (const vi of segs[sg]) { b.expandByPoint(V.fromBufferAttribute(g.attributes.position, vi)); any = true; }
-    CREW_SEG.push(any ? { c: b.getCenter(new THREE.Vector3()), size: b.getSize(new THREE.Vector3()) } : null); }
+  for (const sd of [-1, 1]) { const r = sd < 0 ? 0 : 1, [u, f] = armBones(sd);
+    CREW_JOINTS.push([0, u, ARM.S.clone().setX(sd * ARM.S.x)], [u, f, ARM.E.clone().setX(sd * ARM.E.x)],
+      [0, 1 + r, new THREE.Vector3(sd * 0.1, 0, cz)], [1 + r, 3 + r, new THREE.Vector3(sd * 0.1, 0, cz + leg)]); }
+  CREW_SEG.length = 0;      // each segment's center and box: its bone's origin, and its rigid body in a crash
+  for (let sg = 0; sg < 10; sg++) { const b = new THREE.Box3(); let any = false;
+    parts.forEach(([g], j) => { const p = g.attributes.position, seg = segOf[j]; for (let i = 0; i < p.count; i++) if (seg[i] === sg) { b.expandByPoint(V.fromBufferAttribute(p, i)); any = true; } });
+    CREW_SEG.push(any ? { c: b.getCenter(new THREE.Vector3()), size: b.getSize(new THREE.Vector3()) } : { c: new THREE.Vector3(), size: new THREE.Vector3(0.12, 0.12, 0.12) }); }
   return parts;
 }
+// bone b's skeleton slot: the backpack rides the torso's bone until it breaks loose
+const crewInverses = (packOwn) => Array.from({ length: 10 }, (_, b) => { const c = CREW_SEG[b === 7 && !packOwn ? 0 : b].c; return new THREE.Matrix4().makeTranslation(-c.x, -c.y, -c.z); });
 function seatCrew(parts) {
   CREW_SEATS.forEach((pos, i) => {
-    const grp = new THREE.Group(); grp.userData.part = true;
-    parts.forEach(([g, m]) => { const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; grp.add(mesh); });
-    const holder = new THREE.Group(); holder.add(grp); holder.position.set(...pos); holder.rotation.y = Math.PI / 2;      // facing forward, +x
-    holder.userData.parts = parts; holder.visible = false; rover.add(holder); CREW.push(holder);
+    const holder = new THREE.Group(); holder.position.set(...pos); holder.rotation.y = Math.PI / 2;      // facing forward, +x
+    const bones = []; for (let b = 0; b < 10; b++) { if (b === 7) { bones.push(bones[0]); continue; } const bone = new THREE.Bone(); holder.add(bone); bones.push(bone); }
+    const skel = new THREE.Skeleton(bones, crewInverses(false));
+    parts.forEach(([g, m]) => { const sk = new THREE.SkinnedMesh(g, m); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); holder.add(sk); });
+    // the grips, in his own frame (x to his left, z forward): Cernan's right hand on the hand controller
+    const grip = sd => i === 0 && sd < 0 ? new THREE.Vector3(-(HAND_CTRL.z - pos[2]), HAND_CTRL.y - pos[1], HAND_CTRL.x - pos[0]) : new THREE.Vector3(sd * 0.37, -0.03, 0.1);
+    const P = CREW_P[i];
+    holder.userData = { parts, bones, grips: [grip(-1), grip(1)], P,
+      st: { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null, hands: [grip(-1), grip(1)], up: 0 } };
+    holder.visible = false; rover.add(holder); CREW.push(holder); poseCrew(holder);
   });
+}
+// how each rides: torso stiffness and damping (balance), how far felt gravity sways him, seat cushion stiffness
+const CREW_P = [{ K: 95, C: 7, kg: 0.24, ks: 1700 }, { K: 80, C: 5.5, kg: 0.3, ks: 1300 }];
+const FUN = { rolled: false, on: false, t: 0 };      // the rare big jump when Schmitt throws his hands up
+const _cY = new THREE.Vector3(0, 1, 0), _c0 = new THREE.Vector3(), _ca = new THREE.Vector3(), _cb = new THREE.Vector3(), _cc = new THREE.Vector3(), _cd = new THREE.Vector3(), _ce = new THREE.Vector3();
+const _cq = new THREE.Quaternion(), _cq2 = new THREE.Quaternion(), _cP = new THREE.Vector3(), _cS = new THREE.Vector3(), _cE = new THREE.Vector3(), _cH = new THREE.Vector3();
+function setBone(B, b, q, piv0, piv) { B[b].quaternion.copy(q); B[b].position.copy(CREW_SEG[b].c).sub(piv0).applyQuaternion(q).add(piv); }
+function poseCrew(h) {
+  const { bones: B, st } = h.userData, P = _cP.set(0, st.y, 0);
+  const qt = _cq.setFromUnitVectors(_cY, _ca.set(st.lx, 1, st.lz).normalize());
+  setBone(B, 0, qt, _c0.set(0, 0, 0), P);      // the torso swings about the hips
+  for (const b of [1, 2, 3, 4]) setBone(B, b, _cq2.identity(), _c0.set(0, 0, 0), P);
+  for (const sd of [-1, 1]) {      // two-bone reach: shoulder, elbow, hand on its grip
+    const [u, f] = armBones(sd), S0 = _cb.copy(ARM.S).setX(sd * ARM.S.x), E0 = _cc.copy(ARM.E).setX(sd * ARM.E.x), H0 = _cd.copy(ARM.H).setX(sd * ARM.H.x);
+    const L1 = S0.distanceTo(E0), L2 = E0.distanceTo(H0), S = _cS.copy(S0).applyQuaternion(qt).add(P);
+    const d = _cH.copy(st.hands[sd < 0 ? 0 : 1]).sub(S), D = Math.max(Math.abs(L1 - L2) + 0.01, Math.min(L1 + L2 - 0.002, d.length())); d.normalize();
+    const a = (L1 * L1 - L2 * L2 + D * D) / (2 * D), ht = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+    const pole = _ce.set(sd * (0.7 + 0.3 * st.up), -0.8 + 1.0 * st.up, -0.6 + 0.4 * st.up); pole.addScaledVector(d, -pole.dot(d)).normalize();      // elbows out and down, or out when the hands go up
+    const E = _cE.copy(S).addScaledVector(d, a).addScaledVector(pole, ht), H = d.multiplyScalar(D).add(S);
+    const qu = new THREE.Quaternion().setFromUnitVectors(_ca.copy(E0).sub(S0).normalize(), _ce.copy(E).sub(S).normalize());
+    const qf = new THREE.Quaternion().setFromUnitVectors(_ca.copy(H0).sub(E0).normalize().applyQuaternion(qu), _ce.copy(H).sub(E).normalize()).multiply(qu);
+    setBone(B, u, qu, S0, S); setBone(B, f, qf, E0, E);
+  }
+}
+function stepCrew(dt) {
+  if (!dt) return;
+  if (!AIR.grounded && AIR.t > 1 && !FUN.rolled) { FUN.rolled = true; FUN.on = Math.random() < 0.12; }      // a big jump: now and then, hands in the air
+  if (AIR.grounded) { FUN.rolled = false; if (FUN.on && (FUN.t += dt) > 0.6) { FUN.on = false; FUN.t = 0; } }
+  for (const h of CREW) {
+    const { st, P, grips } = h.userData;
+    if (CRASH.on) { Object.assign(st, { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null }); continue; }
+    // the seat's acceleration, from the rover's motion; then felt gravity and true up in his own frame
+    const r = _ca.copy(h.position).applyQuaternion(car.q), v = _cb.copy(car.w).cross(r).add(car.v);
+    if (!st.v) st.v = v.clone();
+    const acc = _cc.copy(v).sub(st.v).divideScalar(dt); st.v.copy(v); if (acc.lengthSq() > 900) acc.setLength(30);
+    const qi = _cq2.copy(car.q).multiply(h.quaternion).invert(), f = _cd.set(0, -G, 0).sub(acc).applyQuaternion(qi), up = _ce.set(0, 1, 0).applyQuaternion(qi);
+    const jolt = Math.abs(f.y + G * up.y); if (jolt > 4) { st.vx += (Math.random() - 0.5) * jolt * 0.03; st.vz += (Math.random() - 0.5) * jolt * 0.02; }      // a hard bump knocks each a little differently
+    const n = Math.ceil(dt / 0.004), hh = dt / n;
+    for (let i = 0; i < n; i++) {
+      // the torso: pulled toward true up (balance), swayed by felt gravity (less than it would be: he is holding on), damped
+      st.vx += hh * (P.K * (up.x - st.lx) + P.kg * P.K * f.x / 2.5 - P.C * st.vx); st.vz += hh * (P.K * (up.z - st.lz) + P.kg * P.K * f.z / 2.5 - P.C * st.vz);
+      const L = Math.hypot(st.lx, st.lz); if (L > 0.35) { const g = -3 * P.K * (L - 0.35) / L * hh; st.vx += g * st.lx; st.vz += g * st.lz; }      // the suit stiffens at the end of its bend
+      st.lx += hh * st.vx; st.lz += hh * st.vz;
+      // the body on the seat: the cushion below, the seat belt about 5 cm up
+      const c = st.y < 0 ? -P.ks * st.y - 40 * st.vy : st.y > 0.05 ? -P.ks * (st.y - 0.05) - 40 * st.vy : 0;
+      st.vy += hh * (f.y + c); st.y += hh * st.vy;
+    }
+    const L = Math.hypot(st.lx, st.lz); if (L > 0.5) { st.lx *= 0.5 / L; st.lz *= 0.5 / L; }
+    st.y = Math.max(-0.03, Math.min(0.09, st.y));
+    const want = FUN.on && h === CREW[1] ? 1 : 0; st.up += (want - st.up) * (1 - Math.exp(-dt * (want ? 7 : 4)));
+    for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.3 : -0.3, 1.02, 0.2), st.up);
+    poseCrew(h);
+  }
+}
+function handController() {      // the T-handle on its post between the seats
+  const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.6, metalness: 0.4 });
+  const post = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.018, 0.33, 10), mat); post.position.y = -0.17;
+  const bar = new THREE.Mesh(new THREE.CylinderGeometry(0.017, 0.017, 0.12, 10), mat); bar.rotation.z = Math.PI / 2;
+  g.add(post, bar); g.position.copy(HAND_CTRL); g.traverse(o => { o.castShadow = true; }); return g;
 }
 
 /* ── start ── */
@@ -1656,7 +1729,7 @@ function seatCrew(parts) {
   place(0, 0, Math.atan2(350, 82));      // facing north, up the valley toward the North Massif
   $('loadmsg').textContent = 'Unloading the rover…';
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
-  if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); rigWheels(); buildSections(); buildDebris(); }      // tires on the ground at the resting ride height
+  if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o, handController()); rigWheels(); buildSections(); buildDebris(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
   { const a = await loader.loadAsync('../models/astronaut.glb').catch(() => null); if (a) seatCrew(buildCrew(a.scene)); }      // after the sections and debris are cut, so the crew is in neither
   if (lm) { const o = lm.scene; dusty(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true; o.position.set(x, ground(x, z) - 0.15, z); o.rotation.y = -Math.PI / 2; scene.add(o); }

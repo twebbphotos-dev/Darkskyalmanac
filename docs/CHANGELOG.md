@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.90 (zion-sky-v459)
+Lunar Rover: the crew ride like people on a bumpy rover. Gene Cernan keeps his right hand on the T-handle of the hand controller (added between the seats; the model had none) and his left on the edge of his seat; Harrison Schmitt holds his seat with both hands. Each torso is a soft, damped pendulum that tries to stay upright when the rover tilts and sways with braking, turns and bumps, and each body lifts off the cushion over hard bumps until the seat belt holds it, each with slightly different stiffness, so they jostle independently. On a rare big jump Schmitt throws his hands up. The suits are now rigged with elbows, so arms reach their grips and the rag dolls flop at the elbows too. Fixed fingertips that stretched toward the torso: the glove's lowest vertices fell in the shoulder blend and were half pinned to the torso.
+
 ## v4.89 (zion-sky-v458)
 Lunar Rover: in a crash the astronauts tumble out as floppy rag dolls. Each suit stays in one piece (torso, arms, thighs and shins joined by soft joints at the shoulders, hips and knees); only the backpack sometimes breaks loose. Thrown gently and slowed in the air, so it reads as slapstick, not violence.
 
