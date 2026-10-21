@@ -157,3 +157,5 @@ v4.94: rocks have a customDepthMaterial that discards below local y 0.56 (the bu
 v4.95: HOME triggers at edge < 40 + 4 v, holds v0, turns heading and velocity together at up to 0.9 rad/s, ends when within 0.4 rad of the LM bearing (8 s cap). Foil canvas 512, tile 1.8 m, per-face offset from the face normal; panel texture also on blinn2/10 and initialShading.
 
 v4.96: foilLM uses lmShader (from src/spacecraft.js weather + foil): world-space crinkle cells on blinn1/9/10, weathered tone on the cabin (flat shaded), legs and dark parts. No UVs, no canvas textures.
+
+v4.97: suitMaterial() (folds, tone, dust patches from the rest position, vRp) and visorMaterial() (gold metal with a small PMREM sky/ground map); the debris clones keep the suit shader.

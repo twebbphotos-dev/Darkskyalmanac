@@ -1116,7 +1116,7 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
     segP.forEach(P => { if (P) { P.m.position.y += low; P.m.updateMatrixWorld(true); } });      // out of the ground, all together
     const skel = new THREE.Skeleton(bones, crewInverses(pack));
     for (const [g, m, loose] of h.userData.parts) {
-      const mat = DEBRIS_MATS.get(m) || (DEBRIS_MATS.set(m, m.clone()), DEBRIS_MATS.get(m));
+      const mat = DEBRIS_MATS.get(m) || (DEBRIS_MATS.set(m, Object.assign(m.clone(), { onBeforeCompile: m.onBeforeCompile, customProgramCacheKey: m.customProgramCacheKey })), DEBRIS_MATS.get(m));      // the suit's own shader goes with it
       let geo = g; if (pack) { geo = new THREE.BufferGeometry(); for (const a in g.attributes) geo.setAttribute(a, g.attributes[a]); geo.setIndex(loose); }
       const sk = new THREE.SkinnedMesh(geo, mat); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); scene.add(sk); CRASH.extra.push(sk);
     }
@@ -1727,6 +1727,40 @@ const HAND_CTRL = new THREE.Vector3(-0.3, 0.4, 0);      // the grip of the hand 
 // The arm's joints in the scan's standing frame, relative to the seat: shoulder, elbow, the middle of the glove.
 const ARM = { S: new THREE.Vector3(0.26, 0.435, 0.085), E: new THREE.Vector3(0.54, 0.405, 0.095), H: new THREE.Vector3(0.81, 0.37, 0.11) };
 const armBones = sd => sd < 0 ? [5, 8] : [6, 9];
+/* The suits, after the Apollo suits as they came back: off-white Beta cloth gone dingy, soft folds at every joint, the
+   tone a little uneven, and gray lunar dust ground into the lower legs (vertex colors, above) and in patches elsewhere,
+   from noise on the suit's own resting shape so it rides with the body. The visor is the gold-coated outer shell,
+   a mirror of the bright ground and the black sky. */
+function suitMaterial(src) {
+  const m = src.clone(); m.vertexColors = true; m.color.set(0xd2cbbd); m.roughness = 0.93; m.metalness = 0;
+  m.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvRp = position;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      varying vec3 vRp;
+      float sH(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+      float sV(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+        return mix(mix(mix(sH(i), sH(i + vec3(1, 0, 0)), f.x), mix(sH(i + vec3(0, 1, 0)), sH(i + vec3(1, 1, 0)), f.x), f.y),
+                   mix(mix(sH(i + vec3(0, 0, 1)), sH(i + vec3(1, 0, 1)), f.x), mix(sH(i + vec3(0, 1, 1)), sH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }`)
+      .replace('#include <color_fragment>', `#include <color_fragment>
+        { float t = sV(vRp * 6.) * .6 + sV(vRp * 17. + 3.) * .4, d = smoothstep(.55, .85, sV(vRp * 4.3 + 9.) * .7 + sV(vRp * 13. + 1.) * .3);
+          diffuseColor.rgb *= (.9 + .14 * t) * (1. - .28 * d); }      // uneven tone, patches of dust`)
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec3 q = vRp * 9.; vec3 f = vec3(sV(q), sV(q + 17.3), sV(q + 31.7)) - .5, g = vec3(sV(q * 3.1 + 5.), sV(q * 3.1 + 23.), sV(q * 3.1 + 41.)) - .5;
+          normal = normalize(normal + (viewMatrix * vec4(f * .55 + g * .18, 0.)).xyz); }      // soft folds and creases in the cloth`);
+  };
+  m.customProgramCacheKey = () => 'suit';
+  return m;
+}
+let VISOR = null;
+function visorMaterial() {
+  if (VISOR) return VISOR;
+  const c = document.createElement('canvas'); c.width = 256; c.height = 128; const x = c.getContext('2d'), g = x.createLinearGradient(0, 0, 0, 128);
+  g.addColorStop(0, '#000'); g.addColorStop(0.47, '#050505'); g.addColorStop(0.5, '#9a978f'); g.addColorStop(0.62, '#7d7a73'); g.addColorStop(1, '#55534e');      // black sky over the bright gray ground
+  x.fillStyle = g; x.fillRect(0, 0, 256, 128); x.fillStyle = '#fff'; x.beginPath(); x.arc(70, 40, 5, 0, 6.3); x.fill();      // and the Sun
+  const t = new THREE.CanvasTexture(c); t.mapping = THREE.EquirectangularReflectionMapping; t.colorSpace = THREE.SRGBColorSpace;
+  const env = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; t.dispose();
+  return (VISOR = new THREE.MeshStandardMaterial({ color: 0xd8a640, metalness: 1, roughness: 0.14, envMap: env, envMapIntensity: 1.25, name: 'visor' }));      // gold over a mirror
+}
 function buildCrew(src) {
   src.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(src), k = 1.85 / (box.max.y - box.min.y), V = new THREE.Vector3(), Q = new THREE.Quaternion(), E = new THREE.Euler();
@@ -1749,8 +1783,8 @@ function buildCrew(src) {
         w.push([0, wt], [1 + r, (1 - wt) * wk], [3 + r, (1 - wt) * (1 - wk)]);
       }
       let best = 0; w.forEach(([b, x], j) => { si[i * 4 + j] = b; sw[i * 4 + j] = x; if (x > w[best][1]) best = j; }); seg[i] = w[best][0];
-      const dust = ss(0.62, 0.08, y0);      // gray regolith: up the boots and lower legs
-      col.set([1 - 0.3 * dust, 1 - 0.31 * dust, 1 - 0.33 * dust], i * 3);
+      const dust = Math.max(ss(0.66, 0.06, y0), 0.45 * ss(0.62, 0.48, Math.abs(y0 - 0.5)) * (V.z > cz ? 1 : 0.3));      // gray regolith: thick up the boots and lower legs, ground into the knees
+      col.set([1 - 0.42 * dust, 1 - 0.43 * dust, 1 - 0.45 * dust], i * 3);
       const wKnee = ss(kneeY + 0.06, kneeY - 0.06, y0), wHip = ss(hipY + 0.07, hipY - 0.09, y0);
       if (seg[i] !== 7 && !(y0 > 1.15 && ax > 0.24)) {
         if (wKnee > 0) rotAbout(V, new THREE.Vector3(V.x, kneeY, cz), [Math.PI / 2 * wKnee, 0, 0]);       // shin back
@@ -1760,7 +1794,7 @@ function buildCrew(src) {
     }
     g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
     g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
-    const m = o.material.clone(); m.vertexColors = true;
+    const m = /astnt1_2/.test(o.material.name) ? visorMaterial() : suitMaterial(o.material);
     const idx = g.index ? g.index.array : Array.from({ length: p.count }, (_, i) => i), loose = [];
     for (let t = 0; t < idx.length; t += 3) { const n = (seg[idx[t]] === 7) + (seg[idx[t + 1]] === 7) + (seg[idx[t + 2]] === 7); if (n === 0 || n === 3) loose.push(idx[t], idx[t + 1], idx[t + 2]); }
     parts.push([g, m, loose]); segOf.push(seg);      // loose: the triangles left once the backpack tears away, none stretched across the seam

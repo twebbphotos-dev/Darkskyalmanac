@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.97 (zion-sky-v466)
+Lunar Rover: the astronauts look like Apollo suits that have been out on the Moon. The visors are the gold-coated outer shell, a mirror of the black sky and the bright ground (they were a flat tan picture). The suits are a dingier off-white with soft folds and uneven tone instead of clean plastic, and gray lunar dust is thick up the boots and lower legs, ground into the knees, and patchy elsewhere; it rides with the body and goes with them in a crash.
+
 ## v4.96 (zion-sky-v465)
 Lunar Rover: the lunar module is dressed as the spacecraft viewer dresses the same NASA model. The canvas textures (a repeating foil tile and drawn panel seams that never lined up with the model's panels) are gone; the foil's crinkle is now worked out in the shader from the position on the craft, small facets each tilted their own way, so it never repeats and needs no texture coordinates, and it is subtler. The cabin is dull tan-grey aluminium with faint uneven tone, each panel lit flat; legs bare metal; the colors are the ones Apollo photographs show.
 
