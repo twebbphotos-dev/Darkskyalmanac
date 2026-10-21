@@ -519,6 +519,15 @@ function rockMeshes() {
   const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x77736d, roughness: .95, flatShading: true }), rocks.length);
   const o = new THREE.Object3D();
   rocks.forEach((k, n) => { o.position.set(k.x, groundBase(k.x, k.z) + microRaw(k.x, k.z) - k.s * 0.62, k.z); o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(n, o.matrix); });
+  // Each rock is mostly buried, only its top showing, and the ground casts no shadow of its own: so on a slope facing
+  // away from the Sun (a crater wall) the buried part used to throw a shadow up through the ground, a dark blot with no
+  // rock to explain it. Only the part above the ground casts one now.
+  const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+  depth.onBeforeCompile = sh => {
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vLy;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvLy = position.y;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLy;').replace('void main() {', 'void main() {\n  if ( vLy < 0.56 ) discard;      // below the ground line (the rock sits 0.62 of its size down)');
+  };
+  im.customDepthMaterial = depth;
   im.castShadow = im.receiveShadow = true; scene.add(im);
 }
 
@@ -808,32 +817,54 @@ const EARTH = earth(); scene.add(EARTH);
 /* ── rover and lander models ── */
 const rover = new THREE.Group(); scene.add(rover);
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-/* The lunar module's descent stage: its blankets were layers of crinkled amber Kapton and aluminized film, not flat
-   paint. The model has no texture coordinates on them, so each point takes the two axes of the box face it most nearly
-   faces (the creases hide the seams), a tile about 0.6 m across. */
+/* The lunar module's skin. The descent stage was wrapped in crinkled amber Kapton and aluminized film, not flat paint;
+   the ascent stage's light gray panels show their seams and rivets. The model has no texture coordinates on them, so each
+   point is mapped in the plane of its own face (the octagonal stage and the faceted cabin are flat panels, so nothing
+   stretches), a foil tile about 0.6 m across and a panel tile about 1.4 m. */
 function foilLM(root) {
-  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), r = rng(57);
-  x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, S, S);
+  const canvas = () => { const c = document.createElement('canvas'); c.width = c.height = 256; return [c, c.getContext('2d')]; };
+  const [fc, x] = canvas(), r = rng(57);
+  x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, 256, 256);
   for (let k = 0; k < 300; k++) {      // facets of crumpled film, a little lighter or darker
-    const cx = r() * S, cy = r() * S, n = 3 + (r() * 3 | 0), rad = 5 + r() * 20, l = r() < 0.5;
+    const cx = r() * 256, cy = r() * 256, n = 3 + (r() * 3 | 0), rad = 5 + r() * 20, l = r() < 0.5;
     x.fillStyle = l ? `rgba(255,255,255,${0.08 + r() * 0.2})` : `rgba(0,0,0,${0.06 + r() * 0.2})`;
     x.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * 6.283 + r(); x.lineTo(cx + Math.cos(a) * rad * (0.6 + r() * 0.6), cy + Math.sin(a) * rad * (0.6 + r() * 0.6)); } x.fill();
   }
   x.strokeStyle = 'rgba(30,24,16,0.3)'; x.lineWidth = 1;
-  for (let k = 0; k < 80; k++) { const x0 = r() * S, y0 = r() * S, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
-  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; map.anisotropy = 4;
-  const bump = new THREE.CanvasTexture(c); bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+  for (let k = 0; k < 80; k++) { const x0 = r() * 256, y0 = r() * 256, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
+  const [pc, y] = canvas(), q = rng(23);      // panels: a few tones of gray, dark seams, rivet rows
+  y.fillStyle = '#d4d4d4'; y.fillRect(0, 0, 256, 256);
+  const split = (x0, y0, w, h, d) => {
+    if (d > 2 && (w < 70 || h < 70 || q() < 0.3)) { y.fillStyle = `rgba(${q() < 0.5 ? '255,255,255' : '0,0,0'},${0.03 + q() * 0.07})`; y.fillRect(x0, y0, w, h);
+      y.strokeStyle = 'rgba(20,20,22,0.45)'; y.lineWidth = 1.2; y.strokeRect(x0 + 0.5, y0 + 0.5, w - 1, h - 1);
+      y.fillStyle = 'rgba(30,30,32,0.35)'; for (let t = 6; t < w - 3; t += 9) { y.fillRect(x0 + t, y0 + 3, 1.2, 1.2); y.fillRect(x0 + t, y0 + h - 4, 1.2, 1.2); } for (let t = 6; t < h - 3; t += 9) { y.fillRect(x0 + 3, y0 + t, 1.2, 1.2); y.fillRect(x0 + w - 4, y0 + t, 1.2, 1.2); }
+      return; }
+    if (w > h) { const m = Math.round(w * (0.35 + q() * 0.3)); split(x0, y0, m, h, d + 1); split(x0 + m, y0, w - m, h, d + 1); }
+    else { const m = Math.round(h * (0.35 + q() * 0.3)); split(x0, y0, w, m, d + 1); split(x0, y0 + m, w, h - m, d + 1); }
+  };
+  split(0, 0, 256, 256, 0);
+  const tex = (c, srgb) => { const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
+  const foil = [tex(fc, true), tex(fc)], panel = [tex(pc, true), tex(pc)];
   root.updateMatrixWorld(true);
+  const N = new THREE.Vector3(), T = new THREE.Vector3(), B = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), X = new THREE.Vector3(1, 0, 0), P = new THREE.Vector3();
   root.traverse(o => {
-    if (!o.isMesh) return; const amber = /^blinn(1|9)SG/.test(o.material.name), silver = /^blinn4SG/.test(o.material.name);      // the amber blankets, and the silver film on the rest
-    if (o.geometry.attributes.uv || !(amber || silver)) return;
-    const g = o.geometry, p = g.attributes.position, nm = g.attributes.normal, uv = new Float32Array(p.count * 2), k = o.matrixWorld.getMaxScaleOnAxis() / 0.6;
-    for (let i = 0; i < p.count; i++) { const ax = Math.abs(nm.getX(i)), ay = Math.abs(nm.getY(i)), az = Math.abs(nm.getZ(i));
-      const [u, v] = ax >= ay && ax >= az ? [p.getZ(i), p.getY(i)] : ay >= az ? [p.getX(i), p.getZ(i)] : [p.getX(i), p.getY(i)]; uv[i * 2] = u * k; uv[i * 2 + 1] = v * k; }
-    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
-    const m = o.material.clone(); m.bumpMap = bump;
-    if (amber) { m.map = map; m.bumpScale = 1.5; m.metalness = 0.5; m.roughness = 0.38; m.color.multiply(new THREE.Color(0xd2b48c)); }      // amber, a little less yellow than the model's flat color
-    else { m.bumpScale = 0.5; m.metalness = 0.3; m.roughness = 0.45; }      // the silver: the crinkle only, faint
+    if (!o.isMesh || o.geometry.attributes.uv) return;
+    const amber = /^blinn(1|9)SG/.test(o.material.name), gray = /^blinn(3|4|7)SG/.test(o.material.name);      // the amber blankets; the light gray panels
+    if (!amber && !gray) return;
+    // the model's stored normals are smoothed across the panel edges (half of them lean 40° or more off their face), so
+    // each triangle is mapped by its own face: the mesh is split into separate triangles, each laid in its face's plane
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry, p = g.attributes.position, uv = new Float32Array(p.count * 2), k = 1 / (amber ? 0.6 : 1.4);
+    const W = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
+    for (let t = 0; t < p.count; t += 3) {      // in the plane of the face: across it level, and up it (in metres: the model's own frame is turned)
+      for (let j = 0; j < 3; j++) W[j].fromBufferAttribute(p, t + j).applyMatrix4(o.matrixWorld);
+      N.subVectors(W[1], W[0]).cross(P.subVectors(W[2], W[0])); if (N.lengthSq() < 1e-14) continue; N.normalize();
+      T.crossVectors(Math.abs(N.y) > 0.9 ? X : UP, N).normalize(); B.crossVectors(N, T);
+      for (let j = 0; j < 3; j++) { uv[(t + j) * 2] = W[j].dot(T) * k; uv[(t + j) * 2 + 1] = W[j].dot(B) * k; }
+    }
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); o.geometry = g;
+    const m = o.material.clone(), [map, bump] = amber ? foil : panel; m.map = map; m.bumpMap = bump;
+    if (amber) { m.bumpScale = 1.5; m.metalness = 0.5; m.roughness = 0.38; m.color.multiply(new THREE.Color(0xd2b48c)); }      // amber, a little less yellow than the model's flat color
+    else { m.bumpScale = 0.8; m.metalness = 0.25; m.roughness = 0.5; }
     o.material = m;
   });
 }

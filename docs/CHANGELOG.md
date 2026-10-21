@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.94 (zion-sky-v463)
+Lunar Rover: no more stray shadow blots in craters. Each rock is mostly buried, and the ground casts no shadow of its own, so on slopes facing away from the Sun the buried part threw a shadow up through the ground with no rock to explain it; now only the part above the ground casts one. The lunar module's foil no longer stretches: the model's stored normals are smoothed across its panel edges, so the box projection picked the wrong faces; each triangle is now mapped in the plane of its own face. The ascent stage's bare light-gray panels carry seams and rivet rows.
+
 ## v4.93 (zion-sky-v462)
 Lunar Rover: no invisible wall at the edge. About 50 m from it, Mission Control calls the crew back to the mission area and Gene Cernan drives back in, in the letterbox, until well inside (at most 30 s); then the controls are yours again. The map grew 110 m west and 55 m north and south, so there is room round Shorty. The lunar module stands on its footpads: the ground under it was sloping (one pad hung 0.85 m in the air, one was buried), so a pad about 12 m across is now leveled, and the model is set by its lowest point instead of an assumed origin. Its descent stage carries crinkled amber foil instead of flat yellow paint, the silver a faint crinkle too. Hands up on a big jump: the arms turn so the backs of the gloves face forward and the elbows stay soft; with the scan's curled fingers, palms out had read as claws.
 
