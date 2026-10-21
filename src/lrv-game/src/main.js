@@ -1425,22 +1425,38 @@ const SITES = [
     'Almost all of that soil is tiny beads and broken pieces of orange glass, colored by titanium. They were sprayed out in fire-fountain eruptions about 3.6 billion years ago, buried under a later lava flow, and brought back up by the impact that made the crater. In the core tube the crew drove into the rim, the orange gave way to black beads: the same glass, crystallized as it cooled.',
     'Decades later the beads changed ideas about the Moon itself. In 2008 a team led by Alberto Saal found traces of water in these volcanic glasses, and in 2011 tiny pockets of melt sealed inside crystals in this very soil showed that the Moon’s magma had held about a hundred times more water than earlier studies suggested.',
     '<i>The real Shorty is about 4.3 km west of the lander. It is drawn here at its true size but much closer, so the drive to it is short.</i>'] },
+  // Discoveries: rocks and soils brought back, each where it was found. Masses and descriptions from the Lunar Sample
+  // Compendium and NASA's Astromaterials 3D; img, when given, is a photograph in img/lrv/ (shown only if it loads).
+  { kind: 'find', at: () => [BOULDER.x - 10, BOULDER.z + 9, 2.5], label: '76535 · troctolite', name: '76535,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 6', body: [
+    'A troctolite: a coarse-grained igneous rock made almost entirely of large grains of pale green olivine and white plagioclase feldspar. It weighs about 156 g and came back in a rake sample from the soil at Station 6, the stop at the split boulder, on the third moonwalk.',
+    'It crystallized deep in the young Moon’s crust about 4.2 to 4.3 billion years ago, slowly enough to grow its large, interlocking grains, and was later dug out by impacts.',
+    'Few rocks have been studied so closely. In 2009 researchers at MIT found it weakly magnetized since it formed, evidence that the young Moon had a magnetic field from a molten core. In 2021, chemical differences still preserved inside its crystals showed it must have cooled within about 20 million years, far faster than the more than 100 million years once thought.'] },
+  { kind: 'find', at: () => { const dx = -0.65, dz = -0.76; return [VAN.x + dx * 48, VAN.z + dz * 48, 2.5]; }, label: '79115 · breccia', name: '79115,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 9', body: [
+    'Regolith breccia: loose lunar soil and broken rock welded into stone by the shock of an impact. On the third moonwalk the crew broke this 346 g piece off the top of a fractured boulder on the rim of Van Serg crater, hoping it would tell how and when the crater formed. Its partner, 79135, 2.3 kg, came from the bottom of the same boulder.',
+    'About 60% of it is a fine matrix of mineral debris and glass. Mixed through it are fragments of highland rock, mare basalt and other basalts, and beads of orange volcanic glass like those at Shorty crater: soil from across the valley, swept up and pressed together.'] },
+  { kind: 'find', at: () => [SHORTY.x + Math.cos(2.4) * SHORTY.R * 1.05, SHORTY.z + Math.sin(2.4) * SHORTY.R * 1.05, 2.5], label: '74220 · orange soil', name: '74220,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 4', body: [
+    'The orange soil itself: 1,180 g scooped from the rim of Shorty crater on the second moonwalk. With the samples from the trench Harrison Schmitt dug across the orange zone and the core tube driven beside it, the set comes to about 4.6 kg.',
+    'About 99% of it is beads and broken bits of orange glass; the rest is mostly fragments of basalt. Each bead is a droplet of lava sprayed from a fire fountain about 3.6 billion years ago and frozen to glass in flight. The color comes from titanium.',
+    'The beads still hold traces of the gases that drove the eruption. In 2008 and 2011 they gave the first strong evidence of water inside the Moon.'] },
 ];
 const _sp = new THREE.Vector3();
 let siteRun = false;
 function openSite(st) {
-  $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub; $('sc-b').innerHTML = st.body.map(t => `<p>${t}</p>`).join('');
+  $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub;
+  $('sc-b').innerHTML = (st.img ? `<figure><img src="${st.img}" alt="" onerror="this.parentNode.remove()"><figcaption>${st.cap || ''}</figcaption></figure>` : '') + st.body.map(t => `<p>${t}</p>`).join('');
   $('sitecard').classList.add('on'); siteRun = running; running = false;
 }
 $('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; });
-SITES.forEach(st => { const b = document.createElement('button'); b.className = 'site'; b.innerHTML = `<i></i>${st.name}`; b.addEventListener('click', () => openSite(st)); $('sites').appendChild(b); st.el = b; });
-function siteMarks() {
+SITES.forEach(st => { const b = document.createElement('button'); b.className = st.kind === 'find' ? 'site find' : 'site'; b.innerHTML = `<i></i>${st.label || st.name}`; b.addEventListener('click', () => openSite(st)); $('sites').appendChild(b); st.el = b; });
+function siteMarks() {      // shown when near, or when looked at fairly directly; fading out with distance and off to the side
+  camera.updateMatrixWorld();      // this frame's view (lookAt refreshes the matrix before it turns the camera)
   for (const st of SITES) {
     const [x, z, h] = st.at(), d = Math.hypot(x - camera.position.x, z - camera.position.z);
     _sp.set(x, ground(x, z) + h, z).project(camera);
-    const show = d < 320 && _sp.z < 1 && Math.abs(_sp.x) < 1.05 && Math.abs(_sp.y) < 1.05;
-    st.el.style.display = show ? 'flex' : 'none';
-    if (show) { st.el.style.left = ((_sp.x + 1) / 2 * innerWidth).toFixed(1) + 'px'; st.el.style.top = ((1 - _sp.y) / 2 * innerHeight).toFixed(1) + 'px'; st.el.style.opacity = d < 60 ? 1 : 0.7; }
+    const aim = Math.hypot(_sp.x, _sp.y * 0.8), far = st.kind === 'find' ? 150 : 280;
+    const o = _sp.z < 1 && Math.abs(_sp.x) < 1.05 && Math.abs(_sp.y) < 1.05 ? (d < 35 ? 1 : ss(far, far * 0.55, d) * ss(0.5, 0.28, aim)) : 0;
+    st.el.style.display = o > 0.02 ? 'flex' : 'none';
+    if (o > 0.02) { st.el.style.left = ((_sp.x + 1) / 2 * innerWidth).toFixed(1) + 'px'; st.el.style.top = ((1 - _sp.y) / 2 * innerHeight).toFixed(1) + 'px'; st.el.style.opacity = o.toFixed(2); }
   }
 }
 function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -car.steer * WHEELS[k].steer; w.spin.rotation.z = -WHEELS[k].spin; }); }
