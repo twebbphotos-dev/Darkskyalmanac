@@ -3,6 +3,13 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.87 (zion-sky-v456)
+Mars landing: no more flat patch or streaks over the terrain, a truer sky crane, and no stale outcrop marks.
+- The landing's far plain is flat and 4 m below the landing site inside the drivable terrain (it rises into the crater's relief only beyond it), so wherever the real ground lies lower, as on the floor west of the target, it covered the terrain with a featureless orange patch. It is no longer drawn inside the terrain's square.
+- The terrain mesh is fine near the rover and coarse beyond it along each axis separately, so in the arms straight out from the drivable square the cells are 1.25 m one way and up to 45 m the other; ground sampled finely across those long cells drew streaks pointing back at the center, seen from the descending lander. There the mesh now averages the height over the cell's longer side (the wheels still use the height function itself).
+- The descent stage is rebuilt after NASA/JPL photographs of the Mars 2020 hardware (no 3D model of it is published in NASA 3D Resources): a broad, low body wrapped in crinkled silver insulation with gold-wrapped boxes, three large wrapped propellant tanks and two small pressurant tanks, radar antennas and the bridle device beneath, four outriggers with the eight engines in pairs at the corners, and bell-shaped nozzles. It had been a dark hexagon with gold tanks.
+- The landing site map on the briefing marked outcrops numbered from an early version of the drive; they no longer match the game and are gone, legend included.
+
 ## v4.86 (zion-sky-v455)
 Lunar Rover: a map. A small round map under the title follows the rover (260 m across, north up) with your path, the time trial's loop and the lander; tap it for the whole valley: a shaded relief drawn from the drivable ground, your path in gold (kept on this device), the third drive in faint blue, and the names on the crew's traverse maps (Challenger, Stations 6, 8 and 9, Van Serg, Shorty, North Massif, with Sculptured Hills and South Massif pointed to off the edge). Tracy's Rock is left off, since it was named during the mission. Sample sites show as hints until their card has been opened, then by number. Opening the map pauses the drive.
 

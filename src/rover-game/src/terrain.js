@@ -469,9 +469,15 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
   const col = new Float32Array(n * n * 3);
   const sand = new Float32Array(n * n);
   const ground = new Float32Array(n * n * 2);       // x: bedrock pavement, y: cliff strata
+  // Beyond the drivable square the cells stretch: in the arms straight out from it they are fine one way and up to 45 m
+  // the other, and ground sampled finely across a long cell drew streaks pointing back at the center (seen from the
+  // descending lander). There the height is averaged over the cell's longer side, so it carries no detail the cell
+  // cannot hold. The wheels use height() itself, so driving is unchanged.
+  const span = coords.map((v, i) => (coords[Math.min(n - 1, i + 1)] - coords[Math.max(0, i - 1)]) / 2);
   for (let j = 0; j < n; j++) for (let i = 0; i < n; i++) {
-    const k = j * n + i, x = coords[i], z = coords[j];
-    pos[k * 3] = x; pos[k * 3 + 1] = height(x, z); pos[k * 3 + 2] = z;
+    const k = j * n + i, x = coords[i], z = coords[j], sp = Math.max(span[i], span[j]), h0 = height(x, z);
+    const hs = sp > 3 && (Math.abs(x) > FINE_HALF || Math.abs(z) > FINE_HALF) ? (h0 + height(x + sp / 2, z) + height(x - sp / 2, z) + height(x, z + sp / 2) + height(x, z - sp / 2)) / 5 : h0;
+    pos[k * 3] = x; pos[k * 3 + 1] = hs; pos[k * 3 + 2] = z;
     uv[k * 2] = x / TILE; uv[k * 2 + 1] = z / TILE;
   }
 

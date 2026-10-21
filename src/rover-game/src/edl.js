@@ -394,21 +394,51 @@ function buildChute() {
   return { group: g, canopy, length: 43.4 };          // canopy rim sits this far above the backshell top
 }
 
+/* crinkled multilayer insulation, the silver foil that wraps nearly all of the real descent stage; also its bump map */
+function foilTex(seed, base) {
+  const S = 256, c = canvasOf(S), x = c.getContext('2d'), r = rng(seed);
+  x.fillStyle = base; x.fillRect(0, 0, S, S);
+  for (let k = 0; k < 260; k++) {      // facets of crumpled film: small polygons a little lighter or darker
+    const cx = r() * S, cy = r() * S, n = 3 + (r() * 3 | 0), rad = 6 + r() * 18, l = r() < 0.5;
+    x.fillStyle = l ? `rgba(255,255,255,${0.06 + r() * 0.14})` : `rgba(0,0,0,${0.05 + r() * 0.14})`;
+    x.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * 6.283 + r(); x.lineTo(cx + Math.cos(a) * rad * (0.6 + r() * 0.6), cy + Math.sin(a) * rad * (0.6 + r() * 0.6)); } x.fill();
+  }
+  x.strokeStyle = 'rgba(40,40,44,0.25)'; x.lineWidth = 1;
+  for (let k = 0; k < 70; k++) { const x0 = r() * S, y0 = r() * S, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
+  const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4;
+  const bmp = new THREE.CanvasTexture(c); bmp.wrapS = bmp.wrapT = THREE.RepeatWrapping;
+  return [t, bmp];
+}
+/* The descent stage, after NASA/JPL photographs of the Mars 2020 hardware: a broad, low frame wrapped almost entirely in
+   crinkled silver insulation, gold-wrapped boxes on top, three large spherical propellant tanks (wrapped too) and two
+   small pressurant tanks, and four outriggers at the corners, each carrying a pair of the eight throttleable engines,
+   canted outward so the plumes miss the rover beneath. */
 function buildDescentStage() {
   const g = new THREE.Group();
-  const frame = new THREE.MeshStandardMaterial({ color: 0x3a3632, roughness: 0.6, metalness: 0.4 });
-  const gold = new THREE.MeshStandardMaterial({ color: 0xb8893a, roughness: 0.45, metalness: 0.65 });
-  const white = new THREE.MeshStandardMaterial({ color: 0xffffff, map: blanketTex(), roughness: 0.6, metalness: 0.1 });
-
-  const deck = new THREE.Mesh(new THREE.CylinderGeometry(1.45, 1.6, 0.34, 6), frame); deck.position.y = 0.5; g.add(deck);
-  const core = new THREE.Mesh(new THREE.CylinderGeometry(0.62, 0.7, 0.62, 12), white); core.position.y = 0.42; g.add(core);
-  for (let i = 0; i < 3; i++) {                                           // propellant tanks
-    const a = i / 3 * Math.PI * 2 + 0.52, t = new THREE.Mesh(new THREE.SphereGeometry(0.47, 18, 14), gold);
-    t.position.set(Math.cos(a) * 1.0, 0.72, Math.sin(a) * 1.0); g.add(t);
+  const [ft, fb] = foilTex(31, '#d6d8dd'), [gt, gb] = foilTex(57, '#b8913f');
+  const foil = new THREE.MeshStandardMaterial({ color: 0xffffff, map: ft, bumpMap: fb, bumpScale: 2, roughness: 0.42, metalness: 0.35 });
+  const goldFoil = new THREE.MeshStandardMaterial({ color: 0xffffff, map: gt, bumpMap: gb, bumpScale: 2, roughness: 0.4, metalness: 0.45 });
+  const frame = new THREE.MeshStandardMaterial({ color: 0x55565a, roughness: 0.55, metalness: 0.5 });
+  const dark = new THREE.MeshStandardMaterial({ color: 0x2a2a2d, roughness: 0.6, metalness: 0.4 });
+  const box = (w, h, d, m, x, y, z, ry = 0) => { const o = new THREE.Mesh(new RoundedBoxGeometry(w, h, d, 2, Math.min(w, h, d) * 0.12), m); o.position.set(x, y, z); o.rotation.y = ry; g.add(o); return o; };
+  // the main structure: a low, wide body, foil over a box frame, with an open bay beneath for the rover
+  box(2.3, 0.32, 1.7, foil, 0, 0.62, 0);
+  box(1.5, 0.22, 2.3, foil, 0, 0.6, 0);
+  for (const sx of [-1, 1]) for (const sz of [-1, 1]) {      // frame rails along the underside
+    const rail = new THREE.Mesh(new THREE.CylinderGeometry(0.035, 0.035, 2.2, 8), frame); rail.rotation.z = Math.PI / 2; rail.position.set(0, 0.44, sz * 0.72 + sx * 0.0); g.add(rail);
   }
-  for (let i = 0; i < 2; i++) {                                           // helium pressurant
-    const a = i * Math.PI + 1.57, t = new THREE.Mesh(new THREE.SphereGeometry(0.27, 14, 10), white);
-    t.position.set(Math.cos(a) * 0.95, 0.95, Math.sin(a) * 0.95); g.add(t);
+  // propellant: three big wrapped spheres on top, and two small pressurant tanks
+  for (let i = 0; i < 3; i++) { const a = i / 3 * Math.PI * 2 + Math.PI / 2, t = new THREE.Mesh(new THREE.SphereGeometry(0.46, 32, 22), foil); t.position.set(Math.cos(a) * 0.62, 0.98, Math.sin(a) * 0.62); g.add(t); }
+  for (const sx of [-1, 1]) { const t = new THREE.Mesh(new THREE.SphereGeometry(0.22, 24, 16), foil); t.position.set(sx * 0.95, 0.9, -0.55); g.add(t); }
+  // avionics and the radar electronics, in gold foil; the rover's umbilical and the bridle device beneath the center
+  box(0.55, 0.3, 0.4, goldFoil, -0.85, 0.92, 0.55, 0.3); box(0.42, 0.26, 0.36, goldFoil, 0.9, 0.9, 0.5, -0.4); box(0.35, 0.22, 0.5, goldFoil, 0, 0.88, -1.0);
+  const bud = new THREE.Mesh(new THREE.CylinderGeometry(0.16, 0.2, 0.22, 20), dark); bud.position.set(0, 0.38, 0); g.add(bud);
+  for (let i = 0; i < 6; i++) { const a = i / 6 * Math.PI * 2, d = new THREE.Mesh(new THREE.CylinderGeometry(0.11, 0.11, 0.03, 16), dark); d.position.set(Math.cos(a) * 0.75, 0.45, Math.sin(a) * 0.6); g.add(d); }      // radar antennas, looking down
+  // the four outriggers, out to the engine pairs at the corners
+  for (let c = 0; c < 4; c++) {
+    const a = c * Math.PI / 2 + Math.PI / 4, ex = Math.cos(a) * 1.5, ez = Math.sin(a) * 1.5;
+    for (const dy of [0.5, 0.72]) { const L = 1.0, arm = new THREE.Mesh(new THREE.CylinderGeometry(0.04, 0.04, L, 8), frame); arm.position.set(Math.cos(a) * 1.0, dy, Math.sin(a) * 1.0); arm.rotation.set(0, -a, Math.PI / 2); g.add(arm); }
+    const pod = new THREE.Mesh(new RoundedBoxGeometry(0.42, 0.3, 0.55, 2, 0.05), foil); pod.position.set(ex, 0.6, ez); pod.rotation.y = -a; g.add(pod);
   }
   // eight throttled engines in four pairs, canted outward so the plumes miss the rover
   const nozzles = [], plumes = [];
@@ -425,7 +455,8 @@ function buildDescentStage() {
     const piv = new THREE.Group();
     piv.position.set(Math.cos(a) * 1.5, 0.36, Math.sin(a) * 1.5);
     piv.rotation.set(Math.sin(a) * 0.36, 0, -Math.cos(a) * 0.36);        // cant outward
-    const nz = new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.17, 0.4, 12, 1, true), frame); nz.position.y = -0.2;
+    const bell = [[0.06, 0.02], [0.064, -0.05], [0.085, -0.14], [0.115, -0.24], [0.15, -0.34]].map(q => new THREE.Vector2(q[0], q[1]));      // a bell nozzle, not a cone
+    const nz = new THREE.Mesh(new THREE.LatheGeometry(bell, 24), new THREE.MeshStandardMaterial({ color: 0x9a9894, roughness: 0.4, metalness: 0.45, side: THREE.DoubleSide }));
     const pl = new THREE.Mesh(new THREE.CylinderGeometry(0.15, 0.5, 2.6, 12, 1, true), plumeMat); pl.position.y = -1.7;
     piv.add(nz, pl); g.add(piv); nozzles.push(piv); plumes.push(pl);
   }
@@ -463,6 +494,7 @@ export function createEDL(ctx) {
           diffuseColor.rgb *= clamp( mix( 1.0, d1, 0.5 ) * mix( 1.0, d2, 0.35 ) * mix( 1.0, d3, 0.26 ) * mix( 1.0, d4, 0.24 ), 0.45, 1.7 );
           float inMap = smoothstep( 0.5, 0.42, max( abs( vMapUv.x - 0.5 ), abs( vMapUv.y - 0.5 ) ) );      // past the edge of the map: its average colour, not its edge pixels smeared outward
           diffuseColor.rgb = mix( texture2D( map, vec2( 0.5 ), 12.0 ).rgb * diffuse, diffuseColor.rgb, inMap );`);
+      if (ctx.ext) sh.fragmentShader = sh.fragmentShader.replace('void main() {', `void main() {\n  if ( max( abs( vWP.x ), abs( vWP.z ) ) < ${(ctx.ext - 120).toFixed(1)} ) discard;      // the real terrain covers this square; the plain, flat and low here, showed through its hollows`);
     };
     applyGrade(mat, true);
     const m = new THREE.Mesh(geo, mat);
@@ -1635,12 +1667,6 @@ export function createEDL(ctx) {
       const px = m => (m + HALF) / (HALF * 2) * S, len = m => m / (HALF * 2) * S;
       c.strokeStyle = 'rgba(242,228,190,.5)'; c.lineWidth = 1; c.setLineDash([3, 4]);
       c.beginPath(); c.arc(px(0), px(0), len(lim), 0, 6.2832); c.stroke(); c.setLineDash([]);
-      // the outcrops: what the landing site was chosen for
-      (ctx.outcrops || []).forEach(([x, z], i) => {
-        c.save(); c.translate(px(x), px(z)); c.rotate(Math.PI / 4);
-        c.fillStyle = INK; c.strokeStyle = 'rgba(20,12,8,.8)'; c.lineWidth = 1.5; c.fillRect(-4, -4, 8, 8); c.strokeRect(-4, -4, 8, 8); c.restore();
-        label(c, String(i + 1), px(x) + 10, px(z) - 7, 'left', 11);
-      });
       // the target, and the way in
       const T = ctx.target;
       c.strokeStyle = GOLDC; c.lineWidth = 2;
