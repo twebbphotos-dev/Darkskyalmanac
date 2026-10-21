@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.85 (zion-sky-v454)
+Lunar Rover: the orange soil photograph (AS17-137-20990) on the 74220 card has its color raised 25% from NASA's original so the orange reads on a phone, still close to the frame as published; the caption says the color is enhanced.
+
 ## v4.84 (zion-sky-v453)
 Lunar Rover: photographs on the site and discovery cards. NASA's own pictures, public domain, captioned with their frame numbers: Schmitt beside the boulder at Station 6 (AS17-146-22294), Schmitt in the rover at Van Serg (AS17-134-20454), looking into Shorty crater (AS17-137-20992), the orange soil with the gnomon (AS17-137-20990), the orange glass beads under the microscope (S73-15171, 0.02–0.045 mm across, ×160), and the laboratory photographs of 76535 (S73-19456) and 79115 (S73-15396) from NASA's lunar sample catalog. Seven images, 900 px or less, 0.9 MB, in lrv/img/, saved with the rest of the game by Download everything. Credited on the Sources page.
 

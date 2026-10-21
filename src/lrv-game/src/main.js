@@ -1446,7 +1446,7 @@ const SITE_IMGS = {
   'Shorty crater': [['img/shorty.jpg', 'Looking into Shorty crater from Station 4, with the orange soil on its rim. AS17-137-20992, 12 December 1972. NASA.']],
   '76535,0': [['img/76535.jpg', 'Sample 76535, photographed at NASA’s Manned Spacecraft Center (now Johnson Space Center) in 1973. NASA photo S73-19456.']],
   '79115,0': [['img/79115.jpg', 'Sample 79115, photographed at NASA’s Manned Spacecraft Center (now Johnson Space Center) in 1973. NASA photo S73-15396.']],
-  '74220,0': [['img/orange-soil.jpg', 'The orange soil at Station 4, Shorty crater. The tripod is the gnomon, the crew’s reference for scale, sun angle and color. AS17-137-20990, 12 December 1972. NASA.'],
+  '74220,0': [['img/orange-soil.jpg', 'The orange soil at Station 4, Shorty crater. The tripod is the gnomon, the crew’s reference for scale, sun angle and color. AS17-137-20990, 12 December 1972, color gently enhanced. NASA.'],
     ['img/orange-beads.jpg', 'Orange glass beads and fragments from the soil, 0.02 to 0.045 mm across, magnified 160 times. NASA photo S73-15171, January 1973.']],
 };
 SITES.forEach(st => { st.imgs = SITE_IMGS[st.name] || []; });
