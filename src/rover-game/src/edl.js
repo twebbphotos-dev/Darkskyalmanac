@@ -533,21 +533,42 @@ export function createEDL(ctx) {
   /* ── the globe world (kilometres) ───────────────────────────── */
   const space = new THREE.Scene();
   const bgCam = new THREE.PerspectiveCamera(55, 1, 0.4, 30000);
+  // The regional map, drawn into the globe's own shader as a cap round Jezero (gnomonic, 60 km square, feathered at its
+  // edge), so map and planet share one light and one haze and meet without a halo. The whole globe is tinted so that
+  // round Jezero it has the map's colour: the rust of the rest of the simulator and of the CTX pictures, not tan.
+  const capCv = canvasOf(1024);
+  {
+    const c = capCv.getContext('2d'); c.drawImage(regionCv, 0, 0, 1024, 1024);
+    const g = c.createRadialGradient(512, 512, 300, 512, 512, 508);
+    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
+    c.globalCompositeOperation = 'destination-in'; c.fillStyle = g; c.fillRect(0, 0, 1024, 1024);
+  }
+  const capTex = new THREE.CanvasTexture(capCv); capTex.colorSpace = THREE.SRGBColorSpace; capTex.flipY = false; capTex.anisotropy = 8;
+  const castV = `vec3( ${LIGHT_CAST.map(v => v.toFixed(3)).join(', ')} )`, capK = new THREE.Color(0xa1ada7);
   const globeMat = new THREE.ShaderMaterial({
     uniforms: {
-      map: { value: null }, detail: { value: mottle }, sunDir: { value: new THREE.Vector3() },
-      haze: { value: new THREE.Color(0xb08f6c) }, hazeAmt: { value: 0.8 },
+      map: { value: null }, detail: { value: mottle }, cap: { value: capTex }, tint: { value: new THREE.Vector3(1, 1, 1) }, sunDir: { value: new THREE.Vector3() },
+      haze: { value: new THREE.Color(0xa8705a) }, hazeAmt: { value: 0.8 },
     },
     vertexShader: `varying vec2 vUv; varying vec3 vN; varying vec3 vW;
       void main(){ vUv = uv; vN = normalize( mat3( modelMatrix ) * normal ); vec4 w = modelMatrix * vec4( position, 1.0 ); vW = w.xyz;
         gl_Position = projectionMatrix * viewMatrix * w; }`,
-    fragmentShader: `uniform sampler2D map; uniform sampler2D detail; uniform vec3 sunDir; uniform vec3 haze; uniform float hazeAmt;
+    fragmentShader: `uniform sampler2D map; uniform sampler2D detail; uniform sampler2D cap; uniform vec3 tint; uniform vec3 sunDir; uniform vec3 haze; uniform float hazeAmt;
       varying vec2 vUv; varying vec3 vN; varying vec3 vW;
+      vec3 marsGrade( vec3 c ) { float l = dot( c, vec3( 0.2126, 0.7152, 0.0722 ) ); c = mix( vec3( l ), c, ${GRADE.sat.toFixed(3)} ); return c * vec3( ${GRADE.gain.map(v => v.toFixed(3)).join(', ')} ); }
       void main(){
-        vec3 c = texture2D( map, vUv ).rgb;
+        vec3 c = min( texture2D( map, vUv ).rgb * tint, vec3( 1.0 ) );
         vec2 d = vUv * vec2( 2.0, 1.0 );
         float m = texture2D( detail, d * 110.0 ).r * 0.4 + texture2D( detail, d * 760.0 ).r * 0.35 + texture2D( detail, d * 4300.0 ).r * 0.25;
-        c *= 0.62 + m * 0.95;
+        c *= 0.84 + m * 0.32;      // a little grain below the picture's own 15 km pixels, not blotches
+        vec3 dir = normalize( vW );
+        if ( dir.y > 0.99 ) {      // the map, 60 km round Jezero (at the top of the globe, east +x, south +z)
+          vec2 q = dir.xz / dir.y * ${R_MARS.toFixed(1)} / 60.0 + 0.5;
+          if ( q.x > 0.0 && q.x < 1.0 && q.y > 0.0 && q.y < 1.0 ) {
+            vec4 k = texture2D( cap, q );
+            c = mix( c, marsGrade( k.rgb / ${castV} ) * ${castV} * vec3( ${capK.r.toFixed(3)}, ${capK.g.toFixed(3)}, ${capK.b.toFixed(3)} ), k.a );
+          }
+        }
         vec3 n = normalize( vN );
         c *= clamp( dot( n, sunDir ) * 0.85 + 0.42, 0.08, 1.15 );
         float graze = 1.0 - max( dot( n, normalize( cameraPosition - vW ) ), 0.0 );
@@ -567,34 +588,29 @@ export function createEDL(ctx) {
     globe.quaternion.setFromRotationMatrix(new THREE.Matrix4().makeBasis(east, up, north.negate()).transpose());
   }
   space.add(globe);
-  new THREE.TextureLoader().load('img/mars-globe.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; globeMat.uniforms.map.value = t; });
-
-  // the drawn regional map, laid on the globe as a cap round Jezero and feathered at its edge
-  {
-    const cv = canvasOf(1024), c = cv.getContext('2d');
-    c.drawImage(regionCv, 0, 0, 1024, 1024);
-    const g = c.createRadialGradient(512, 512, 330, 512, 512, 508);
-    g.addColorStop(0, 'rgba(0,0,0,1)'); g.addColorStop(1, 'rgba(0,0,0,0)');
-    c.globalCompositeOperation = 'destination-in'; c.fillStyle = g; c.fillRect(0, 0, 1024, 1024);
-    const tex = new THREE.CanvasTexture(cv); tex.colorSpace = THREE.SRGBColorSpace; tex.flipY = false;
-    const N = 48, pos = [], uv = [], idx = [];
-    for (let j = 0; j <= N; j++) for (let i = 0; i <= N; i++) {
-      const x = (i / N - 0.5) * 60, z = (j / N - 0.5) * 60, v = new THREE.Vector3(x, R_MARS, z).setLength(R_MARS + 0.03);
-      pos.push(v.x, v.y, v.z); uv.push(i / N, j / N);
-    }
-    for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const a = j * (N + 1) + i; idx.push(a, a + N + 1, a + 1, a + 1, a + N + 1, a + N + 2); }
-    const geo = new THREE.BufferGeometry();
-    geo.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); geo.setAttribute('uv', new THREE.Float32BufferAttribute(uv, 2)); geo.setIndex(idx);
-    const m = new THREE.Mesh(geo, applyGrade(new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, color: 0xa1ada7 }), true));
-    m.renderOrder = 1; space.add(m);
-  }
+  new THREE.TextureLoader().load('img/mars-globe.jpg', t => {
+    t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; globeMat.uniforms.map.value = t;
+    // the tint: the map's colour, graded as the shader grades it, over the globe picture's colour round Jezero (both linear)
+    const lin = v => Math.pow(v / 255, 2.2), W = t.image.width, H = t.image.height, cv = canvasOf(W); cv.height = H;
+    const c = cv.getContext('2d', { willReadFrequently: true }); c.drawImage(t.image, 0, 0);
+    const l = new THREE.Vector3(0, 1, 0).applyQuaternion(globe.quaternion.clone().invert());      // Jezero, in the sphere's own frame
+    const th = Math.acos(l.y), ph = (Math.atan2(l.z, -l.x) + 2 * Math.PI) % (2 * Math.PI);
+    const gx = Math.round(ph / (2 * Math.PI) * W), gy = Math.round(th / Math.PI * H), gd = c.getImageData(gx - 4, gy - 4, 9, 9).data;
+    const cd = regionCv.getContext('2d').getImageData(0, 0, regionCv.width, regionCv.height).data, S = regionCv.width;
+    const gm = [0, 0, 0], cm = [0, 0, 0]; let n = 0;
+    for (let o = 0; o < gd.length; o += 4) for (let k = 0; k < 3; k++) gm[k] += lin(gd[o + k]) / 81;
+    for (let y = 0; y < S; y += 8) for (let x = 0; x < S; x += 8) { const r = Math.hypot(x - S / 2, y - S / 2) / (S / 2); if (r < 0.55 || r > 0.95) continue; const o = (y * S + x) * 4; for (let k = 0; k < 3; k++) cm[k] += lin(cd[o + k]); n++; }
+    const cast = LIGHT_CAST, K = [capK.r, capK.g, capK.b], a = cm.map((v, k) => v / n / cast[k]), L = 0.2126 * a[0] + 0.7152 * a[1] + 0.0722 * a[2];
+    const graded = a.map((v, k) => (L + (v - L) * GRADE.sat) * GRADE.gain[k] * cast[k] * K[k]);
+    globeMat.uniforms.tint.value.set(...graded.map((v, k) => Math.min(3, v / Math.max(1e-4, gm[k]))));
+  });
   // thin air, seen edge-on
   const air = new THREE.Mesh(new THREE.SphereGeometry(R_MARS * 1.012, 96, 48), new THREE.ShaderMaterial({
     transparent: true, depthWrite: false, blending: THREE.AdditiveBlending,
     vertexShader: 'varying vec3 vN; varying vec3 vW; void main(){ vN = normalize( mat3( modelMatrix ) * normal ); vec4 w = modelMatrix * vec4( position, 1.0 ); vW = w.xyz; gl_Position = projectionMatrix * viewMatrix * w; }',
     fragmentShader: `varying vec3 vN; varying vec3 vW;
       void main(){ float g = 1.0 - abs( dot( normalize( vN ), normalize( cameraPosition - vW ) ) );
-        gl_FragColor = vec4( vec3( 0.80, 0.56, 0.38 ) * pow( g, 5.0 ) * 0.9, 1.0 ); }`,
+        gl_FragColor = vec4( vec3( 0.78, 0.47, 0.33 ) * pow( g, 5.0 ) * 0.9, 1.0 ); }      // dusty, not tan`,
   }));
   space.add(air);
   const stars = (() => {

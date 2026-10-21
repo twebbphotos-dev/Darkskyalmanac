@@ -75,9 +75,10 @@
   .spec span{color:var(--mute);text-transform:uppercase;letter-spacing:.1em;font-size:8.5px;padding-top:2px}
   .spec b{color:var(--hi);font-weight:500}
   .fine{font-size:10px !important;color:var(--mute) !important}
-  .pick{display:flex;align-items:center;gap:7px;flex-wrap:wrap;margin:0 0 16px}
-  .pick span{font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute);margin-right:6px}
-  .pick button{font:inherit;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:999px;padding:7px 12px;cursor:pointer}
+  .pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
+  .pick span{grid-column:1/-1;font-size:8.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--mute)}
+  .pick button{font:inherit;font-size:9.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--dim);background:transparent;border:1px solid rgba(203,168,90,.35);border-radius:10px;padding:8px 4px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px}
+  .pick button small{font-size:9px;letter-spacing:.04em;text-transform:none;opacity:.75}
   .pick button.on{color:#0d0a18;background:var(--gold);border-color:var(--gold);font-weight:600}
   /* site cards: markers in the view, a card when tapped */
   .site{position:fixed;left:0;top:0;z-index:17;display:none;align-items:center;gap:6px;transform:translate(-50%,-100%);pointer-events:auto;cursor:pointer;
@@ -148,7 +149,7 @@
       <span>Ground</span><b>The valley's shape and the mountains are real, from NASA's terrain model of the site, but drawn at a quarter of their size across, so every distance here is a quarter of the real one: the real drives were four times as long. Heights are squashed less, so slopes come out about 1.6 times real. The craters and rocks underfoot are generated: the model is too coarse for them</b>
     </div>
     <p class="fine">Roam where you like. For a time trial, drive through the faint ring just north of the lander: the clock starts and a dotted line marks the real third drive as a loop, north to the split boulder at stop 6 (Tracy’s Rock, which Gene Cernan named for his daughter), east to stop 8 and home past Van Serg crater (stop 9). Pass each stop in turn and come back through the ring to stop the clock. Your best loop and your top speed are kept for each speed setting; to beat Cernan’s <span id="fine-rec">18 km/h</span> you will need a downhill stretch, since on the flat the motors top out just under it. Roll it hard and it breaks apart, and a new rover waits where you last drove safely. Look for a fresh crater with a sharp rim, and drive off the edge. Earth hangs in the west-southwest, where it always is from here. The Seat camera puts you where Gene Cernan sat.</p>
-    <div class="pick" id="speedpick"><span>Speed</span><button data-v="1">Real · 18 km/h</button><button data-v="2">Double · 36 km/h</button><button data-v="3">Triple · 54 km/h</button></div>
+    <div class="pick" id="speedpick"><span>Speed</span><button data-v="1">Real<small>18 km/h</small></button><button data-v="2">Double<small>36 km/h</small></button><button data-v="3">Triple<small>54 km/h</small></button></div>
     <button class="btn primary" id="btn-go">Start driving</button>
   </div>
 </div>

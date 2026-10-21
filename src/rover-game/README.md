@@ -679,3 +679,19 @@ relief fades by pixel footprint, not distance, so far crests do not alias.
   adds it with its ring and a "New objective" toast.
 
 v4.64: cinematic landing (edl.js, E.cine). begin('intro', true) from the briefing's "Watch it, narrated". autoBank() flies bank angle for range and reverses at a cross-range corridor that narrows with time; attitude() damps the swing with a PD law; the parachute fires on a Range Trigger (as soon as the speed is safe if long, when the predicted miss reaches zero if short); the backshell goes at 2.1 km; autoDivert() flies to the safe point nearest the target. cineWarp() runs the clock a little faster than the game and slows it while captions are queued. say() and prompt() are silent; cineCues() queues the narration.
+
+## v4.91: the landing ground from orbit
+
+- The landing level (no `?level`) now lays HiRISE pictures on its ground like the year levels: `img/landing_hr.jpg`,
+  `landing_area.jpg` (src/jezero-crater/pictures.py) and `landing_relief.jpg`, `landing_dunes.jpg` (relief.py landing).
+  `HI` in terrain.js is the year level's pictures or these. The TRN elevation (`dtm/site_1m.png`, `area_4m.png`) sits
+  20 m east and 48 m south of the viewer's HiRISE tiles (hillshade cross-correlation, same at 1 m and 4 m), so the
+  landing pictures are cut 20 m west and 48 m north; the residual is about 1 m.
+- With the real elevation loaded, the invented rim wall round the roaming circle and the six mesas are off (they were
+  the stepped terraces seen from the descent stage); the rover is held in the circle as in the year levels.
+- Where the HiRISE 4 m picture covers the ground, the fbm light and dark (48 m, 210 m) and most of the 31 m grain give
+  way to the picture (`fakeK`); the painted beds on steep faces fade between 60 and 200 m (`cliffK`).
+- pictures.py fills HiRISE gaps in every `NAME_area.jpg` from the CTX map, matched per channel and feathered over 200 m.
+- Entry: the regional map is sampled in the globe's shader (gnomonic, 60 km, alpha-feathered); `tint` scales the globe
+  picture so that round Jezero it has the map's graded color. Haze 0xa8705a, limb glow (0.78, 0.47, 0.33).
+- Dust puffs: per-point alpha (vertex color, 4 components), ground-colored sprite.

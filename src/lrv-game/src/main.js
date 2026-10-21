@@ -49,7 +49,7 @@ function demRaw(X, Z) {      // metres, at X east and Z south of the lander in r
 }
 let DEM0 = 0;
 function demGame(x, z) { const X = x * SQ, Z = z * SQ; return (demRaw(X, Z) - DEM0) * SV - (X * X + Z * Z) / (2 * RM) * SV; }
-const craters = [], rocks = [], VAN = { x: 0, z: 0 }, SHORTY = { x: -120, z: 10, R: 55 };
+const craters = [], rocks = [], VAN = { x: 0, z: 0 }, SHORTY = { x: -158, z: 62, R: 55 };
 { const r = rng(1972);
   const add = (x, z, R, fresh) => craters.push({ x, z, R, fresh, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
   // a few fresh ones within reach of the start, the rims to aim for
@@ -81,19 +81,24 @@ const craters = [], rocks = [], VAN = { x: 0, z: 0 }, SHORTY = { x: -120, z: 10,
   { const v = rng(17), x = 421.75 + 38, z = -303 + 44; add(x, z, 50, 0.5); VAN.x = x; VAN.z = z;
     for (let i = 0; i < 170; i++) { const a = v() * 6.2832, d = 50 * (0.86 + Math.pow(v(), 1.5) * 1.1);
       rocks.push({ x: x + Math.cos(a) * d, z: z + Math.sin(a) * d, s: 0.07 + Math.pow(v(), 4) * 0.95, yaw: v() * 6.28, k: v() }); } }
-  // Shorty, stop 4 of the second drive: about 110 m across and up to 14 m deep, true size, but drawn here about 110 m west
-  // of the lander, where the real one is some 4.3 km west. Its rim, where Harrison Schmitt found the orange soil, is tinted
+  // Shorty, stop 4 of the second drive: about 110 m across and up to 14 m deep, true size, but drawn here about 160 m
+  // west-southwest of the lander, out the way the second drive went, where the real one is some 4.3 km west. Smaller craters
+  // that would cut its rim are cleared first (after the blocks are thrown, so nothing else moves). Its rim, where Harrison Schmitt found the orange soil, is tinted
   // (orangeAt, below). A few blocks on the rim; its own random numbers.
+  for (let i = craters.length - 1; i >= 0; i--) if (Math.hypot(craters[i].x - SHORTY.x, craters[i].z - SHORTY.z) < SHORTY.R * 1.25 + craters[i].R * 0.5) craters.splice(i, 1);
   { const v = rng(74); craters.push({ x: SHORTY.x, z: SHORTY.z, R: SHORTY.R, fresh: 0.5, depth: 14, rim: 2.2 });
     for (let i = 0; i < 70; i++) { const a = v() * 6.2832, d = SHORTY.R * (0.9 + Math.pow(v(), 1.5) * 0.8);
       rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.08 + Math.pow(v(), 4) * 0.8, yaw: v() * 6.28, k: v() }); } }
 }
-// The orange soil: glass beads from fire-fountain eruptions, buried under later lava and dug out by the impact, lying in
-// patches on and just outside the rim. Drawn as a light tint on the ground's own color, never a painted ring.
+// The orange soil: glass beads from fire-fountain eruptions, buried under later lava and dug out by the impact. Schmitt
+// found it as a narrow zone on the rim, not a ring round the crater: here two patches on the rim, the larger where the
+// sample was scooped (74220), elongated along the rim and broken up at the edges. A light tint on the ground's own color.
+const ORANGE = [[2.4, 1.02, 0.15, 0.09, 1], [2.95, 1.06, 0.08, 0.06, 0.7]];      // angle round the rim, distance out (radii), spread along and across, strength
 function orangeAt(x, z) {
-  const d = Math.hypot(x - SHORTY.x, z - SHORTY.z) / SHORTY.R; if (d < 0.8 || d > 1.6) return 0;
-  const band = ss(0.82, 0.96, d) * ss(1.55, 1.08, d), a = Math.atan2(z - SHORTY.z, x - SHORTY.x);
-  return band * (0.35 + 0.65 * Math.max(0, Math.cos(a - 2.4))) * ss(0.42, 0.62, fbm(x / 7 + 3, z / 7 - 5, 3));      // stronger round one side, in patches
+  const dx = x - SHORTY.x, dz = z - SHORTY.z, d = Math.hypot(dx, dz) / SHORTY.R; if (d < 0.75 || d > 1.35) return 0;
+  const a = Math.atan2(dz, dx); let w = 0;
+  for (const [a0, d0, sa, sd, k] of ORANGE) { let da = a - a0; da -= 6.2832 * Math.round(da / 6.2832); w = Math.max(w, k * Math.exp(-(da * da) / (2 * sa * sa) - ((d - d0) * (d - d0)) / (2 * sd * sd))); }
+  return w < 0.02 ? 0 : ss(0.15, 0.55, w * (0.6 + 0.8 * fbm(x / 5 + 3, z / 5 - 5, 3)));
 }
 const tintOrange = (b, w, out) => { out[0] = b * (1 + 0.38 * w); out[1] = b * (1 + 0.06 * w); out[2] = b * (1 - 0.36 * w); return out; };
 const CG = 16, CRATER_GRID = new Map();      // craters by 16 m cell, so each point checks only its neighbors
@@ -521,10 +526,10 @@ const MASS = 700, I = new THREE.Vector3(MASS / 12 * (1.1 ** 2 + 2.06 ** 2), MASS
 // Speed, chosen on the briefing card: real (1), double (2), or triple (3, unlocked by finishing the time trial once),
 // the faster ones with stronger motors and grippier tires to get there
 const unlocked3 = () => true;      // open to everyone for now (it was unlocked by finishing a lap: !!(REC.lap || REC.lap2 || REC.lap3))
-let SPD = (() => { try { return +localStorage.getItem('lrv-speed') || 1; } catch (e) { return 1; } })();
+let SPD = (() => { try { return +localStorage.getItem('lrv-spd') || 2; } catch (e) { return 2; } })();      // double unless chosen otherwise (a new key: the old one held everyone's first default, real)
 const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.6;
 let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
-function setSpeed(n) { SPD = n === 3 && unlocked3() ? 3 : n === 2 || n === 3 ? 2 : 1; MU = [0.62, 0.85, 1.0][SPD - 1]; VMAX = [5.0, 11.2, 15.0][SPD - 1]; try { localStorage.setItem('lrv-speed', String(SPD)); } catch (e) { /* not remembered */ } }
+function setSpeed(n) { SPD = n === 3 && unlocked3() ? 3 : n === 2 || n === 3 ? 2 : 1; MU = [0.62, 0.85, 1.0][SPD - 1]; VMAX = [5.0, 11.2, 15.0][SPD - 1]; try { localStorage.setItem('lrv-spd', String(SPD)); } catch (e) { /* not remembered */ } }
 const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0, off: 0, hit: 0 }));      // off: time out of contact; hit: how hard it came down, for the dust
 const LM = { on: false, x: -12, z: 4, y: 0 };      // where the lunar module stands; measured from its model: footpads 4.1 m out along each axis, the descent stage 2.2 m round
 const HULL = []; for (const x of [-1.5, 1.5]) for (const z of [-1.0, 1.0]) for (const y of [-0.3, 0.75]) HULL.push(new THREE.Vector3(x, y, z));
@@ -1102,7 +1107,7 @@ let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
 if (U.US) {      // the start card, in US units
-  document.querySelectorAll('#speedpick button').forEach(b => { b.textContent = ['Real', 'Double', 'Triple'][b.dataset.v - 1] + ' · ' + U.kmh(18 * b.dataset.v); });
+  document.querySelectorAll('#speedpick button').forEach(b => { b.innerHTML = ['Real', 'Double', 'Triple'][b.dataset.v - 1] + '<small>' + U.kmh(18 * b.dataset.v) + '</small>'; });
   $('spec-rover').textContent = 'About 1,540 lb loaded with crew; 10 ft long; four wire-mesh wheels, each with its own motor; front and rear steering';
   $('fine-rec').textContent = '11 mph';
   $('spec-top').textContent = '11 mph, the record Gene Cernan set on Apollo 17 (it was built for about 8 mph on the level). Faster downhill, where gravity does the work';

@@ -141,11 +141,11 @@ addEventListener('resize', resize);
 resize();
 
 /* ── outcrops ─────────────────────────────────────────────────── */
-let SURPRISE = null;      // an objective that appears only once the first is done (2022: the blue sunset)
+let SURPRISE = null;      // an objective that appears only once all the others are done (2022: the blue sunset, ending the level)
 function revealSurprise() {
-  if (!SURPRISE || S.logged < 1) return;
+  if (!SURPRISE || S.outcrops.some(o => !o.logged)) return;
   const o = SURPRISE; SURPRISE = null; o.ring.visible = true; S.outcrops.push(o); marks.push(makeMark());
-  toastSoon(o.sunset ? 'New objective · take a panorama of the blue sunset, at the end of the path' : `New objective · ${o.label}`);
+  if (!o.sunset) toastSoon(`New objective · ${o.label}`);      // the sunset is announced as the last card closes
 }
 /* In a year level the objectives are the level's goals: a rock to analyze (outcrop) or to core (sample), or a point of
    interest for a Mastcam-Z panorama (pano), which has no rock, only a marker you can see from the start. */
@@ -157,7 +157,7 @@ GOALS.filter(g => g.type === 'pano').forEach(g => {
   const ring = new THREE.Mesh(new THREE.RingGeometry(7, 7.6, 64), ringMat);
   ring.position.set(g.x, y + 0.2, g.z); ring.quaternion.setFromUnitVectors(new THREE.Vector3(0, 0, 1), normalAt(g.x, g.z, 5)); scene.add(ring);
   const o = { type: 'pano', sunset: !!g.sunset, name: g.real.t, label: g.label, short: g.short || g.label, site: g.real, pos: new THREE.Vector3(g.x, y, g.z), focus: new THREE.Vector3(g.x, y + 2, g.z), ring, ringMat, found: true, logged: false };
-  if (g.sunset) { ring.visible = false; SURPRISE = o; } else S.outcrops.push(o);      // the blue sunset is a surprise: kept out of the objectives until the first is done
+  if (g.sunset) { ring.visible = false; SURPRISE = o; } else S.outcrops.push(o);      // the blue sunset is a surprise: kept out of the objectives until the rest are done
 });
 GOALS.filter(q => q.type !== 'pano').forEach((goal, i) => {
   const x = goal.x, z = goal.z;
@@ -277,19 +277,20 @@ const dust = (() => {
   const cv = document.createElement('canvas'); cv.width = cv.height = 64;
   const c = cv.getContext('2d');
   const g = c.createRadialGradient(32, 32, 0, 32, 32, 32);
-  g.addColorStop(0, 'rgba(206,176,145,.8)'); g.addColorStop(1, 'rgba(206,176,145,0)');
+  g.addColorStop(0, 'rgba(176,120,86,.8)'); g.addColorStop(0.6, 'rgba(176,120,86,.3)'); g.addColorStop(1, 'rgba(176,120,86,0)');      // the ground's own dust, not pale smoke
   c.fillStyle = g; c.fillRect(0, 0, 64, 64);
 
   const pos = new Float32Array(DUST_N * 3).fill(-999);
   const geo = new THREE.BufferGeometry();
   geo.setAttribute('position', new THREE.BufferAttribute(pos, 3));
+  const col = new Float32Array(DUST_N * 4).fill(1); geo.setAttribute('color', new THREE.BufferAttribute(col, 4));      // alpha: each puff thickens, then thins away
   const pts = new THREE.Points(geo, new THREE.PointsMaterial({
-    map: new THREE.CanvasTexture(cv), size: 1.4, transparent: true,
+    map: new THREE.CanvasTexture(cv), size: 1.4, transparent: true, vertexColors: true,
     depthWrite: false, opacity: 0.5, sizeAttenuation: true,
   }));
   pts.frustumCulled = false;
   scene.add(pts);
-  return { pts, pos, geo, vel: new Float32Array(DUST_N * 3), life: new Float32Array(DUST_N), head: 0 };
+  return { pts, pos, col, geo, vel: new Float32Array(DUST_N * 3), life: new Float32Array(DUST_N), head: 0 };
 })();
 
 function puff(x, y, z, spread = 0.6, up = 0.8) {
@@ -306,8 +307,9 @@ function stepDust(dt) {
     for (let k = 0; k < 3; k++) dust.pos[i * 3 + k] += dust.vel[i * 3 + k] * dt;
     dust.vel[i * 3 + 1] -= dt * 0.3;
     if (dust.life[i] <= 0) dust.pos[i * 3 + 1] = -999;
+    const l = Math.max(0, dust.life[i]); dust.col[i * 4 + 3] = Math.min(1, (1 - l) * 5) * l;
   }
-  dust.geo.attributes.position.needsUpdate = true;
+  dust.geo.attributes.position.needsUpdate = true; dust.geo.attributes.color.needsUpdate = true;
 }
 
 /* ── wheel tracks ─────────────────────────────────────────────── */
@@ -1579,7 +1581,7 @@ $('real-link').addEventListener('click', e => { const h = $('real-link').getAttr
 
 $('card-ok').addEventListener('click', () => {
   $('card').classList.remove('on');
-  if (SITE && S.outcrops.every(o => o.logged || o.sunset) && S.outcrops.some(o => o.sunset && !o.logged)) toast('Last objective · a panorama of the blue sunset, at the end of the path');
+  if (SITE && S.outcrops.every(o => o.logged || o.sunset) && S.outcrops.some(o => o.sunset && !o.logged)) toast('Surprise objective · the sun is setting: take a panorama of the blue sunset at the end of the path');
   else if (SITE) { toast(S.logged >= S.outcrops.length ? 'Objectives done · on to the end of the path' : `${S.outcrops.length - S.logged} objective${S.outcrops.length - S.logged > 1 ? 's' : ''} left`); }
   else if (S.logged >= S.outcrops.length) done();
 });

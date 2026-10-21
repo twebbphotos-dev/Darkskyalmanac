@@ -82,6 +82,8 @@ const SITES = {
 };
 const LV = typeof location !== 'undefined' ? +new URLSearchParams(location.search).get('level') : 0;
 export const SITE = SITES[LV] ? { sq: 1.5, sv: 1, playR: 500, fine: 1.6, mid: 2.4, fog: 1900, src: 'HiRISE elevation and images', scale: 'drawn at two-thirds scale across, so slopes come out 1.5 times steeper', ...SITES[LV], level: LV, pack: 50, next: SITES[LV + 1] ? LV + 1 : 0 } : null;
+// the HiRISE pictures laid on the ground: a year level's, or the landing site's (src/jezero-crater/pictures.py)
+export const HI = SITE || (LV === 0 ? { hi: 'img/landing_hr.jpg', hiArea: 'img/landing_area.jpg' } : null);
 if (SITE) { const p = SITE.path, n = p.length / 2; SITE.start = { x: p[0], z: p[1] }; SITE.end = { x: p[p.length - 2], z: p[p.length - 1] };
   let L = 0; const cum = [0]; for (let i = 1; i < n; i++) cum.push(L += Math.hypot(p[i * 2] - p[i * 2 - 2], p[i * 2 + 1] - p[i * 2 - 1]));
   const k = cum.findIndex(c => c >= L / 2);
@@ -255,9 +257,9 @@ export async function loadDTM(base = 'dtm/') {
   for (let i = 0; i < 2000; i += 8) edge.push(a[i], a[1999 * 2000 + i], a[i * 2000], a[i * 2000 + 1999]);
   edge.sort((p, q) => p - q); DTM.edge = edge[edge.length >> 1]; DTM.plain = DTM.edge * SV;
   DTM.on = true;
-  if (SITE) {      // the ripple fields (src/jezero-crater/relief.py), so the rocks keep off them; no map, no harm
+  if (HI) {      // the ripple fields (src/jezero-crater/relief.py), so the rocks keep off them; no map, no harm
     try {
-      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = SITE.hi.replace('_hr.jpg', '_dunes.jpg'); });
+      const img = await new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = HI.hi.replace('_hr.jpg', '_dunes.jpg'); });
       const c = document.createElement('canvas'); c.width = c.height = 512;
       const g = c.getContext('2d', { willReadFrequently: true }); g.drawImage(img, 0, 0, 512, 512);
       const d = g.getImageData(0, 0, 512, 512).data; DTM.dune = new Float32Array(512 * 512);
@@ -291,7 +293,7 @@ function dtmRaw(x, z) {
 /* the edge of the roaming area: a ragged wall of layered rock with notches you can see
    through, and a talus skirt at its foot. */
 function rimWall(x, z, d) {
-  if (SITE) return 0;                 // at Belva the real ground runs on; the rover is simply held inside the roaming circle
+  if (SITE || DTM.on) return 0;       // on the real ground it runs on; the rover is simply held inside the roaming circle
   const rr = d - PLAY_R;
   if (rr < -6) return 0;
   const H = 30 + 26 * (0.5 + 0.5 * nRim(x / 90, z / 90)) + nRough(x / 22, z / 22) * 7;
@@ -306,7 +308,7 @@ function rimWall(x, z, d) {
   return H * s + smooth(-6, 6, rr) * 1.6 + nFine(x / 3, z / 3) * 0.6 * smooth(-4, 10, rr);
 }
 function mesaAt(x, z) {
-  let h = 0;
+  let h = 0; if (DTM.on) return 0;      // the mesas are for the made-up ground only: there are none at the real landing site
   for (let i = 0; i < MESAS.length; i++) {
     const m = MESAS[i], dx = x - m.x, dz = z - m.z, lim = m.R * 2.8;
     if (dx > lim || dx < -lim || dz > lim || dz < -lim) continue;
@@ -326,7 +328,7 @@ function mesaAt(x, z) {
 }
 export function mesaT(x, z) {      // nearest mesa in units of its radius
   let best = 99;
-  for (const m of MESAS) best = Math.min(best, Math.hypot(x - m.x, z - m.z) / m.R);
+  for (const m of DTM.on ? [] : MESAS) best = Math.min(best, Math.hypot(x - m.x, z - m.z) / m.R);
   return best;
 }
 
@@ -511,8 +513,8 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
       const ct = craterT(x, z);
       const rim = ct > 0.8 && ct < 1.4 ? 1 - Math.abs(ct - 1.05) / 0.35 : 0;
       const sm = sandMask(x, z) * (1 - smooth(PLAY_R - 10, PLAY_R + 20, Math.hypot(x, z)));
-      sand[k] = SITE ? 0 : sm * (1 - smooth(0.06, 0.16, steep));          // sand will not lie on a steep face (at Belva, the real dunes come from the pictures)
-      ground[k * 2] = SITE ? 0 : paverMask(x, z) * (1 - Math.min(1, steep * 14)) * (1 - smooth(PLAY_R - 20, PLAY_R + 10, Math.hypot(x, z)));
+      sand[k] = HI ? 0 : sm * (1 - smooth(0.06, 0.16, steep));          // sand will not lie on a steep face (at Belva, the real dunes come from the pictures)
+      ground[k * 2] = HI ? 0 : paverMask(x, z) * (1 - Math.min(1, steep * 14)) * (1 - smooth(PLAY_R - 20, PLAY_R + 10, Math.hypot(x, z)));
 
       const dust = Math.min(1, Math.max(0, hollow) * 1.9 + (ct < 0.6 ? 0.45 : 0));
       const bare = Math.min(1, steep * 11 + Math.max(0, -hollow) * 1.6 + Math.max(0, rim) * 0.7) * (1 - sm * 0.7);
@@ -551,12 +553,12 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
     tPeb: { value: tx('pebbles_diff', true) }, tPebN: { value: tx('pebbles_nor') },
     tSlab: { value: tx('slab_diff', true) }, tSlabN: { value: tx('slab_nor') },
   };
-  if (SITE) {      // level 3: the real ground's light and dark, from the HiRISE pictures, laid over the game's own colour and grain
+  if (HI) {      // the real ground's light and dark, from the HiRISE pictures, laid over the game's own colour and grain
     const hi = t => { const x = TL.load(t); x.colorSpace = THREE.SRGBColorSpace; x.anisotropy = 8; return x; };
-    scan.tHi = { value: hi(SITE.hi) }; scan.tHiA = { value: hi(SITE.hiArea) };
-    const rl = TL.load(SITE.hi.replace('_hr.jpg', '_relief.jpg')); rl.anisotropy = 8;      // small relief worked out from the picture (src/jezero-crater/relief.py)
+    scan.tHi = { value: hi(HI.hi) }; scan.tHiA = { value: hi(HI.hiArea) };
+    const rl = TL.load(HI.hi.replace('_hr.jpg', '_relief.jpg')); rl.anisotropy = 8;      // small relief worked out from the picture (src/jezero-crater/relief.py)
     scan.tRel = { value: rl };
-    scan.tDune = { value: TL.load(SITE.hi.replace('_hr.jpg', '_dunes.jpg')) };      // where the ripple fields are: kept clean, no grit, no rocks
+    scan.tDune = { value: TL.load(HI.hi.replace('_hr.jpg', '_dunes.jpg')) };      // where the ripple fields are: kept clean, no grit, no rocks
   }
   mat.onBeforeCompile = sh => {
     Object.assign(sh.uniforms, scan, { uSun: { value: sunV } });
@@ -569,7 +571,7 @@ export function buildTerrain(scene, map, bump, sunV = new THREE.Vector3(0, 1, 0)
       varying float vSand; varying vec2 vGround; varying vec3 vWPos;
       float vCrack;
       uniform vec3 uSun; uniform sampler2D tReg, tRegN, tSand, tSandN, tPeb, tPebN, tSlab, tSlabN;
-${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
+${HI ? `uniform sampler2D tHi, tHiA, tRel, tDune;
       float hiH = 0.0;
       // B-spline bicubic from four bilinear taps: magnified, the 1 m pictures stay smooth instead of showing their pixels
       vec4 cubicW( float v ) { vec4 n = vec4( 1.0, 2.0, 3.0, 4.0 ) - v, s = n * n * n; float x = s.x, y = s.y - 4.0 * s.x, z = s.z - 4.0 * s.y + 6.0 * s.x; return vec4( x, y, z, 6.0 - x - y - z ) / 6.0; }
@@ -615,15 +617,18 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
         // its shapes line up into an obvious repeating pattern. It gives way to its own average colour
         // with distance; the scanned grain below carries the detail from there.
         float tileNear = 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) );
-        ${SITE ? `{      // ripple fields: untouched sand, smooth and clean, so the crests carry the picture
+        ${HI ? `{      // ripple fields: untouched sand, smooth and clean, so the crests carry the picture
           vec2 du = vWPos.xz * ${SQ.toFixed(2)} / 2048.0 + 0.5;
           dune = texture2D( tDune, vec2( du.x, 1.0 - du.y ) ).r * smoothstep( 0.5, 0.45, max( abs( du.x - 0.5 ), abs( du.y - 0.5 ) ) );
           tileNear *= 1.0 - 0.8 * dune;
         }` : ''}
         vec4 sampledDiffuseColor = texture2D( map, vMapUv );
         sampledDiffuseColor.rgb = mix( textureLod( map, vMapUv, 10.0 ).rgb * 0.95, sampledDiffuseColor.rgb, 0.12 + 0.88 * tileNear );
-        // broad light and dark over tens and hundreds of metres, from noise that never repeats
-        sampledDiffuseColor.rgb *= clamp( ( 1.0 + fbm( vWPos.xz / 48.0 + 3.1 ) * 0.34 ) * ( 1.0 + fbm( vWPos.xz / 210.0 - 7.3 ) * 0.26 ), 0.62, 1.5 );
+        // broad light and dark over tens and hundreds of metres, from noise that never repeats; where the HiRISE
+        // picture covers the ground the real light and dark take over, and the made-up blotches go
+        float fakeK = 1.0;
+        ${HI ? `{ vec2 r0 = vWPos.xz * ${SQ.toFixed(2)} / 8192.0; fakeK = 1.0 - smoothstep( 0.5, 0.45, max( abs( r0.x ), abs( r0.y ) ) ); }` : ''}
+        sampledDiffuseColor.rgb *= clamp( ( 1.0 + fbm( vWPos.xz / 48.0 + 3.1 ) * 0.34 * fakeK ) * ( 1.0 + fbm( vWPos.xz / 210.0 - 7.3 ) * 0.26 * fakeK ), 0.62, 1.5 );
         sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, vec3( 0.212, 0.099, 0.054 ), vSand * 0.82 );
 
         // bedrock pavement: pale flat plates a metre or so across, sand in the joints
@@ -641,7 +646,9 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
         }
 
         // cliffs of layered rock: beds picked out wherever the face is steep
-        if ( vGround.y > 0.02 ) {
+        // on the real ground the painted beds are for the close view only: from the air they read as terraces the picture does not have
+        float cliffK = vGround.y${HI ? ' * ( 1.0 - smoothstep( 60.0, 200.0, length( vViewPosition ) ) )' : ''};
+        if ( cliffK > 0.02 ) {
           // Beds are never ruler-straight: they dip, sag and swell along the face, thin out and
           // lose definition in patches, and are streaked by dust washed down from above.
           vec2 xz = vWPos.xz;
@@ -663,8 +670,8 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
           // on a cliff the ground texture is smeared down the face, so swap it for plain rock with its own grain
           float grain = texture2D( tSlab, vec2( dot( xz, vec2( 0.7, -0.7 ) ), vWPos.y ) * 0.31 ).g / 0.36;
           vec3 rock = mix( vec3( 0.15, 0.068, 0.038 ), vec3( 0.215, 0.118, 0.068 ), tone ) * mix( 1.0, grain, 0.35 );
-          sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, rock, face * vGround.y * 0.92 );
-          sampledDiffuseColor.rgb *= ( 1.0 + bed * 0.45 * vGround.y * face ) * ( 1.0 + streak * 0.16 * vGround.y * face );
+          sampledDiffuseColor.rgb = mix( sampledDiffuseColor.rgb, rock, face * cliffK * 0.92 );
+          sampledDiffuseColor.rgb *= ( 1.0 + bed * 0.45 * cliffK * face ) * ( 1.0 + streak * 0.16 * cliffK * face );
         }
         // scanned ground detail, strongest close to the camera
         {
@@ -679,9 +686,9 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
           vec3 dt = mix( reg, snd, vSand );
           dt = mix( dt, slb, vGround.x * 0.7 * ( 1.0 - vSand ) );
           vec3 far = detail( tReg, vWPos.xz / 31.0, vec3( 0.2918, 0.1620, 0.0763 ) );   // the same grain, much larger, for mid distance
-          sampledDiffuseColor.rgb *= mix( vec3( 1.0 ), dt, sDet * 0.9 * ( 1.0 - 0.8 * dune ) ) * mix( vec3( 1.0 ), far, sMid * 0.35 * ( 1.0 - 0.7 * dune ) );
+          sampledDiffuseColor.rgb *= mix( vec3( 1.0 ), dt, sDet * 0.9 * ( 1.0 - 0.8 * dune ) ) * mix( vec3( 1.0 ), far, sMid * 0.35 * ( 1.0 - 0.7 * dune ) * ( 0.3 + 0.7 * fakeK ) );
         }
-        ${SITE ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
+        ${HI ? `{      // HiRISE: 1 m round the crater, 4 m beyond; game metres are ${SQ} m of Mars
           vec2 r = vWPos.xz * ${SQ.toFixed(2)}, u1 = r / 2048.0 + 0.5, u4 = r / 8192.0 + 0.5;
           float l1 = dot( bicubic( tHi, vec2( u1.x, 1.0 - u1.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHi, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
           float l4 = dot( bicubic( tHiA, vec2( u4.x, 1.0 - u4.y ) ).rgb, vec3( 0.3, 0.55, 0.15 ) ) / max( 0.05, dot( texture2D( tHiA, vec2( 0.5 ), 12.0 ).rgb, vec3( 0.3, 0.55, 0.15 ) ) );
@@ -711,7 +718,7 @@ ${SITE ? `uniform sampler2D tHi, tHiA, tRel, tDune;
       #ifdef USE_BUMPMAP
         normal = perturbNormalArb( - vViewPosition, normal, dHdxy_fwd() * ( 0.2 + 0.8 * ( 1.0 - smoothstep( 3.0, 14.0, length( vViewPosition ) ) ) ) * ( 1.0 - vSand * 0.85 ) * ( 1.0 - vCrack * 0.6 ) * ( 1.0 - 0.85 * dune ), faceDirection );
       #endif
-      ${SITE ? '#ifdef USE_BUMPMAP\n      normal = perturbNormalArb( - vViewPosition, normal, vec2( dFdx( hiH ), dFdy( hiH ) ), faceDirection );\n      #endif' : ''}
+      ${HI ? '#ifdef USE_BUMPMAP\n      normal = perturbNormalArb( - vViewPosition, normal, vec2( dFdx( hiH ), dFdy( hiH ) ), faceDirection );\n      #endif' : ''}
       // scanned normals: the real relief of grit, pebbles and cracks
       if ( sDet > 0.01 ) {
         vec3 nR = texture2D( tRegN, sUv ).xyz * 2.0 - 1.0;
@@ -950,11 +957,11 @@ export function scatterRocks(scene, { seed = 5150, exclude, scans = null, boost 
     place(x, z, 0.3 + Math.pow(rand(), 2.0) * 0.45, false); i++;
   }
   // talus: blocks fallen from the rim wall and the mesa cliffs, piled at their feet
-  for (let i = 0; i < (SITE ? 0 : 1400); i++) {      // (no rim wall in a year level)
+  for (let i = 0; i < (SITE || DTM.on ? 0 : 1400); i++) {      // (no rim wall on the real ground)
     const a = rand() * Math.PI * 2, r = PLAY_R - 4 + Math.pow(rand(), 1.5) * 22;
     place(Math.cos(a) * r, Math.sin(a) * r, Math.min(3.2, 0.45 * Math.pow(0.03 + rand() * 0.97, -0.6)), true);
   }
-  for (const m of MESAS) for (let i = 0; i < m.R * 6; i++) {
+  for (const m of DTM.on ? [] : MESAS) for (let i = 0; i < m.R * 6; i++) {
     const a = rand() * Math.PI * 2;
     let da = Math.abs(a - m.ramp); if (da > Math.PI) da = 2 * Math.PI - da;
     if (da < 0.4) continue;                                  // keep the ramp drivable
