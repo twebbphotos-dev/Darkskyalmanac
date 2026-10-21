@@ -11,7 +11,7 @@ import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js';
 import { MeshoptDecoder } from 'three/examples/jsm/libs/meshopt_decoder.module.js';
 import { mergeVertices } from 'three/examples/jsm/utils/BufferGeometryUtils.js';
 import { createStick, buzz } from '../../rover-game/src/stick.js';
-import { DETAIL } from '../../rover-game/src/detail.js';      // the Mars simulator's detail setting, shared
+import { DETAIL, DETAIL_NAME, detailChoice, setDetail } from '../../rover-game/src/detail.js';      // the Mars simulator's detail setting, shared
 import * as U from '../../rover-game/src/units.js';      // metric or US, from Settings, shared too
 
 const $ = id => document.getElementById(id);
@@ -813,7 +813,8 @@ addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 const stick = createStick($('stick'));
 const ORB = { yaw: 0, pitch: 0.18, id: null, x: 0, y: 0, idle: 9 };
 let pov = 0;      // 0 chase, 1 wide, 2 the driver's seat
-$('btn-pov').addEventListener('click', () => { pov = (pov + 1) % 3; $('btn-pov').textContent = ['Chase', 'Wide', 'Seat'][pov]; camInit = false; rover.visible = true; });
+function setPov(n) { pov = n; $('btn-pov').textContent = ['Chase', 'Wide', 'Seat'][pov]; camInit = false; rover.visible = true; }
+$('btn-pov').addEventListener('click', () => setPov((pov + 1) % 3));
 addEventListener('pointerdown', e => { if (e.target !== renderer.domElement) return; ORB.id = e.pointerId; ORB.x = e.clientX; ORB.y = e.clientY; });
 addEventListener('pointermove', e => { if (e.pointerId !== ORB.id) return; ORB.yaw -= (e.clientX - ORB.x) * 0.006; ORB.pitch = Math.max(-0.1, Math.min(1.1, ORB.pitch + (e.clientY - ORB.y) * 0.004)); ORB.x = e.clientX; ORB.y = e.clientY; ORB.idle = 0; });
 addEventListener('pointerup', e => { if (e.pointerId === ORB.id) ORB.id = null; });
@@ -1107,19 +1108,64 @@ let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
 $('btn-recover').addEventListener('click', recover);
 if (U.US) {      // the start card, in US units
-  document.querySelectorAll('#speedpick button').forEach(b => { b.innerHTML = ['Real', 'Double', 'Triple'][b.dataset.v - 1] + '<small>' + U.kmh(18 * b.dataset.v) + '</small>'; });
+  document.querySelectorAll('.spd button').forEach(b => { b.innerHTML = ['Real', 'Double', 'Triple'][b.dataset.v - 1] + '<small>' + U.kmh(18 * b.dataset.v) + '</small>'; });
   $('spec-rover').textContent = 'About 1,540 lb loaded with crew; 10 ft long; four wire-mesh wheels, each with its own motor; front and rear steering';
   $('fine-rec').textContent = '11 mph';
   $('spec-top').textContent = '11 mph, the record Gene Cernan set on Apollo 17 (it was built for about 8 mph on the level). Faster downhill, where gravity does the work';
 }
-document.querySelectorAll('#speedpick button').forEach(b => {
+const markSpeed = () => document.querySelectorAll('.spd button').forEach(o => o.classList.toggle('on', +o.dataset.v === SPD));
+document.querySelectorAll('.spd button').forEach(b => {
   if (b.dataset.v === '3') b.hidden = !unlocked3();
-  b.classList.toggle('on', +b.dataset.v === SPD);
-  b.addEventListener('click', () => { setSpeed(+b.dataset.v); showRecords(); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
+  b.addEventListener('click', () => {
+    if (RUN.on && +b.dataset.v !== SPD) { RUN.on = false; RUN.away = false; $('clock').textContent = ''; toast('Speed changed · time trial over'); }      // a lap counts at one speed only
+    setSpeed(+b.dataset.v); showRecords(); markSpeed();
+  });
 });
+markSpeed();
 $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else { running = OBJ.live = true; CREW.forEach(c => { c.visible = true; }); } });
 $('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); else if (BRIEF.on && BRIEF.t < BRIEF.lines[2][0]) BRIEF.t = BRIEF.lines[2][0]; });
-{ const go = e => { e.preventDefault(); location.href = '../moon'; }; $('back').addEventListener('click', go); }
+/* The menu (the back button) and the settings (the gear), as in the Mars simulator. The drive pauses while either is open.
+   Back to Objects is the extensionless address, as every other page links it: a redirected page from the offline cache fails to open. */
+const SHEETS = ['menu', 'settings'], PAUSE = { was: false };
+const anyOpen = () => SHEETS.some(id => $(id).classList.contains('on'));
+function openSheet(id) { if (!anyOpen()) { PAUSE.was = running; running = false; } $(id).classList.add('on'); }
+function closeSheets(resume = PAUSE.was) { SHEETS.forEach(id => $(id).classList.remove('on')); running = resume; }
+function toDrive() {      // out of the opening film, a time trial's briefing or a wreck, ready to drive
+  if (INTRO.on) endIntro();
+  if (BRIEF.on) { BRIEF.on = false; document.body.classList.remove('briefing'); $('cine-cap').classList.remove('on'); BRIEF.cap = ''; }
+  if (CRASH.on) { CRASH.on = false; rover.visible = true; }
+  RUN.on = false; RUN.save = null; REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); $('clock').textContent = '';
+  CREW.forEach(c => { c.visible = true; }); OBJ.live = true; camInit = false;
+}
+{ const tap = (el, f) => { const go = e => { e.preventDefault(); e.stopPropagation(); f(); }; el.addEventListener('pointerup', go); el.addEventListener('click', go); };      // the game's own touch handling can swallow a plain tap on iPhone
+  let last = 0; const once = f => () => { const t = performance.now(); if (t - last > 400) { last = t; f(); } };      // pointerup and click both fire: act once
+  tap($('back'), once(() => { if ($('brief').classList.contains('on')) location.href = '../objects'; else if (anyOpen()) closeSheets(); else openSheet('menu'); }));
+  tap($('btn-set'), once(() => { markSettings(); SHEETS.forEach(id => $(id).classList.remove('on')); openSheet('settings'); }));
+}
+$('m-resume').addEventListener('click', () => closeSheets());
+$('m-trial').addEventListener('click', () => {      // put down short of the start ring, facing it; drive through to start the clock
+  toDrive(); RUN.away = false; place(OBJ.x, OBJ.z + 22, Math.PI / 2); closeSheets(true); $('brief').classList.remove('on'); toast('Drive through the ring to start the clock');
+});
+$('m-lander').addEventListener('click', () => { toDrive(); place(0, 0, Math.atan2(350, 82)); closeSheets(true); $('brief').classList.remove('on'); toast('Back beside the lander'); });
+$('m-objects').addEventListener('click', () => { location.href = '../objects'; });
+let setQ = detailChoice();
+function markSettings() {
+  markSpeed(); setQ = detailChoice();
+  document.querySelectorAll('.cam button').forEach(b => b.classList.toggle('on', +b.dataset.c === pov));
+  document.querySelectorAll('.det button').forEach(b => b.classList.toggle('on', b.dataset.q === setQ));
+  $('set-apply').hidden = true; const r = $('set-rec'); r.armed = false; r.textContent = 'Reset records';
+  $('set-note').textContent = `Now drawing at ${DETAIL_NAME[0].toUpperCase() + DETAIL_NAME.slice(1)}. Lower detail runs smoother; higher looks sharper.`;
+}
+document.querySelectorAll('.cam button').forEach(b => b.addEventListener('click', () => { setPov(+b.dataset.c); markSettings(); }));
+document.querySelectorAll('.det button').forEach(b => b.addEventListener('click', () => {
+  setQ = b.dataset.q; document.querySelectorAll('.det button').forEach(o => o.classList.toggle('on', o === b)); $('set-apply').hidden = setQ === detailChoice(); }));
+$('set-apply').addEventListener('click', () => { setDetail(setQ); location.reload(); });
+$('set-done').addEventListener('click', () => closeSheets());
+$('set-rec').addEventListener('click', () => {      // two taps, so a stray one cannot wipe them
+  const r = $('set-rec'); if (!r.armed) { r.armed = true; r.textContent = 'Tap again to erase'; return; }
+  Object.keys(REC).forEach(k => { REC[k] = 0; }); AIR.best = 0; try { localStorage.removeItem('lrv-records'); } catch (e) { /* storage blocked */ }
+  showRecords(); r.armed = false; r.textContent = 'Records erased';
+});
 
 /* ── replay: the last 20 s of the rover's pose, kept every frame. After a long jump over a crater, a button offers it
    again in slow motion from a fixed camera low beside the jump, the crater rim in view. ── */
