@@ -817,56 +817,46 @@ const EARTH = earth(); scene.add(EARTH);
 /* ── rover and lander models ── */
 const rover = new THREE.Group(); scene.add(rover);
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-/* The lunar module's skin (foil tile about 1.8 m, each flat face offset into it). The descent stage was wrapped in crinkled amber Kapton and aluminized film, not flat paint;
-   the ascent stage's light gray panels show their seams and rivets. The model has no texture coordinates on them, so each
-   point is mapped in the plane of its own face (the octagonal stage and the faceted cabin are flat panels, so nothing
-   stretches), a foil tile about 0.6 m across and a panel tile about 1.4 m. */
-function foilLM(root) {
-  const canvas = (n = 256) => { const c = document.createElement('canvas'); c.width = c.height = n; return [c, c.getContext('2d')]; };
-  const [fc, x] = canvas(512), r = rng(57);
-  x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, 512, 512);
-  for (let k = 0; k < 1300; k++) {      // facets of crumpled film, a little lighter or darker
-    const cx = r() * 512, cy = r() * 512, n = 3 + (r() * 3 | 0), rad = 4 + r() * 18, l = r() < 0.5;
-    x.fillStyle = l ? `rgba(255,255,255,${0.08 + r() * 0.2})` : `rgba(0,0,0,${0.06 + r() * 0.2})`;
-    x.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * 6.283 + r(); x.lineTo(cx + Math.cos(a) * rad * (0.6 + r() * 0.6), cy + Math.sin(a) * rad * (0.6 + r() * 0.6)); } x.fill();
-  }
-  x.strokeStyle = 'rgba(30,24,16,0.3)'; x.lineWidth = 1;
-  for (let k = 0; k < 320; k++) { const x0 = r() * 512, y0 = r() * 512, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
-  const [pc, y] = canvas(), q = rng(23);      // panels: a few tones of gray, dark seams, rivet rows
-  y.fillStyle = '#d4d4d4'; y.fillRect(0, 0, 256, 256);
-  const split = (x0, y0, w, h, d) => {
-    if (d > 2 && (w < 70 || h < 70 || q() < 0.3)) { y.fillStyle = `rgba(${q() < 0.5 ? '255,255,255' : '0,0,0'},${0.03 + q() * 0.07})`; y.fillRect(x0, y0, w, h);
-      y.strokeStyle = 'rgba(20,20,22,0.45)'; y.lineWidth = 1.2; y.strokeRect(x0 + 0.5, y0 + 0.5, w - 1, h - 1);
-      y.fillStyle = 'rgba(30,30,32,0.35)'; for (let t = 6; t < w - 3; t += 9) { y.fillRect(x0 + t, y0 + 3, 1.2, 1.2); y.fillRect(x0 + t, y0 + h - 4, 1.2, 1.2); } for (let t = 6; t < h - 3; t += 9) { y.fillRect(x0 + 3, y0 + t, 1.2, 1.2); y.fillRect(x0 + w - 4, y0 + t, 1.2, 1.2); }
-      return; }
-    if (w > h) { const m = Math.round(w * (0.35 + q() * 0.3)); split(x0, y0, m, h, d + 1); split(x0 + m, y0, w - m, h, d + 1); }
-    else { const m = Math.round(h * (0.35 + q() * 0.3)); split(x0, y0, w, m, d + 1); split(x0, y0 + m, w, h - m, d + 1); }
+/* The lunar module's skin, as the Dark Sky Almanac's spacecraft viewer dresses the same NASA model: the descent stage in
+   crinkled amber foil (about 11 facets a metre, a second, larger set under it), the cabin in dull tan-grey aluminium, the legs bare metal, all in the tones they photographed on the
+   Moon. Nothing is painted on: the crinkle is worked out in the shader from the position on the craft (each small cell of
+   space a flat facet tilted its own way, so it never repeats and needs no texture coordinates, which the model lacks),
+   with faint, uneven tone and shine over every part so nothing reads as plastic. */
+function lmShader(m, key, foil, w) {      // foil: [facets per metre, strength] or null; w: [tone, shine, wrinkle, features per metre]
+  m.onBeforeCompile = sh => {
+    sh.uniforms.uW = { value: new THREE.Vector4(...w) }; sh.uniforms.uF = { value: new THREE.Vector2(...(foil || [1, 0])) };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vWp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvWp = (modelMatrix * vec4(transformed, 1.)).xyz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      varying vec3 vWp; uniform vec4 uW; uniform vec2 uF;
+      float wH(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+      float wV(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+        return mix(mix(mix(wH(i), wH(i + vec3(1, 0, 0)), f.x), mix(wH(i + vec3(0, 1, 0)), wH(i + vec3(1, 1, 0)), f.x), f.y),
+                   mix(mix(wH(i + vec3(0, 0, 1)), wH(i + vec3(1, 0, 1)), f.x), mix(wH(i + vec3(0, 1, 1)), wH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+      float wF(vec3 p) { return wV(p) * .5 + wV(p * 2.7 + 3.1) * .3 + wV(p * 7.3 + 7.7) * .2; }
+      vec3 fH(vec3 p) { p = fract(p * vec3(.1031, .1030, .0973)); p += dot(p, p.yxz + 33.33); return fract((p.xxy + p.yxx) * p.zyx); }
+      vec3 fCell(vec3 x) { vec3 i = floor(x), f = fract(x), id = vec3(.5); float best = 9.;
+        for (int a = -1; a <= 1; a++) for (int b = -1; b <= 1; b++) for (int c = -1; c <= 1; c++) { vec3 g = vec3(float(a), float(b), float(c)), o = fH(i + g), d = g + o - f; float l = dot(d, d); if (l < best) { best = l; id = o; } }
+        return id - .5; }`)
+      .replace('#include <color_fragment>', '#include <color_fragment>\ndiffuseColor.rgb *= 1. + uW.x * (wF(vWp * uW.w) - .52) * 2.;')
+      .replace('#include <roughnessmap_fragment>', '#include <roughnessmap_fragment>\nroughnessFactor = clamp(roughnessFactor + uW.y * (wF(vWp * uW.w * 2.3 + 11.) - .5) * 2., .05, 1.);')
+      .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
+        { vec3 q = vWp * uW.w * 4.; vec3 d = vec3(wV(q), wV(q + 17.3), wV(q + 31.7)) - .5; normal = normalize(normal + uW.z * (viewMatrix * vec4(d, 0.)).xyz); }
+        if (uF.y > 0.) { vec3 q = vWp * uF.x; float fw = length(fwidth(q)); vec3 t = fCell(q) * smoothstep(1.1, .3, fw) + .6 * fCell(q * .37 + 5.) * smoothstep(1.1, .3, fw * .37); normal = normalize(normal + uF.y * (viewMatrix * vec4(t, 0.)).xyz); }`);
   };
-  split(0, 0, 256, 256, 0);
-  const tex = (c, srgb) => { const t = new THREE.CanvasTexture(c); if (srgb) t.colorSpace = THREE.SRGBColorSpace; t.wrapS = t.wrapT = THREE.RepeatWrapping; t.anisotropy = 4; return t; };
-  const foil = [tex(fc, true), tex(fc)], panel = [tex(pc, true), tex(pc)];
-  root.updateMatrixWorld(true);
-  const N = new THREE.Vector3(), T = new THREE.Vector3(), B = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), X = new THREE.Vector3(1, 0, 0), P = new THREE.Vector3();
+  m.customProgramCacheKey = () => 'lm-' + key;
+}
+function foilLM(root) {
   root.traverse(o => {
-    if (!o.isMesh || o.geometry.attributes.uv) return;
-    const amber = /^blinn(1|9)SG/.test(o.material.name), gray = /^(blinn(2|3|4|7|10)SG|initialShading)/.test(o.material.name);      // the amber blankets; the gray and pale panels
-    if (!amber && !gray) return;
-    // the model's stored normals are smoothed across the panel edges (half of them lean 40° or more off their face), so
-    // each triangle is mapped by its own face: the mesh is split into separate triangles, each laid in its face's plane
-    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry, p = g.attributes.position, uv = new Float32Array(p.count * 2), k = 1 / (amber ? 1.8 : 1.4);
-    const W = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
-    for (let t = 0; t < p.count; t += 3) {      // in the plane of the face: across it level, and up it (in metres: the model's own frame is turned)
-      for (let j = 0; j < 3; j++) W[j].fromBufferAttribute(p, t + j).applyMatrix4(o.matrixWorld);
-      N.subVectors(W[1], W[0]).cross(P.subVectors(W[2], W[0])); if (N.lengthSq() < 1e-14) continue; N.normalize();
-      T.crossVectors(Math.abs(N.y) > 0.9 ? X : UP, N).normalize(); B.crossVectors(N, T);
-      const ou = Math.abs(Math.sin(N.x * 91.7 + N.z * 37.3 + N.y * 13.1) * 43.7) % 1, ov = Math.abs(Math.sin(N.x * 27.1 + N.z * 71.9) * 61.3) % 1;      // each face its own part of the tile, so neighbors do not repeat
-      for (let j = 0; j < 3; j++) { uv[(t + j) * 2] = W[j].dot(T) * k + ou; uv[(t + j) * 2 + 1] = W[j].dot(B) * k + ov; }
-    }
-    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); o.geometry = g;
-    const m = o.material.clone(), [map, bump] = amber ? foil : panel; m.map = map; m.bumpMap = bump;
-    if (amber) { m.bumpScale = 1.5; m.metalness = 0.5; m.roughness = 0.38; m.color.multiply(new THREE.Color(0xd2b48c)); }      // amber, a little less yellow than the model's flat color
-    else { m.bumpScale = 0.8; m.metalness = 0.25; m.roughness = 0.5; }
-    o.material = m;
+    if (!o.isMesh) return;
+    o.material = [].concat(o.material).map(m0 => { const m = m0.clone(), n = m.name || '', set = (hex, metal, rough) => { m.color.set(hex); m.metalness = metal; m.roughness = rough; };
+      if (/blinn1SG|blinn10SG/.test(n)) { set(0xcf8530, .25, .42); lmShader(m, 'amber', [11, .2], [.12, .18, .05, 1.5]); }      // amber foil, crinkled
+      else if (/blinn9SG/.test(n)) { set(0xa85a22, .25, .44); lmShader(m, 'amber2', [11, .2], [.12, .18, .05, 1.5]); }
+      else if (/initialShadingGr|blinn3SG|blinn7SG/.test(n)) { set(n.includes('blinn3') ? 0x62554d : 0x92806f, .08, .55);      // little metalness: no sky here to reflect, it would only darken
+        lmShader(m, 'cabin', null, [.08, .12, .04, 1.2]); m.flatShading = true; }      // each panel lit flat, a clean edge at every corner (the model's normals are smoothed across them)      // the cabin: dull aluminium panels
+      else if (/blinn4SG/.test(n)) { set(0xb3aba0, .12, .5); lmShader(m, 'metal', null, [.07, .12, .04, 2]); }      // legs, ladder, porch and antennas: bare metal
+      else if (/blinn6SG|blinn2SG/.test(n)) { set(n.includes('blinn6') ? 0x18181a : 0x3c3634, .3, .55); lmShader(m, 'dark', null, [.06, .1, .03, 2]); }
+      return m; });
+    if (o.material.length === 1) o.material = o.material[0];
   });
 }
 function dusty(root) { root.traverse(o => { if (!o.isMesh) return; o.castShadow = o.receiveShadow = true; [].concat(o.material).forEach(m => { if (m.color) m.color.lerp(new THREE.Color(0x9b958c), 0.18); }); }); }

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.96 (zion-sky-v465)
+Lunar Rover: the lunar module is dressed as the spacecraft viewer dresses the same NASA model. The canvas textures (a repeating foil tile and drawn panel seams that never lined up with the model's panels) are gone; the foil's crinkle is now worked out in the shader from the position on the craft, small facets each tilted their own way, so it never repeats and needs no texture coordinates, and it is subtler. The cabin is dull tan-grey aluminium with faint uneven tone, each panel lit flat; legs bare metal; the colors are the ones Apollo photographs show.
+
 ## v4.95 (zion-sky-v464)
 Lunar Rover: at the edge, Gene Cernan now keeps his speed and swings the rover round in two or three seconds, then hands the controls straight back (it had slowed to a crawl and driven 100 m in for up to 30 s). On the Moon's weak grip the tires alone turn too wide at speed, so his swing turns heading and motion together; Mission Control calls a little earlier the faster you go. The lunar module's foil tile is larger and denser, and each flat face takes its own part of it, so the repeat no longer shows; the remaining bare gray and pale parts carry the panel texture.
 
