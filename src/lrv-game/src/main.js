@@ -1439,11 +1439,23 @@ const SITES = [
     'About 99% of it is beads and broken bits of orange glass; the rest is mostly fragments of basalt. Each bead is a droplet of lava sprayed from a fire fountain about 3.6 billion years ago and frozen to glass in flight. The color comes from titanium.',
     'The beads still hold traces of the gases that drove the eruption. In 2008 and 2011 they gave the first strong evidence of water inside the Moon.'] },
 ];
+// Photographs for the cards, all NASA (public domain), in lrv/img/: each [file, caption]
+const SITE_IMGS = {
+  'Tracy’s Rock': [['img/tracys-rock.jpg', 'Harrison Schmitt beside the boulder at Station 6, with the front of the rover at left. AS17-146-22294, photographed by Gene Cernan, 13 December 1972. NASA.']],
+  'Van Serg crater': [['img/van-serg.jpg', 'Harrison Schmitt in the rover at Station 9, Van Serg crater, on the third moonwalk. AS17-134-20454, photographed by Gene Cernan, 13 December 1972. NASA.']],
+  'Shorty crater': [['img/shorty.jpg', 'Looking into Shorty crater from Station 4, with the orange soil on its rim. AS17-137-20992, 12 December 1972. NASA.']],
+  '76535,0': [['img/76535.jpg', 'Sample 76535, photographed at NASA’s Manned Spacecraft Center (now Johnson Space Center) in 1973. NASA photo S73-19456.']],
+  '79115,0': [['img/79115.jpg', 'Sample 79115, photographed at NASA’s Manned Spacecraft Center (now Johnson Space Center) in 1973. NASA photo S73-15396.']],
+  '74220,0': [['img/orange-soil.jpg', 'The orange soil at Station 4, Shorty crater. The tripod is the gnomon, the crew’s reference for scale, sun angle and color. AS17-137-20990, 12 December 1972. NASA.'],
+    ['img/orange-beads.jpg', 'Orange glass beads and fragments from the soil, 0.02 to 0.045 mm across, magnified 160 times. NASA photo S73-15171, January 1973.']],
+};
+SITES.forEach(st => { st.imgs = SITE_IMGS[st.name] || []; });
 const _sp = new THREE.Vector3();
 let siteRun = false;
 function openSite(st) {
   $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub;
-  $('sc-b').innerHTML = (st.img ? `<figure><img src="${st.img}" alt="" onerror="this.parentNode.remove()"><figcaption>${st.cap || ''}</figcaption></figure>` : '') + st.body.map(t => `<p>${t}</p>`).join('');
+  const fig = ([src, cap]) => `<figure><img src="${src}" alt="" loading="lazy" onerror="this.parentNode.remove()"><figcaption>${cap}</figcaption></figure>`;
+  $('sc-b').innerHTML = (st.imgs[0] ? fig(st.imgs[0]) : '') + st.body.map(t => `<p>${t}</p>`).join('') + st.imgs.slice(1).map(fig).join('');      // the first picture leads, any others follow the text
   $('sitecard').classList.add('on'); siteRun = running; running = false;
 }
 $('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; });
