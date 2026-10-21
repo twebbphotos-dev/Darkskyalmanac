@@ -153,3 +153,5 @@ v4.92: menu (#menu: m-resume, m-trial, m-lander, m-objects) and settings (#setti
 v4.93: HALF 600, CX 243 (grown west). HOME: at 50 m from the edge, homeStep() drives toward the LM (or the map middle past 500 m) with body.home letterbox captions, until 100 m inside or 30 s. buildGround levels 11 m round LM to the mean within 5.5 m. foilLM(): box-projected UVs and a canvas foil on blinn1/9 (amber) and blinn4 (silver, bump only). Hands up: twist sd*pi/4 on upper arm and forearm.
 
 v4.94: rocks have a customDepthMaterial that discards below local y 0.56 (the buried part). foilLM maps each triangle in its own face plane (toNonIndexed, world space); panel canvas on blinn3/4/7.
+
+v4.95: HOME triggers at edge < 40 + 4 v, holds v0, turns heading and velocity together at up to 0.9 rad/s, ends when within 0.4 rad of the LM bearing (8 s cap). Foil canvas 512, tile 1.8 m, per-face offset from the face normal; panel texture also on blinn2/10 and initialShading.

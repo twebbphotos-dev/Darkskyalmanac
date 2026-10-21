@@ -817,21 +817,21 @@ const EARTH = earth(); scene.add(EARTH);
 /* ── rover and lander models ── */
 const rover = new THREE.Group(); scene.add(rover);
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
-/* The lunar module's skin. The descent stage was wrapped in crinkled amber Kapton and aluminized film, not flat paint;
+/* The lunar module's skin (foil tile about 1.8 m, each flat face offset into it). The descent stage was wrapped in crinkled amber Kapton and aluminized film, not flat paint;
    the ascent stage's light gray panels show their seams and rivets. The model has no texture coordinates on them, so each
    point is mapped in the plane of its own face (the octagonal stage and the faceted cabin are flat panels, so nothing
    stretches), a foil tile about 0.6 m across and a panel tile about 1.4 m. */
 function foilLM(root) {
-  const canvas = () => { const c = document.createElement('canvas'); c.width = c.height = 256; return [c, c.getContext('2d')]; };
-  const [fc, x] = canvas(), r = rng(57);
-  x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, 256, 256);
-  for (let k = 0; k < 300; k++) {      // facets of crumpled film, a little lighter or darker
-    const cx = r() * 256, cy = r() * 256, n = 3 + (r() * 3 | 0), rad = 5 + r() * 20, l = r() < 0.5;
+  const canvas = (n = 256) => { const c = document.createElement('canvas'); c.width = c.height = n; return [c, c.getContext('2d')]; };
+  const [fc, x] = canvas(512), r = rng(57);
+  x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, 512, 512);
+  for (let k = 0; k < 1300; k++) {      // facets of crumpled film, a little lighter or darker
+    const cx = r() * 512, cy = r() * 512, n = 3 + (r() * 3 | 0), rad = 4 + r() * 18, l = r() < 0.5;
     x.fillStyle = l ? `rgba(255,255,255,${0.08 + r() * 0.2})` : `rgba(0,0,0,${0.06 + r() * 0.2})`;
     x.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * 6.283 + r(); x.lineTo(cx + Math.cos(a) * rad * (0.6 + r() * 0.6), cy + Math.sin(a) * rad * (0.6 + r() * 0.6)); } x.fill();
   }
   x.strokeStyle = 'rgba(30,24,16,0.3)'; x.lineWidth = 1;
-  for (let k = 0; k < 80; k++) { const x0 = r() * 256, y0 = r() * 256, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
+  for (let k = 0; k < 320; k++) { const x0 = r() * 512, y0 = r() * 512, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
   const [pc, y] = canvas(), q = rng(23);      // panels: a few tones of gray, dark seams, rivet rows
   y.fillStyle = '#d4d4d4'; y.fillRect(0, 0, 256, 256);
   const split = (x0, y0, w, h, d) => {
@@ -849,17 +849,18 @@ function foilLM(root) {
   const N = new THREE.Vector3(), T = new THREE.Vector3(), B = new THREE.Vector3(), UP = new THREE.Vector3(0, 1, 0), X = new THREE.Vector3(1, 0, 0), P = new THREE.Vector3();
   root.traverse(o => {
     if (!o.isMesh || o.geometry.attributes.uv) return;
-    const amber = /^blinn(1|9)SG/.test(o.material.name), gray = /^blinn(3|4|7)SG/.test(o.material.name);      // the amber blankets; the light gray panels
+    const amber = /^blinn(1|9)SG/.test(o.material.name), gray = /^(blinn(2|3|4|7|10)SG|initialShading)/.test(o.material.name);      // the amber blankets; the gray and pale panels
     if (!amber && !gray) return;
     // the model's stored normals are smoothed across the panel edges (half of them lean 40° or more off their face), so
     // each triangle is mapped by its own face: the mesh is split into separate triangles, each laid in its face's plane
-    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry, p = g.attributes.position, uv = new Float32Array(p.count * 2), k = 1 / (amber ? 0.6 : 1.4);
+    const g = o.geometry.index ? o.geometry.toNonIndexed() : o.geometry, p = g.attributes.position, uv = new Float32Array(p.count * 2), k = 1 / (amber ? 1.8 : 1.4);
     const W = [new THREE.Vector3(), new THREE.Vector3(), new THREE.Vector3()];
     for (let t = 0; t < p.count; t += 3) {      // in the plane of the face: across it level, and up it (in metres: the model's own frame is turned)
       for (let j = 0; j < 3; j++) W[j].fromBufferAttribute(p, t + j).applyMatrix4(o.matrixWorld);
       N.subVectors(W[1], W[0]).cross(P.subVectors(W[2], W[0])); if (N.lengthSq() < 1e-14) continue; N.normalize();
       T.crossVectors(Math.abs(N.y) > 0.9 ? X : UP, N).normalize(); B.crossVectors(N, T);
-      for (let j = 0; j < 3; j++) { uv[(t + j) * 2] = W[j].dot(T) * k; uv[(t + j) * 2 + 1] = W[j].dot(B) * k; }
+      const ou = Math.abs(Math.sin(N.x * 91.7 + N.z * 37.3 + N.y * 13.1) * 43.7) % 1, ov = Math.abs(Math.sin(N.x * 27.1 + N.z * 71.9) * 61.3) % 1;      // each face its own part of the tile, so neighbors do not repeat
+      for (let j = 0; j < 3; j++) { uv[(t + j) * 2] = W[j].dot(T) * k + ou; uv[(t + j) * 2 + 1] = W[j].dot(B) * k + ov; }
     }
     g.setAttribute('uv', new THREE.BufferAttribute(uv, 2)); o.geometry = g;
     const m = o.material.clone(), [map, bump] = amber ? foil : panel; m.map = map; m.bumpMap = bump;
@@ -887,26 +888,28 @@ document.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e
 /* ── HUD ── */
 let toastT = 0;
 /* The edge of the map, without an invisible wall: Mission Control calls the crew back to the mission area, and Gene
-   Cernan takes the controls and drives back in for a while, in the letterbox; then they are yours again. */
-const HOME = { on: false, t: 0, cool: 0, th: 0, st: 0, said: 0 };
+   Cernan takes the controls, keeps his speed and swings the rover back round, in the letterbox; pointed back in, they are yours again. */
+const HOME = { on: false, t: 0, cool: 0, th: 0, st: 0, v0: 0 }, _hq = new THREE.Quaternion(), _hy = new THREE.Vector3(0, 1, 0);
 function homeCap(m) { const el = $('cine-cap'); el.classList.remove('on'); el.textContent = m; void el.offsetWidth; el.classList.add('on'); }
-function homeEnd() { HOME.on = false; HOME.cool = 8; document.body.classList.remove('home'); $('cine-cap').classList.remove('on'); }
+function homeEnd() { HOME.on = false; HOME.cool = 6; document.body.classList.remove('home'); $('cine-cap').classList.remove('on'); }
 function homeStep(dt) {      // true while Cernan is driving
   const edge = HALF - Math.max(Math.abs(car.p.x - CX), Math.abs(car.p.z - CZ));
   if (!HOME.on) {
-    if ((HOME.cool -= dt) > 0 || edge > 50 || CRASH.on || BRIEF.on || INTRO.on) return false;
-    HOME.on = true; HOME.t = 0; HOME.said = 0; document.body.classList.add('home');
-    homeCap('Mission Control · You’re at the edge of the mission area. Turn around and head back toward the LM.');
+    const v = car.v.dot(_fw);
+    if ((HOME.cool -= dt) > 0 || edge > 40 + 4 * Math.max(0, v) || CRASH.on || BRIEF.on || INTRO.on) return false;      // a little earlier the faster you go
+    HOME.on = true; HOME.t = 0; HOME.v0 = Math.max(3, car.v.dot(_fw));      // the speed he keeps document.body.classList.add('home');
+    homeCap('Mission Control · You’re at the edge of the mission area. Head back toward the LM.');
   }
   if (CRASH.on || BRIEF.on || INTRO.on) { homeEnd(); return false; }
   HOME.t += dt;
-  if (HOME.t > 5 && !HOME.said) { HOME.said = 1; homeCap('Gene Cernan takes the controls and drives back in.'); }
-  if ((edge > 100 && HOME.t > 7) || HOME.t > 30) { homeEnd(); toast('Back in the mission area · the controls are yours'); return false; }
   const far = Math.hypot(LM.x - car.p.x, LM.z - car.p.z) > 500, tx = far ? CX : LM.x, tz = far ? CZ : LM.z;      // toward the lander, or the middle of the map
   let err = Math.atan2(-(tz - car.p.z), tx - car.p.x) - Math.atan2(-_fw.z, _fw.x); err -= 2 * Math.PI * Math.round(err / (2 * Math.PI));
+  if ((Math.abs(err) < 0.4 && HOME.t > 0.8) || HOME.t > 8) { homeEnd(); toast('Heading back in · the controls are yours'); return false; }      // pointed back in: yours again
+  // A driver's swing, faster than the tires alone would turn at this speed: heading and motion turn together, the speed held
+  const turn = Math.max(-0.9 * dt, Math.min(0.9 * dt, err)); car.q.premultiply(_hq.setFromAxisAngle(_hy, turn)); car.v.applyAxisAngle(_hy, turn);
   const v = car.v.dot(_fw);
-  HOME.st = Math.max(-1, Math.min(1, -err * 1.6));      // a calm turn: steering is right-positive, heading counterclockwise
-  HOME.th = v > 4 ? 0 : Math.abs(err) < 0.5 ? 0.7 : v > 1.5 ? 0 : 0.35;      // slow through the turn, the grip is weak
+  HOME.st = Math.max(-1, Math.min(1, -err * 2.5));      // steering is right-positive, heading counterclockwise
+  HOME.th = v < HOME.v0 ? 0.8 : 0;      // he keeps his speed
   return true;
 }
 function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.6; }

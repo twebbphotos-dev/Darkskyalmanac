@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.95 (zion-sky-v464)
+Lunar Rover: at the edge, Gene Cernan now keeps his speed and swings the rover round in two or three seconds, then hands the controls straight back (it had slowed to a crawl and driven 100 m in for up to 30 s). On the Moon's weak grip the tires alone turn too wide at speed, so his swing turns heading and motion together; Mission Control calls a little earlier the faster you go. The lunar module's foil tile is larger and denser, and each flat face takes its own part of it, so the repeat no longer shows; the remaining bare gray and pale parts carry the panel texture.
+
 ## v4.94 (zion-sky-v463)
 Lunar Rover: no more stray shadow blots in craters. Each rock is mostly buried, and the ground casts no shadow of its own, so on slopes facing away from the Sun the buried part threw a shadow up through the ground with no rock to explain it; now only the part above the ground casts one. The lunar module's foil no longer stretches: the model's stored normals are smoothed across its panel edges, so the box projection picked the wrong faces; each triangle is now mapped in the plane of its own face. The ascent stage's bare light-gray panels carry seams and rivet rows.
 
