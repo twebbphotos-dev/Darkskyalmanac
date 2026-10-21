@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.93 (zion-sky-v462)
+Lunar Rover: no invisible wall at the edge. About 50 m from it, Mission Control calls the crew back to the mission area and Gene Cernan drives back in, in the letterbox, until well inside (at most 30 s); then the controls are yours again. The map grew 110 m west and 55 m north and south, so there is room round Shorty. The lunar module stands on its footpads: the ground under it was sloping (one pad hung 0.85 m in the air, one was buried), so a pad about 12 m across is now leveled, and the model is set by its lowest point instead of an assumed origin. Its descent stage carries crinkled amber foil instead of flat yellow paint, the silver a faint crinkle too. Hands up on a big jump: the arms turn so the backs of the gloves face forward and the elbows stay soft; with the scan's curled fingers, palms out had read as claws.
+
 ## v4.92 (zion-sky-v461)
 Lunar Rover: a menu and settings, as in the Mars simulator. The back button (which went to the Moon page by an address that could fall back to the home page) opens a menu: keep driving, restart the time trial (set down just short of the start ring), back to the lander, or back to Objects; from the start card it goes straight to Objects. A gear button opens settings: speed, camera, detail (shared with the Mars simulator, applied on reload) and a two-tap reset of the records. The drive pauses while either is open.
 

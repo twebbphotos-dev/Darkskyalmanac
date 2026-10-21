@@ -149,3 +149,5 @@ v4.90: crew rig. buildCrew keeps the scan's T-pose arms and skins the suit to 10
 v4.91: Shorty at (-158, 62); ORANGE lists the two rim patches (angle, distance in radii, spreads, strength). Speed in localStorage lrv-spd (default 2).
 
 v4.92: menu (#menu: m-resume, m-trial, m-lander, m-objects) and settings (#settings: .spd .cam .det, set-rec two taps). openSheet/closeSheets pause and restore running; toDrive() ends the intro, a briefing, a wreck or a run before placing.
+
+v4.93: HALF 600, CX 243 (grown west). HOME: at 50 m from the edge, homeStep() drives toward the LM (or the map middle past 500 m) with body.home letterbox captions, until 100 m inside or 30 s. buildGround levels 11 m round LM to the mean within 5.5 m. foilLM(): box-projected UVs and a canvas foil on blinn1/9 (amber) and blinn4 (silver, bump only). Hands up: twist sd*pi/4 on upper arm and forearm.

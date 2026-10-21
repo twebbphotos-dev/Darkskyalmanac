@@ -36,7 +36,7 @@ const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
    SQ metres of the Moon, and heights are squashed by SV, so slopes come out SQ·SV = 1.6 times real. The valley's
    shape under it comes from the same terrain model, with the Moon's curvature; the craters are game size. */
 const SQ = 4, SV = 0.4, RM = 1737400;
-const HALF = 545, CX = 298, CZ = -375, CELL = 1.6, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 940 m across, round the third drive
+const HALF = 600, CX = 243, CZ = -375, CELL = 1.6, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 1.2 km across, round the third drive (grown west in 4.93 for room round Shorty)
 const inSq = (x, z, m) => Math.abs(x - CX) < HALF - m && Math.abs(z - CZ) < HALF - m;
 let DEM = null;      // NASA's terrain model of the site (models/moon-a17.bin): 256 × 250 m, heights in quarter-metres, centred on the lander
 function demRaw(X, Z) {      // metres, at X east and Z south of the lander in real metres; Catmull-Rom between the 250 m cells so slopes stay smooth
@@ -137,6 +137,10 @@ function buildGround() {
     H[j * N + i] = HB[j * N + i] + edge * craterH(x, z);
     B[j * N + i] = brightness(x, z);
   }
+  // the landing site: Challenger came down on ground level enough to stand on, so a pad about 12 m across is eased flat to
+  // its own mean height (before, one footpad hung 0.85 m in the air and another was buried)
+  let m = 0, n = 0; const near = (fn) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const r = Math.hypot(CX - HALF + i * CELL - LM.x, CZ - HALF + j * CELL - LM.z); if (r < 11) fn(j * N + i, r); } };
+  near((o, r) => { if (r < 5.5) { m += H[o]; n++; } }); if (n) { m /= n; near((o, r) => { const w = ss(11, 6.5, r); H[o] += (m - H[o]) * w; HB[o] += (m - HB[o]) * w; }); }
 }
 // rocks are small bumps the wheels feel, under the rock you see
 const ROCK_GRID = new Map(), RG = 8;
@@ -804,6 +808,35 @@ const EARTH = earth(); scene.add(EARTH);
 /* ── rover and lander models ── */
 const rover = new THREE.Group(); scene.add(rover);
 const loader = new GLTFLoader().setMeshoptDecoder(MeshoptDecoder);
+/* The lunar module's descent stage: its blankets were layers of crinkled amber Kapton and aluminized film, not flat
+   paint. The model has no texture coordinates on them, so each point takes the two axes of the box face it most nearly
+   faces (the creases hide the seams), a tile about 0.6 m across. */
+function foilLM(root) {
+  const S = 256, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), r = rng(57);
+  x.fillStyle = '#d8d8d8'; x.fillRect(0, 0, S, S);
+  for (let k = 0; k < 300; k++) {      // facets of crumpled film, a little lighter or darker
+    const cx = r() * S, cy = r() * S, n = 3 + (r() * 3 | 0), rad = 5 + r() * 20, l = r() < 0.5;
+    x.fillStyle = l ? `rgba(255,255,255,${0.08 + r() * 0.2})` : `rgba(0,0,0,${0.06 + r() * 0.2})`;
+    x.beginPath(); for (let i = 0; i < n; i++) { const a = i / n * 6.283 + r(); x.lineTo(cx + Math.cos(a) * rad * (0.6 + r() * 0.6), cy + Math.sin(a) * rad * (0.6 + r() * 0.6)); } x.fill();
+  }
+  x.strokeStyle = 'rgba(30,24,16,0.3)'; x.lineWidth = 1;
+  for (let k = 0; k < 80; k++) { const x0 = r() * S, y0 = r() * S, a = r() * 6.283, l = 8 + r() * 40; x.beginPath(); x.moveTo(x0, y0); x.lineTo(x0 + Math.cos(a) * l, y0 + Math.sin(a) * l); x.stroke(); }      // creases
+  const map = new THREE.CanvasTexture(c); map.colorSpace = THREE.SRGBColorSpace; map.wrapS = map.wrapT = THREE.RepeatWrapping; map.anisotropy = 4;
+  const bump = new THREE.CanvasTexture(c); bump.wrapS = bump.wrapT = THREE.RepeatWrapping;
+  root.updateMatrixWorld(true);
+  root.traverse(o => {
+    if (!o.isMesh) return; const amber = /^blinn(1|9)SG/.test(o.material.name), silver = /^blinn4SG/.test(o.material.name);      // the amber blankets, and the silver film on the rest
+    if (o.geometry.attributes.uv || !(amber || silver)) return;
+    const g = o.geometry, p = g.attributes.position, nm = g.attributes.normal, uv = new Float32Array(p.count * 2), k = o.matrixWorld.getMaxScaleOnAxis() / 0.6;
+    for (let i = 0; i < p.count; i++) { const ax = Math.abs(nm.getX(i)), ay = Math.abs(nm.getY(i)), az = Math.abs(nm.getZ(i));
+      const [u, v] = ax >= ay && ax >= az ? [p.getZ(i), p.getY(i)] : ay >= az ? [p.getX(i), p.getZ(i)] : [p.getX(i), p.getY(i)]; uv[i * 2] = u * k; uv[i * 2 + 1] = v * k; }
+    g.setAttribute('uv', new THREE.BufferAttribute(uv, 2));
+    const m = o.material.clone(); m.bumpMap = bump;
+    if (amber) { m.map = map; m.bumpScale = 1.5; m.metalness = 0.5; m.roughness = 0.38; m.color.multiply(new THREE.Color(0xd2b48c)); }      // amber, a little less yellow than the model's flat color
+    else { m.bumpScale = 0.5; m.metalness = 0.3; m.roughness = 0.45; }      // the silver: the crinkle only, faint
+    o.material = m;
+  });
+}
 function dusty(root) { root.traverse(o => { if (!o.isMesh) return; o.castShadow = o.receiveShadow = true; [].concat(o.material).forEach(m => { if (m.color) m.color.lerp(new THREE.Color(0x9b958c), 0.18); }); }); }
 
 /* ── controls ── */
@@ -822,6 +855,29 @@ document.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e
 
 /* ── HUD ── */
 let toastT = 0;
+/* The edge of the map, without an invisible wall: Mission Control calls the crew back to the mission area, and Gene
+   Cernan takes the controls and drives back in for a while, in the letterbox; then they are yours again. */
+const HOME = { on: false, t: 0, cool: 0, th: 0, st: 0, said: 0 };
+function homeCap(m) { const el = $('cine-cap'); el.classList.remove('on'); el.textContent = m; void el.offsetWidth; el.classList.add('on'); }
+function homeEnd() { HOME.on = false; HOME.cool = 8; document.body.classList.remove('home'); $('cine-cap').classList.remove('on'); }
+function homeStep(dt) {      // true while Cernan is driving
+  const edge = HALF - Math.max(Math.abs(car.p.x - CX), Math.abs(car.p.z - CZ));
+  if (!HOME.on) {
+    if ((HOME.cool -= dt) > 0 || edge > 50 || CRASH.on || BRIEF.on || INTRO.on) return false;
+    HOME.on = true; HOME.t = 0; HOME.said = 0; document.body.classList.add('home');
+    homeCap('Mission Control · You’re at the edge of the mission area. Turn around and head back toward the LM.');
+  }
+  if (CRASH.on || BRIEF.on || INTRO.on) { homeEnd(); return false; }
+  HOME.t += dt;
+  if (HOME.t > 5 && !HOME.said) { HOME.said = 1; homeCap('Gene Cernan takes the controls and drives back in.'); }
+  if ((edge > 100 && HOME.t > 7) || HOME.t > 30) { homeEnd(); toast('Back in the mission area · the controls are yours'); return false; }
+  const far = Math.hypot(LM.x - car.p.x, LM.z - car.p.z) > 500, tx = far ? CX : LM.x, tz = far ? CZ : LM.z;      // toward the lander, or the middle of the map
+  let err = Math.atan2(-(tz - car.p.z), tx - car.p.x) - Math.atan2(-_fw.z, _fw.x); err -= 2 * Math.PI * Math.round(err / (2 * Math.PI));
+  const v = car.v.dot(_fw);
+  HOME.st = Math.max(-1, Math.min(1, -err * 1.6));      // a calm turn: steering is right-positive, heading counterclockwise
+  HOME.th = v > 4 ? 0 : Math.abs(err) < 0.5 ? 0.7 : v > 1.5 ? 0 : 0.35;      // slow through the turn, the grip is weak
+  return true;
+}
 function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.6; }
 function landed(a) {
   buzz(a.t > 1.2 ? 40 : 20);
@@ -1134,6 +1190,7 @@ function toDrive() {      // out of the opening film, a time trial's briefing or
   if (INTRO.on) endIntro();
   if (BRIEF.on) { BRIEF.on = false; document.body.classList.remove('briefing'); $('cine-cap').classList.remove('on'); BRIEF.cap = ''; }
   if (CRASH.on) { CRASH.on = false; rover.visible = true; }
+  if (HOME.on) homeEnd();
   RUN.on = false; RUN.save = null; REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); $('clock').textContent = '';
   CREW.forEach(c => { c.visible = true; }); OBJ.live = true; camInit = false;
 }
@@ -1225,6 +1282,7 @@ function frame(now) {
   if (running) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
+    if (homeStep(dt)) { throttle = HOME.th; steerIn = HOME.st; }      // Cernan driving, the player's controls set aside
     if (Math.abs(throttle) > 0.02 || Math.abs(steerIn) > 0.02) parked = false;
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
     if (!CRASH.on) for (let i = 0; i < n; i++) step(h);
@@ -1729,7 +1787,9 @@ function poseCrew(h) {
     const pole = _ce.set(sd * (0.7 + 0.3 * st.up), -0.8 + 1.0 * st.up, -0.6 + 0.4 * st.up); pole.addScaledVector(d, -pole.dot(d)).normalize();      // elbows out and down, or out when the hands go up
     const E = _cE.copy(S).addScaledVector(d, a).addScaledVector(pole, ht), H = d.multiplyScalar(D).add(S);
     const qu = new THREE.Quaternion().setFromUnitVectors(_ca.copy(E0).sub(S0).normalize(), _ce.copy(E).sub(S).normalize());
+    if (st.up > 0.01) qu.premultiply(_cq2.setFromAxisAngle(_ce.copy(E).sub(S).normalize(), sd * Math.PI / 4 * st.up));      // hands up: the arm turns so the backs of the gloves face forward (the scan's fingers are curled: palms out read as claws)
     const qf = new THREE.Quaternion().setFromUnitVectors(_ca.copy(H0).sub(E0).normalize().applyQuaternion(qu), _ce.copy(H).sub(E).normalize()).multiply(qu);
+    if (st.up > 0.01) qf.premultiply(_cq2.setFromAxisAngle(_ce.copy(H).sub(E).normalize(), sd * Math.PI / 4 * st.up));
     setBone(B, u, qu, S0, S); setBone(B, f, qf, E0, E);
   }
 }
@@ -1759,7 +1819,7 @@ function stepCrew(dt) {
     const L = Math.hypot(st.lx, st.lz); if (L > 0.5) { st.lx *= 0.5 / L; st.lz *= 0.5 / L; }
     st.y = Math.max(-0.03, Math.min(0.09, st.y));
     const want = FUN.on && h === CREW[1] ? 1 : 0; st.up += (want - st.up) * (1 - Math.exp(-dt * (want ? 7 : 4)));
-    for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.3 : -0.3, 1.02, 0.2), st.up);
+    for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.29 : -0.29, 0.95, 0.2), st.up);      // straight up, elbows soft
     poseCrew(h);
   }
 }
@@ -1783,7 +1843,8 @@ function handController() {      // the T-handle on its post between the seats
   if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o, handController()); rigWheels(); buildSections(); buildDebris(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
   { const a = await loader.loadAsync('../models/astronaut.glb').catch(() => null); if (a) seatCrew(buildCrew(a.scene)); }      // after the sections and debris are cut, so the crew is in neither
-  if (lm) { const o = lm.scene; dusty(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true; o.position.set(x, ground(x, z) - 0.15, z); o.rotation.y = -Math.PI / 2; scene.add(o); }
+  if (lm) { const o = lm.scene; dusty(o); foilLM(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true; o.position.set(x, 0, z); o.rotation.y = -Math.PI / 2;
+    o.updateMatrixWorld(true); o.position.y = LM.y - new THREE.Box3().setFromObject(o).min.y - 0.05; scene.add(o); }      // the footpads on the ground, pressed a few centimeters in
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
