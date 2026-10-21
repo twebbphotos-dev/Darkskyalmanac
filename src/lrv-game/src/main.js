@@ -996,13 +996,23 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
     const g = mesh(d); g.position.set(d.c.x - hx, d.c.y - SEC.HY, d.c.z); piv.add(g); body.add(piv);
     piv.rotation.z = (R() < 0.5 ? -1 : 1) * (0.08 + 0.4 * k) * (0.6 + 0.4 * R()); piv.rotation.x = (R() - 0.5) * 0.25 * k; ends[key] = piv; }
   for (const key of ['w0', 'w1', 'w2', 'w3', 'k00', 'k01', 'k10', 'k11']) { const d = by[key]; if (!d) continue;
-    const wheel = key[0] === 'w', go = R() < (wheel ? 0.1 + 0.45 * k : 0.05 + 0.4 * k);
+    const wheel = key[0] === 'w', go = R() < (wheel ? 0.1 + 0.45 * k : 0.45 + 0.4 * k);      // the antennas, camera and seats on top are the weakest parts: even a slow roll tears some off
     if (go) { launch(mesh(d), d.c, (wheel ? 1.0 : 0.6) * (0.3 + k), wheel, d.sz); continue; }
     const host = wheel ? ends[d.c.x > 0 ? 'c2' : 'c0'] : null, g = mesh(d);      // left on, knocked askew: a wheel goes with its end of the chassis
     if (host) g.position.copy(d.c).sub(C).sub(host.position); else g.position.copy(d.c).sub(C);
-    g.rotation.set((R() - 0.5) * (wheel ? 0.7 : 0.3) * (0.3 + k), (R() - 0.5) * 0.3 * (0.3 + k), (R() - 0.5) * 0.3 * (0.3 + k));
+    g.rotation.set((R() - 0.5) * (wheel ? 0.7 : 1.1) * (0.3 + k), (R() - 0.5) * 0.3 * (0.3 + k), (R() - 0.5) * (wheel ? 0.3 : 1.0) * (0.3 + k));
+    if (!wheel) g.scale.set(1, 0.5 + 0.25 * R(), 1);      // what stays on is crushed flat against the ground it landed on
     (host || body).add(g); }
   body.position.copy(C).applyMatrix4(rover.matrixWorld); body.quaternion.copy(car.q); scene.add(body);
+  // the crew, thrown clear: each a loose body, tumbling with the rover's spin and pitched out from their seats
+  for (const h of CREW) {
+    if (!h.visible) continue;
+    h.updateMatrixWorld(true); const g = new THREE.Group(); g.userData.part = true;
+    h.children[0].children.forEach(c => { const n = new THREE.Mesh(c.geometry, DEBRIS_MATS.get(c.material) || (DEBRIS_MATS.set(c.material, c.material.clone()), DEBRIS_MATS.get(c.material))); n.castShadow = true; g.add(n); });
+    h.getWorldPosition(g.position); h.getWorldQuaternion(g.quaternion); scene.add(g);
+    const rr = g.position.clone().sub(car.p), v = car.v.clone().add(car.w.clone().cross(rr)).addScaledVector(rr.clone().setY(0).normalize(), 0.8 + 1.6 * k + R()).add(new THREE.Vector3(0, 1 + 2 * k + R(), 0));
+    CRASH.pieces.push(Object.assign({ m: g, v, w: car.w.clone().add(new THREE.Vector3(R() - .5, R() - .5, R() - .5).multiplyScalar(3 + 4 * k)) }, debrisBody(g)));
+  }
   const rr = body.position.clone().sub(car.p);
   CRASH.pieces.push(Object.assign({ m: body, main: true, v: car.v.clone().add(car.w.clone().cross(rr)), w: car.w.clone() }, debrisBody(body)));
   for (let j = 0, n = Math.round(30 + 70 * k); j < n; j++) { const i = dnext; dnext = (dnext + 1) % DN;      // a puff of dust, falling straight back
@@ -1037,7 +1047,7 @@ function stepDebris(p, h) {      // one rigid piece, one small time step
 function stepCrash(dt) {
   if (!CRASH.on) {      // remember where it last drove upright, to bring it back there
     if ((CRASH.safeT += dt) > 1 && _up.y > 0.85 && AIR.grounded) { CRASH.safeT = 0; CRASH.safe = { x: car.p.x, z: car.p.z, yaw: Math.atan2(-_fw.z, _fw.x) }; }
-    if (CRASH.roof > 3.5 || (_up.y < -0.2 && CRASH.topDown && car.v.length() > 4)) breakApart(Math.max(CRASH.roof, car.v.length()));      // only on landing upside down: a roll in the air is not yet a crash
+    if (CRASH.roof > 3.5 || (_up.y < -0.2 && CRASH.topDown)) breakApart(Math.max(CRASH.roof, car.v.length()));      // landing upside down, however slowly: the antennas, the camera and the crew on top take it. A roll in the air is not yet a crash
     CRASH.topDown = false;
     CRASH.roof = 0;
   } else if ((CRASH.t += dt) > 4.5) {
@@ -1063,7 +1073,7 @@ document.querySelectorAll('#speedpick button').forEach(b => {
   b.classList.toggle('on', +b.dataset.v === SPD);
   b.addEventListener('click', () => { setSpeed(+b.dataset.v); showRecords(); document.querySelectorAll('#speedpick button').forEach(o => o.classList.toggle('on', o === b)); });
 });
-$('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else running = OBJ.live = true; });
+$('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else { running = OBJ.live = true; CREW.forEach(c => { c.visible = true; }); } });
 $('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); else if (BRIEF.on && BRIEF.t < BRIEF.lines[2][0]) BRIEF.t = BRIEF.lines[2][0]; });
 { const go = e => { e.preventDefault(); location.href = '../moon'; }; $('back').addEventListener('click', go); }
 
@@ -1143,6 +1153,7 @@ function frame(now) {
   ORB.idle += dt; if (ORB.idle > 2.5) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
   _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q);
   const wreck = CRASH.on && CRASH.pieces.find(p => p.main);
+  if (CREW[0] && !INTRO.on && OBJ.live) CREW[0].visible = pov !== 2;      // in his seat you see through his eyes, not his helmet
   if (wreck) {      // the crash: follow the biggest piece, the chassis, rising to look almost straight down on the wreck
     const k = ss(0, 2.2, CRASH.t), heading = Math.atan2(-_fw.z, _fw.x) + Math.PI, D = 8 - k, H = 2.5 + 18 * k, t = wreck.m.position;
     const want = _tmp.set(t.x + Math.cos(heading) * D, t.y + H, t.z - Math.sin(heading) * D); want.y = Math.max(want.y, ground(want.x, want.z) + 1.5);
@@ -1341,7 +1352,7 @@ function startIntro() {
   place(x0, z0, yaw);
 }
 function endIntro() {
-  INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on'); OBJ.ring.visible = OBJ.live = true;
+  INTRO.on = false; document.body.classList.remove('intro'); $('cine-cap').classList.remove('on'); OBJ.ring.visible = OBJ.live = true; CREW.forEach(c => { c.visible = true; });
   foldPose(0, 0, 0, 0); SEC.kit.forEach(k => { k.m.visible = true; k.m.scale.setScalar(1); }); place(INTRO.end.x, INTRO.end.z, INTRO.end.yaw);
   camPos.copy(camera.position); camTgt.copy(car.p); camInit = true;      // the chase camera picks up from the last shot
   running = true;
@@ -1370,6 +1381,7 @@ function stepIntro(dt) {
   _iq.copy(INTRO.q).multiply(new THREE.Quaternion().setFromAxisAngle(_iz, -phi));
   const pos = _ic.copy(_ip).sub(_it.set(SEC.HF, SEC.HB, 0).applyQuaternion(_iq));
   const k = sm(19.0, 20.0);      // settle onto the pose the drive starts from
+  CREW.forEach(c => { c.visible = T > BACK[0] - 0.4; });      // aboard for the drive out, once the rover is set up
   if (T > BACK[0]) {      // reversing round to face the ring, front and rear wheels steering opposite ways
     const u = Math.min(1, (T - BACK[0]) / (BACK[1] - BACK[0])), sNow = INTRO.L * u * u * u * (u * (6 * u - 15) + 10), P = INTRO.path, n = P.length - 1;
     const f = Math.min(n, sNow / INTRO.L * n), i = Math.min(n - 1, Math.floor(f)), w = f - i, at = j => P[i][j] + (P[i + 1][j] - P[i][j]) * w;
@@ -1527,6 +1539,52 @@ function siteMarks() {      // shown when near, or when looked at fairly directl
 }
 function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -car.steer * WHEELS[k].steer; w.spin.rotation.z = -WHEELS[k].spin; }); }
 
+/* ── the crew: NASA's astronaut model (NASA 3D Resources, public domain), its suit texture given the weave of Beta cloth
+   (models/astronaut.glb, rebuilt by src/lrv-game/astronaut.md). The scan stands with its arms out; here it is bent into a
+   seat: the shins folded back at the knee, then everything below the hip swung forward, the arms lowered from the
+   shoulder and brought forward to the hand controller and the console. Each bend is blended over a few centimeters, the
+   way a pressure suit creases. Gray lunar dust works up the boots and lower legs. Gene Cernan drives from the left seat
+   (his suit carries the commander's red stripes); Harrison Schmitt rides on the right. ── */
+const CREW = [];
+const CREW_SEATS = [[-0.66, 0.16, -0.33], [-0.66, 0.16, 0.33]];      // where each seat is, rover frame (x forward, z to the right)
+function buildCrew(src) {
+  src.updateMatrixWorld(true);
+  const box = new THREE.Box3().setFromObject(src), k = 1.85 / (box.max.y - box.min.y), V = new THREE.Vector3(), Q = new THREE.Quaternion(), E = new THREE.Euler();
+  const hipY = 0.93, kneeY = 0.5, shY = 1.42, shX = 0.2, cz = (box.min.z + box.max.z) / 2 * k;
+  const rotAbout = (v, piv, e) => v.sub(piv).applyQuaternion(Q.setFromEuler(E.set(e[0], e[1], e[2]))).add(piv);
+  const parts = [];
+  src.traverse(o => {
+    if (!o.isMesh) return;
+    const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); g.translate(-(box.min.x + box.max.x) / 2, -box.min.y, 0); g.scale(k, k, k);
+    const p = g.attributes.position, col = new Float32Array(p.count * 3);
+    for (let i = 0; i < p.count; i++) {
+      V.fromBufferAttribute(p, i); const y0 = V.y, side = Math.sign(V.x) || 1;
+      const dust = ss(0.62, 0.08, y0);      // gray regolith: up the boots and lower legs
+      col.set([1 - 0.3 * dust, 1 - 0.31 * dust, 1 - 0.33 * dust], i * 3);
+      const wKnee = ss(kneeY + 0.06, kneeY - 0.06, y0), wHip = ss(hipY + 0.07, hipY - 0.09, y0);
+      const wArm = ss(shX - 0.04, shX + 0.12, Math.abs(V.x)) * ss(shY - 0.32, shY - 0.18, y0);
+      if (wKnee > 0) rotAbout(V, new THREE.Vector3(V.x, kneeY, cz), [Math.PI / 2 * wKnee, 0, 0]);       // shin back
+      if (wHip > 0) rotAbout(V, new THREE.Vector3(V.x, hipY, cz), [-Math.PI / 2 * wHip, 0, 0]);         // thigh forward, shin now down
+      if (wArm > 0) {
+        rotAbout(V, new THREE.Vector3(side * shX, shY, cz), [0, 0, -side * 1.15 * wArm]);       // arm lowered
+        rotAbout(V, new THREE.Vector3(side * shX, shY, cz), [-0.75 * wArm, 0, 0]);       // and brought forward
+      }
+      p.setXYZ(i, V.x, V.y - (hipY), V.z);      // the seat, under the hips, is the origin
+    }
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
+    const m = o.material.clone(); m.vertexColors = true; parts.push([g, m]);
+  });
+  return parts;
+}
+function seatCrew(parts) {
+  CREW_SEATS.forEach((pos, i) => {
+    const grp = new THREE.Group(); grp.userData.part = true;
+    parts.forEach(([g, m]) => { const mesh = new THREE.Mesh(g, m); mesh.castShadow = true; grp.add(mesh); });
+    const holder = new THREE.Group(); holder.add(grp); holder.position.set(...pos); holder.rotation.y = Math.PI / 2;      // facing forward, +x
+    holder.visible = false; rover.add(holder); CREW.push(holder);
+  });
+}
+
 /* ── start ── */
 (async () => {
   $('loadmsg').textContent = 'Shaping the valley…';
@@ -1539,6 +1597,7 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
   if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o); rigWheels(); buildSections(); buildDebris(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
+  { const a = await loader.loadAsync('../models/astronaut.glb').catch(() => null); if (a) seatCrew(buildCrew(a.scene)); }      // after the sections and debris are cut, so the crew is in neither
   if (lm) { const o = lm.scene; dusty(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true; o.position.set(x, ground(x, z) - 0.15, z); o.rotation.y = -Math.PI / 2; scene.add(o); }
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
