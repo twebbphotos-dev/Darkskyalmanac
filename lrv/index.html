@@ -60,6 +60,12 @@
   html.touch #hint{display:none}
   .sheet{position:fixed;inset:0;z-index:40;display:none;align-items:center;justify-content:center;padding:18px;background:rgba(0,0,0,.55)}
   .sheet.on{display:flex}
+  /* the map: a small one under the title, the whole valley when tapped */
+  #minimap{position:fixed;left:14px;top:calc(env(safe-area-inset-top,0px) + 60px);z-index:19;width:92px;height:92px;border-radius:50%;
+    border:1px solid var(--line);box-shadow:0 2px 10px rgba(0,0,0,.5);cursor:pointer;pointer-events:auto;background:#1a1916}
+  body.intro #minimap,body.replay #minimap,body.briefing #minimap{display:none}
+  #mapsheet .card{max-width:640px}
+  #mapbig{display:block;width:100%;aspect-ratio:1;border-radius:8px;background:#1a1916;margin:0 0 12px}
   .card{max-width:470px;width:100%;max-height:90vh;overflow-y:auto;background:#0d0a18;border:1px solid var(--line);border-radius:12px;padding:22px 22px 20px}
   .card h1{margin:0 0 3px;font-size:19px;font-weight:600;color:var(--hi);letter-spacing:.02em}
   .card h2{margin:0 0 14px;font-size:9.5px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--gold)}
@@ -112,6 +118,7 @@
     <div class="stat"><b id="best">—</b><span>Best air</span></div>
   </div>
 </div>
+<canvas id="minimap" title="Map"></canvas>
 <div id="air"></div>
 <div id="objmark"><i></i><b></b></div>
 <div id="clock"></div>
@@ -147,6 +154,15 @@
 </div>
 
 <div id="sites"></div>
+<div class="sheet" id="mapsheet">
+  <div class="card">
+    <h1>Taurus–Littrow</h1>
+    <h2>Where you have driven · names from the crew’s maps</h2>
+    <canvas id="mapbig"></canvas>
+    <p class="fine">Gold: your path. Faint blue: the third drive, the time trial’s loop. Blue circles mark places samples were found; tap one in the view to open its card. Names are those on the crew’s traverse maps; Shorty is drawn much closer to the lander than it really is, and the map shows the valley at a quarter of its true size.</p>
+    <button class="btn primary" id="mapsheet-close">Back to driving</button>
+  </div>
+</div>
 <div class="sheet" id="sitecard">
   <div class="card">
     <h1 id="sc-t"></h1>

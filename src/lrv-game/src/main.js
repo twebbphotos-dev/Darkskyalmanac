@@ -1166,7 +1166,7 @@ function frame(now) {
   const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = U.speed(kmh).toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
-  siteMarks();
+  siteMarks(); if (running) mapTick(dt);
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -1451,12 +1451,66 @@ const SITE_IMGS = {
 };
 SITES.forEach(st => { st.imgs = SITE_IMGS[st.name] || []; });
 const _sp = new THREE.Vector3();
+/* ── the map: a shaded relief of the drivable square (drawn once from the ground grid), your path on it (kept on this
+   device), the time trial's loop, the lander, and the names on the crew's traverse maps. Samples show as hints until
+   their card has been opened. ── */
+const MAP = { relief: null, trail: (() => { try { return JSON.parse(localStorage.getItem('lrv-trail')) || []; } catch (e) { return []; } })(), seen: (() => { try { return new Set(JSON.parse(localStorage.getItem('lrv-found')) || []); } catch (e) { return new Set(); } })(), t: 0, saveT: 0, open: false };
+const MAP_NAMES = () => [
+  [LM.x + 22, LM.z + 30, 'Challenger'], [CPS[0].x, CPS[0].z - 22, 'Station 6'], [CPS[1].x - 10, CPS[1].z - 20, 'Station 8'],
+  [VAN.x, VAN.z - SHORTY.R - 8, 'Station 9 · Van Serg'], [SHORTY.x, SHORTY.z - SHORTY.R - 12, 'Shorty'], [CX, CZ - HALF + 70, 'North Massif'],
+];
+const MAP_EDGE = [['Sculptured Hills →', 1, 0.42], ['← South Massif', -1, 0.96]];      // beyond the square: [label, side (1 east, −1 west), how far down]
+function reliefCanvas() {
+  const S = 340, c = document.createElement('canvas'); c.width = c.height = S; const x = c.getContext('2d'), im = x.createImageData(S, S);
+  for (let j = 0; j < S; j++) for (let i = 0; i < S; i++) {
+    const gx = CX - HALF + (i + 0.5) * 2 * HALF / S, gz = CZ - HALF + (j + 0.5) * 2 * HALF / S, e = 2 * HALF / S;
+    const dx = groundBase(gx + e, gz) - groundBase(gx - e, gz), dz = groundBase(gx, gz + e) - groundBase(gx, gz - e);
+    const v = Math.max(16, Math.min(215, 108 - dx / e * 150 - dz / e * 38)), o = (j * S + i) * 4;      // lit from the east, like the valley under this Sun
+    im.data[o] = v; im.data[o + 1] = v * 0.98; im.data[o + 2] = v * 0.93; im.data[o + 3] = 255;
+  }
+  x.putImageData(im, 0, 0); return c;
+}
+function drawMap(cv, cx, cz, span, big) {      // span: meters across the canvas
+  const dpr = Math.min(2, devicePixelRatio || 1), W = Math.round(cv.clientWidth * dpr); if (!W) return;
+  if (cv.width !== W) { cv.width = cv.height = W; }
+  const x = cv.getContext('2d'), k = W / span, P = (wx, wz) => [(wx - cx) * k + W / 2, (wz - cz) * k + W / 2];
+  if (!MAP.relief) MAP.relief = reliefCanvas();
+  x.fillStyle = '#1a1916'; x.fillRect(0, 0, W, W);
+  const [rx, ry] = P(CX - HALF, CZ - HALF); x.drawImage(MAP.relief, rx, ry, 2 * HALF * k, 2 * HALF * k);
+  x.lineJoin = x.lineCap = 'round';
+  x.strokeStyle = 'rgba(124,199,242,.55)'; x.lineWidth = Math.max(1, 1.2 * dpr); x.setLineDash([2 * dpr, 4 * dpr]); x.beginPath();      // the third drive
+  for (let i = 0; i < COURSE.length; i += 6) { const [a, b] = P(COURSE[i], COURSE[i + 1]); i ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); x.setLineDash([]);
+  x.strokeStyle = 'rgba(230,204,133,.9)'; x.lineWidth = Math.max(1.5, (big ? 2 : 1.6) * dpr); x.beginPath();      // where you have driven
+  let pen = false; for (const q of MAP.trail) { if (!q) { pen = false; continue; } const [a, b] = P(q[0], q[1]); pen ? x.lineTo(a, b) : x.moveTo(a, b); pen = true; } x.stroke();
+  const fs = (big ? 11 : 8) * dpr; x.font = `600 ${fs}px Montserrat, sans-serif`; x.textAlign = 'center';
+  for (const st of SITES) if (st.kind === 'find') {      // samples: a hint until found
+    const [wx, wz] = st.at(), [a, b] = P(wx, wz), seen = MAP.seen.has(st.name);
+    x.beginPath(); x.arc(a, b, (big ? 5 : 3.2) * dpr, 0, 6.3); x.strokeStyle = '#7CC7F2'; x.lineWidth = 1.3 * dpr; x.stroke(); if (seen) { x.fillStyle = '#7CC7F2'; x.fill(); }
+    if (big) { x.fillStyle = 'rgba(201,189,151,.95)'; x.fillText(seen ? st.name.split(',')[0] : '?', a, b + 17 * dpr); }
+  }
+  if (big || span < 600) for (const [wx, wz, t] of MAP_NAMES()) { const [a, b] = P(wx, wz); x.fillStyle = 'rgba(0,0,0,.55)'; x.fillText(t, a + dpr, b + dpr); x.fillStyle = '#E6CC85'; x.fillText(t, a, b); }
+  if (big) for (const [t, side, f] of MAP_EDGE) { x.textAlign = side > 0 ? 'right' : 'left'; x.fillStyle = 'rgba(201,189,151,.8)'; x.fillText(t, side > 0 ? W - 8 * dpr : 8 * dpr, W * f); }
+  const [la, lb] = P(LM.x, LM.z); x.fillStyle = '#F2E4BE'; x.fillRect(la - 2.5 * dpr, lb - 2.5 * dpr, 5 * dpr, 5 * dpr);      // the lander
+  const [ca, cb] = P(car.p.x, car.p.z), hd = Math.atan2(-_fw.z, _fw.x);      // you, pointing the way you face
+  x.save(); x.translate(ca, cb); x.rotate(-hd); x.beginPath(); x.moveTo(7 * dpr, 0); x.lineTo(-4.5 * dpr, 4 * dpr); x.lineTo(-2.5 * dpr, 0); x.lineTo(-4.5 * dpr, -4 * dpr); x.closePath();
+  x.fillStyle = '#E6CC85'; x.strokeStyle = '#0d0a18'; x.lineWidth = 1.2 * dpr; x.fill(); x.stroke(); x.restore();
+}
+function mapTick(dt) {
+  const L = MAP.trail[MAP.trail.length - 1];
+  if (!CRASH.on && (!L || Math.hypot(car.p.x - L[0], car.p.z - L[1]) > 3)) { if (L && Math.hypot(car.p.x - L[0], car.p.z - L[1]) > 30) MAP.trail.push(null); MAP.trail.push([+car.p.x.toFixed(1), +car.p.z.toFixed(1)]); if (MAP.trail.length > 6000) MAP.trail.splice(0, 1000); }      // a gap after a jump back
+  if ((MAP.saveT += dt) > 5) { MAP.saveT = 0; try { localStorage.setItem('lrv-trail', JSON.stringify(MAP.trail)); } catch (e) { /* not kept */ } }
+  if ((MAP.t += dt) > 0.2) { MAP.t = 0; drawMap($('minimap'), car.p.x, car.p.z, 260, false); }
+}
+let mapRun = false;
+$('minimap').addEventListener('click', () => { if (INTRO.on || REPLAY.on || BRIEF.on) return; mapRun = running; running = false; $('mapsheet').classList.add('on'); requestAnimationFrame(() => drawMap($('mapbig'), CX, CZ, 2 * HALF, true)); });
+$('mapsheet-close').addEventListener('click', () => { $('mapsheet').classList.remove('on'); running = mapRun; });
 let siteRun = false;
 function openSite(st) {
   $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub;
   const fig = ([src, cap]) => `<figure><img src="${src}" alt="" loading="lazy" onerror="this.parentNode.remove()"><figcaption>${cap}</figcaption></figure>`;
   $('sc-b').innerHTML = (st.imgs[0] ? fig(st.imgs[0]) : '') + st.body.map(t => `<p>${t}</p>`).join('') + st.imgs.slice(1).map(fig).join('');      // the first picture leads, any others follow the text
   $('sitecard').classList.add('on'); siteRun = running; running = false;
+  if (st.kind === 'find' && !MAP.seen.has(st.name)) { MAP.seen.add(st.name); try { localStorage.setItem('lrv-found', JSON.stringify([...MAP.seen])); } catch (e) { /* not kept */ } }
 }
 $('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; });
 SITES.forEach(st => { const b = document.createElement('button'); b.className = st.kind === 'find' ? 'site find' : 'site'; b.innerHTML = `<i></i>${st.label || st.name}`; b.addEventListener('click', () => openSite(st)); $('sites').appendChild(b); st.el = b; });

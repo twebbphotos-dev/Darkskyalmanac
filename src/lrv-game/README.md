@@ -139,3 +139,5 @@ v4.82: HALF 545, CX 298 (was 470, 373). Crater and rock generation keeps CX0/CZ0
 v4.83: SITES entries with kind 'find' are discovery pins (.site.find, label) opening the same sheet; any entry may carry img (img/lrv/…) and cap, drawn as a figure only if the image loads. siteMarks: camera.updateMatrixWorld() first; opacity = ss(far, 0.55·far, d) · ss(0.5, 0.28, aim), far 280 (sites) or 150 (finds); always on within 35 m.
 
 v4.84: SITE_IMGS maps a card's name to [file, caption] pairs (lrv/img/, NASA photographs); the first leads the card, the rest follow the text. Listed in OFFLINE3D.
+
+v4.86: MAP (trail in localStorage lrv-trail, opened samples in lrv-found), reliefCanvas() from groundBase, drawMap(canvas, cx, cz, span, big), mapTick each running frame (minimap redrawn every 0.2 s). Names: MAP_NAMES, MAP_EDGE.

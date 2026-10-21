@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.86 (zion-sky-v455)
+Lunar Rover: a map. A small round map under the title follows the rover (260 m across, north up) with your path, the time trial's loop and the lander; tap it for the whole valley: a shaded relief drawn from the drivable ground, your path in gold (kept on this device), the third drive in faint blue, and the names on the crew's traverse maps (Challenger, Stations 6, 8 and 9, Van Serg, Shorty, North Massif, with Sculptured Hills and South Massif pointed to off the edge). Tracy's Rock is left off, since it was named during the mission. Sample sites show as hints until their card has been opened, then by number. Opening the map pauses the drive.
+
 ## v4.85 (zion-sky-v454)
 Lunar Rover: the orange soil photograph (AS17-137-20990) on the 74220 card has its color raised 25% from NASA's original so the orange reads on a phone, still close to the frame as published; the caption says the color is enhanced.
 
