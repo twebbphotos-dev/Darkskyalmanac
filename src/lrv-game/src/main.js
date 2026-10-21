@@ -36,7 +36,7 @@ const ss = (a, b, x) => { const t = Math.max(0, Math.min(1, (x - a) / (b - a)));
    SQ metres of the Moon, and heights are squashed by SV, so slopes come out SQ·SV = 1.6 times real. The valley's
    shape under it comes from the same terrain model, with the Moon's curvature; the craters are game size. */
 const SQ = 4, SV = 0.4, RM = 1737400;
-const HALF = 470, CX = 373, CZ = -375, CELL = 1.6, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 940 m across, round the third drive
+const HALF = 545, CX = 298, CZ = -375, CELL = 1.6, N = Math.round(2 * HALF / CELL) + 1;      // the drivable square, 940 m across, round the third drive
 const inSq = (x, z, m) => Math.abs(x - CX) < HALF - m && Math.abs(z - CZ) < HALF - m;
 let DEM = null;      // NASA's terrain model of the site (models/moon-a17.bin): 256 × 250 m, heights in quarter-metres, centred on the lander
 function demRaw(X, Z) {      // metres, at X east and Z south of the lander in real metres; Catmull-Rom between the 250 m cells so slopes stay smooth
@@ -49,19 +49,27 @@ function demRaw(X, Z) {      // metres, at X east and Z south of the lander in r
 }
 let DEM0 = 0;
 function demGame(x, z) { const X = x * SQ, Z = z * SQ; return (demRaw(X, Z) - DEM0) * SV - (X * X + Z * Z) / (2 * RM) * SV; }
-const craters = [], rocks = [], VAN = { x: 0, z: 0 };
+const craters = [], rocks = [], VAN = { x: 0, z: 0 }, SHORTY = { x: -120, z: 10, R: 55 };
 { const r = rng(1972);
   const add = (x, z, R, fresh) => craters.push({ x, z, R, fresh, depth: R * (0.12 + 0.26 * fresh), rim: R * (0.025 + 0.06 * fresh) });
   // a few fresh ones within reach of the start, the rims to aim for
-  [[48, -18, 13, 1], [-30, 64, 17, .95], [96, 52, 21, .9], [20, 120, 11, 1], [-92, -40, 24, .85]].forEach(c => add(...c));
+  [[48, -18, 13, 1], [-30, 64, 17, .95], [96, 52, 21, .9], [20, 120, 11, 1], [-40, -75, 24, .85]].forEach(c => add(...c));      // (the last moved out of Shorty's way)
+  // the square was 940 m across round (373, −375) when these were laid out; they stay where they were, and the strip it
+  // grew by (to make room for Shorty, west of the lander) gets its own, from its own random numbers, just below
+  const CX0 = 373, CZ0 = -375, H0 = 470, old = (x, z) => Math.abs(x - CX0) < H0 && Math.abs(z - CZ0) < H0;
   for (let i = 0; i < 2000; i++) {
     const R = 1.2 / Math.sqrt(1 - r() * (1 - (1.2 / 32) ** 2));        // a power-law spread of sizes, 1.2 to 32 m
-    const x = CX + (r() * 2 - 1) * (HALF - 10), z = CZ + (r() * 2 - 1) * (HALF - 10);
+    const x = CX0 + (r() * 2 - 1) * (H0 - 10), z = CZ0 + (r() * 2 - 1) * (H0 - 10);
     if (Math.hypot(x, z) < 14 || Math.hypot(x + 12, z - 4) < 14) continue;      // the start and the lander stand on level ground
     add(x, z, R, Math.pow(r(), 2.2));
   }
-  for (let i = 0; i < 1150; i++) { const x = CX + (r() * 2 - 1) * (HALF - 6), z = CZ + (r() * 2 - 1) * (HALF - 6); if (Math.hypot(x, z) < 10) continue;
+  for (let i = 0; i < 1150; i++) { const x = CX0 + (r() * 2 - 1) * (H0 - 6), z = CZ0 + (r() * 2 - 1) * (H0 - 6); if (Math.hypot(x, z) < 10) continue;
     rocks.push({ x, z, s: 0.12 + Math.pow(r(), 3) * 0.7, yaw: r() * 6.28, k: r() }); }
+  { const q = rng(2112);      // the new strip, at the same density
+    for (let i = 0; i < 1060; i++) { const R = 1.2 / Math.sqrt(1 - q() * (1 - (1.2 / 32) ** 2)), x = CX + (q() * 2 - 1) * (HALF - 10), z = CZ + (q() * 2 - 1) * (HALF - 10), f = Math.pow(q(), 2.2);
+      if (old(x, z) || Math.hypot(x + 12, z - 4) < 14 || Math.hypot(x - SHORTY.x, z - SHORTY.z) < SHORTY.R * 1.3) continue; add(x, z, R, f); }
+    for (let i = 0; i < 600; i++) { const x = CX + (q() * 2 - 1) * (HALF - 6), z = CZ + (q() * 2 - 1) * (HALF - 6), s = 0.12 + Math.pow(q(), 3) * 0.7, yaw = q() * 6.28, k = q();
+      if (!old(x, z)) rocks.push({ x, z, s, yaw, k }); } }
   // a fresh crater digs through the soil into rock and throws blocks out over its rim; worn ones have lost theirs
   for (const c of craters) { if (c.fresh < 0.55 || c.R < 4) continue; const n = Math.round(c.R * c.fresh * 2.2);
     for (let i = 0; i < n; i++) { const a = r() * 6.2832, d = c.R * (0.85 + Math.pow(r(), 1.7) * 1.3), x = c.x + Math.cos(a) * d, z = c.z + Math.sin(a) * d;
@@ -73,7 +81,21 @@ const craters = [], rocks = [], VAN = { x: 0, z: 0 };
   { const v = rng(17), x = 421.75 + 38, z = -303 + 44; add(x, z, 50, 0.5); VAN.x = x; VAN.z = z;
     for (let i = 0; i < 170; i++) { const a = v() * 6.2832, d = 50 * (0.86 + Math.pow(v(), 1.5) * 1.1);
       rocks.push({ x: x + Math.cos(a) * d, z: z + Math.sin(a) * d, s: 0.07 + Math.pow(v(), 4) * 0.95, yaw: v() * 6.28, k: v() }); } }
+  // Shorty, stop 4 of the second drive: about 110 m across and up to 14 m deep, true size, but drawn here about 110 m west
+  // of the lander, where the real one is some 4.3 km west. Its rim, where Harrison Schmitt found the orange soil, is tinted
+  // (orangeAt, below). A few blocks on the rim; its own random numbers.
+  { const v = rng(74); craters.push({ x: SHORTY.x, z: SHORTY.z, R: SHORTY.R, fresh: 0.5, depth: 14, rim: 2.2 });
+    for (let i = 0; i < 70; i++) { const a = v() * 6.2832, d = SHORTY.R * (0.9 + Math.pow(v(), 1.5) * 0.8);
+      rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.08 + Math.pow(v(), 4) * 0.8, yaw: v() * 6.28, k: v() }); } }
 }
+// The orange soil: glass beads from fire-fountain eruptions, buried under later lava and dug out by the impact, lying in
+// patches on and just outside the rim. Drawn as a light tint on the ground's own color, never a painted ring.
+function orangeAt(x, z) {
+  const d = Math.hypot(x - SHORTY.x, z - SHORTY.z) / SHORTY.R; if (d < 0.8 || d > 1.6) return 0;
+  const band = ss(0.82, 0.96, d) * ss(1.55, 1.08, d), a = Math.atan2(z - SHORTY.z, x - SHORTY.x);
+  return band * (0.35 + 0.65 * Math.max(0, Math.cos(a - 2.4))) * ss(0.42, 0.62, fbm(x / 7 + 3, z / 7 - 5, 3));      // stronger round one side, in patches
+}
+const tintOrange = (b, w, out) => { out[0] = b * (1 + 0.38 * w); out[1] = b * (1 + 0.06 * w); out[2] = b * (1 - 0.36 * w); return out; };
 const CG = 16, CRATER_GRID = new Map();      // craters by 16 m cell, so each point checks only its neighbors
 function indexCraters() { craters.forEach(c => { const e = c.R * 2.2; for (let a = Math.floor((c.x - e) / CG); a <= Math.floor((c.x + e) / CG); a++) for (let b = Math.floor((c.z - e) / CG); b <= Math.floor((c.z + e) / CG); b++) { const k = a + ',' + b; if (!CRATER_GRID.has(k)) CRATER_GRID.set(k, []); CRATER_GRID.get(k).push(c); } }); }
 function craterH(x, z) {
@@ -256,11 +278,12 @@ function reliefMap() {
   t.anisotropy = renderer.capabilities.getMaxAnisotropy(); t.needsUpdate = true;
   reliefU.value = t;
 }
+const _oc = [0, 0, 0];
 function groundMesh() {
   const g = new THREE.PlaneGeometry(2 * HALF, 2 * HALF, N - 1, N - 1); g.rotateX(-Math.PI / 2); g.translate(CX, 0, CZ);
   const p = g.attributes.position, uv = g.attributes.uv;
   const col = new Float32Array(p.count * 3);
-  for (let k = 0; k < p.count; k++) { const i = Math.round((p.getX(k) - CX + HALF) / CELL), j = Math.round((p.getZ(k) - CZ + HALF) / CELL); p.setY(k, H[j * N + i]); uv.setXY(k, p.getX(k) / 3.2, p.getZ(k) / 3.2); col.fill(B[j * N + i], k * 3, k * 3 + 3); }
+  for (let k = 0; k < p.count; k++) { const i = Math.round((p.getX(k) - CX + HALF) / CELL), j = Math.round((p.getZ(k) - CZ + HALF) / CELL); p.setY(k, H[j * N + i]); uv.setXY(k, p.getX(k) / 3.2, p.getZ(k) / 3.2); const w = orangeAt(p.getX(k), p.getZ(k)); if (w > 0) col.set(tintOrange(B[j * N + i], w, _oc), k * 3); else col.fill(B[j * N + i], k * 3, k * 3 + 3); }
   g.setAttribute('color', new THREE.BufferAttribute(col, 3));
   g.computeVertexNormals();
   const m = new THREE.Mesh(g, coarse); m.receiveShadow = true; scene.add(m);
@@ -276,7 +299,7 @@ function buildPatch(cx, cz) {
   PATCH.cx = Math.round(cx / PS) * PS; PATCH.cz = Math.round(cz / PS) * PS;
   const p = patchGeo.attributes.position, uv = patchGeo.attributes.uv, col = patchGeo.attributes.color;
   for (let j = 0; j < PN; j++) for (let i = 0; i < PN; i++) { const k = j * PN + i, x = PATCH.cx - PATCH.half + i * PS, z = PATCH.cz - PATCH.half + j * PS, f = microFade(x, z), m = f > 0 ? microRaw(x, z) * f : 0;
-    p.setXYZ(k, x, groundBase(x, z) + m + (f > 0 ? craterFine(x, z) * f : 0), z); uv.setXY(k, x / 3.2, z / 3.2); const b = bilB(x, z) * (1 + Math.max(-0.08, Math.min(0.08, m * 0.6))); col.setXYZ(k, b, b, b); }
+    p.setXYZ(k, x, groundBase(x, z) + m + (f > 0 ? craterFine(x, z) * f : 0), z); uv.setXY(k, x / 3.2, z / 3.2); const b = bilB(x, z) * (1 + Math.max(-0.08, Math.min(0.08, m * 0.6))), w = orangeAt(x, z); if (w > 0) { tintOrange(b, w, _oc); col.setXYZ(k, _oc[0], _oc[1], _oc[2]); } else col.setXYZ(k, b, b, b); }
   p.needsUpdate = uv.needsUpdate = col.needsUpdate = true; patchGeo.computeVertexNormals(); patchGeo.computeBoundingSphere();
   patchU.value.set(PATCH.cx, PATCH.cz, PATCH.half - 1.0, 0);
 }
@@ -1397,6 +1420,11 @@ const SITES = [
     'Its rim is strewn with angular blocks thrown out by the impact, mostly smaller than 30 cm, with a few boulders up to about 2 m across. A piece they broke from a boulder on the rim, sample 79115, turned out to be regolith breccia: loose lunar soil welded into rock by the shock of an impact.',
     '<b>What they found.</b> Harrison Schmitt called it a fresh impact crater with a blocky rim as soon as they arrived. Its shape bears that out: a raised rim of blocks, benches stepping down the inner walls, and a mound of blocks on the floor. Nearly every rock they sampled was the same dark, crumbly breccia, which the geologists read as the valley floor’s own soil, hardened into rock by the impact and thrown out of the crater.',
     '<b>The name.</b> Schmitt named it for Hugh McKinstry (1896–1961), a Harvard geology professor who wrote scientific satires under the pen name Nicholas Vanserg.'] },
+  { at: () => [SHORTY.x, SHORTY.z, 6], name: 'Shorty crater', sub: 'Stop 4 · the second drive · the orange soil', body: [
+    'On the second moonwalk Harrison Schmitt, the only geologist to walk on the Moon, looked down at the rim of this crater and saw orange soil. Shorty is about 110 m across and up to 14 m deep.',
+    'Almost all of that soil is tiny beads and broken pieces of orange glass, colored by titanium. They were sprayed out in fire-fountain eruptions about 3.6 billion years ago, buried under a later lava flow, and brought back up by the impact that made the crater. In the core tube the crew drove into the rim, the orange gave way to black beads: the same glass, crystallized as it cooled.',
+    'Decades later the beads changed ideas about the Moon itself. In 2008 a team led by Alberto Saal found traces of water in these volcanic glasses, and in 2011 tiny pockets of melt sealed inside crystals in this very soil showed that the Moon’s magma had held about a hundred times more water than earlier studies suggested.',
+    '<i>The real Shorty is about 4.3 km west of the lander. It is drawn here at its true size but much closer, so the drive to it is short.</i>'] },
 ];
 const _sp = new THREE.Vector3();
 let siteRun = false;
@@ -1433,4 +1461,4 @@ function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -ca
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();
-window.__lrv = { ORB, WHEEL_PARTS, WHEELS, rover, CRASH, stepDebris, INTRO, SEC, BOULDER, SLABS, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; parked = false; }, craters };
+window.__lrv = { SHORTY, ORB, WHEEL_PARTS, WHEELS, rover, CRASH, stepDebris, INTRO, SEC, BOULDER, SLABS, VAN, SITES, openSite, OBJ, CPS, RUN, breakApart, EARTH, look: null, car, AIR, step, ground, place, tick: (n, dt = 1 / 60) => { for (let i = 0; i < n; i++) { const k = 4; for (let j = 0; j < k; j++) step(dt / k); } }, set: (t, s) => { throttle = t; steerIn = s; parked = false; }, craters };

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.82 (zion-sky-v451)
+Lunar Rover: Shorty crater and its orange soil. The drivable square grew from 940 to 1,090 m across, its center moved 75 m west, to make room west of the lander, toward the second drive, for Shorty: true size (about 110 m across, up to 14 m deep) but drawn about 110 m from the lander, where the real crater is some 4.3 km west (the card says so). Its rim carries a light orange tint in patches, stronger round one side: the orange glass soil Harrison Schmitt found there. Its card covers the find, the glass beads (titanium-colored, from fire-fountain eruptions about 3.6 billion years ago, buried under lava and brought up by the impact; black crystallized beads beneath in the core), and the water found in them (Saal et al. 2008; melt inclusions in the same soil, 2011). Sources: the Lunar Sample Compendium (74220), LROC, Nature (Saal et al. 2008), Brown University (2011). The existing craters and rocks keep their places (they are still laid out over the old square, and the new strip gets its own at the same density); one starter crater that sat where Shorty goes moved 60 m.
+
 ## v4.81 (zion-sky-v450)
 Lunar Rover: tracks under the tires, a ramp jump on the route, a way back after straying, and more on Van Serg. Mars: an easier end of entry, a clearer parachute button, and the hazard map only briefly in the narrated landing.
 - Tracks were laid at the suspension mounts, 0.915 m out from the centerline, while the tires sit at 0.78 m, so they ran 13 cm outboard of the wheels; they now follow each tire's measured center and width, and are a little bolder.
