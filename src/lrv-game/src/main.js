@@ -1361,10 +1361,10 @@ $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on');
 $('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); else if (BRIEF.on && BRIEF.t < BRIEF.lines[2][0]) BRIEF.t = BRIEF.lines[2][0]; });
 /* The menu (the back button) and the settings (the gear), as in the Mars simulator. The drive pauses while either is open.
    Back to Almanac goes to the extensionless Objects address, as every other page links it: a redirected page from the offline cache fails to open. */
-const SHEETS = ['menu', 'settings'], PAUSE = { was: false };
+const SHEETS = ['menu', 'settings', 'gpsheet'], PAUSE = { was: false };
 const anyOpen = () => SHEETS.some(id => $(id).classList.contains('on'));
 function openSheet(id) { if (!anyOpen()) { PAUSE.was = running; running = false; } $(id).classList.add('on'); }
-function closeSheets(resume = PAUSE.was) { SHEETS.forEach(id => $(id).classList.remove('on')); running = resume; }
+function closeSheets(resume = PAUSE.was) { SHEETS.forEach(id => $(id).classList.remove('on')); $('gp-vid').pause(); running = resume; }
 function toDrive() {      // out of the opening film, a time trial's briefing or a wreck, ready to drive
   if (INTRO.on) endIntro();
   if (BRIEF.on) { BRIEF.on = false; document.body.classList.remove('briefing'); $('cine-cap').classList.remove('on'); BRIEF.cap = ''; }
@@ -1386,6 +1386,10 @@ $('m-trial').addEventListener('click', () => {      // put down short of the sta
 });
 $('m-lander').addEventListener('click', () => { toDrive(); place(0, 0, Math.atan2(350, 82)); closeSheets(true); $('brief').classList.remove('on'); toast('Back beside the lander'); });
 $('m-objects').addEventListener('click', () => { location.href = '../objects'; });
+/* The real thing: the Apollo 16 Grand Prix, NASA's 16 mm film (public domain) */
+function grandPrix() { const was = anyOpen() ? PAUSE.was : running; SHEETS.forEach(id => $(id).classList.remove('on')); openSheet('gpsheet'); PAUSE.was = was; const v = $('gp-vid'); v.currentTime = 0; v.play().catch(() => {}); }
+$('m-gp').addEventListener('click', grandPrix);
+$('gp-close').addEventListener('click', () => { $('gp-vid').pause(); closeSheets(); });
 let setQ = detailChoice();
 function markSettings() {
   markSpeed(); setQ = detailChoice();
@@ -2167,19 +2171,26 @@ function stepFilm(h, dt) {
   // on foot, in the world
   let legs = [[1.45, -1.35], [1.45, -1.35]], bob = 0, lean = 0, faceT = FILM.face, cam = 0;
   const rx = car.p.x - FILM.x, rz = car.p.z - FILM.z, rd = Math.hypot(rx, rz), vx = car.v.x, vz = car.v.z, v2 = vx * vx + vz * vz;
-  if (!FILM.dodge && FILM.ph !== 'board' && !CRASH.on && v2 > 1 && rd < 14) {      // the rover coming at him: sideways off its path, in one lunar leap
+  if (!FILM.dodge && FILM.ph !== 'board' && !CRASH.on && v2 > 1 && rd < 18) {      // the rover coming at him: off its path, the way a suited man can move here
     const tc = -(rx * vx + rz * vz) / v2, mx = rx + vx * tc, mz = rz + vz * tc;
-    if (tc > 0 && tc < 1.5 && Math.hypot(mx, mz) < 2.4) {
+    if (tc > 0 && tc < 2.0 && Math.hypot(mx, mz) < 2.6) {
       const v = Math.sqrt(v2); let nx = -vz / v, nz = vx / v; if (-mx * nx - mz * nz < 0) { nx = -nx; nz = -nz; }
-      FILM.dodge = { t: 0, x0: FILM.x, z0: FILM.z, dx: nx * 2.2, dz: nz * 2.2 };
+      const far = Math.max(1.6, 3.0 - Math.hypot(mx, mz));      // just enough to be clear of the wheels
+      FILM.dodge = { t: 0, x0: FILM.x, z0: FILM.z, dx: nx * far, dz: nz * far };
       if (!FILM.told) { FILM.told = true; toast('Schmitt jumps clear!'); }
     }
   }
   const walk = (tx, tz, v) => { const dx = tx - FILM.x, dz = tz - FILM.z, d = Math.hypot(dx, dz); if (d < 0.05) return d; const k = Math.min(d, v * dt) / d; FILM.x += dx * k; FILM.z += dz * k; faceT = Math.atan2(dx, dz);
     legs = lopeLegs(T * 6.2, true); bob = 0.11 * Math.pow(Math.abs(Math.sin(T * 6.2)), 0.6); lean = 0.14; return d; };
-  if (FILM.dodge) {
-    const D = FILM.dodge, u = Math.min(1, (D.t += dt) / 0.9); FILM.x = D.x0 + D.dx * ss(0, 1, u); FILM.z = D.z0 + D.dz * ss(0, 1, u); bob = 0.5 * Math.sin(Math.PI * u);
-    legs = [[1.05, -0.7], [1.1, -0.8]]; lean = 0.2; st.up = 0.35 * Math.sin(Math.PI * u); faceT = Math.atan2(rx, rz); if (u >= 1) FILM.dodge = null;
+  if (FILM.dodge) {      // a crouch to load the legs, a long sideways hop, the knees taking the landing, a shorter second hop; eyes on the rover throughout
+    const D = FILM.dodge, t = (D.t += dt), h1 = Math.min(1, Math.max(0, (t - 0.22) / 0.72)), h2 = Math.min(1, Math.max(0, (t - 1.12) / 0.5));
+    const k = 0.66 * ss(0, 1, h1) + 0.34 * ss(0, 1, h2); FILM.x = D.x0 + D.dx * k; FILM.z = D.z0 + D.dz * k;
+    const air = (h1 > 0 && h1 < 1) || (h2 > 0 && h2 < 1);
+    bob = 0.36 * Math.sin(Math.PI * h1) * (h1 < 1 ? 1 : 0) + 0.14 * Math.sin(Math.PI * h2) * (h2 > 0 && h2 < 1 ? 1 : 0);
+    const give = air ? 0.12 : 0.5 * (ss(0, 0.2, t) * (1 - ss(0.18, 0.24, t)) + ss(0.92, 0.98, t) * (1 - ss(1.04, 1.14, t)) + ss(1.6, 1.64, t) * (1 - ss(1.75, 1.95, t)));
+    legs = [[1.45 - give * 0.55, -1.35 + give * 1.1], [1.4 - give * 0.55, -1.3 + give * 1.1]]; lean = 0.08 + 0.12 * give;
+    const f = FILM.face, lx = D.dx * Math.cos(f) - D.dz * Math.sin(f); D.lx = Math.sign(lx) * 0.2 * ss(0.1, 0.3, t) * (1 - ss(1.6, 1.95, t));      // leaning into the push
+    D.arms = ss(0, 0.2, t) * (1 - ss(1.65, 1.95, t)); faceT = Math.atan2(rx, rz); if (t > 1.95) FILM.dodge = null;
   } else if (FILM.ph === 'walk') {
     if (walk(FILM.tx, FILM.tz, 2.0) < 0.3) { FILM.ph = 'film'; FILM.t = 0; FILM.t0 = simT; FILM.land = -1; FILM.crash = 0; toast('Schmitt is filming · show him a stunt'); }
   } else if (FILM.ph === 'film') {
@@ -2193,10 +2204,10 @@ function stepFilm(h, dt) {
     if (Math.sqrt(v2) > 1.5) FILM.ph = 'wait';
     else if (walk(o.x, o.z, 1.6) < 0.35) { rover.attach(h); h.position.copy(OUT1); h.rotation.set(0, 0, 0); FILM.ph = 'in'; FILM.t = 0; stepFilm(h, 0); return; }
   }
-  let dy = faceT - FILM.face; dy -= 2 * Math.PI * Math.round(dy / (2 * Math.PI)); FILM.face += Math.max(-3 * dt, Math.min(3 * dt, dy));      // he turns at a walk, in his stiff suit
-  st.legs = legs; st.lz = lean; h.rotation.set(0, FILM.face, 0); h.position.set(FILM.x, ground(FILM.x, FILM.z) - soleY(legs) + bob, FILM.z);
+  const tr = FILM.dodge ? 4.5 : 3; let dy = faceT - FILM.face; dy -= 2 * Math.PI * Math.round(dy / (2 * Math.PI)); FILM.face += Math.max(-tr * dt, Math.min(tr * dt, dy));      // he turns at a walk, in his stiff suit (quicker when he must)
+  st.legs = legs; st.lz = lean; st.lx = FILM.dodge ? FILM.dodge.lx : 0; h.rotation.set(0, FILM.face, 0); h.position.set(FILM.x, ground(FILM.x, FILM.z) - soleY(legs) + bob, FILM.z);
   for (let j = 0; j < 2; j++) { st.hands[j].copy(side(j)); if (cam) st.hands[j].lerp(_fv.set(j ? 0.07 : -0.07, 0.36, 0.25).multiplyScalar(K), cam); }      // the camera up in both gloves
-  if (st.up > 0) for (let j = 0; j < 2; j++) st.hands[j].lerp(_fv.set(j ? 0.45 : -0.45, 0.35, 0.05).multiplyScalar(K), st.up / 0.35);      // arms out in the leap
+  if (FILM.dodge) for (let j = 0; j < 2; j++) st.hands[j].lerp(_fv.set(j ? 0.44 : -0.44, 0.1, 0.12).multiplyScalar(K), FILM.dodge.arms);      // arms out for balance
   poseCrew(h);
 }
 /* The right-click menu (a long press on a touch screen): a few things to do from where you point */
@@ -2219,7 +2230,7 @@ function ctxOpen(cx, cy) {
   if (FILM.on && FILM.ph !== 'in') items.push(['Schmitt back aboard', filmAboard]);
   if (upsideT > 0.5) items.push(['Back on its wheels', recover]);
   if (REPLAY.jump && REPLAY.offerT > 0) items.push(['Replay the jump', startReplay]);
-  items.push(['Change camera view', () => $('btn-pov').click()], ['Open the map', () => $('minimap').click()]);
+  items.push(['Change camera view', () => $('btn-pov').click()], ['Open the map', () => $('minimap').click()], ['Watch the real Grand Prix', grandPrix]);
   const m = $('ctx'); m.innerHTML = ''; for (const [t, f] of items) { const b = document.createElement('button'); b.textContent = t; b.addEventListener('click', e => { e.stopPropagation(); ctxClose(); f(); }); m.appendChild(b); }
   m.classList.add('on'); const w = m.offsetWidth, h = m.offsetHeight; m.style.left = Math.min(cx, innerWidth - w - 8) + 'px'; m.style.top = Math.min(cy, innerHeight - h - 8) + 'px';
 }

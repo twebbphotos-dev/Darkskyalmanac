@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.18 (zion-sky-v487)
+Lunar Rover: the real Grand Prix and a truer dodge. Watch the real Grand Prix (right-click menu and main menu) plays NASA's 16 mm film of John Young driving the rover on Apollo 16's first moonwalk, filmed by Charlie Duke (public domain; the Wikimedia Commons cut, cropped and stabilized; 0.9 MB, saved for offline with the 3D downloads). Schmitt's evasive action was one instant 2.2 m leap; now he sees the rover sooner (2 s out), crouches to load his legs, makes a long sideways hop and a shorter second one, leans into the push with his arms out, lands on bent knees, and never takes his eyes off the rover. He moves only as far as he needs to clear the wheels.
+
 ## v5.17 (zion-sky-v486)
 Lunar Rover: a right-click menu (a long press on a touch screen) with Hold the camera here, Change camera view, Open the map, and when they apply Replay the jump, Back on its wheels and Schmitt back aboard. Hold the camera: Schmitt climbs out, lopes to the spot (up to 20 m away) and films the rover with the 16 mm camera, as Charlie Duke filmed John Young's Grand Prix on Apollo 16. After a jump lands, a wreck or about 14 s, his clip plays from where he stood, at true speed and handheld. Stop beside him and he climbs back aboard. Drive at him and he leaps clear, sideways off the rover's path. The menu's exit now reads Back to Almanac.
 

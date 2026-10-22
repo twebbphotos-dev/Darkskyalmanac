@@ -99,6 +99,7 @@
   .rock3d.big .rock-fs{top:calc(env(safe-area-inset-top,0px) + 12px);right:14px}
   #sc-b .rock3d.big figcaption{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);text-align:center}
   #sitecard.wide .card{max-width:640px}
+  #gpsheet .card{max-width:640px} #gp-vid{display:block;width:100%;height:auto;border-radius:8px;background:#000;margin:0 0 14px} #gpsheet p{font-size:12px;line-height:1.6;color:var(--hi)} #gpsheet .gp-src{font-size:9.5px;color:var(--mute)}
   .setgo{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
   .setgo .btn{flex:1}
   .pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
@@ -192,7 +193,20 @@
     <button class="btn primary" id="m-resume">Keep driving</button>
     <button class="btn" id="m-trial">Restart the time trial</button>
     <button class="btn" id="m-lander">Back to the lander</button>
+    <button class="btn" id="m-gp">Watch the real Grand Prix</button>
     <button class="btn" id="m-objects">Back to Almanac</button>
+  </div>
+</div>
+
+<div class="sheet" id="gpsheet">
+  <div class="card">
+    <h1>The Grand Prix</h1>
+    <h2>Apollo 16 · 21 April 1972</h2>
+    <video id="gp-vid" src="grand-prix.mp4" poster="grand-prix.jpg" controls muted playsinline preload="none" width="640" height="480" aria-label="John Young drives the lunar rover at speed, throwing up arcs of dust, with the lunar module behind"></video>
+    <p>On their first moonwalk, John Young drove the rover hard across the plain near the lunar module to show how it handled, while Charlie Duke filmed him with the 16 mm movie camera. The run became known as the Grand Prix.</p>
+    <p>Watch the dust thrown up by the wire-mesh wheels: with no air to slow it, it flies in clean arcs and falls straight back, with no cloud left hanging behind.</p>
+    <p class="gp-src">Film: NASA (public domain), cut, cropped and stabilized for Wikimedia Commons (Ap16 rover.ogv).</p>
+    <button class="btn primary" id="gp-close">Back to driving</button>
   </div>
 </div>
 

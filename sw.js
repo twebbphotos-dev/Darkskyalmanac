@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v486';
+const CACHE = 'zion-sky-v487';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -123,7 +123,7 @@ const OFFLINE3D = [
   'rover/tex/slab_diff.jpg', 'rover/tex/slab_disp.jpg', 'rover/tex/slab_nor.jpg',
   // Apollo 17 lunar rover (lrv/): page and code; it shares models/lrv.glb, lm.glb and moon-a17.bin
   'lrv/', 'lrv/lrv.bundle.js', 'models/astronaut-a7l.glb', 'models/earth-bm.jpg', 'models/sample-76535.glb', 'models/sample-79115.glb',
-  'lrv/img/tracys-rock.jpg', 'lrv/img/van-serg.jpg', 'lrv/img/shorty.jpg', 'lrv/img/orange-soil.jpg', 'lrv/img/orange-beads.jpg', 'lrv/img/76535.jpg', 'lrv/img/79115.jpg'
+  'lrv/img/tracys-rock.jpg', 'lrv/img/van-serg.jpg', 'lrv/img/shorty.jpg', 'lrv/img/orange-soil.jpg', 'lrv/img/orange-beads.jpg', 'lrv/img/76535.jpg', 'lrv/img/79115.jpg', 'lrv/grand-prix.mp4', 'lrv/grand-prix.jpg'
 ];
 // ── Star ID (solver/) ────────────────────────────────────
 // The plate solver and its star catalog (about 6.5 MB). Saved the first time
