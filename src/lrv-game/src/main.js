@@ -569,7 +569,7 @@ const MASS = 700, I = new THREE.Vector3(MASS / 12 * (1.1 ** 2 + 2.06 ** 2), MASS
 // the faster ones with stronger motors and grippier tires to get there
 const unlocked3 = () => true;      // open to everyone for now (it was unlocked by finishing a lap: !!(REC.lap || REC.lap2 || REC.lap3))
 let SPD = (() => { try { return +localStorage.getItem('lrv-spd') || 2; } catch (e) { return 2; } })();      // double unless chosen otherwise (a new key: the old one held everyone's first default, real)
-const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.6;
+const WHEEL_R = 0.41, REST = 0.36, K = 4200, C_DAMP = 620, CRR = 0.05, VREV = 1.6, BUMP_K = 60000, BUMP_OUT = 1500, BUMP_RB = 0.1, C_REB = 1600;      // rebound damped harder than compression, as on any off-road damper: the springs no longer fling the rover off a crest
 let MU = 0.62, VMAX = 5.0;      // 5 m/s = 18 km/h, Gene Cernan's top speed on Apollo 17 (the design speed on the level was about 13 km/h)
 function setSpeed(n) { SPD = n === 3 && unlocked3() ? 3 : n === 2 || n === 3 ? 2 : 1; MU = [0.62, 0.85, 1.0][SPD - 1]; VMAX = [5.0, 11.2, 15.0][SPD - 1]; try { localStorage.setItem('lrv-spd', String(SPD)); } catch (e) { /* not remembered */ } }
 const WHEELS = [[1.15, 0.915, 1], [1.15, -0.915, 1], [-1.15, 0.915, -1], [-1.15, -0.915, -1]].map(([x, z, f]) => ({ at: new THREE.Vector3(x, -0.08, z), steer: f, comp: 0, contact: false, spin: 0, off: 0, hit: 0 }));      // off: time out of contact; hit: how hard it came down, for the dust
@@ -608,7 +608,8 @@ function step(h) {
     if (wl.off > 0.12) wl.hit = Math.max(wl.hit, -car.v.y + 0.5);      // touching down after a hop
     wl.off = 0; wl.contact = true; touching++;
     const xd = (x - wl.comp) / h; wl.comp = x;
-    let Fn = Math.min(9000, (K * Math.min(x, REST) + C_DAMP * xd + (x > REST ? 60000 * (x - REST) : 0))) * ss(0.2, 0.55, _up.y);      /* capped: a real strut and tire give way; unlimited, a fast hit on a rim kicked the rover into backflips */      // spring, damper, and the bump stop; none once it lies on its side (the struts were throwing it back up)
+    const bump = x > REST ? (xd >= 0 ? BUMP_K * (x - REST) : Math.min(BUMP_OUT, BUMP_K * BUMP_RB * (x - REST))) : 0;      /* the bump stop and the wire-mesh tire soak up a hard hit and give little back: pushing out as hard as it went in, at the 9000 N cap, a hit bounced off like rubber */
+    let Fn = Math.min(9000, K * Math.min(x, REST) + (xd < 0 ? C_REB : C_DAMP) * xd + bump) * ss(0.2, 0.55, _up.y);      /* capped: a real strut and tire give way; unlimited, a fast hit on a rim kicked the rover into backflips */      // spring, damper, and the bump stop; none once it lies on its side (the struts were throwing it back up)
     if (Fn <= 0) continue;
     const n = normalAt(a.x, a.z), cp = _r.copy(a).addScaledVector(_up, -(t - WHEEL_R * 0.1)), r = cp.sub(car.p);
     _vc.copy(car.w).cross(r).add(car.v);                                // velocity of the tire where it meets the ground
@@ -628,7 +629,7 @@ function step(h) {
       const g = Math.hypot(Fl, Fs); if (g > lim) { wl.hx *= lim / g; wl.hy *= lim / g; }      // slipping: the hold gives way with it
     }
     const tot = Math.hypot(Fl, Fs); if (tot > lim) { Fl *= lim / tot; Fs *= lim / tot; }        // the friction circle: grip is shared
-    _tmp.copy(_up).multiplyScalar(Fn).addScaledVector(_wf, Fl).addScaledVector(_ws, Fs);
+    _tmp.copy(n).multiplyScalar(Fn).addScaledVector(_wf, Fl).addScaledVector(_ws, Fs);      // the ground pushes square to its own surface: a rising wall slows the rover as well as lifting its nose (along the chassis's up, all of a hit went into the pitch)
     _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
     wl.spin += vf / WHEEL_R * h;
   }
@@ -637,16 +638,16 @@ function step(h) {
   { let load = 0; for (const wl of WHEELS) if (wl.contact) load++;
     if (load >= 2 && !parked) { const want = -speed * Math.tan(car.steer) / 1.15, have = car.w.dot(_up);
       _t.addScaledVector(_up, Math.max(-700, Math.min(700, (want - have) * I.y * 0.8 * load / 4 * ss(0.5, 0.8, _up.y)))); /* a gentle assist: the low grip still shows, the rover drifting wide */ } }
-  // past the tipping point (tilted beyond about 70°, the chassis on the ground) there is no coming back: it goes over
-  if (_up.y < 0.34 && _up.y > -0.5 && vh < 2.5 && Math.hypot(car.w.x, car.w.z) < 1.2) { let side = false; /* only a slow, settling tip: at speed the push had helped a nose-up hit into a flip */ for (const c of HULL) { const a = _a.copy(c).applyQuaternion(car.q).add(car.p); if (a.y < ground(a.x, a.z) + 0.05) { side = true; break; } }
-    if (side) { const ax = _tmp.set(0, 1, 0).cross(_up); const l = ax.length(); if (l > 1e-3) _t.addScaledVector(ax, 2400 / l * ss(0.34, 0.15, _up.y)); /* about Y × up: tilting further */ } }
+  // past the tipping point (tilted beyond about 53°, the chassis on the ground; the outer tire edges put the true one near 50°) there is no coming back: it goes over
+  if (_up.y < 0.6 && _up.y > -0.5 && vh < 2.5 && Math.hypot(car.w.x, car.w.z) < 1.2) { let side = false; /* only a slow, settling tip: at speed the push had helped a nose-up hit into a flip */ for (const c of HULL) { const a = _a.copy(c).applyQuaternion(car.q).add(car.p); if (a.y < ground(a.x, a.z) + 0.05) { side = true; break; } }
+    if (side) { const ax = _tmp.set(0, 1, 0).cross(_up); const l = ax.length(); if (l > 1e-3) _t.addScaledVector(ax, 2400 / l * ss(0.6, 0.4, _up.y)); /* about Y × up: tilting further */ } }
   for (const c of HULL) {      // the chassis itself meeting the ground, if it rolls or bottoms out
     const a = _a.copy(c).applyQuaternion(car.q).add(car.p), g = ground(a.x, a.z), pen = g - a.y;
     if (pen <= 0) continue;
     touching++;
     const r = _r.copy(a).sub(car.p); _vc.copy(car.w).cross(r).add(car.v); const n = normalAt(a.x, a.z), vn = _vc.dot(n);
     if (c.y > 0) { CRASH.roof = Math.max(CRASH.roof, -vn); CRASH.topDown = true; }      // the top of the rover hitting the ground: how hard
-    const Fn = Math.min(14000, Math.max(0, 60000 * pen - 3500 * vn));      // the frame meeting the ground: stiff but not a trampoline, and soaking up the blow
+    const Fn = vn < 0 ? Math.min(14000, 60000 * pen - 3500 * vn) : Math.max(0, Math.min(2500, 9000 * pen) - 3500 * vn);      // the frame meeting the ground: stiff going in, and the soil gives little back (capped going in, it sank deep, and the full spring threw it out again)
     _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.4 * Fn, vt * 3000) / vt);
     _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
   }
@@ -740,28 +741,28 @@ const DN = 1400, dpos = new Float32Array(DN * 3), dvel = new Float32Array(DN * 3
 const dgeo = new THREE.BufferGeometry(); dgeo.setAttribute('position', new THREE.BufferAttribute(dpos, 3));
 function softDot() {      // a round grain with a soft edge: bare points draw as hard squares
   const c = document.createElement('canvas'); c.width = c.height = 32; const x = c.getContext('2d'), g = x.createRadialGradient(16, 16, 0, 16, 16, 16);
-  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.45, 'rgba(255,255,255,.55)'); g.addColorStop(1, 'rgba(255,255,255,0)'); x.fillStyle = g; x.fillRect(0, 0, 32, 32);
+  g.addColorStop(0, 'rgba(255,255,255,1)'); g.addColorStop(0.25, 'rgba(255,255,255,.6)'); g.addColorStop(0.6, 'rgba(255,255,255,.15)'); g.addColorStop(1, 'rgba(255,255,255,0)');      /* a gaussian-like falloff: soft grains, no hard rim */ x.fillStyle = g; x.fillRect(0, 0, 32, 32);
   return new THREE.CanvasTexture(c);
 }
 const DOT = softDot();
-const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0x8f8a82, size: 0.04, map: DOT, transparent: true, opacity: 0.6, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
+const dust = new THREE.Points(dgeo, new THREE.PointsMaterial({ color: 0x9a958c, size: 0.032, map: DOT, transparent: true, opacity: 0.32, depthWrite: false })); dust.frustumCulled = false; scene.add(dust);
 let dnext = 0;
 // the blast of a landing: coarser, lighter grains (a fresh, unweathered spray of soil catches the Sun), the same airless arcs
 const PN2 = 1600, ppos = new Float32Array(PN2 * 3), pvel = new Float32Array(PN2 * 3), plife = new Float32Array(PN2);
 const pgeo = new THREE.BufferGeometry(); pgeo.setAttribute('position', new THREE.BufferAttribute(ppos, 3));
-const puff = new THREE.Points(pgeo, new THREE.PointsMaterial({ color: 0xbdb7ad, size: 0.085, map: DOT, transparent: true, opacity: 0.55, depthWrite: false })); puff.frustumCulled = false; scene.add(puff);
+const puff = new THREE.Points(pgeo, new THREE.PointsMaterial({ color: 0xbdb7ad, size: 0.06, map: DOT, transparent: true, opacity: 0.3, depthWrite: false })); puff.frustumCulled = false; scene.add(puff);
 let pnext = 0;
 function kick(dt) {
   for (const wl of WHEELS) {
     if (!wl.contact) continue;
-    const a = _a.copy(wl.at).applyQuaternion(car.q).add(car.p), sp = car.v.length(); const n = Math.min(12, Math.floor(sp * 3 * dt * 60 * (0.6 + Math.random())));
+    const a = _a.copy(wl.at).applyQuaternion(car.q).add(car.p), sp = car.v.length(); const n = Math.min(5, Math.floor(sp * 1.2 * dt * 60 * (0.6 + Math.random())))      /* a thin spray: fewer grains */;
     for (let k = 0; k < n; k++) { const i = dnext; dnext = (dnext + 1) % DN;
       dpos[i * 3] = a.x + (Math.random() - .5) * .3; dpos[i * 3 + 1] = ground(a.x, a.z) + 0.05; dpos[i * 3 + 2] = a.z + (Math.random() - .5) * .3;
-      const up = 0.8 + Math.random() * 1.6 * Math.min(1, sp / 3);       // flung up and back off the turning wire mesh
+      const up = 0.5 + Math.random() * 1.1 * Math.min(1, sp / 3);       // flung up and back off the turning wire mesh
       dvel[i * 3] = -_fw.x * sp * (0.25 + Math.random() * .5) + (Math.random() - .5) * .6; dvel[i * 3 + 1] = up; dvel[i * 3 + 2] = -_fw.z * sp * (0.25 + Math.random() * .5) + (Math.random() - .5) * .6;
       dlife[i] = 1; }
     if (wl.hit > 0) {      // coming down from a jump, the tire blasts a ring of soil out sideways, low and fast, that falls back in the same clean arcs
-      const g = ground(a.x, a.z), m = Math.min(260, Math.round(90 * wl.hit)), k0 = Math.min(3, wl.hit);
+      const g = ground(a.x, a.z), m = Math.min(110, Math.round(40 * wl.hit)), k0 = Math.min(2.2, wl.hit);
       for (let k = 0; k < m; k++) { const i = pnext, ang = Math.random() * 6.2832, out = (0.4 + Math.random() * 1.0) * k0; pnext = (pnext + 1) % PN2;
         ppos[i * 3] = a.x + Math.cos(ang) * 0.25; ppos[i * 3 + 1] = g + 0.04; ppos[i * 3 + 2] = a.z + Math.sin(ang) * 0.25;
         pvel[i * 3] = Math.cos(ang) * out + car.v.x * 0.4; pvel[i * 3 + 1] = (0.2 + Math.random() * 0.6) * k0; pvel[i * 3 + 2] = Math.sin(ang) * out + car.v.z * 0.4;
