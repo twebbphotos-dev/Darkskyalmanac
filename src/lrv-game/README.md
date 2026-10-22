@@ -173,3 +173,5 @@ v5.05: EARTH_SKY (from tools/earth-sky.mjs) places and turns Earth; models/earth
 v5.06: buildGround fits a plane (LM.plane) over 14 m and blends toward it within 22 m; indexRocks clears 7 m round LM; the LM is tilted to its four pads and set by its lowest point.
 
 v5.08: jointLimit/limitJoint (hinge limits as hard stops, also after each debris substep), brace() (arms toward the ground while tumbling, first 4 s). SAMPLE/startSample/stepSample: the passenger walk-out with st.legs [thigh, knee] per side (LEGJ), the scoop. rockView: three.js viewer of models/sample-76535.glb in the card (tools/sample-obj2gltf.py, sample-simplify.mjs). Rocks may carry bury (default 0.62).
+
+v5.11: deckContacts() (crash pieces vs the chassis deck box M.deck), seat-belt joints to the chassis when k < 0.55 (M.inv 0.03), brace() 260 per rad with relative damping from t = 0, wheel springs scaled by ss(0.2, 0.55, up.y), tipping torque past 70°, dmax at least 0.14 rad, yaw assist toward -v tan(steer) / 1.15.

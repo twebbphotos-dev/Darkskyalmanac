@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.11 (zion-sky-v480)
+Lunar Rover: crashes and rollovers. The astronauts now reach for the ground from the first instant of a crash, a quick firm reach with both arms (it had been too weak to see: forearms pointed down 0.10 on average, now about 0.5). The chassis deck is solid to the crew and loose parts, which had passed through it. In a slow rollover the seat belts hold and the crew go over with the rover, ending up under it instead of thrown clear; a hard crash still tears them loose. On its side the rover no longer bounces back up: the wheel springs were still pushing while it lay on its side, flinging it upright; they now give no support past about 70°, and beyond that tipping point it goes over. Steering: at speed the wheels had been limited by grip to about 2° (they hardly turned, and steering felt dead); they now always have at least 8° of lock, and a turn assist makes the rover's heading follow the wheels while the tires bear on the ground (about 40°/s at full lock at 6 m/s).
+
 ## v5.10 (zion-sky-v479)
 Lunar Rover: the astronauts' model is lighter for tablets. Its 26 textures took about 100 MB of graphics memory once decoded; now about 35 MB (the suit cloth and helmet keep 1024 px, small parts 512, the occlusion-roughness maps 256), and the file is 2.6 MB instead of 4.2. If the crew still cannot be loaded, the game tries once more and then says so with the reason, instead of silently driving on empty seats (the crew showed normally in every desktop and tablet-sized test, so the cause on a device has to be read from that message).
 

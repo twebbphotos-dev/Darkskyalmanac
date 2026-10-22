@@ -597,7 +597,7 @@ function step(h) {
   // Four-wheel steering, limited at speed to about the sharpest turn the tires can hold: each grips a sixth as hard as on
   // Earth, so the most sideways push is about MU·g ≈ 1 m/s². Turning tighter only slides, and the old limit (which fell off
   // with forward speed, itself shrinking in a slide) left the wheels at full lock and fed the slide into a spin.
-  const vh = Math.hypot(car.v.x, car.v.z), dmax = Math.min(0.42, Math.atan(1.15 * 1.3 * MU * G / Math.max(0.01, vh * vh)));
+  const vh = Math.hypot(car.v.x, car.v.z), dmax = Math.min(0.42, Math.max(0.14, 1.8 * Math.atan(1.15 * 1.3 * MU * G / Math.max(0.01, vh * vh))));      // never less than 8° of lock: at speed the grip limit had left about 2°, the wheels hardly turning
   car.steer += Math.max(-STEER_RATE * h, Math.min(STEER_RATE * h, steerIn * dmax - car.steer));      // the steering motors turn the wheels at a steady rate, on the ground or off it
   let touching = 0;
   for (const wl of WHEELS) {
@@ -608,7 +608,7 @@ function step(h) {
     if (wl.off > 0.12) wl.hit = Math.max(wl.hit, -car.v.y + 0.5);      // touching down after a hop
     wl.off = 0; wl.contact = true; touching++;
     const xd = (x - wl.comp) / h; wl.comp = x;
-    let Fn = K * Math.min(x, REST) + C_DAMP * xd + (x > REST ? 60000 * (x - REST) : 0);      // spring, damper, and the bump stop
+    let Fn = (K * Math.min(x, REST) + C_DAMP * xd + (x > REST ? 60000 * (x - REST) : 0)) * ss(0.2, 0.55, _up.y);      // spring, damper, and the bump stop; none once it lies on its side (the struts were throwing it back up)
     if (Fn <= 0) continue;
     const n = normalAt(a.x, a.z), cp = _r.copy(a).addScaledVector(_up, -(t - WHEEL_R * 0.1)), r = cp.sub(car.p);
     _vc.copy(car.w).cross(r).add(car.v);                                // velocity of the tire where it meets the ground
@@ -632,6 +632,14 @@ function step(h) {
     _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
     wl.spin += vf / WHEEL_R * h;
   }
+  // A turn assist while the tires bear on the ground: the yaw follows the turn the wheels ask for (four-wheel steering
+  // turns on half the 2.3 m wheelbase), as a driver feels a car answer, instead of waiting on lightly loaded tires to bite
+  { let load = 0; for (const wl of WHEELS) if (wl.contact) load++;
+    if (load >= 2 && !parked) { const want = -speed * Math.tan(car.steer) / 1.15, have = car.w.dot(_up);
+      _t.addScaledVector(_up, Math.max(-1800, Math.min(1800, (want - have) * I.y * 2.2 * load / 4 * ss(0.5, 0.8, _up.y)))); } }
+  // past the tipping point (tilted beyond about 70°, the chassis on the ground) there is no coming back: it goes over
+  if (_up.y < 0.34 && _up.y > -0.5) { let side = false; for (const c of HULL) { const a = _a.copy(c).applyQuaternion(car.q).add(car.p); if (a.y < ground(a.x, a.z) + 0.05) { side = true; break; } }
+    if (side) { const ax = _tmp.set(0, 1, 0).cross(_up); const l = ax.length(); if (l > 1e-3) _t.addScaledVector(ax, 2400 / l * ss(0.34, 0.15, _up.y)); /* about Y × up: tilting further */ } }
   for (const c of HULL) {      // the chassis itself meeting the ground, if it rolls or bottoms out
     const a = _a.copy(c).applyQuaternion(car.q).add(car.p), g = ground(a.x, a.z), pen = g - a.y;
     if (pen <= 0) continue;
@@ -1155,10 +1163,11 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
   // ground, held together at the shoulders, elbows, hips and knees by soft joints, so the limbs flop and the suit creases
   // but nothing comes apart. Only the backpack may break loose. Each starts from the pose he was riding in. Thrown gently
   // and slowed in the air: more slapstick than violent.
+  const belts = [];
   for (const h of CREW) {
     if (!h.visible) continue;
     h.updateMatrixWorld(true); const seat = h.userData.bones, pack = R() < 0.5, tq = new THREE.Quaternion(), tp = new THREE.Vector3(), ts = new THREE.Vector3();
-    const pop = new THREE.Vector3((R() - 0.5) * 1.2, 0.8 + 1.2 * k + R() * 0.6, (R() - 0.5) * 1.2), spin = new THREE.Vector3(R() - .5, R() - .5, R() - .5).multiplyScalar(1.5 + 2 * k);
+    const pop = new THREE.Vector3((R() - 0.5) * 1.2, 0.8 + 1.2 * k + R() * 0.6, (R() - 0.5) * 1.2).multiplyScalar(0.15 + 0.85 * k) /* a slow roll throws no one clear: they go over with the rover */, spin = new THREE.Vector3(R() - .5, R() - .5, R() - .5).multiplyScalar(1.5 + 2 * k);
     const bones = [], segP = [];
     for (let b = 0; b < 10; b++) {
       if (b === 7 && !pack) { bones.push(bones[0]); segP.push(null); continue; }
@@ -1182,12 +1191,18 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
       const sk = new THREE.SkinnedMesh(geo, mat); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); scene.add(sk); CRASH.extra.push(sk);
     }
     for (const [a, b2, at] of CREW_JOINTS) CRASH.joints.push({ A: segP[a], B: segP[b2], la: at.clone().sub(CREW_SEG[a].c), lb: at.clone().sub(CREW_SEG[b2].c), lim: jointLimit(a, b2) });
+    belts.push([segP[0], h.getWorldPosition(new THREE.Vector3())]);
     CRASH.brace.push({ T: segP[0], arms: [-1, 1].map(sd => { const [u, f] = armBones(sd); return [segP[u], segP[f], armDir(sd), sd]; }) });
   }
 
 
   const rr = body.position.clone().sub(car.p);
-  CRASH.pieces.push(Object.assign({ m: body, main: true, v: car.v.clone().add(car.w.clone().cross(rr)), w: car.w.clone() }, debrisBody(body)));
+  CRASH.pieces.push(Object.assign({ m: body, main: true, v: car.v.clone().add(car.w.clone().cross(rr)), w: car.w.clone(),
+    deck: [new THREE.Vector3(-1.5 - C.x, -0.35 - C.y, -1.0 - C.z), new THREE.Vector3(1.5 - C.x, 0.1 - C.y, 1.0 - C.z)] }, debrisBody(body)));      // the deck and frame, in its own frame: solid to the rest
+  // The seat belts: in a slow roll they hold, and each goes over with the rover (pinned under it if it lands on him); a
+  // hard crash tears them loose and throws him clear
+  if (k < 0.55) { const M = CRASH.pieces[CRASH.pieces.length - 1]; M.inv = 0.03; const qi = M.m.quaternion.clone().invert();
+    for (const [T, w] of belts) CRASH.joints.push({ A: M, B: T, la: w.clone().sub(M.m.position).applyQuaternion(qi), lb: CREW_SEG[0].c.clone().negate(), belt: true }); }
   for (let j = 0, n = Math.round(30 + 70 * k); j < n; j++) { const i = dnext; dnext = (dnext + 1) % DN;      // a puff of dust, falling straight back
     dpos[i * 3] = car.p.x + (R() - .5) * 2; dpos[i * 3 + 1] = car.p.y; dpos[i * 3 + 2] = car.p.z + (R() - .5) * 2;
     dvel[i * 3] = car.v.x * 0.5 + (R() - .5) * 3 * (0.3 + k); dvel[i * 3 + 1] = R() * 2.5 * (0.3 + k); dvel[i * 3 + 2] = car.v.z * 0.5 + (R() - .5) * 3 * (0.3 + k); dlife[i] = 1; }
@@ -1222,15 +1237,35 @@ function limitJoint(J, h) {      // a stiff, damped stop where the joint runs ou
 }
 // Thrown or rolling, each instinctively reaches for the ground with both arms, nearly straight, to catch himself
 function brace(h) {
-  if (CRASH.t > 4) return;
+  if (CRASH.t > 3) return;
   for (const C of CRASH.brace) {
-    const T = C.T; if (T.rest || (T.v.lengthSq() < 0.3 && T.w.lengthSq() < 2)) continue;      // only while still tumbling
+    const T = C.T; if (T.rest || (CRASH.t > 0.6 && T.v.lengthSq() < 0.3 && T.w.lengthSq() < 2)) continue;      // from the first instant, and while still tumbling
     const q = T.m.quaternion; _bf.set(0, 0, 1).applyQuaternion(q); _bs.set(1, 0, 0).applyQuaternion(q);
     for (const [U, F, d, sd] of C.arms) {
-      _bt.set(0, -1, 0).addScaledVector(_bf, 0.35).addScaledVector(_bs, 0.3 * sd).normalize();      // down, a little ahead and out to that side
-      for (const [P, k] of [[U, 30], [F, 18]]) { _bc.copy(d).applyQuaternion(P.m.quaternion).cross(_bt); P.w.addScaledVector(_bc, k * h); P.rest = false; }
+      _bt.set(0, -1, 0).addScaledVector(_bf, 0.35).addScaledVector(_bs, 0.45 * sd).normalize();      // down, a little ahead and out to that side
+      for (const P of [U, F]) {      // the arm swings toward it like a quick, firm reach: a stiff pull and damping of the arm's own spin, relative to the body
+        _bc.copy(d).applyQuaternion(P.m.quaternion).cross(_bt);
+        P.w.addScaledVector(_bc, 260 * h).addScaledVector(_lw.copy(P.w).sub(T.w), -9 * h); P.rest = false;
+      }
     }
   }
+}
+// The chassis deck is solid to everything else in a crash: crew and loose parts are pushed out of it along the shortest
+// way, and stop moving into it, so a rover rolling over lands on its crew rather than passing through them.
+const _dk = new THREE.Vector3(), _dl = new THREE.Vector3(), _dn = new THREE.Vector3(), _dv2 = new THREE.Vector3(), _dqi = new THREE.Quaternion();
+function deckContacts() {
+  const M = CRASH.pieces.find(p => p.main); if (!M || !M.deck) return;
+  const [lo, hi] = M.deck; _dqi.copy(M.m.quaternion).invert();
+  for (const p of CRASH.pieces) { if (p === M || p.rest) continue;
+    for (const pt of p.pts) {
+      _dk.copy(pt).applyQuaternion(p.m.quaternion).add(p.m.position); _dl.copy(_dk).sub(M.m.position).applyQuaternion(_dqi);
+      if (_dl.x <= lo.x || _dl.x >= hi.x || _dl.y <= lo.y || _dl.y >= hi.y || _dl.z <= lo.z || _dl.z >= hi.z) continue;
+      const pen = [_dl.x - lo.x, hi.x - _dl.x, _dl.y - lo.y, hi.y - _dl.y, _dl.z - lo.z, hi.z - _dl.z]; let k = 0; for (let i = 1; i < 6; i++) if (pen[i] < pen[k]) k = i;
+      _dn.set(k === 0 ? -1 : k === 1 ? 1 : 0, k === 2 ? -1 : k === 3 ? 1 : 0, k === 4 ? -1 : k === 5 ? 1 : 0).applyQuaternion(M.m.quaternion);
+      p.m.position.addScaledVector(_dn, Math.min(pen[k], 0.05));      // out, a little at a time so nothing leaps
+      const r = _dl.copy(_dk).sub(p.m.position), vp = _dv2.copy(p.w).cross(r).add(p.v), vm = _dk.sub(M.m.position); const vrel = vp.sub(_dk.copy(M.w).cross(vm).add(M.v));
+      const vn = vrel.dot(_dn); if (vn < 0) { p.v.addScaledVector(_dn, -vn * 1.05); p.v.addScaledVector(vrel.addScaledVector(_dn, -vn), -0.3); }
+    } }
 }
 function stepJoints(h) {      // the rag dolls' joints: a soft spring and damper pulling the two anchor points together, pushing each part by its share
   brace(h);
@@ -1283,7 +1318,7 @@ function stepCrash(dt) {
     const o = Math.max(0, 1 - (CRASH.fade - 10) / 1.5); DEBRIS_MATS.forEach(m => { if (!m.transparent) { m.transparent = true; m.needsUpdate = true; } m.opacity = o; });
     if (o === 0) { CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = []; CRASH.brace = []; }
   }
-  const n = Math.min(12, Math.ceil(dt * 200)); for (let i = 0; i < n; i++) { stepJoints(dt / n); for (const p of CRASH.pieces) stepDebris(p, dt / n); for (const J of CRASH.joints) if (J.lim) limitJoint(J); }      // the joint stops once more, after the parts have moved
+  const n = Math.min(12, Math.ceil(dt * 200)); for (let i = 0; i < n; i++) { stepJoints(dt / n); for (const p of CRASH.pieces) stepDebris(p, dt / n); deckContacts(); for (const J of CRASH.joints) if (J.lim) limitJoint(J); }      // the joint stops once more, after the parts have moved
 }
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
