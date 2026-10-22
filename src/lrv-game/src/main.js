@@ -1731,19 +1731,33 @@ const armBones = sd => sd < 0 ? [5, 8] : [6, 9];
    tone a little uneven, and gray lunar dust ground into the lower legs (vertex colors, above) and in patches elsewhere,
    from noise on the suit's own resting shape so it rides with the body. The visor is the gold-coated outer shell,
    a mirror of the bright ground and the black sky. */
-function suitMaterial(src) {
-  const m = src.clone(); m.vertexColors = true; m.color.set(0xd2cbbd); m.roughness = 0.93; m.metalness = 0;
+function suitMaterial(src, cmdr = false) {
+  const m = src.clone(); m.vertexColors = true; m.color.set(0xd2cbbd); m.roughness = 0.93; m.metalness = 0; m.userData.cmdr = cmdr ? 1 : 0;
   m.onBeforeCompile = sh => {
-    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vRp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvRp = position;');
+    sh.uniforms.uCmdr = { value: m.userData.cmdr || 0 };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 sp;\nvarying vec3 vRp;\nvarying vec3 vSp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvRp = position; vSp = sp;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying vec3 vRp;
+      varying vec3 vRp; varying vec3 vSp; uniform float uCmdr;
       float sH(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
       float sV(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
         return mix(mix(mix(sH(i), sH(i + vec3(1, 0, 0)), f.x), mix(sH(i + vec3(0, 1, 0)), sH(i + vec3(1, 1, 0)), f.x), f.y),
                    mix(mix(sH(i + vec3(0, 0, 1)), sH(i + vec3(1, 0, 1)), f.x), mix(sH(i + vec3(0, 1, 1)), sH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
         { float t = sV(vRp * 6.) * .6 + sV(vRp * 17. + 3.) * .4, d = smoothstep(.55, .85, sV(vRp * 4.3 + 9.) * .7 + sV(vRp * 13. + 1.) * .3);
-          diffuseColor.rgb *= (.9 + .14 * t) * (1. - .28 * d); }      // uneven tone, patches of dust`)
+          diffuseColor.rgb *= (.9 + .14 * t) * (1. - .28 * d); }      // uneven tone, patches of dust
+        { vec3 q = vSp; float ax = abs(q.x), y = q.y, arm = step(1.15, y) * step(.3, ax);      // the standing suit, arms out: x to his left, y up from the soles, z forward
+          float glove = arm * smoothstep(.71, .73, ax), tip = arm * smoothstep(.83, .845, ax);      // EVA gloves: gray-silver shell, blue rubber fingertips
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.42, .42, .43), glove); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.12, .2, .42), tip);
+          float knee = smoothstep(.05, .035, abs(y - .5)) * step(y, .9), elbow = arm * smoothstep(.035, .02, abs(ax - .53)) * (1. - glove);      // ribbed restraint bands
+          diffuseColor.rgb *= 1. - (knee + elbow) * (.1 + .08 * step(.5, fract((knee > 0. ? y : ax) * 90.)));
+          float cuff = arm * step(0., q.x) * smoothstep(.64, .65, ax) * smoothstep(.71, .70, ax) * step(.04, q.z + .02);      // the cuff checklist on the left wrist
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.86, .85, .8) * (1. - .25 * step(.82, fract(ax * 260.))), cuff * .9);
+          float pocket = step(0., q.x) * smoothstep(.07, .08, q.x) * smoothstep(.21, .2, q.x) * smoothstep(.58, .59, y) * smoothstep(.8, .79, y) * step(.02, q.z);      // the thigh pocket
+          diffuseColor.rgb *= 1. - .1 * pocket - .18 * pocket * (step(abs(q.x - .075), .006) + step(abs(q.x - .205), .006) + step(abs(y - .585), .006) + step(abs(y - .74), .005));
+          float boot = smoothstep(.17, .15, y), sole = smoothstep(.045, .035, y);      // lunar overshoes: brighter, with a dark ribbed sole
+          diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.08, boot); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.16, .16, .17) * (.8 + .4 * step(.5, fract(q.z * 60.))), sole);
+          float red = uCmdr * (arm * smoothstep(.025, .015, abs(ax - .38)) + step(y, .9) * step(.5, y) * smoothstep(.025, .015, abs(y - .66)) + step(1.72, y) * smoothstep(.022, .014, abs(q.x)));      // the commander's red bands: arms, legs, helmet
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.5, .04, .04), red * .9); }`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
         { vec3 q = vRp * 9.; vec3 f = vec3(sV(q), sV(q + 17.3), sV(q + 31.7)) - .5, g = vec3(sV(q * 3.1 + 5.), sV(q * 3.1 + 23.), sV(q * 3.1 + 41.)) - .5;
           normal = normalize(normal + (viewMatrix * vec4(f * .55 + g * .18, 0.)).xyz); }      // soft folds and creases in the cloth`);
@@ -1770,9 +1784,9 @@ function buildCrew(src) {
   src.traverse(o => {
     if (!o.isMesh) return;
     const g = o.geometry.clone(); g.applyMatrix4(o.matrixWorld); g.translate(-(box.min.x + box.max.x) / 2, -box.min.y, 0); g.scale(k, k, k);
-    const p = g.attributes.position, col = new Float32Array(p.count * 3), seg = new Uint8Array(p.count), si = new Uint16Array(p.count * 4), sw = new Float32Array(p.count * 4);
+    const p = g.attributes.position, col = new Float32Array(p.count * 3), seg = new Uint8Array(p.count), si = new Uint16Array(p.count * 4), sw = new Float32Array(p.count * 4), sp = new Float32Array(p.count * 3);
     for (let i = 0; i < p.count; i++) {
-      V.fromBufferAttribute(p, i); const y0 = V.y, ax = Math.abs(V.x), r = V.x < 0 ? 0 : 1;
+      V.fromBufferAttribute(p, i); const y0 = V.y, ax = Math.abs(V.x), r = V.x < 0 ? 0 : 1; sp.set([V.x, y0, V.z - cz], i * 3);      // where it is on the standing suit, for the details
       const w = [];      // [bone, weight]: blended across the waist, knees, shoulders and elbows, so the suit bends instead of breaking
       if (V.z < cz - 0.14 && y0 > hipY + 0.05 && ax < 0.3) w.push([7, 1]);
       else if (y0 > 1.15 && ax > 0.24) {
@@ -1792,7 +1806,7 @@ function buildCrew(src) {
       }
       p.setXYZ(i, V.x, V.y - hipY, V.z);      // the seat, under the hips, is the origin
     }
-    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.computeVertexNormals();
+    g.setAttribute('color', new THREE.BufferAttribute(col, 3)); g.setAttribute('sp', new THREE.BufferAttribute(sp, 3)); g.computeVertexNormals();
     g.setAttribute('skinIndex', new THREE.Uint16BufferAttribute(si, 4)); g.setAttribute('skinWeight', new THREE.Float32BufferAttribute(sw, 4));
     const m = /astnt1_2/.test(o.material.name) ? visorMaterial() : suitMaterial(o.material);
     const idx = g.index ? g.index.array : Array.from({ length: p.count }, (_, i) => i), loose = [];
@@ -1817,11 +1831,12 @@ function seatCrew(parts) {
     const holder = new THREE.Group(); holder.position.set(...pos); holder.rotation.y = Math.PI / 2;      // facing forward, +x
     const bones = []; for (let b = 0; b < 10; b++) { if (b === 7) { bones.push(bones[0]); continue; } const bone = new THREE.Bone(); holder.add(bone); bones.push(bone); }
     const skel = new THREE.Skeleton(bones, crewInverses(false));
-    parts.forEach(([g, m]) => { const sk = new THREE.SkinnedMesh(g, m); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); holder.add(sk); });
+    const mine = parts.map(([g, m0, l]) => [g, i === 0 && m0.name !== 'visor' ? suitMaterial(m0, true) : m0, l]);      // Gene Cernan, the commander: red bands
+    mine.forEach(([g, m]) => { const sk = new THREE.SkinnedMesh(g, m); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); holder.add(sk); });
     // the grips, in his own frame (x to his left, z forward): Cernan's right hand on the hand controller
     const grip = sd => i === 0 && sd < 0 ? new THREE.Vector3(-(HAND_CTRL.z - pos[2]), HAND_CTRL.y - pos[1], HAND_CTRL.x - pos[0]) : new THREE.Vector3(sd * 0.37, -0.03, 0.1);
     const P = CREW_P[i];
-    holder.userData = { parts, bones, grips: [grip(-1), grip(1)], P,
+    holder.userData = { parts: mine, bones, grips: [grip(-1), grip(1)], P,
       st: { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null, hands: [grip(-1), grip(1)], up: 0 } };
     holder.visible = false; rover.add(holder); CREW.push(holder); poseCrew(holder);
   });

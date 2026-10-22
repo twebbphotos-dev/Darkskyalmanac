@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.98 (zion-sky-v467)
+Lunar Rover: suit details after the Apollo suits in the Smithsonian's collection: gray-silver EVA gloves with blue rubber fingertips, ribbed restraint bands at the elbows and knees, the cuff checklist on the left wrist, a thigh pocket, white lunar overshoes with dark ribbed soles, and on Gene Cernan the commander's red bands on arms and legs and a red stripe across the helmet. The chest's hose connectors stay hidden, as they were on the Moon, under the control unit box. The model's own texture keeps its flag and NASA patch.
+
 ## v4.97 (zion-sky-v466)
 Lunar Rover: the astronauts look like Apollo suits that have been out on the Moon. The visors are the gold-coated outer shell, a mirror of the black sky and the bright ground (they were a flat tan picture). The suits are a dingier off-white with soft folds and uneven tone instead of clean plastic, and gray lunar dust is thick up the boots and lower legs, ground into the knees, and patchy elsewhere; it rides with the body and goes with them in a crash.
 
