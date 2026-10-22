@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.13 (zion-sky-v482)
+Lunar Rover: a soft, rounded mission boundary. The edge was the terrain square itself, and Cernan grabbed the wheel the instant you came within 40 m of it, then spun the heading and velocity together with no warning. That felt like a kick because it bypassed the tires. The mission area is now an uneven, rounded loop inside the square, at least 45 m beyond every site and stop, drawn as a dashed line on the map. Heading out, a Mission Control notice counts down about 5 seconds first ("Cernan takes the wheel in 3 s"); turn back and it clears. If you keep going, he drives with the normal controls: brakes in a straight line (a rover turning hard at speed on the Moon just slides), then turns round at walking pace and hands back once you're heading in. The takeover point moves out with speed so he has room to stop. The terrain's own end now lets you slide along it instead of cutting your speed to 30%.
+
 ## v5.12 (zion-sky-v481)
 Lunar Rover: no more flips from a rim. A fast hit could reach 7 rad/s of tumble, several somersaults in one long lunar jump, from three things: the wheels' bump stops and the frame's contact with the ground had no upper limit, so a hard hit at speed gave a huge kick; the tip-over push added in v5.11 could also act on a nose-up hit at speed; and nothing soaked up a spin. Now each strut gives way past 9 kN and the frame's contact is softer and capped, the tip-over push acts only on a slow, settling tip, and tumbling faster than about 2.5 rad/s is damped. At 13 to 15 m/s into Shorty's rim the worst tumble fell from 7.4 to under 4 rad/s, a rough landing rather than a flip. Steering: the turn assist is gentler and the minimum lock smaller (full lock at 6 m/s now turns about 29° a second instead of 40), so the low grip shows again.
 

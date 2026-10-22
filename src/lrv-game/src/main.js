@@ -684,7 +684,9 @@ function step(h) {
   const dq = new THREE.Quaternion(car.w.x * h * .5, car.w.y * h * .5, car.w.z * h * .5, 0).multiply(car.q);
   car.q.x += dq.x; car.q.y += dq.y; car.q.z += dq.z; car.q.w += dq.w; car.q.normalize();
   // keep to the mapped square
-  const lim2 = HALF - 12; if (Math.abs(car.p.x - CX) > lim2 || Math.abs(car.p.z - CZ) > lim2) { car.p.x = CX + Math.max(-lim2, Math.min(lim2, car.p.x - CX)); car.p.z = CZ + Math.max(-lim2, Math.min(lim2, car.p.z - CZ)); car.v.multiplyScalar(0.3); }
+  const lim2 = HALF - 12;      /* the terrain's own end, a last resort well past the mission line: it slides you along, no bounce */
+  if (Math.abs(car.p.x - CX) > lim2) { car.p.x = CX + Math.sign(car.p.x - CX) * lim2; if (car.v.x * (car.p.x - CX) > 0) car.v.x = 0; }
+  if (Math.abs(car.p.z - CZ) > lim2) { car.p.z = CZ + Math.sign(car.p.z - CZ) * lim2; if (car.v.z * (car.p.z - CZ) > 0) car.v.z = 0; }
   // air time: off the ground with nothing touching
   if (touching === 0) {
     if (AIR.grounded && AIR.t === 0) { AIR.start = car.p.clone(); AIR.peak = 0; AIR.spin = 0; }
@@ -948,27 +950,40 @@ const PTR = { x: -1e4, y: -1e4 };      // the mouse, for the site markers
 addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { PTR.x = e.clientX; PTR.y = e.clientY; } });
 /* The edge of the map, without an invisible wall: Mission Control calls the crew back to the mission area, and Gene
    Cernan takes the controls, keeps his speed and swings the rover back round, in the letterbox; pointed back in, they are yours again. */
-const HOME = { on: false, t: 0, cool: 0, th: 0, st: 0, v0: 0 }, _hq = new THREE.Quaternion(), _hy = new THREE.Vector3(0, 1, 0);
+// The mission area: a rounded, uneven loop inside the terrain square, at least 45 m beyond every site and stop
+const wob = th => 40 + 18 * Math.sin(3 * th + 5) + 12 * Math.sin(5 * th) + 7 * Math.sin(8 * th + 4);
+function edgeDist(x, z) { const dx = x - CX, dz = z - CZ; return HALF - wob(Math.atan2(dz, dx)) - Math.pow(dx ** 6 + dz ** 6, 1 / 6); }      // meters inside the line
+function edgePt(th) { const c = Math.cos(th), s = Math.sin(th), r = (HALF - wob(th)) / Math.pow(c ** 6 + s ** 6, 1 / 6); return [CX + r * c, CZ + r * s]; }
+const HOME = { on: false, t: 0, cool: 0, th: 0, st: 0, wt: 0, msg: '', turn: false };
 function homeCap(m) { const el = $('cine-cap'); el.classList.remove('on'); el.textContent = m; void el.offsetWidth; el.classList.add('on'); }
-function homeEnd() { HOME.on = false; HOME.cool = 6; document.body.classList.remove('home'); $('cine-cap').classList.remove('on'); }
+function edgeWarn(m) { if (m === HOME.msg) return; HOME.msg = m; const el = $('edgewarn'); if (m) el.textContent = m; el.classList.toggle('on', !!m); }
+function homeEnd() { HOME.on = false; HOME.cool = 4; document.body.classList.remove('home'); $('cine-cap').classList.remove('on'); }
 function homeStep(dt) {      // true while Cernan is driving
-  const edge = HALF - Math.max(Math.abs(car.p.x - CX), Math.abs(car.p.z - CZ));
+  const x = car.p.x, z = car.p.z, edge = edgeDist(x, z);
+  const vOut = -(car.v.x * (edgeDist(x + 1, z) - edgeDist(x - 1, z)) + car.v.z * (edgeDist(x, z + 1) - edgeDist(x, z - 1))) / 2;      // speed toward the line
+  const line = Math.min(50, 15 + Math.max(0, vOut) ** 2 / 2.4);      // he takes over with room to stop: brakes grip weakly in one-sixth gravity
+  const busy = CRASH.on || BRIEF.on || INTRO.on || SAMPLE.on;
+  if (HOME.on && busy) { homeEnd(); return false; }
   if (!HOME.on) {
-    const v = car.v.dot(_fw);
-    if ((HOME.cool -= dt) > 0 || edge > 40 + 4 * Math.max(0, v) || CRASH.on || BRIEF.on || INTRO.on) return false;      // a little earlier the faster you go
-    HOME.on = true; HOME.t = 0; HOME.v0 = Math.max(3, car.v.dot(_fw));      // the speed he keeps document.body.classList.add('home');
-    homeCap('Mission Control · You’re at the edge of the mission area. Head back toward the LM.');
+    HOME.cool -= dt;
+    const T = vOut > 0.3 ? (edge - line) / vOut : 99;
+    if (busy || edge > 160 || (T > 5 && edge > line + 12) || vOut < -0.3) { edgeWarn(''); return false; }      // clear of it, or already turning back
+    if (edge > line || HOME.cool > 0) {      // a few seconds' notice first
+      if ((HOME.wt -= dt) <= 0) { HOME.wt = 0.25; edgeWarn(`Mission Control · You’re nearing the edge of the mission area. Turn back toward the LM${T < 99 ? `, or Cernan takes the wheel in ${Math.max(1, Math.ceil(T))} s` : ''}.`); }
+      return false;
+    }
+    edgeWarn(''); HOME.on = true; HOME.t = 0; HOME.turn = false; document.body.classList.add('home');
+    homeCap('Cernan has the wheel · He brakes, turns you around and heads back inside the mission area.');
   }
-  if (CRASH.on || BRIEF.on || INTRO.on) { homeEnd(); return false; }
   HOME.t += dt;
-  const far = Math.hypot(LM.x - car.p.x, LM.z - car.p.z) > 500, tx = far ? CX : LM.x, tz = far ? CZ : LM.z;      // toward the lander, or the middle of the map
-  let err = Math.atan2(-(tz - car.p.z), tx - car.p.x) - Math.atan2(-_fw.z, _fw.x); err -= 2 * Math.PI * Math.round(err / (2 * Math.PI));
-  if ((Math.abs(err) < 0.4 && HOME.t > 0.8) || HOME.t > 8) { homeEnd(); toast('Heading back in · the controls are yours'); return false; }      // pointed back in: yours again
-  // A driver's swing, faster than the tires alone would turn at this speed: heading and motion turn together, the speed held
-  const turn = Math.max(-0.9 * dt, Math.min(0.9 * dt, err)); car.q.premultiply(_hq.setFromAxisAngle(_hy, turn)); car.v.applyAxisAngle(_hy, turn);
-  const v = car.v.dot(_fw);
-  HOME.st = Math.max(-1, Math.min(1, -err * 2.5));      // steering is right-positive, heading counterclockwise
-  HOME.th = v < HOME.v0 ? 0.8 : 0;      // he keeps his speed
+  const far = Math.hypot(LM.x - x, LM.z - z) > 500, tx = far ? CX : LM.x, tz = far ? CZ : LM.z;      // toward the lander, or the middle of the map
+  const wrap = a => a - 2 * Math.PI * Math.round(a / (2 * Math.PI)), tgt = Math.atan2(-(tz - z), tx - x), hd = Math.atan2(-_fw.z, _fw.x);
+  const sp = Math.hypot(car.v.x, car.v.z), mv = Math.atan2(-car.v.z, car.v.x), err = wrap(tgt - hd), errV = wrap(tgt - mv);
+  if ((HOME.turn && Math.abs(err) < 0.5 && (sp < 1 || Math.abs(errV) < 0.6) && HOME.t > 2) || HOME.t > 15) { homeEnd(); toast('Back inside the mission area · the controls are yours'); return false; }
+  // Like a driver on loose ground: brakes in a straight line first (a turning rover on the Moon slides out), then turns round at walking pace
+  const ease = Math.min(1, HOME.t / 1.2);
+  if (sp > 4 && !HOME.turn) { HOME.st = 0; HOME.th = -1; }
+  else { HOME.turn = true; HOME.st = ease * Math.max(-1, Math.min(1, -err * 2.5)); HOME.th = sp < 2.5 ? 0.5 : 0.15; }      // steering is right-positive, heading counterclockwise
   return true;
 }
 function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.6; }
@@ -1818,6 +1833,8 @@ function drawMap(cv, cx, cz, span, big) {      // span: meters across the canvas
   }
   if (big || span < 600) for (const [wx, wz, t] of MAP_NAMES()) { const [a, b] = P(wx, wz); x.fillStyle = 'rgba(0,0,0,.55)'; x.fillText(t, a + dpr, b + dpr); x.fillStyle = '#E6CC85'; x.fillText(t, a, b); }
   if (big) for (const [t, side, f] of MAP_EDGE) { x.textAlign = side > 0 ? 'right' : 'left'; x.fillStyle = 'rgba(201,189,151,.8)'; x.fillText(t, side > 0 ? W - 8 * dpr : 8 * dpr, W * f); }
+  x.strokeStyle = 'rgba(230,140,90,.75)'; x.lineWidth = Math.max(1, 1.3 * dpr); x.setLineDash([5 * dpr, 4 * dpr]); x.beginPath();      // the edge of the mission area
+  for (let i = 0; i <= 240; i++) { const [a, b] = P(...edgePt(i / 240 * 2 * Math.PI)); i ? x.lineTo(a, b) : x.moveTo(a, b); } x.stroke(); x.setLineDash([]);
   const [la, lb] = P(LM.x, LM.z); x.fillStyle = '#F2E4BE'; x.fillRect(la - 2.5 * dpr, lb - 2.5 * dpr, 5 * dpr, 5 * dpr);      // the lander
   const [ca, cb] = P(car.p.x, car.p.z), hd = Math.atan2(-_fw.z, _fw.x);      // you, pointing the way you face
   x.save(); x.translate(ca, cb); x.rotate(-hd); x.beginPath(); x.moveTo(7 * dpr, 0); x.lineTo(-4.5 * dpr, 4 * dpr); x.lineTo(-2.5 * dpr, 0); x.lineTo(-4.5 * dpr, -4 * dpr); x.closePath();
