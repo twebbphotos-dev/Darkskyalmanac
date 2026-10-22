@@ -193,3 +193,5 @@ v5.19: stepSample(h, dt, S) takes a state object (seat, out, spot, faceOut, tool
 v5.20: GP.known (set by startFilm) gates the right-click Grand Prix item; endReplay of his film offers #btn-gp for 8 s (GP.offerT); #m-gp stays in the menu.
 
 v5.21: film phase 30 s with #filmcd countdown; bestClip(t0, t1, crashT) slides a 15 s window over HIST scoring speed/5 + 3·air + 0.8·tumble + 0.8·nearness (25 m) + 6 within 2 s of a wreck; HIST keeps 40 s.
+
+v5.22: deckContacts: per-point clear flag (only points that have been outside the deck box are pushed), momentum shared with the chassis by inv; belted crew parts noDeck; chassis inv 0.03 always; belt anchor la at the torso's hip after the lift out of the ground.

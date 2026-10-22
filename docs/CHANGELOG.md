@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.22 (zion-sky-v491)
+Lunar Rover: light crashes no longer launch the wreck. In a slow rollover the crew stay belted in, and the chassis deck is solid to crew and loose parts. But the seated astronauts' legs start inside the deck's box, and their hips sit right on it: every step the deck shoved them out and the belt pulled them back, and only the crew were pushed, so each step added energy until the chassis flew off at up to 20 m/s, spinning at 13 rad/s, with the legs forced out under the floor (which made the belts look tied to the feet). Now a belted man is held by his belt, not pushed by the deck; the deck blocks only parts that come in from outside, and pushes the chassis back by its share; the chassis counts as heavy; and each belt starts slack at the hips wherever the body ended up. In test rollovers the chassis keeps its own 1.6 m/s and under 1 rad/s, and the crew stay in their seats.
+
 ## v5.21 (zion-sky-v490)
 Lunar Rover: Hold the camera now films for 30 s, with a REC countdown at the top of the screen, instead of stopping at the first landing or 14 s. When the time is up (or the rover is wrecked) his clip is the best 15 s of it: every moment scored for speed, height off the ground, tumbling, a close pass by Schmitt and a wreck, and the highest-scoring window plays. The replay history now keeps 40 s instead of 20.
 

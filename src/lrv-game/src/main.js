@@ -1209,7 +1209,7 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
       const sk = new THREE.SkinnedMesh(geo, mat); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); scene.add(sk); CRASH.extra.push(sk);
     }
     for (const [a, b2, at] of CREW_JOINTS) CRASH.joints.push({ A: segP[a], B: segP[b2], la: at.clone().sub(CREW_SEG[a].c), lb: at.clone().sub(CREW_SEG[b2].c), lim: jointLimit(a, b2) });
-    belts.push([segP[0], h.getWorldPosition(new THREE.Vector3())]);
+    belts.push([segP.filter((P, b) => P && b !== 7), segP[0], CREW_SEG[0].c.clone().negate().applyQuaternion(segP[0].m.quaternion).add(segP[0].m.position)]);      // his hips where they are now, after any lift out of the ground: the belt starts slack
     CRASH.brace.push({ T: segP[0], arms: [-1, 1].map(sd => { const [u, f] = armBones(sd); return [segP[u], segP[f], armDir(sd), sd]; }) });
   }
 
@@ -1219,8 +1219,9 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
     deck: [new THREE.Vector3(-1.5 - C.x, -0.35 - C.y, -1.0 - C.z), new THREE.Vector3(1.5 - C.x, 0.1 - C.y, 1.0 - C.z)] }, debrisBody(body)));      // the deck and frame, in its own frame: solid to the rest
   // The seat belts: in a slow roll they hold, and each goes over with the rover (pinned under it if it lands on him); a
   // hard crash tears them loose and throws him clear
-  if (k < 0.55) { const M = CRASH.pieces[CRASH.pieces.length - 1]; M.inv = 0.03; const qi = M.m.quaternion.clone().invert();
-    for (const [T, w] of belts) CRASH.joints.push({ A: M, B: T, la: w.clone().sub(M.m.position).applyQuaternion(qi), lb: CREW_SEG[0].c.clone().negate(), belt: true }); }
+  CRASH.pieces[CRASH.pieces.length - 1].inv = 0.03;      // the chassis is heavy next to any one part of a man
+  if (k < 0.55) { const M = CRASH.pieces[CRASH.pieces.length - 1]; const qi = M.m.quaternion.clone().invert();
+    for (const [parts, T, w] of belts) { parts.forEach(P => { P.noDeck = true; }); CRASH.joints.push({ A: M, B: T, la: w.clone().sub(M.m.position).applyQuaternion(qi), lb: CREW_SEG[0].c.clone().negate(), belt: true }); } }      // belted in, he is held to the chassis, not pushed out of it
   for (let j = 0, n = Math.round(30 + 70 * k); j < n; j++) { const i = dnext; dnext = (dnext + 1) % DN;      // a puff of dust, falling straight back
     dpos[i * 3] = car.p.x + (R() - .5) * 2; dpos[i * 3 + 1] = car.p.y; dpos[i * 3 + 2] = car.p.z + (R() - .5) * 2;
     dvel[i * 3] = car.v.x * 0.5 + (R() - .5) * 3 * (0.3 + k); dvel[i * 3 + 1] = R() * 2.5 * (0.3 + k); dvel[i * 3 + 2] = car.v.z * 0.5 + (R() - .5) * 3 * (0.3 + k); dlife[i] = 1; }
@@ -1274,15 +1275,18 @@ const _dk = new THREE.Vector3(), _dl = new THREE.Vector3(), _dn = new THREE.Vect
 function deckContacts() {
   const M = CRASH.pieces.find(p => p.main); if (!M || !M.deck) return;
   const [lo, hi] = M.deck; _dqi.copy(M.m.quaternion).invert();
-  for (const p of CRASH.pieces) { if (p === M || p.rest) continue;
+  for (const p of CRASH.pieces) { if (p === M || p.rest || p.noDeck) continue;
     for (const pt of p.pts) {
       _dk.copy(pt).applyQuaternion(p.m.quaternion).add(p.m.position); _dl.copy(_dk).sub(M.m.position).applyQuaternion(_dqi);
-      if (_dl.x <= lo.x || _dl.x >= hi.x || _dl.y <= lo.y || _dl.y >= hi.y || _dl.z <= lo.z || _dl.z >= hi.z) continue;
+      if (_dl.x <= lo.x || _dl.x >= hi.x || _dl.y <= lo.y || _dl.y >= hi.y || _dl.z <= lo.z || _dl.z >= hi.z) { pt.clear = true; continue; }
+      if (!pt.clear) continue;      // only what comes in from outside: a seated man's legs start inside the deck's box, and pushing them out fought the belt and fed the wreck energy
       const pen = [_dl.x - lo.x, hi.x - _dl.x, _dl.y - lo.y, hi.y - _dl.y, _dl.z - lo.z, hi.z - _dl.z]; let k = 0; for (let i = 1; i < 6; i++) if (pen[i] < pen[k]) k = i;
       _dn.set(k === 0 ? -1 : k === 1 ? 1 : 0, k === 2 ? -1 : k === 3 ? 1 : 0, k === 4 ? -1 : k === 5 ? 1 : 0).applyQuaternion(M.m.quaternion);
       p.m.position.addScaledVector(_dn, Math.min(pen[k], 0.05));      // out, a little at a time so nothing leaps
       const r = _dl.copy(_dk).sub(p.m.position), vp = _dv2.copy(p.w).cross(r).add(p.v), vm = _dk.sub(M.m.position); const vrel = vp.sub(_dk.copy(M.w).cross(vm).add(M.v));
-      const vn = vrel.dot(_dn); if (vn < 0) { p.v.addScaledVector(_dn, -vn * 1.05); p.v.addScaledVector(vrel.addScaledVector(_dn, -vn), -0.3); }
+      const vn = vrel.dot(_dn); if (vn < 0) {      // stopped going in, and the chassis takes the same push back by its share: nothing gained
+        const ip = p.inv || 1, im = M.inv || 1, fp = ip / (ip + im), fm = im / (ip + im); _dv2.copy(_dn).multiplyScalar(-vn * 1.05);
+        p.v.addScaledVector(_dv2, fp); M.v.addScaledVector(_dv2, -fm); p.v.addScaledVector(vrel.addScaledVector(_dn, -vn), -0.3 * fp); M.rest = false; }
     } }
 }
 function stepJoints(h) {      // the rag dolls' joints: a soft spring and damper pulling the two anchor points together, pushing each part by its share
