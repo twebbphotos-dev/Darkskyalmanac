@@ -189,3 +189,5 @@ v5.17: CTX/ctxOpen (contextmenu, or a 600 ms still touch press; groundAt marches
 v5.18: grandPrix() opens #gpsheet (lrv/grand-prix.mp4, H.264 640x480 from the Commons 480p transcode of Ap16 rover.ogv; poster grand-prix.jpg). Dodge: trigger at closest approach < 2.6 m within 2 s; crouch 0-0.22 s, hop 1 (66%, 0.36 m) 0.22-0.94 s, landing give, hop 2 (34%, 0.14 m) 1.12-1.62 s, settle to 1.95 s; st.lx leans into the push; turn rate 4.5 rad/s.
 
 v5.19: stepSample(h, dt, S) takes a state object (seat, out, spot, faceOut, tool, card, done); SAMPLE is the default. DIG/startDig: both crew out (Cernan SEAT0/OUT0/SPOT0 with DIG.tongs, Schmitt with the scoop 0.5 s behind); digResult: 25% a card from EXTRA (unseen first, kept in localStorage lrv-extra; 10% once all seen), else a NOTHING toast.
+
+v5.20: GP.known (set by startFilm) gates the right-click Grand Prix item; endReplay of his film offers #btn-gp for 8 s (GP.offerT); #m-gp stays in the menu.

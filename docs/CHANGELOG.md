@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.20 (zion-sky-v489)
+Lunar Rover: the real Grand Prix film is offered only where it means something: in the right-click menu once you have used Hold the camera, as a button for 8 s after Schmitt's clip plays, and always in the main menu. It had been in every right-click menu.
+
 ## v5.19 (zion-sky-v488)
 Lunar Rover: Sample here (right-click menu, rover stopped). Both astronauts climb out, Cernan with the tongs on the driver's side and Schmitt with the scoop on his, take a sample, look it over and climb back aboard. Usually it is ordinary soil, said plainly. About one time in four a card appears for a rock like a famous Apollo find, each labeled with its own mission: the Genesis Rock (15415, Apollo 15), Big Bertha (14321, Apollo 14, with the 2019 report of a fragment of early Earth), Big Muley (61016, Apollo 16) and the goodwill basalt (70017, Apollo 17). Facts checked against the Lunar Sample Compendium, NASA and the published study. Schmitt's walk-out code now runs for either astronaut.
 

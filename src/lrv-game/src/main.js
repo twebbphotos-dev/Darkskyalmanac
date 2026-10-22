@@ -1388,8 +1388,9 @@ $('m-trial').addEventListener('click', () => {      // put down short of the sta
 $('m-lander').addEventListener('click', () => { toDrive(); place(0, 0, Math.atan2(350, 82)); closeSheets(true); $('brief').classList.remove('on'); toast('Back beside the lander'); });
 $('m-objects').addEventListener('click', () => { location.href = '../objects'; });
 /* The real thing: the Apollo 16 Grand Prix, NASA's 16 mm film (public domain) */
-function grandPrix() { const was = anyOpen() ? PAUSE.was : running; SHEETS.forEach(id => $(id).classList.remove('on')); openSheet('gpsheet'); PAUSE.was = was; const v = $('gp-vid'); v.currentTime = 0; v.play().catch(() => {}); }
-$('m-gp').addEventListener('click', grandPrix);
+const GP = { known: false, offerT: 0 };      // the real film is offered once he has held the camera: then it means something
+function grandPrix() { GP.offerT = 0; $('btn-gp').classList.remove('on'); const was = anyOpen() ? PAUSE.was : running; SHEETS.forEach(id => $(id).classList.remove('on')); openSheet('gpsheet'); PAUSE.was = was; const v = $('gp-vid'); v.currentTime = 0; v.play().catch(() => {}); }
+$('m-gp').addEventListener('click', grandPrix); $('btn-gp').addEventListener('click', grandPrix);
 $('gp-close').addEventListener('click', () => { $('gp-vid').pause(); closeSheets(); });
 let setQ = detailChoice();
 function markSettings() {
@@ -1441,7 +1442,7 @@ function endReplay() {
   if (!REPLAY.on) return;
   REPLAY.on = false; document.body.classList.remove('replay'); camera.fov = REPLAY.fov; camera.updateProjectionMatrix(); $('cine-cap').classList.remove('on');
   car.steer = REPLAY.save.steer; WHEELS.forEach((w, k) => { w.spin = REPLAY.save.spin[k]; }); running = REPLAY.save.run; camInit = false;
-  if (REPLAY.film) { REPLAY.film = false; CREW[1].visible = true; rover.position.copy(car.p); rover.quaternion.copy(car.q); toast('Drive up beside Schmitt and stop to pick him up'); }
+  if (REPLAY.film) { REPLAY.film = false; CREW[1].visible = true; rover.position.copy(car.p); rover.quaternion.copy(car.q); toast('Drive up beside Schmitt and stop to pick him up'); GP.offerT = 8; $('btn-gp').classList.add('on'); }      // and, after his film, the real one
 }
 function stepReplay(dt) {
   REPLAY.t += dt * (REPLAY.film ? 1 : 0.55);      // slow motion, or his film at true speed
@@ -1481,6 +1482,7 @@ function frame(now) {
     upsideT = _up.y < 0.35 ? upsideT + dt : 0; $('btn-recover').classList.toggle('on', upsideT > 1.2);
     simT += dt; if (!CRASH.on) record();
     if (REPLAY.offerT > 0 && (REPLAY.offerT -= dt) <= 0 || CRASH.on) { REPLAY.offerT = 0; $('btn-replay').classList.remove('on'); }
+    if (GP.offerT > 0 && (GP.offerT -= dt) <= 0) $('btn-gp').classList.remove('on');
     if (REJOIN.t > 0 && ((REJOIN.t -= dt) <= 0 || RUN.on)) { REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); }
   }
   if (REPLAY.on && stepReplay(dt)) { renderer.render(scene, camera); requestAnimationFrame(frame); return; }
@@ -2139,7 +2141,7 @@ function startFilm(px, pz) {
   if (FILM.on) { if (FILM.ph !== 'out' && FILM.ph !== 'in') { FILM.tx = px; FILM.tz = pz; FILM.ph = 'walk'; FILM.t = 0; } return; }      // out already: a new spot
   if (!h || !h.visible || SAMPLE.on || DIG.on || CRASH.on || REPLAY.on) return;
   if (Math.hypot(car.v.x, car.v.z) > 1.5) { toast('Slow down first: Schmitt climbs out of a stopped rover'); return; }
-  Object.assign(FILM, { on: true, ph: 'out', t: 0, tx: px, tz: pz, land: -1, crash: 0, dodge: null }); SCH.mode = '';
+  Object.assign(FILM, { on: true, ph: 'out', t: 0, tx: px, tz: pz, land: -1, crash: 0, dodge: null }); SCH.mode = ''; GP.known = true;
 }
 function filmAboard() {      // back in his seat at once
   const h = CREW[1], st = h.userData.st, g = h.userData.grips; if (h.parent !== rover) rover.add(h);
@@ -2232,7 +2234,8 @@ function ctxOpen(cx, cy) {
   if (FILM.on && FILM.ph !== 'in') items.push(['Schmitt back aboard', filmAboard]);
   if (upsideT > 0.5) items.push(['Back on its wheels', recover]);
   if (REPLAY.jump && REPLAY.offerT > 0) items.push(['Replay the jump', startReplay]);
-  items.push(['Change camera view', () => $('btn-pov').click()], ['Open the map', () => $('minimap').click()], ['Watch the real Grand Prix', grandPrix]);
+  items.push(['Change camera view', () => $('btn-pov').click()], ['Open the map', () => $('minimap').click()]);
+  if (GP.known) items.push(['Watch the real Grand Prix', grandPrix]);
   const m = $('ctx'); m.innerHTML = ''; for (const [t, f] of items) { const b = document.createElement('button'); b.textContent = t; b.addEventListener('click', e => { e.stopPropagation(); ctxClose(); f(); }); m.appendChild(b); }
   m.classList.add('on'); const w = m.offsetWidth, h = m.offsetHeight; m.style.left = Math.min(cx, innerWidth - w - 8) + 'px'; m.style.top = Math.min(cy, innerHeight - h - 8) + 'px';
 }
