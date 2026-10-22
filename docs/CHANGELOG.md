@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.04 (zion-sky-v473)
+Lunar Rover: the astronauts' arms no longer look bloated. Two causes: the cloth was puffed out up to 2.6 cm on arms about 6 cm in radius (now 0.6 cm, the body 1 cm), and the arms were rigged from straight out level, so reaching down to the seat swung them about 80° and the shoulder skin ballooned and smeared. They are now rigged 30° below level, near how they are used, so the swing is about 50°, and the arm is picked out along its own axis instead of as everything past a fixed width.
+
 ## v5.03 (zion-sky-v472)
 Lunar Rover: no more stretched torso fabric at the astronauts' sides. The fabric of the torso's side below the armpit was partly tied to the upper arm (in the rig, and in raising the arms from the model's A-pose), so when an arm came down to the seat it dragged that fabric into a smooth stretched sheet. Now only fabric at the arm itself moves with it, blended over a narrower band at the shoulder.
 

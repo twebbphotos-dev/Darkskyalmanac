@@ -1726,7 +1726,7 @@ const CREW_SEATS = [[-0.66, 0.16, -0.33], [-0.66, 0.16, 0.33]];      // where ea
 const HAND_CTRL = new THREE.Vector3(-0.3, 0.4, 0);      // the grip of the hand controller, rover frame
 // Segments: 0 torso and head, 1 2 thighs, 3 4 shins, 5 6 upper arms, 7 backpack, 8 9 forearms (odd-even: right, left).
 // The arm's joints in the scan's standing frame, relative to the seat: shoulder, elbow, the middle of the glove.
-const ARM = { S: new THREE.Vector3(0.26, 0.47, -0.07), E: new THREE.Vector3(0.5, 0.46, -0.08), H: new THREE.Vector3(0.84, 0.44, -0.09) };      // after prepSuit: arms out level at 1.39 m, wrist at 0.73, glove 0.84
+const ARM = { S: new THREE.Vector3(0.26, 0.435, -0.07), E: new THREE.Vector3(0.44, 0.334, -0.08), H: new THREE.Vector3(0.72, 0.149, -0.093) };      // after prepSuit: arms 30° below level, wrist at (0.64, 1.15 m), glove (0.72, 1.08 m)
 const armBones = sd => sd < 0 ? [5, 8] : [6, 9];
 /* The suits: "Space suit" by IgorSholopov (sketchfab.com/3d-models/space-suit-bdc42075279746dab4c8b54784276a20, CC BY 4.0),
    an Apollo A7L, its textures re-encoded and its mesh compressed (src/lrv-game/astronaut.md). Changed here at load
@@ -1741,7 +1741,8 @@ function prepSuit(src) {
   src.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(src), k = 1.85 / (box.max.y - box.min.y), cx = (box.min.x + box.max.x) / 2, out = new THREE.Group();
   let zb = new THREE.Box3(); src.traverse(o => { if (o.isMesh && o.material.name === 'base_002') zb.expandByObject(o); }); const cz = (zb.min.z + zb.max.z) / 2;
-  const PIV = [0.22, 1.38], ROT = [0.23, 1.43], TH = Math.PI / 4, SH = 0.01,      // the arm's line from the armpit; it turns about the top of the shoulder, so the shoulder pad rises with it
+  const PIV = [0.22, 1.38], ROT = [0.23, 1.43], TH = Math.PI / 12, ANG = Math.PI / 4, SH = 0.01,      // ANG: the arm's slant in the model; TH: how far it is raised (to 30° below level, near how it is used, so the skin bends less)
+         // the arm's line from the armpit; it turns about the top of the shoulder, so the shoulder pad rises with it
     V = new THREE.Vector3(), N = new THREE.Vector3();
   src.traverse(o => {
     if (!o.isMesh) return;
@@ -1750,7 +1751,7 @@ function prepSuit(src) {
     for (let i = 0; i < p.count; i++) {
       V.fromBufferAttribute(p, i); N.fromBufferAttribute(n, i); const sd = Math.sign(V.x) || 1;
       // the arm: points along the line from the shoulder down to the hand, raised to level, blended in at the armpit
-      const dx = Math.abs(V.x) - PIV[0], dy = V.y - PIV[1], t = dx * Math.cos(TH) - dy * Math.sin(TH), r = Math.abs(dx * Math.sin(TH) + dy * Math.cos(TH));
+      const dx = Math.abs(V.x) - PIV[0], dy = V.y - PIV[1], t = dx * Math.cos(ANG) - dy * Math.sin(ANG), r = Math.abs(dx * Math.sin(ANG) + dy * Math.cos(ANG));
       // outside the torso only: the torso's side below the armpit lies close to that slanting line too, and used to go up with the arm and stretch
       const out = V.y > 1.36 ? 1 : ss(0.2, 0.235, Math.abs(V.x));
       const wArm = V.y > 0.86 && !hard ? ss(-0.04, 0.07, t) * ss(0.12, 0.085, r) * ss(1.62, 1.5, V.y) * out : 0;
@@ -1759,7 +1760,7 @@ function prepSuit(src) {
       // the shoulders and chest broadened (the arms move out with them), the cloth filled out
       const band = ss(0.98, 1.28, V.y) * ss(1.62, 1.5, V.y);
       if (wArm > 0.5) V.x += sd * SH * band; else if (!hard) { V.x *= 1 + (SH / PIV[0]) * band; V.z *= 1 + 0.03 * band; }
-      if (cloth) V.addScaledVector(N, 0.014 + 0.008 * wArm + 0.004 * band);
+      if (cloth) V.addScaledVector(N, 0.01 * (1 - wArm) + 0.006 * wArm);      // filled out a little: the arms barely (more read as bloated)
       else if (fitted) { const l = Math.hypot(V.x * 0.3, V.z) || 1; V.x += V.x * 0.3 / l * 0.018; V.z += V.z / l * 0.018; }      // out with the cloth beneath
       p.setXYZ(i, V.x, V.y, V.z); n.setXYZ(i, N.x, N.y, N.z);
     }
@@ -1798,6 +1799,12 @@ function visorMaterial() {
   const env = new THREE.PMREMGenerator(renderer).fromEquirectangular(t).texture; t.dispose();
   return (VISOR = new THREE.MeshStandardMaterial({ color: 0xd8a640, metalness: 1, roughness: 0.14, envMap: env, envMapIntensity: 1.25, name: 'visor' }));      // gold over a mirror
 }
+// The arm's axis in the standing suit (from ARM, before the crew is scaled): along it from the shoulder, and off it
+const AX = (() => { const sx = ARM.S.x, sy = ARM.S.y + 0.93, dx = ARM.H.x - sx, dy = ARM.H.y + 0.93 - sy, l = Math.hypot(dx, dy);
+  return { sx, sy, ux: dx / l, uy: dy / l, le: Math.hypot(ARM.E.x - sx, ARM.E.y - ARM.S.y) }; })();
+const armAx = (ax, y) => { const dx = ax - AX.sx, dy = y - AX.sy; return [dx * AX.ux + dy * AX.uy, Math.abs(dx * AX.uy - dy * AX.ux)]; };
+const armAt = (ax, y) => { if (ax < 0.24 && y < 1.32) return false;      // the torso's side under the arm stays torso
+  const [al, pe] = armAx(ax, y); return al > -0.05 && pe < (al > 0.35 ? 0.2 : 0.15); };
 function buildCrew(src) {
   src.updateMatrixWorld(true);
   const box = new THREE.Box3(); src.traverse(o => { if (o.isMesh && !o.userData.addon) box.expandByObject(o); });      // the suit itself, not the backpack built on
@@ -1813,8 +1820,8 @@ function buildCrew(src) {
       V.fromBufferAttribute(p, i); const y0 = V.y, ax = Math.abs(V.x), r = V.x < 0 ? 0 : 1; sp.set([V.x, y0, V.z - cz], i * 3);      // where it is on the standing suit, for the details
       const w = [];      // [bone, weight]: blended across the waist, knees, shoulders and elbows, so the suit bends instead of breaking
       if (o.userData.addon === 'pack') w.push([7, 1]);
-      else if (y0 > 1.15 && ax > 0.24) {
-        const wa = Math.max(ss(0.22, 0.31, ax) * ss(1.26, 1.31, y0), ss(0.34, 0.4, ax)), wf = ss(0.46, 0.54, ax);      // the torso's side below the arm (under 1.29 m) stays torso: tied to the arm, it was dragged into a sheet when the arm came down      // past the armpit it is all arm, the drooping fingertips too
+      else if (armAt(ax, y0)) {      // along the arm's own axis, from the shoulder: blended in at the shoulder and the elbow
+        const [al, pe] = armAx(ax, y0), wa = al > 0.35 ? 1 : ss(-0.03, 0.05, al) * ss(0.15, 0.11, pe), wf = ss(AX.le - 0.04, AX.le + 0.04, al);      // the torso's side below the arm (under 1.29 m) stays torso: tied to the arm, it was dragged into a sheet when the arm came down      // past the armpit it is all arm, the drooping fingertips too
         w.push([0, 1 - wa], [5 + r, wa * (1 - wf)], [8 + r, wa * wf]);
       } else {
         const wt = ss(hipY - 0.06, hipY + 0.1, y0), wk = ss(kneeY - 0.05, kneeY + 0.05, y0);
@@ -1824,7 +1831,7 @@ function buildCrew(src) {
       const dust = Math.max(ss(0.66, 0.06, y0), 0.45 * ss(0.62, 0.48, Math.abs(y0 - 0.5)) * (V.z > cz ? 1 : 0.3));      // gray regolith: thick up the boots and lower legs, ground into the knees
       col.set([1 - 0.42 * dust, 1 - 0.43 * dust, 1 - 0.45 * dust], i * 3);
       const wKnee = ss(kneeY + 0.06, kneeY - 0.06, y0), wHip = ss(hipY + 0.07, hipY - 0.09, y0);
-      if (seg[i] !== 7 && !(y0 > 1.15 && ax > 0.24)) {
+      if (seg[i] !== 7 && !armAt(ax, y0)) {
         NV.fromBufferAttribute(nrm, i);
         if (wKnee > 0) { rotAbout(V, new THREE.Vector3(V.x, kneeY, cz), [Math.PI / 2 * wKnee, 0, 0]); NV.applyQuaternion(Q); }       // shin back
         if (wHip > 0) { rotAbout(V, new THREE.Vector3(V.x, hipY, cz), [-Math.PI / 2 * wHip, 0, 0]); NV.applyQuaternion(Q); }         // thigh forward, shin now down

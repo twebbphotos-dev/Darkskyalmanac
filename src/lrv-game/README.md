@@ -165,3 +165,5 @@ v4.98: attribute sp (standing position, before the seat bend) drives the suit de
 v4.99: suitMaterial: the map multiplies in only where it differs from its plain cloth color (uRef, measured from the picture); folds(vSp) gives relief, valley depth and softness; bumpN perturbs the normal from screen derivatives (follows the skinned pose).
 
 v5.01: CREW_K 0.92 scales the built crew (geometry, CREW_SEG, CREW_JOINTS, ARM). CREW_P adds tau (felt-gravity lag), fid (fidget), look, ph, bal (upright balance), glance (into a slide). st.yaw: shoulder turn, applied after the lean in poseCrew.
+
+v5.04: prepSuit raises the arms by TH (15°) about ROT, selecting arm points along the model's own slant ANG (45°). buildCrew picks the arm by AX (axis from ARM.S toward ARM.H): armAx gives [along, off], armAt the test; the elbow blend at AX.le.
