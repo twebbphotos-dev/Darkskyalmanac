@@ -191,3 +191,5 @@ v5.18: grandPrix() opens #gpsheet (lrv/grand-prix.mp4, H.264 640x480 from the Co
 v5.19: stepSample(h, dt, S) takes a state object (seat, out, spot, faceOut, tool, card, done); SAMPLE is the default. DIG/startDig: both crew out (Cernan SEAT0/OUT0/SPOT0 with DIG.tongs, Schmitt with the scoop 0.5 s behind); digResult: 25% a card from EXTRA (unseen first, kept in localStorage lrv-extra; 10% once all seen), else a NOTHING toast.
 
 v5.20: GP.known (set by startFilm) gates the right-click Grand Prix item; endReplay of his film offers #btn-gp for 8 s (GP.offerT); #m-gp stays in the menu.
+
+v5.21: film phase 30 s with #filmcd countdown; bestClip(t0, t1, crashT) slides a 15 s window over HIST scoring speed/5 + 3·air + 0.8·tumble + 0.8·nearness (25 m) + 6 within 2 s of a wreck; HIST keeps 40 s.

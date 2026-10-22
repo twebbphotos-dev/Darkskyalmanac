@@ -1417,7 +1417,7 @@ const HIST = [], REPLAY = { on: false, t: 0, end: 0, cam: new THREE.Vector3(), j
 let simT = 0;
 function record() {
   HIST.push([simT, car.p.x, car.p.y, car.p.z, car.q.x, car.q.y, car.q.z, car.q.w, car.steer, ...WHEELS.map(w => w.spin)]);
-  while (HIST.length && HIST[0][0] < simT - 20) HIST.shift();
+  while (HIST.length && HIST[0][0] < simT - 40) HIST.shift();      // long enough for Schmitt's 30 s of film
 }
 function offerReplay(a) {      // called on landing: a long jump, taking off from or passing over a crater 3 m or more across
   if (!(a.t >= 1.5 || a.d >= 12) || !AIR.start) return;
@@ -2144,13 +2144,27 @@ function startFilm(px, pz) {
   Object.assign(FILM, { on: true, ph: 'out', t: 0, tx: px, tz: pz, land: -1, crash: 0, dodge: null }); SCH.mode = ''; GP.known = true;
 }
 function filmAboard() {      // back in his seat at once
+  $('filmcd').classList.remove('on');
   const h = CREW[1], st = h.userData.st, g = h.userData.grips; if (h.parent !== rover) rover.add(h);
   FILM.on = false; FILM.ph = ''; h.position.copy(SEAT1); h.rotation.set(0, Math.PI / 2, 0); st.legs = null; st.lz = 0; st.up = 0; st.v = null; st.hands[0].copy(g[0]); st.hands[1].copy(g[1]); h.visible = true; poseCrew(h);
 }
+/* The best 15 s of his 30: each moment scored for speed, height off the ground, tumbling, a close pass by him and a
+   wreck at the end, and the window with the most of it wins */
+function bestClip(t0, t1, crashT) {
+  const H = HIST.filter(q => q[0] >= t0 && q[0] <= t1); if (t1 - t0 <= 15 || H.length < 3) return [Math.max(t0, t1 - 15), t1];
+  const sc = H.map((q, i) => {
+    const p = H[Math.max(0, i - 1)], dt = Math.max(1e-3, q[0] - p[0]), v = Math.hypot(q[1] - p[1], q[3] - p[3]) / dt, air = Math.max(0, q[2] - ground(q[1], q[3]) - 0.85);
+    const dot = Math.min(1, Math.abs(q[4] * p[4] + q[5] * p[5] + q[6] * p[6] + q[7] * p[7])), rot = 2 * Math.acos(dot) / dt, near = Math.max(0, 1 - Math.hypot(q[1] - FILM.x, q[3] - FILM.z) / 25);
+    return (Math.min(v, 15) / 5 + 3 * air + Math.min(rot, 4) * 0.8 + near * 0.8 + (crashT && Math.abs(q[0] - crashT) < 2 ? 6 : 0)) * dt;
+  });
+  let best = -1, bi = 0, sum = 0, j = 0;
+  for (let i = 0; i < H.length; i++) { while (j < H.length && H[j][0] < H[i][0] + 15) sum += sc[j++]; if (sum > best) { best = sum; bi = i; } sum -= sc[i]; }
+  return [H[bi][0], Math.min(t1, H[bi][0] + 15)];
+}
 function playFilm(t1 = simT) {
-  const t0 = Math.max(FILM.t0, t1 - 9); FILM.ph = 'wait'; FILM.t = 0;
-  if (t1 - t0 < 1.5 || REPLAY.on || HIST.length < 2) return;
-  REPLAY.save = { run: running, steer: car.steer, spin: WHEELS.map(w => w.spin) }; REPLAY.fov = camera.fov; REPLAY.on = REPLAY.film = true; REPLAY.t = t0; REPLAY.end = Math.min(t1 + 0.6, simT); running = false;
+  $('filmcd').classList.remove('on'); const [t0, t1c] = bestClip(FILM.t0, t1, FILM.crash); FILM.ph = 'wait'; FILM.t = 0;
+  if (t1c - t0 < 1.5 || REPLAY.on || HIST.length < 2) return;
+  REPLAY.save = { run: running, steer: car.steer, spin: WHEELS.map(w => w.spin) }; REPLAY.fov = camera.fov; REPLAY.on = REPLAY.film = true; REPLAY.t = t0; REPLAY.end = Math.min(t1c + 0.4, simT); running = false;
   document.body.classList.add('replay'); $('btn-replay').classList.remove('on'); REPLAY.offerT = 0;
   REPLAY.cam.set(FILM.x, ground(FILM.x, FILM.z) + 1.4, FILM.z); CREW[1].visible = false;
   const el = $('cine-cap'); el.textContent = 'Schmitt’s film'; void el.offsetWidth; el.classList.add('on');
@@ -2195,10 +2209,11 @@ function stepFilm(h, dt) {
     const f = FILM.face, lx = D.dx * Math.cos(f) - D.dz * Math.sin(f); D.lx = Math.sign(lx) * 0.2 * ss(0.1, 0.3, t) * (1 - ss(1.6, 1.95, t));      // leaning into the push
     D.arms = ss(0, 0.2, t) * (1 - ss(1.65, 1.95, t)); faceT = Math.atan2(rx, rz); if (t > 1.95) FILM.dodge = null;
   } else if (FILM.ph === 'walk') {
-    if (walk(FILM.tx, FILM.tz, 2.0) < 0.3) { FILM.ph = 'film'; FILM.t = 0; FILM.t0 = simT; FILM.land = -1; FILM.crash = 0; toast('Schmitt is filming · show him a stunt'); }
+    if (walk(FILM.tx, FILM.tz, 2.0) < 0.3) { FILM.ph = 'film'; FILM.t = 0; FILM.t0 = simT; FILM.land = -1; FILM.crash = 0; toast('Schmitt is filming for 30 s · show him something good'); }
   } else if (FILM.ph === 'film') {
     faceT = Math.atan2(rx, rz); cam = ss(0, 0.6, T);
-    if (!CRASH.on && ((FILM.land >= 0 && simT - FILM.land > 1.6) || T > 14 || rd > 140)) playFilm();
+    const left = Math.max(0, 30 - T); $('filmcd').classList.add('on'); $('filmcd').lastChild.textContent = `REC · ${Math.ceil(left)} s`;      // the countdown
+    if (!CRASH.on && (T > 30 || rd > 250)) playFilm();
   } else if (FILM.ph === 'wait') {
     faceT = Math.atan2(rx, rz);
     if (rd < 7 && Math.sqrt(v2) < 0.8 && !CRASH.on) { FILM.ph = 'board'; FILM.t = 0; }

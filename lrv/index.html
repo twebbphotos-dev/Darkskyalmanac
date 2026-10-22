@@ -59,6 +59,9 @@
   #btn-recover.on{display:block}
   #btn-replay{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 146px);transform:translateX(-50%);z-index:21;display:none}
   #btn-replay.on{display:block}
+  #filmcd{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 64px);transform:translateX(-50%);z-index:20;display:none;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.08em;color:#F2E4BE;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;pointer-events:none;font-variant-numeric:tabular-nums}
+  #filmcd.on{display:flex} #filmcd i{width:9px;height:9px;border-radius:50%;background:#e2483d;animation:rec 1s steps(2) infinite} @keyframes rec{50%{opacity:.25}}
+  body.replay #filmcd{display:none}
   #btn-gp{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 146px);transform:translateX(-50%);z-index:21;display:none} #btn-gp.on{display:block}
   #btn-rejoin{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 146px);transform:translateX(-50%);z-index:21;display:none}
   #btn-rejoin.on{display:block}
@@ -159,6 +162,7 @@
 <div id="ctx" role="menu"></div>
 <div id="edgewarn"></div>
 <button class="btn" id="btn-replay">▶ Replay the jump</button>
+<div id="filmcd"><i></i><span></span></div>
 <button class="btn" id="btn-gp">▶ Watch the real Grand Prix</button>
 <button class="btn" id="btn-rejoin">↺ Back to the route</button>
 

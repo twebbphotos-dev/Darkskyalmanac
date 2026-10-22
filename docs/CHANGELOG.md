@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.21 (zion-sky-v490)
+Lunar Rover: Hold the camera now films for 30 s, with a REC countdown at the top of the screen, instead of stopping at the first landing or 14 s. When the time is up (or the rover is wrecked) his clip is the best 15 s of it: every moment scored for speed, height off the ground, tumbling, a close pass by Schmitt and a wreck, and the highest-scoring window plays. The replay history now keeps 40 s instead of 20.
+
 ## v5.20 (zion-sky-v489)
 Lunar Rover: the real Grand Prix film is offered only where it means something: in the right-click menu once you have used Hold the camera, as a button for 8 s after Schmitt's clip plays, and always in the main menu. It had been in every right-click menu.
 
