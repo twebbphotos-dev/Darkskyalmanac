@@ -138,14 +138,23 @@ function buildGround() {
     H[j * N + i] = HB[j * N + i] + edge * craterH(x, z);
     B[j * N + i] = brightness(x, z);
   }
-  // the landing site: Challenger came down on ground level enough to stand on, so a pad about 12 m across is eased flat to
-  // its own mean height (before, one footpad hung 0.85 m in the air and another was buried)
-  let m = 0, n = 0; const near = (fn) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const r = Math.hypot(CX - HALF + i * CELL - LM.x, CZ - HALF + j * CELL - LM.z); if (r < 11) fn(j * N + i, r); } };
-  near((o, r) => { if (r < 5.5) { m += H[o]; n++; } }); if (n) { m /= n; near((o, r) => { const w = ss(11, 6.5, r); H[o] += (m - H[o]) * w; HB[o] += (m - HB[o]) * w; }); }
+  // the landing site: Challenger came down on fairly even ground, so the bumps under it are smoothed out, not leveled: the
+  // ground eases toward the plane that best fits it (keeping its own slope), fully within 6 m, fading out by 22 m, so
+  // there is no flat terrace (a flat pad to its mean height read as one), and the lander stands on that plane (below)
+  const near = (R, fn) => { for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) { const dx = CX - HALF + i * CELL - LM.x, dz = CZ - HALF + j * CELL - LM.z, r = Math.hypot(dx, dz); if (r < R) fn(j * N + i, dx, dz, r); } };
+  let S0 = 0, Sx = 0, Sz = 0, Sxx = 0, Szz = 0, Sxz = 0, Sh = 0, Sxh = 0, Szh = 0;
+  near(14, (o, dx, dz) => { const h = H[o]; S0++; Sx += dx; Sz += dz; Sxx += dx * dx; Szz += dz * dz; Sxz += dx * dz; Sh += h; Sxh += dx * h; Szh += dz * h; });
+  if (S0 > 10) {      // least squares h = a + b dx + c dz (Cramer's rule)
+    const M = [[S0, Sx, Sz], [Sx, Sxx, Sxz], [Sz, Sxz, Szz]], v = [Sh, Sxh, Szh], det = m => m[0][0] * (m[1][1] * m[2][2] - m[1][2] * m[2][1]) - m[0][1] * (m[1][0] * m[2][2] - m[1][2] * m[2][0]) + m[0][2] * (m[1][0] * m[2][1] - m[1][1] * m[2][0]);
+    const D0 = det(M), col = k => M.map((row, i) => row.map((x, j) => j === k ? v[i] : x)), [a, b, c] = [0, 1, 2].map(k => det(col(k)) / D0);
+    LM.plane = { a, b, c };
+    near(22, (o, dx, dz, r) => { const w = ss(22, 6, r), t = a + b * dx + c * dz; H[o] += (t - H[o]) * w; HB[o] += (t - HB[o]) * w; });
+  }
 }
 // rocks are small bumps the wheels feel, under the rock you see
 const ROCK_GRID = new Map(), RG = 8;
-function indexRocks() { rocks.forEach((k, n) => { const key = Math.floor(k.x / RG) + ',' + Math.floor(k.z / RG); if (!ROCK_GRID.has(key)) ROCK_GRID.set(key, []); ROCK_GRID.get(key).push(n); }); }
+function indexRocks() { for (let i = rocks.length - 1; i >= 0; i--) if (Math.hypot(rocks[i].x - LM.x, rocks[i].z - LM.z) < 7) rocks.splice(i, 1);      // nothing under the lander
+  rocks.forEach((k, n) => { const key = Math.floor(k.x / RG) + ',' + Math.floor(k.z / RG); if (!ROCK_GRID.has(key)) ROCK_GRID.set(key, []); ROCK_GRID.get(key).push(n); }); }
 function rockH(x, z) {
   let h = 0; const gx = Math.floor(x / RG), gz = Math.floor(z / RG);
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = ROCK_GRID.get((gx + a) + ',' + (gz + b)); if (!l) continue;
@@ -878,8 +887,8 @@ function foilLM(root) {
   root.traverse(o => {
     if (!o.isMesh) return;
     o.material = [].concat(o.material).map(m0 => { const m = m0.clone(), n = m.name || '', set = (hex, metal, rough) => { m.color.set(hex); m.metalness = metal; m.roughness = rough; };
-      if (/blinn1SG|blinn10SG/.test(n)) { set(0xcf8530, .25, .42); lmShader(m, 'amber', [11, .2], [.12, .18, .05, 1.5]); }      // amber foil, crinkled
-      else if (/blinn9SG/.test(n)) { set(0xa85a22, .25, .44); lmShader(m, 'amber2', [11, .2], [.12, .18, .05, 1.5]); }
+      if (/blinn1SG|blinn10SG/.test(n)) { set(0xcf8530, .15, .5); lmShader(m, 'amber', [11, .09], [.06, .1, .02, 1.5]); }      // amber foil, crinkled
+      else if (/blinn9SG/.test(n)) { set(0xa85a22, .15, .52); lmShader(m, 'amber2', [11, .09], [.06, .1, .02, 1.5]); }      // the crinkle and shine kept gentle: stronger, the facets flashed light and dark
       else if (/initialShadingGr|blinn3SG|blinn7SG/.test(n)) { set(n.includes('blinn3') ? 0x62554d : 0x92806f, .08, .55);      // little metalness: no sky here to reflect, it would only darken
         lmShader(m, 'cabin', null, [.08, .12, .04, 1.2]); m.flatShading = true; }      // each panel lit flat, a clean edge at every corner (the model's normals are smoothed across them)      // the cabin: dull aluminium panels
       else if (/blinn4SG/.test(n)) { set(0xb3aba0, .12, .5); lmShader(m, 'metal', null, [.07, .12, .04, 2]); }      // legs, ladder, porch and antennas: bare metal
@@ -2000,8 +2009,14 @@ function handController() {      // the T-handle on its post between the seats
   if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o, handController()); rigWheels(); buildSections(); buildDebris(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
   { const a = await loader.loadAsync('../models/astronaut-a7l.glb').catch(() => null); if (a) seatCrew(buildCrew(prepSuit(a.scene))); }      // after the sections and debris are cut, so the crew is in neither
-  if (lm) { const o = lm.scene; dusty(o); foilLM(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true; o.position.set(x, 0, z); o.rotation.y = -Math.PI / 2;
-    o.updateMatrixWorld(true); o.position.y = LM.y - new THREE.Box3().setFromObject(o).min.y - 0.05; scene.add(o); }      // the footpads on the ground, pressed a few centimeters in
+  if (lm) { const o = lm.scene; dusty(o); foilLM(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true;
+    // stood on its four pads: tilted to the ground's slope under them, and set so the lowest pad presses 3 cm into the dust
+    const pad = [[4.1, 0], [-4.1, 0], [0, 4.1], [0, -4.1]].map(([dx, dz]) => ground(x + dx, z + dz));
+    const nrm = new THREE.Vector3(pad[1] - pad[0], 8.2, pad[3] - pad[2]).normalize();
+    o.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), nrm).multiply(new THREE.Quaternion().setFromAxisAngle(new THREE.Vector3(0, 1, 0), -Math.PI / 2));
+    o.position.set(x, 0, z); o.updateMatrixWorld(true);
+    let gap = 1e9; const V = new THREE.Vector3(); o.traverse(m => { if (!m.isMesh) return; const P = m.geometry.attributes.position; for (let i = 0; i < P.count; i += 2) { V.fromBufferAttribute(P, i).applyMatrix4(m.matrixWorld); gap = Math.min(gap, V.y - ground(V.x, V.z)); } });
+    o.position.y = -gap - 0.03; scene.add(o); }
   $('loading').classList.remove('on'); $('brief').classList.add('on');
   requestAnimationFrame(t => { last = t; frame(t); });
 })();

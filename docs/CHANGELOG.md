@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.06 (zion-sky-v475)
+Lunar Rover: no terrace round the lander. The ground there had been leveled flat to its mean height, which left a ledge where it met the slope; now it eases toward the plane that best fits it, keeping its own slope, fully within 6 m and fading out by 22 m. The lander stands tilted to that slope on all four pads, each pressed 2 to 3 cm into the dust, and rocks no longer sit under it. The amber foil's crinkle and shine are gentler: at full strength its facets flashed light and dark.
+
 ## v5.05 (zion-sky-v474)
 Lunar Rover: Earth as the crew saw it on the first moonwalk, worked out with Astronomy Engine for 12 December 1972 at Taurus–Littrow: 45° up toward 240° (it was drawn 54° up), 1.88° across (already right), about two-thirds lit, its disc centered on the eastern Pacific with the Americas toward the eastern limb and its axis lying nearly sideways in the lunar sky. The surface is NASA's Blue Marble instead of invented continents; the clouds on it are drawn, since that hour's are not known. Cameras: the opening film is shot from low on the plain, the lander and rover against the black sky; a crash is filmed one of three ways, never the same twice running (low beside the tumble, low and wide behind it, or rising high over the wreck); a new Low view follows wide from just above the ground; and in the driver's seat you can drag to look around.
 

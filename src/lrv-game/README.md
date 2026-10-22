@@ -169,3 +169,5 @@ v5.01: CREW_K 0.92 scales the built crew (geometry, CREW_SEG, CREW_JOINTS, ARM).
 v5.04: prepSuit raises the arms by TH (15°) about ROT, selecting arm points along the model's own slant ANG (45°). buildCrew picks the arm by AX (axis from ARM.S toward ARM.H): armAx gives [along, off], armAt the test; the elbow blend at AX.le.
 
 v5.05: EARTH_SKY (from tools/earth-sky.mjs) places and turns Earth; models/earth-bm.jpg (Blue Marble, 1024 x 512) with drawn clouds. pov 3 = Low; POV_ORDER cycles chase, low, wide, seat; seat look from ORB.yaw/pitch. CRASH.cam picks one of three crash shots per crash (CRASH.id).
+
+v5.06: buildGround fits a plane (LM.plane) over 14 m and blends toward it within 22 m; indexRocks clears 7 m round LM; the LM is tilted to its four pads and set by its lowest point.
