@@ -989,6 +989,7 @@ function homeStep(dt) {      // true while Cernan is driving
 }
 function toast(m) { $('toast').textContent = m; $('toast').classList.add('on'); toastT = 3.6; }
 function landed(a) {
+  if (FILM.ph === 'film' && a.t > 0.6) FILM.land = simT;      // the stunt he was waiting for
   buzz(a.t > 1.2 ? 40 : 20);
   const recs = [];
   if (a.t > REC.t) { REC.t = a.t; recs.push('air time'); } if (a.d > REC.d) { REC.d = a.d; recs.push('distance'); } if (a.peak > REC.h) { REC.h = a.peak; recs.push('height'); }
@@ -1182,7 +1183,7 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
   // and slowed in the air: more slapstick than violent.
   const belts = [];
   for (const h of CREW) {
-    if (!h.visible) continue;
+    if (!h.visible || (h === CREW[1] && FILM.on)) continue;      // Schmitt on foot, filming: not aboard
     h.updateMatrixWorld(true); const seat = h.userData.bones, pack = R() < 0.5, tq = new THREE.Quaternion(), tp = new THREE.Vector3(), ts = new THREE.Vector3();
     const pop = new THREE.Vector3((R() - 0.5) * 1.2, 0.8 + 1.2 * k + R() * 0.6, (R() - 0.5) * 1.2).multiplyScalar(0.15 + 0.85 * k) /* a slow roll throws no one clear: they go over with the rover */, spin = new THREE.Vector3(R() - .5, R() - .5, R() - .5).multiplyScalar(1.5 + 2 * k);
     const bones = [], segP = [];
@@ -1325,11 +1326,12 @@ function stepDebris(p, h) {      // one rigid piece, one small time step
 function stepCrash(dt) {
   if (!CRASH.on) {      // remember where it last drove upright, to bring it back there
     if ((CRASH.safeT += dt) > 1 && _up.y > 0.85 && AIR.grounded) { CRASH.safeT = 0; CRASH.safe = { x: car.p.x, z: car.p.z, yaw: Math.atan2(-_fw.z, _fw.x) }; }
-    if (CRASH.roof > 3.5 || (_up.y < -0.2 && CRASH.topDown)) breakApart(Math.max(CRASH.roof, car.v.length()));      // landing upside down, however slowly: the antennas, the camera and the crew on top take it. A roll in the air is not yet a crash
+    if (CRASH.roof > 3.5 || (_up.y < -0.2 && CRASH.topDown)) FILM.crash = FILM.ph === 'film' ? simT : 0, breakApart(Math.max(CRASH.roof, car.v.length()));      // landing upside down, however slowly: the antennas, the camera and the crew on top take it. A roll in the air is not yet a crash
     CRASH.topDown = false;
     CRASH.roof = 0;
   } else if ((CRASH.t += dt) > 4.5) {
     CRASH.on = false; rover.visible = true; place(CRASH.safe.x, CRASH.safe.z, CRASH.safe.yaw); camInit = false; toast('A new rover · back where you last drove safely');
+    if (FILM.ph === 'film' && FILM.crash) playFilm(FILM.crash);
   }
   if (CRASH.pieces.length && (CRASH.fade += dt) > 10) {      // the wreck fades away after 10 s
     const o = Math.max(0, 1 - (CRASH.fade - 10) / 1.5); DEBRIS_MATS.forEach(m => { if (!m.transparent) { m.transparent = true; m.needsUpdate = true; } m.opacity = o; });
@@ -1358,7 +1360,7 @@ markSpeed();
 $('btn-go').addEventListener('click', () => { $('brief').classList.remove('on'); if (SEC.ok && LM.on) startIntro(); else { running = OBJ.live = true; CREW.forEach(c => { c.visible = true; }); } });
 $('cine-skip').addEventListener('click', () => { if (INTRO.on) endIntro(); else if (BRIEF.on && BRIEF.t < BRIEF.lines[2][0]) BRIEF.t = BRIEF.lines[2][0]; });
 /* The menu (the back button) and the settings (the gear), as in the Mars simulator. The drive pauses while either is open.
-   Back to Objects is the extensionless address, as every other page links it: a redirected page from the offline cache fails to open. */
+   Back to Almanac goes to the extensionless Objects address, as every other page links it: a redirected page from the offline cache fails to open. */
 const SHEETS = ['menu', 'settings'], PAUSE = { was: false };
 const anyOpen = () => SHEETS.some(id => $(id).classList.contains('on'));
 function openSheet(id) { if (!anyOpen()) { PAUSE.was = running; running = false; } $(id).classList.add('on'); }
@@ -1369,6 +1371,7 @@ function toDrive() {      // out of the opening film, a time trial's briefing or
   if (CRASH.on) { CRASH.on = false; rover.visible = true; }
   if (HOME.on) homeEnd();
   if (SAMPLE.on) { SAMPLE.t = 99; stepSample(CREW[1], 0.016); }      // back in his seat at once
+  if (FILM.on) filmAboard();
   RUN.on = false; RUN.save = null; REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); $('clock').textContent = '';
   CREW.forEach(c => { c.visible = true; }); OBJ.live = true; camInit = false;
 }
@@ -1433,17 +1436,19 @@ function endReplay() {
   if (!REPLAY.on) return;
   REPLAY.on = false; document.body.classList.remove('replay'); camera.fov = REPLAY.fov; camera.updateProjectionMatrix(); $('cine-cap').classList.remove('on');
   car.steer = REPLAY.save.steer; WHEELS.forEach((w, k) => { w.spin = REPLAY.save.spin[k]; }); running = REPLAY.save.run; camInit = false;
+  if (REPLAY.film) { REPLAY.film = false; CREW[1].visible = true; rover.position.copy(car.p); rover.quaternion.copy(car.q); toast('Drive up beside Schmitt and stop to pick him up'); }
 }
 function stepReplay(dt) {
-  REPLAY.t += dt * 0.55;      // slow motion
+  REPLAY.t += dt * (REPLAY.film ? 1 : 0.55);      // slow motion, or his film at true speed
   if (REPLAY.t >= REPLAY.end) { endReplay(); return false; }
   let i = HIST.findIndex(h => h[0] > REPLAY.t); if (i < 1) i = i < 0 ? HIST.length - 1 : 1;
   const A = HIST[i - 1], B = HIST[i], w = Math.max(0, Math.min(1, (REPLAY.t - A[0]) / Math.max(1e-6, B[0] - A[0])));
   rover.position.set(A[1] + (B[1] - A[1]) * w, A[2] + (B[2] - A[2]) * w, A[3] + (B[3] - A[3]) * w);
   rover.quaternion.set(A[4], A[5], A[6], A[7]).slerp(_qi.set(B[4], B[5], B[6], B[7]), w);
   car.steer = A[8] + (B[8] - A[8]) * w; WHEELS.forEach((wl, k) => { wl.spin = A[9 + k] + (B[9 + k] - A[9 + k]) * w; }); turnWheels();
-  camera.position.copy(REPLAY.cam); camera.lookAt(_tmp.copy(rover.position).add(_r.set(0, 0.3, 0)));
-  camera.fov = Math.max(14, Math.min(REPLAY.fov, 2 * Math.atan(7 / camera.position.distanceTo(rover.position)) * 180 / Math.PI)); camera.updateProjectionMatrix();      // a long lens: the rover and some ground round it fill the frame
+  camera.position.copy(REPLAY.cam); const k = REPLAY.film ? 0.25 : 0, q = REPLAY.t;      // his, handheld: a little unsteady
+  camera.lookAt(_tmp.copy(rover.position).add(_r.set(k * Math.sin(q * 2.3), 0.3 + k * 0.6 * Math.sin(q * 3.1 + 1), k * Math.sin(q * 1.7 + 2))));
+  camera.fov = Math.max(14, Math.min(REPLAY.fov, 2 * Math.atan((REPLAY.film ? 11 : 7) / camera.position.distanceTo(rover.position)) * 180 / Math.PI)); camera.updateProjectionMatrix();      // a long lens: the rover and some ground round it fill the frame
   sun.position.copy(rover.position).addScaledVector(SUN, 120); sun.target.position.copy(rover.position);
   return true;
 }
@@ -1461,7 +1466,7 @@ function frame(now) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
     if (homeStep(dt)) { throttle = HOME.th; steerIn = HOME.st; }
-    if (SAMPLE.on) { throttle = 0; steerIn = 0; car.v.multiplyScalar(Math.exp(-dt * 3)); }      // held still while he is out      // Cernan driving, the player's controls set aside
+    if (SAMPLE.on || FILM.ph === 'out' || FILM.ph === 'in') { throttle = 0; steerIn = 0; car.v.multiplyScalar(Math.exp(-dt * 3)); }      // held still while he is out      // Cernan driving, the player's controls set aside
     if (Math.abs(throttle) > 0.02 || Math.abs(steerIn) > 0.02) parked = false;
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
     if (!CRASH.on) for (let i = 0; i < n; i++) step(h);
@@ -2116,6 +2121,114 @@ function poseCrew(h) {
     setBone(B, u, qu, S0, S); setBone(B, f, qf, E0, E); (st.hand || (st.hand = [new THREE.Vector3(), new THREE.Vector3()]))[sd < 0 ? 0 : 1].copy(H);
   }
 }
+/* "Hold the camera": Schmitt climbs out, lopes to the spot and films the rover with the 16 mm camera, as Charlie Duke filmed
+   John Young's "Grand Prix" on Apollo 16. After a jump lands, a wreck or about 14 s, his clip plays from where he stood.
+   Stop beside him and he climbs back aboard. He watches the rover: drive at him and he jumps clear. */
+const FILM = { on: false, ph: '', t: 0, x: 0, z: 0, face: 0, tx: 0, tz: 0, t0: 0, land: -1, crash: 0, dodge: null, told: false }, _fv = new THREE.Vector3(), _fw2 = new THREE.Vector3();
+function lopeLegs(ph, on) { const st = [1.45, -1.35], s = Math.abs(Math.sin(ph)), sw = 0.22 * Math.sin(ph), give = on ? 0.4 * (1 - s) : 0;
+  return [[st[0] + sw - give * 0.5, st[1] - Math.max(0, -sw) * 0.6 + give], [st[0] - sw - give * 0.5, st[1] - Math.max(0, sw) * 0.6 + give]]; }
+function soleY(legs) { const qa = _lq.setFromAxisAngle(_lr.set(1, 0, 0), legs[0][0]), knee = _le.copy(LEGJ[0].knee).sub(LEGJ[0].hip).applyQuaternion(qa);
+  return knee.add(_lp.set(0, -LEGJ[0].shin, 0).applyQuaternion(_cq2.setFromAxisAngle(_lr.set(1, 0, 0), legs[0][0] + legs[0][1]))).y; }
+function startFilm(px, pz) {
+  const h = CREW[1];
+  if (FILM.on) { if (FILM.ph !== 'out' && FILM.ph !== 'in') { FILM.tx = px; FILM.tz = pz; FILM.ph = 'walk'; FILM.t = 0; } return; }      // out already: a new spot
+  if (!h || !h.visible || SAMPLE.on || CRASH.on || REPLAY.on) return;
+  if (Math.hypot(car.v.x, car.v.z) > 1.5) { toast('Slow down first: Schmitt climbs out of a stopped rover'); return; }
+  Object.assign(FILM, { on: true, ph: 'out', t: 0, tx: px, tz: pz, land: -1, crash: 0, dodge: null }); SCH.mode = '';
+}
+function filmAboard() {      // back in his seat at once
+  const h = CREW[1], st = h.userData.st, g = h.userData.grips; if (h.parent !== rover) rover.add(h);
+  FILM.on = false; FILM.ph = ''; h.position.copy(SEAT1); h.rotation.set(0, Math.PI / 2, 0); st.legs = null; st.lz = 0; st.up = 0; st.v = null; st.hands[0].copy(g[0]); st.hands[1].copy(g[1]); h.visible = true; poseCrew(h);
+}
+function playFilm(t1 = simT) {
+  const t0 = Math.max(FILM.t0, t1 - 9); FILM.ph = 'wait'; FILM.t = 0;
+  if (t1 - t0 < 1.5 || REPLAY.on || HIST.length < 2) return;
+  REPLAY.save = { run: running, steer: car.steer, spin: WHEELS.map(w => w.spin) }; REPLAY.fov = camera.fov; REPLAY.on = REPLAY.film = true; REPLAY.t = t0; REPLAY.end = Math.min(t1 + 0.6, simT); running = false;
+  document.body.classList.add('replay'); $('btn-replay').classList.remove('on'); REPLAY.offerT = 0;
+  REPLAY.cam.set(FILM.x, ground(FILM.x, FILM.z) + 1.4, FILM.z); CREW[1].visible = false;
+  const el = $('cine-cap'); el.textContent = 'Schmitt’s film'; void el.offsetWidth; el.classList.add('on');
+}
+function stepFilm(h, dt) {
+  const st = h.userData.st, K = CREW_K, T = (FILM.t += dt), g = h.userData.grips; st.yaw = 0; st.up = 0; st.lx = 0; st.y = 0; st.v = null;
+  const side = j => _c0.set(j ? 0.31 : -0.31, -0.22, 0.13).multiplyScalar(K);
+  if (FILM.ph === 'out' || FILM.ph === 'in') {      // off the seat, or back onto it, beside the rover (in its frame)
+    const out = FILM.ph === 'out', u = out ? ss(0, 1.1, T) : 1 - ss(0, 1.1, T), legs = [[1.45 * u, -1.35 * u], [1.45 * u, -1.35 * u]];
+    const pos = _fv.copy(SEAT1).lerp(OUT1, out ? ss(0.2, 1.1, T) : 1 - ss(0, 0.9, T));
+    const wp = rover.localToWorld(_bt.set(pos.x, 0, pos.z)), gy = rover.worldToLocal(_bc.set(wp.x, ground(wp.x, wp.z), wp.z)).y;
+    st.legs = legs; st.lz = 0; h.position.set(pos.x, SEAT1.y + (gy - soleY(legs) - SEAT1.y) * u, pos.z); h.rotation.set(0, Math.PI / 2 * (1 - u), 0);
+    for (let j = 0; j < 2; j++) st.hands[j].copy(g[j]).lerp(side(j), u);
+    poseCrew(h);
+    if (T >= 1.1) {
+      if (!out) { filmAboard(); return; }
+      scene.attach(h); FILM.x = h.position.x; FILM.z = h.position.z; _fw2.set(0, 0, 1).applyQuaternion(h.quaternion); FILM.face = Math.atan2(_fw2.x, _fw2.z); FILM.ph = 'walk'; FILM.t = 0;
+    }
+    return;
+  }
+  // on foot, in the world
+  let legs = [[1.45, -1.35], [1.45, -1.35]], bob = 0, lean = 0, faceT = FILM.face, cam = 0;
+  const rx = car.p.x - FILM.x, rz = car.p.z - FILM.z, rd = Math.hypot(rx, rz), vx = car.v.x, vz = car.v.z, v2 = vx * vx + vz * vz;
+  if (!FILM.dodge && FILM.ph !== 'board' && !CRASH.on && v2 > 1 && rd < 14) {      // the rover coming at him: sideways off its path, in one lunar leap
+    const tc = -(rx * vx + rz * vz) / v2, mx = rx + vx * tc, mz = rz + vz * tc;
+    if (tc > 0 && tc < 1.5 && Math.hypot(mx, mz) < 2.4) {
+      const v = Math.sqrt(v2); let nx = -vz / v, nz = vx / v; if (-mx * nx - mz * nz < 0) { nx = -nx; nz = -nz; }
+      FILM.dodge = { t: 0, x0: FILM.x, z0: FILM.z, dx: nx * 2.2, dz: nz * 2.2 };
+      if (!FILM.told) { FILM.told = true; toast('Schmitt jumps clear!'); }
+    }
+  }
+  const walk = (tx, tz, v) => { const dx = tx - FILM.x, dz = tz - FILM.z, d = Math.hypot(dx, dz); if (d < 0.05) return d; const k = Math.min(d, v * dt) / d; FILM.x += dx * k; FILM.z += dz * k; faceT = Math.atan2(dx, dz);
+    legs = lopeLegs(T * 6.2, true); bob = 0.11 * Math.pow(Math.abs(Math.sin(T * 6.2)), 0.6); lean = 0.14; return d; };
+  if (FILM.dodge) {
+    const D = FILM.dodge, u = Math.min(1, (D.t += dt) / 0.9); FILM.x = D.x0 + D.dx * ss(0, 1, u); FILM.z = D.z0 + D.dz * ss(0, 1, u); bob = 0.5 * Math.sin(Math.PI * u);
+    legs = [[1.05, -0.7], [1.1, -0.8]]; lean = 0.2; st.up = 0.35 * Math.sin(Math.PI * u); faceT = Math.atan2(rx, rz); if (u >= 1) FILM.dodge = null;
+  } else if (FILM.ph === 'walk') {
+    if (walk(FILM.tx, FILM.tz, 2.0) < 0.3) { FILM.ph = 'film'; FILM.t = 0; FILM.t0 = simT; FILM.land = -1; FILM.crash = 0; toast('Schmitt is filming · show him a stunt'); }
+  } else if (FILM.ph === 'film') {
+    faceT = Math.atan2(rx, rz); cam = ss(0, 0.6, T);
+    if (!CRASH.on && ((FILM.land >= 0 && simT - FILM.land > 1.6) || T > 14 || rd > 140)) playFilm();
+  } else if (FILM.ph === 'wait') {
+    faceT = Math.atan2(rx, rz);
+    if (rd < 7 && Math.sqrt(v2) < 0.8 && !CRASH.on) { FILM.ph = 'board'; FILM.t = 0; }
+  } else if (FILM.ph === 'board') {      // to the seat side of the rover, and aboard
+    rover.updateMatrixWorld(true); const o = rover.localToWorld(_fv.copy(OUT1));
+    if (Math.sqrt(v2) > 1.5) FILM.ph = 'wait';
+    else if (walk(o.x, o.z, 1.6) < 0.35) { rover.attach(h); h.position.copy(OUT1); h.rotation.set(0, 0, 0); FILM.ph = 'in'; FILM.t = 0; stepFilm(h, 0); return; }
+  }
+  let dy = faceT - FILM.face; dy -= 2 * Math.PI * Math.round(dy / (2 * Math.PI)); FILM.face += Math.max(-3 * dt, Math.min(3 * dt, dy));      // he turns at a walk, in his stiff suit
+  st.legs = legs; st.lz = lean; h.rotation.set(0, FILM.face, 0); h.position.set(FILM.x, ground(FILM.x, FILM.z) - soleY(legs) + bob, FILM.z);
+  for (let j = 0; j < 2; j++) { st.hands[j].copy(side(j)); if (cam) st.hands[j].lerp(_fv.set(j ? 0.07 : -0.07, 0.36, 0.25).multiplyScalar(K), cam); }      // the camera up in both gloves
+  if (st.up > 0) for (let j = 0; j < 2; j++) st.hands[j].lerp(_fv.set(j ? 0.45 : -0.45, 0.35, 0.05).multiplyScalar(K), st.up / 0.35);      // arms out in the leap
+  poseCrew(h);
+}
+/* The right-click menu (a long press on a touch screen): a few things to do from where you point */
+const CTX = { x: 0, z: 0, hit: false, timer: 0, at: null };
+function groundAt(cx, cy) {      // where the pointer meets the ground: marched along the view ray
+  const r = new THREE.Raycaster(); r.setFromCamera(new THREE.Vector2(cx / innerWidth * 2 - 1, 1 - cy / innerHeight * 2), camera);
+  const o = r.ray.origin, d = r.ray.direction; let prev = 0;
+  for (let t = 0.5; t < 400; t *= 1.04) { const x = o.x + d.x * t, z = o.z + d.z * t; if (o.y + d.y * t < ground(x, z)) { for (let k = 0; k < 12; k++) { const m = (prev + t) / 2; if (o.y + d.y * m < ground(o.x + d.x * m, o.z + d.z * m)) t = m; else prev = m; } return [o.x + d.x * t, o.z + d.z * t]; } prev = t; }
+  return null;
+}
+function ctxOpen(cx, cy) {
+  if (!running || INTRO.on || BRIEF.on || REPLAY.on || anyOpen()) return;
+  let p = groundAt(cx, cy), dx, dz;
+  if (!p) { const f = camera.getWorldDirection(_fw2); p = [car.p.x + f.x * 15, car.p.z + f.z * 15]; }
+  dx = p[0] - car.p.x; dz = p[1] - car.p.z; const d = Math.hypot(dx, dz);
+  if (d > 20) { p = [car.p.x + dx / d * 20, car.p.z + dz / d * 20]; } else if (d < 4) { const k = 4 / Math.max(0.01, d); p = [car.p.x + dx * k, car.p.z + dz * k]; }      // close enough to walk to, far enough to film from
+  CTX.x = p[0]; CTX.z = p[1];
+  const items = [];
+  if (CREW[1] && !SAMPLE.on && !CRASH.on) items.push([FILM.on ? 'Film from here instead' : 'Hold the camera here', () => startFilm(CTX.x, CTX.z)]);
+  if (FILM.on && FILM.ph !== 'in') items.push(['Schmitt back aboard', filmAboard]);
+  if (upsideT > 0.5) items.push(['Back on its wheels', recover]);
+  if (REPLAY.jump && REPLAY.offerT > 0) items.push(['Replay the jump', startReplay]);
+  items.push(['Change camera view', () => $('btn-pov').click()], ['Open the map', () => $('minimap').click()]);
+  const m = $('ctx'); m.innerHTML = ''; for (const [t, f] of items) { const b = document.createElement('button'); b.textContent = t; b.addEventListener('click', e => { e.stopPropagation(); ctxClose(); f(); }); m.appendChild(b); }
+  m.classList.add('on'); const w = m.offsetWidth, h = m.offsetHeight; m.style.left = Math.min(cx, innerWidth - w - 8) + 'px'; m.style.top = Math.min(cy, innerHeight - h - 8) + 'px';
+}
+function ctxClose() { $('ctx').classList.remove('on'); }
+renderer.domElement.addEventListener('contextmenu', e => { e.preventDefault(); ctxOpen(e.clientX, e.clientY); });
+renderer.domElement.addEventListener('pointerdown', e => { ctxClose(); if (e.pointerType !== 'touch') return; CTX.at = [e.clientX, e.clientY]; clearTimeout(CTX.timer); CTX.timer = setTimeout(() => { if (CTX.at) ctxOpen(CTX.at[0], CTX.at[1]); CTX.at = null; }, 600); });      // a long, still press
+renderer.domElement.addEventListener('pointermove', e => { if (CTX.at && Math.hypot(e.clientX - CTX.at[0], e.clientY - CTX.at[1]) > 12) { CTX.at = null; clearTimeout(CTX.timer); } });
+addEventListener('pointerup', () => { CTX.at = null; clearTimeout(CTX.timer); });
+addEventListener('keydown', e => { if (e.key === 'Escape') ctxClose(); });
 /* Harrison Schmitt riding: a geologist in the field. He turns to the station ahead as it comes into view, points it out
    once as they near it, and when the rover slows he raises both gloves to the camera on his chest for a picture (the
    crews photographed constantly from the rover). A hard bump sends both hands back to the grips. */
@@ -2149,6 +2262,7 @@ function stepCrew(dt) {
   if (AIR.grounded) { FUN.rolled = false; if (FUN.on && (FUN.t += dt) > 0.6) { FUN.on = false; FUN.t = 0; } }
   for (const h of CREW) {
     const { st, P, grips } = h.userData;
+    if (FILM.on && h === CREW[1]) { stepFilm(h, dt); continue; }
     if (CRASH.on) { Object.assign(st, { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null }); continue; }
     if (SAMPLE.on && h === CREW[1]) { stepSample(h, dt); continue; }
     // the seat's acceleration, from the rover's motion; then felt gravity and true up in his own frame
@@ -2195,7 +2309,7 @@ const STOPS = [
   { find: '74220,0', in: (x, z) => Math.abs(Math.hypot(x - SHORTY.x, z - SHORTY.z) - SHORTY.R) < 22, what: 'the orange soil' },
 ].map(o => Object.assign(o, { here: false, done: false, hint: false, still: 0 }));
 function sampleStops(dt) {
-  const busy = SAMPLE.on || CRASH.on || HOME.on || INTRO.on || BRIEF.on || REPLAY.on || RUN.on, sp = Math.hypot(car.v.x, car.v.z);
+  const busy = SAMPLE.on || FILM.on || CRASH.on || HOME.on || INTRO.on || BRIEF.on || REPLAY.on || RUN.on, sp = Math.hypot(car.v.x, car.v.z);
   for (const o of STOPS) {
     const here = o.in(car.p.x, car.p.z);
     if (!here) { o.here = o.done = o.hint = false; o.still = 0; continue; }      // gone: on the next visit, again
@@ -2206,7 +2320,7 @@ function sampleStops(dt) {
   }
 }
 function startSample(st) {
-  if (SAMPLE.on || !CREW[1] || !CREW[1].visible || CRASH.on || car.v.length() > 1.2) return false;
+  if (SAMPLE.on || FILM.on || !CREW[1] || !CREW[1].visible || CRASH.on || car.v.length() > 1.2) return false;
   Object.assign(SAMPLE, { on: true, t: 0, st, opened: false });
   if (!SAMPLE.scoop) {      // the scoop: an aluminium extension handle about 75 cm long and a small pan at its end
     const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0xb8b4ac, roughness: 0.5, metalness: 0.6 });

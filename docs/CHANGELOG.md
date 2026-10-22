@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.17 (zion-sky-v486)
+Lunar Rover: a right-click menu (a long press on a touch screen) with Hold the camera here, Change camera view, Open the map, and when they apply Replay the jump, Back on its wheels and Schmitt back aboard. Hold the camera: Schmitt climbs out, lopes to the spot (up to 20 m away) and films the rover with the 16 mm camera, as Charlie Duke filmed John Young's Grand Prix on Apollo 16. After a jump lands, a wreck or about 14 s, his clip plays from where he stood, at true speed and handheld. Stop beside him and he climbs back aboard. Drive at him and he leaps clear, sideways off the rover's path. The menu's exit now reads Back to Almanac.
+
 ## v5.16 (zion-sky-v485)
 Lunar Rover: Schmitt behaves like a geologist in the field. Riding, he turns to the station ahead as it comes into view and points it out once as you approach; when the rover slows he raises both gloves to the camera on his chest for a picture, and a hard bump sends his hands back to the grips. On a sample walk-out he moves in the lunar lope the crews used (slower strides, a longer float, knees taking each landing, arms out for balance) and lifts the scoop to his visor for a first look before heading back. The card now opens at that moment.
 
