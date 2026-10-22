@@ -916,6 +916,8 @@ document.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e
 
 /* ── HUD ── */
 let toastT = 0;
+const PTR = { x: -1e4, y: -1e4 };      // the mouse, for the site markers
+addEventListener('pointermove', e => { if (e.pointerType === 'mouse') { PTR.x = e.clientX; PTR.y = e.clientY; } });
 /* The edge of the map, without an invisible wall: Mission Control calls the crew back to the mission area, and Gene
    Cernan takes the controls, keeps his speed and swings the rover back round, in the letterbox; pointed back in, they are yours again. */
 const HOME = { on: false, t: 0, cool: 0, th: 0, st: 0, v0: 0 }, _hq = new THREE.Quaternion(), _hy = new THREE.Vector3(0, 1, 0);
@@ -1099,6 +1101,7 @@ function debrisBody(m, sz, wheel) {      // contact points and box-shaped inerti
   return { pts, R: Math.max(...pts.map(v => v.length())), I: new THREE.Vector3((d.y * d.y + d.z * d.z) / 12, (d.x * d.x + d.z * d.z) / 12, (d.x * d.x + d.y * d.y) / 12), still: 0, rest: false };
 }
 function breakApart(hit = 8) {      // hit: how hard, m/s
+  buzz([70, 50, 140, 40, 60]);      // a crash: felt, where the phone allows it (Android; iPhone Safari has no vibration for web pages)
   const k = Math.max(0, Math.min(1, (hit - 3.5) / 8));      // 0 a slow roll onto the roof .. 1 a hard tumble
   CRASH.on = true; CRASH.t = 0; CRASH.fade = 0; rover.visible = false; CRASH.id = (CRASH.id || 0) + 1;
   CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = [];
@@ -1750,7 +1753,8 @@ function siteMarks() {      // shown when near, or when looked at fairly directl
     const aim = Math.hypot(_sp.x, _sp.y * 0.8), far = st.kind === 'find' ? 150 : 280;
     const o = _sp.z < 1 && Math.abs(_sp.x) < 1.05 && Math.abs(_sp.y) < 1.05 ? (d < 35 ? 1 : ss(far, far * 0.55, d) * ss(0.5, 0.28, aim)) : 0;
     st.el.style.display = o > 0.02 ? 'flex' : 'none';
-    if (o > 0.02) { st.el.style.left = ((_sp.x + 1) / 2 * innerWidth).toFixed(1) + 'px'; st.el.style.top = ((1 - _sp.y) / 2 * innerHeight).toFixed(1) + 'px'; st.el.style.opacity = o.toFixed(2); }
+    if (o > 0.02) { const px = (_sp.x + 1) / 2 * innerWidth, py = (1 - _sp.y) / 2 * innerHeight; st.el.style.left = px.toFixed(1) + 'px'; st.el.style.top = py.toFixed(1) + 'px'; st.el.style.opacity = o.toFixed(2);
+      const d = Math.hypot(PTR.x - px, PTR.y - py + 12); st.el.style.setProperty('--k', (1 + 0.6 * ss(130, 20, d)).toFixed(3)); }      // grows as the cursor comes near: easier to hit
   }
 }
 function turnWheels() { WHEEL_PARTS.forEach((w, k) => { w.steer.rotation.y = -car.steer * WHEELS[k].steer; w.spin.rotation.z = -WHEELS[k].spin; }); }
@@ -1924,7 +1928,7 @@ function seatCrew(parts) {
   });
 }
 // how each rides: torso stiffness and damping (balance), how far felt gravity sways him, seat cushion stiffness
-const CREW_K = 0.92;
+const CREW_K = 0.92, BUZZ = { t: 0 };
 // how each rides: torso stiffness and damping (balance; soft, so the body sways), how far felt gravity sways him, seat
 // cushion stiffness, how quickly he reacts to a jolt (seconds), and his own slow fidget; the passenger looks about more
 // how far he holds himself upright when the rover tilts (Cernan, gripping the hand controller, rides with it more), and how far he glances into a slide
@@ -1964,7 +1968,7 @@ function stepCrew(dt) {
     if (!st.v) st.v = v.clone();
     const acc = _cc.copy(v).sub(st.v).divideScalar(dt); st.v.copy(v); if (acc.lengthSq() > 900) acc.setLength(30);
     const qi = _cq2.copy(car.q).multiply(h.quaternion).invert(), f = _cd.set(0, -G, 0).sub(acc).applyQuaternion(qi), up = _ce.set(0, 1, 0).applyQuaternion(qi);
-    const jolt = Math.abs(f.y + G * up.y); if (jolt > 4) { st.vx += (Math.random() - 0.5) * jolt * 0.07; st.vz += (Math.random() - 0.5) * jolt * 0.05; st.vyaw += (Math.random() - 0.5) * jolt * 0.05; }      // a hard bump knocks each a little differently
+    const jolt = Math.abs(f.y + G * up.y); if (h === CREW[0]) { BUZZ.t -= dt; if (jolt > 6 && BUZZ.t < 0) { BUZZ.t = 0.3; buzz(jolt > 12 ? 35 : 15); } }      /* a hard bump, felt */ if (jolt > 4) { st.vx += (Math.random() - 0.5) * jolt * 0.07; st.vz += (Math.random() - 0.5) * jolt * 0.05; st.vyaw += (Math.random() - 0.5) * jolt * 0.05; }      // a hard bump knocks each a little differently
     const a = 1 - Math.exp(-dt / P.tau); st.fx += (f.x - st.fx) * a; st.fz += (f.z - st.fz) * a;      // each feels the sway a moment late, his own moment
     st.t += dt; const fid = P.fid, fx0 = fid * (Math.sin(st.t * 0.61 + P.ph) + 0.6 * Math.sin(st.t * 1.37 + 2 * P.ph)), fz0 = fid * 0.7 * Math.sin(st.t * 0.83 + 3 * P.ph);      // a slow fidget, never in step
     // where he looks: about the valley now and then (the passenger more), and round toward the way the rover is going when it slides

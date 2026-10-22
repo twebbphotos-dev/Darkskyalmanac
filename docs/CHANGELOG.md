@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.07 (zion-sky-v476)
+Lunar Rover: the discovery and site markers grow as the mouse comes near (up to 1.6 times) and have a larger invisible tap area for fingers, so they are easier to hit. Hard bumps and crashes vibrate the device where the browser allows it (Android; Safari on iPhone does not let web pages vibrate). On tablets the joystick sits further in from the corner and a little larger.
+
 ## v5.06 (zion-sky-v475)
 Lunar Rover: no terrace round the lander. The ground there had been leveled flat to its mean height, which left a ledge where it met the slope; now it eases toward the plane that best fits it, keeping its own slope, fully within 6 m and fading out by 22 m. The lander stands tilted to that slope on all four pads, each pressed 2 to 3 cm into the dust, and rocks no longer sit under it. The amber foil's crinkle and shine are gentler: at full strength its facets flashed light and dark.
 
