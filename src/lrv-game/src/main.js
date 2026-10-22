@@ -597,7 +597,7 @@ function step(h) {
   // Four-wheel steering, limited at speed to about the sharpest turn the tires can hold: each grips a sixth as hard as on
   // Earth, so the most sideways push is about MU·g ≈ 1 m/s². Turning tighter only slides, and the old limit (which fell off
   // with forward speed, itself shrinking in a slide) left the wheels at full lock and fed the slide into a spin.
-  const vh = Math.hypot(car.v.x, car.v.z), dmax = Math.min(0.42, Math.max(0.14, 1.8 * Math.atan(1.15 * 1.3 * MU * G / Math.max(0.01, vh * vh))));      // never less than 8° of lock: at speed the grip limit had left about 2°, the wheels hardly turning
+  const vh = Math.hypot(car.v.x, car.v.z), dmax = Math.min(0.42, Math.max(0.1, 1.5 * Math.atan(1.15 * 1.3 * MU * G / Math.max(0.01, vh * vh))));      // never less than about 6° of lock: at speed the grip limit had left about 2°, the wheels hardly turning
   car.steer += Math.max(-STEER_RATE * h, Math.min(STEER_RATE * h, steerIn * dmax - car.steer));      // the steering motors turn the wheels at a steady rate, on the ground or off it
   let touching = 0;
   for (const wl of WHEELS) {
@@ -608,7 +608,7 @@ function step(h) {
     if (wl.off > 0.12) wl.hit = Math.max(wl.hit, -car.v.y + 0.5);      // touching down after a hop
     wl.off = 0; wl.contact = true; touching++;
     const xd = (x - wl.comp) / h; wl.comp = x;
-    let Fn = (K * Math.min(x, REST) + C_DAMP * xd + (x > REST ? 60000 * (x - REST) : 0)) * ss(0.2, 0.55, _up.y);      // spring, damper, and the bump stop; none once it lies on its side (the struts were throwing it back up)
+    let Fn = Math.min(9000, (K * Math.min(x, REST) + C_DAMP * xd + (x > REST ? 60000 * (x - REST) : 0))) * ss(0.2, 0.55, _up.y);      /* capped: a real strut and tire give way; unlimited, a fast hit on a rim kicked the rover into backflips */      // spring, damper, and the bump stop; none once it lies on its side (the struts were throwing it back up)
     if (Fn <= 0) continue;
     const n = normalAt(a.x, a.z), cp = _r.copy(a).addScaledVector(_up, -(t - WHEEL_R * 0.1)), r = cp.sub(car.p);
     _vc.copy(car.w).cross(r).add(car.v);                                // velocity of the tire where it meets the ground
@@ -636,9 +636,9 @@ function step(h) {
   // turns on half the 2.3 m wheelbase), as a driver feels a car answer, instead of waiting on lightly loaded tires to bite
   { let load = 0; for (const wl of WHEELS) if (wl.contact) load++;
     if (load >= 2 && !parked) { const want = -speed * Math.tan(car.steer) / 1.15, have = car.w.dot(_up);
-      _t.addScaledVector(_up, Math.max(-1800, Math.min(1800, (want - have) * I.y * 2.2 * load / 4 * ss(0.5, 0.8, _up.y)))); } }
+      _t.addScaledVector(_up, Math.max(-700, Math.min(700, (want - have) * I.y * 0.8 * load / 4 * ss(0.5, 0.8, _up.y)))); /* a gentle assist: the low grip still shows, the rover drifting wide */ } }
   // past the tipping point (tilted beyond about 70°, the chassis on the ground) there is no coming back: it goes over
-  if (_up.y < 0.34 && _up.y > -0.5) { let side = false; for (const c of HULL) { const a = _a.copy(c).applyQuaternion(car.q).add(car.p); if (a.y < ground(a.x, a.z) + 0.05) { side = true; break; } }
+  if (_up.y < 0.34 && _up.y > -0.5 && vh < 2.5 && Math.hypot(car.w.x, car.w.z) < 1.2) { let side = false; /* only a slow, settling tip: at speed the push had helped a nose-up hit into a flip */ for (const c of HULL) { const a = _a.copy(c).applyQuaternion(car.q).add(car.p); if (a.y < ground(a.x, a.z) + 0.05) { side = true; break; } }
     if (side) { const ax = _tmp.set(0, 1, 0).cross(_up); const l = ax.length(); if (l > 1e-3) _t.addScaledVector(ax, 2400 / l * ss(0.34, 0.15, _up.y)); /* about Y × up: tilting further */ } }
   for (const c of HULL) {      // the chassis itself meeting the ground, if it rolls or bottoms out
     const a = _a.copy(c).applyQuaternion(car.q).add(car.p), g = ground(a.x, a.z), pen = g - a.y;
@@ -646,8 +646,8 @@ function step(h) {
     touching++;
     const r = _r.copy(a).sub(car.p); _vc.copy(car.w).cross(r).add(car.v); const n = normalAt(a.x, a.z), vn = _vc.dot(n);
     if (c.y > 0) { CRASH.roof = Math.max(CRASH.roof, -vn); CRASH.topDown = true; }      // the top of the rover hitting the ground: how hard
-    const Fn = Math.max(0, 90000 * pen - 3000 * vn);
-    _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.55 * Fn, vt * 3000) / vt);
+    const Fn = Math.min(14000, Math.max(0, 60000 * pen - 3500 * vn));      // the frame meeting the ground: stiff but not a trampoline, and soaking up the blow
+    _tmp.copy(_vc).addScaledVector(n, -vn); const vt = _tmp.length(); if (vt > 1e-4) _tmp.multiplyScalar(-Math.min(0.4 * Fn, vt * 3000) / vt);
     _tmp.addScaledVector(n, Fn); _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
   }
   {
@@ -679,6 +679,7 @@ function step(h) {
   const Iw = _L.set(I.x * _wb.x, I.y * _wb.y, I.z * _wb.z); const gyro = _a.copy(_wb).cross(Iw);
   _wb.x += (tb.x - gyro.x) / I.x * h; _wb.y += (tb.y - gyro.y) / I.y * h; _wb.z += (tb.z - gyro.z) / I.z * h;
   car.w.copy(_wb).applyQuaternion(car.q);
+  { const wh = Math.hypot(car.w.x, car.w.z); if (wh > 2.5) { const k = Math.exp(-h * 3 * (wh - 2.5)); car.w.x *= k; car.w.z *= k; } }      // tumbling faster than about 2.5 rad/s is soaked up: nothing on a vehicle this size spins faster from a bump
   car.p.addScaledVector(car.v, h);
   const dq = new THREE.Quaternion(car.w.x * h * .5, car.w.y * h * .5, car.w.z * h * .5, 0).multiply(car.q);
   car.q.x += dq.x; car.q.y += dq.y; car.q.z += dq.z; car.q.w += dq.w; car.q.normalize();
