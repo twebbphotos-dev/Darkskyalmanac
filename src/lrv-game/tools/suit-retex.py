@@ -5,14 +5,14 @@ src,dst=sys.argv[1],sys.argv[2]
 b=open(src,'rb').read(); n=struct.unpack('<I',b[12:16])[0]; j=json.loads(b[20:20+n]); off=20+n; L=struct.unpack('<I',b[off:off+4])[0]; BIN=b[off+8:off+8+L]
 size={}
 for m in j['materials']:
-  big=2048 if m['name']=='base_002' else 1024
+  big=1024 if m['name'] in ('base_002','helmet') else 512      # v5.10: smaller for tablets' graphics memory (the cloth and helmet keep 1024)
   for k in ['normalTexture']:
-    if k in m: size[j['textures'][m[k]['index']]['source']]=(big,92)
+    if k in m: size[j['textures'][m[k]['index']]['source']]=(min(big,512) if m['name']!='base_002' else big,90)
   pb=m.get('pbrMetallicRoughness',{})
   if 'baseColorTexture' in pb: size[j['textures'][pb['baseColorTexture']['index']]['source']]=(big,88)
   for k in ['metallicRoughnessTexture']:
-    if k in pb: size[j['textures'][pb[k]['index']]['source']]=(512,88)
-  if 'occlusionTexture' in m: size.setdefault(j['textures'][m['occlusionTexture']['index']]['source'],(512,88))
+    if k in pb: size[j['textures'][pb[k]['index']]['source']]=(256,85)
+  if 'occlusionTexture' in m: size.setdefault(j['textures'][m['occlusionTexture']['index']]['source'],(256,85))
 views=[]; newimg={}
 for k,im in enumerate(j['images']):
   bv=j['bufferViews'][im['bufferView']]; d=BIN[bv.get('byteOffset',0):bv.get('byteOffset',0)+bv['byteLength']]

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.10 (zion-sky-v479)
+Lunar Rover: the astronauts' model is lighter for tablets. Its 26 textures took about 100 MB of graphics memory once decoded; now about 35 MB (the suit cloth and helmet keep 1024 px, small parts 512, the occlusion-roughness maps 256), and the file is 2.6 MB instead of 4.2. If the crew still cannot be loaded, the game tries once more and then says so with the reason, instead of silently driving on empty seats (the crew showed normally in every desktop and tablet-sized test, so the cause on a device has to be read from that message).
+
 ## v5.09 (zion-sky-v478)
 Lunar Rover: rocks without gaps, and fewer, gentler ones at Shorty. Every rock had been an icosahedron reshaped corner by corner, but three.js gives each triangle its own corners, so the triangles pulled apart and showed gaps; the corners are joined first now, and the rocks come in three angular shapes cut by flat fracture planes, as fresh lunar blocks are. Shorty's floor has about 90 blocks instead of 300, and every rock's bump under the wheels is a rounded rise a little wider than the rock instead of a dome with a vertical edge, which threw the rover about. Mars Rover: lighter on phones and tablets. The Medium tier (the automatic choice on touch screens) drops antialiasing, which is costly on their dense screens, and draws at 1.25× instead of 1.5× with fewer rocks and no dust devils; the resolution can fall to 0.65× and reacts within about a second when frames run slow.
 

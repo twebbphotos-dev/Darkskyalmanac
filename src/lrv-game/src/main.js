@@ -2160,7 +2160,11 @@ function handController() {      // the T-handle on its post between the seats
   const [lrv, lm] = await Promise.all([loader.loadAsync('../models/lrv.glb').catch(() => null), loader.loadAsync('../models/lm.glb').catch(() => null)]);
   if (lrv) { const o = lrv.scene; dusty(o); o.updateMatrixWorld(true); o.position.y = -0.78 - new THREE.Box3().setFromObject(o).min.y; rover.add(o, handController()); rigWheels(); buildSections(); buildDebris(); }      // tires on the ground at the resting ride height
   else rover.add(new THREE.Mesh(new THREE.BoxGeometry(3.1, 0.5, 2.06), new THREE.MeshStandardMaterial({ color: 0xb9b6b0 })));
-  { const a = await loader.loadAsync('../models/astronaut-a7l.glb').catch(() => null); if (a) seatCrew(buildCrew(prepSuit(a.scene))); }      // after the sections and debris are cut, so the crew is in neither
+  { // the crew; if the model will not load or build (a tablet short of graphics memory, a bad download), say so rather than drive on empty seats
+    let why = ''; for (let k = 0; k < 2 && !CREW.length; k++) {
+      try { const a = await loader.loadAsync('../models/astronaut-a7l.glb'); seatCrew(buildCrew(prepSuit(a.scene))); } catch (e) { why = (e && e.message) || String(e); console.error('crew', e); }
+    }
+    if (!CREW.length) setTimeout(() => toast('The astronauts could not be loaded on this device' + (why ? ' · ' + why.slice(0, 60) : '')), 4000); }      // after the sections and debris are cut, so the crew is in neither
   if (lm) { const o = lm.scene; dusty(o); foilLM(o); const x = LM.x, z = LM.z; LM.y = ground(x, z); LM.on = true;
     // stood on its four pads: tilted to the ground's slope under them, and set so the lowest pad presses 3 cm into the dust
     const pad = [[4.1, 0], [-4.1, 0], [0, 4.1], [0, -4.1]].map(([dx, dz]) => ground(x + dx, z + dz));

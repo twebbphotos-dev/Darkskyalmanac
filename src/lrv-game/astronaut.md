@@ -5,10 +5,11 @@ CC BY 4.0 (credited on the Sources page). An Apollo A7L, standing in an A-pose, 
 (cloth, connectors, straps, helmet, gold visor and its rim, wrist rings, boots, gloves), each with color, normal and
 occlusion-roughness-metal maps (1024 px). It has no backpack.
 
-1. `tools/suit-retex.py IN OUT`: every texture re-encoded as JPEG: color and normal maps 1024 px (the cloth's at its
-   own 1024, nothing upscaled), occlusion-roughness-metal 512 px. 16.9 MB of textures to about 2.4 MB.
+1. `tools/suit-retex.py IN OUT`: every texture re-encoded as JPEG: color and normal maps 1024 px for the cloth and the helmet's
+   color, 512 px for the rest, occlusion-roughness-metal 256 px (v5.10: about 35 MB of graphics memory instead of about
+   100, for tablets). 16.9 MB of textures to about 1 MB.
 2. `tools/suit-pack.mjs IN OUT` (glTF-Transform 4.1, meshoptimizer): welded, deduplicated, pruned, written with
-   EXT_meshopt_compression (quantized). 4.2 MB.
+   EXT_meshopt_compression (quantized). 2.6 MB.
 
 At load, `prepSuit` in `src/main.js`: the arms raised from the A-pose to 30° below level (v5.04; rigged from level they bent too far and ballooned at the shoulder), the shoulders and chest broadened by 1 cm a side and 3 % deeper (v5.02; 4 cm and 10 % read as too big), the cloth puffed out 1 cm (the arms 0.6 cm) (connectors and straps moved out with it), and built on: the portable life support system (47 × 64 ×
 25 cm), the oxygen purge system on top, and the remote control unit on the chest. `buildCrew` bends it into the seat,
