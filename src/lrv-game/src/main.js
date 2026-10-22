@@ -1727,44 +1727,81 @@ const HAND_CTRL = new THREE.Vector3(-0.3, 0.4, 0);      // the grip of the hand 
 // The arm's joints in the scan's standing frame, relative to the seat: shoulder, elbow, the middle of the glove.
 const ARM = { S: new THREE.Vector3(0.26, 0.435, 0.085), E: new THREE.Vector3(0.54, 0.405, 0.095), H: new THREE.Vector3(0.81, 0.37, 0.11) };
 const armBones = sd => sd < 0 ? [5, 8] : [6, 9];
-/* The suits, after the Apollo suits as they came back: off-white Beta cloth gone dingy, soft folds at every joint, the
-   tone a little uneven, and gray lunar dust ground into the lower legs (vertex colors, above) and in patches elsewhere,
-   from noise on the suit's own resting shape so it rides with the body. The visor is the gold-coated outer shell,
-   a mirror of the bright ground and the black sky. */
+/* The suits, after the Apollo suits as they came back. The NASA model's own picture (1024 px for the whole body) cannot
+   hold cloth up close, so it is kept only where it has markings (flags, patches, stripes: wherever it differs from its
+   plain cloth color); the cloth itself is worked out per pixel from the suit's shape, sharp at any distance:
+   - folds as relief (a bump, so it follows the body whatever its pose): rings round the arms and legs, wobbling and
+     bunching at the knees, elbows, shoulders, waist and ankles, as the A7LB's convolutes and cover layers did; smaller
+     creases over them; the Beta-cloth weave close up, faded before it can shimmer; the fold valleys shaded darker;
+   - an uneven, dingy off-white, and gray lunar dust ground into the lower legs (vertex colors) and in patches;
+   - details from the reference photographs: gray-silver gloves with blue fingertips, restraint bands, the cuff checklist,
+     a thigh pocket, lunar overshoes, and on the commander red bands on arms and legs and a stripe across the helmet.
+   vSp is the point on the standing suit, arms out (x to his left, y up from the soles, z forward); vRp the seated rest shape. */
 function suitMaterial(src, cmdr = false) {
   const m = src.clone(); m.vertexColors = true; m.color.set(0xd2cbbd); m.roughness = 0.93; m.metalness = 0; m.userData.cmdr = cmdr ? 1 : 0;
+  let ref = new THREE.Vector3(0.85, 0.83, 0.78);
+  if (m.map) {
+    m.map.anisotropy = renderer.capabilities.getMaxAnisotropy(); m.map.minFilter = THREE.LinearMipmapLinearFilter; m.map.generateMipmaps = true;
+    ref = SUIT_REF.get(m.map) || (() => {      // the picture's plain cloth color (linear): the mean of its bright, unsaturated pixels
+      const im = m.map.image, c = document.createElement('canvas'); c.width = c.height = 128; const x = c.getContext('2d'); x.drawImage(im, 0, 0, 128, 128);
+      const d = x.getImageData(0, 0, 128, 128).data, lin = v => Math.pow(v / 255, 2.2), t = [0, 0, 0]; let n = 0;
+      for (let o = 0; o < d.length; o += 4) { const mx = Math.max(d[o], d[o + 1], d[o + 2]), mn = Math.min(d[o], d[o + 1], d[o + 2]); if (mx > 180 && mx - mn < 30) { t[0] += lin(d[o]); t[1] += lin(d[o + 1]); t[2] += lin(d[o + 2]); n++; } }
+      const r = n ? new THREE.Vector3(t[0] / n, t[1] / n, t[2] / n) : new THREE.Vector3(0.85, 0.83, 0.78); SUIT_REF.set(m.map, r); return r; })();
+  }
   m.onBeforeCompile = sh => {
-    sh.uniforms.uCmdr = { value: m.userData.cmdr || 0 };
+    sh.uniforms.uCmdr = { value: m.userData.cmdr || 0 }; sh.uniforms.uRef = { value: ref };
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nattribute vec3 sp;\nvarying vec3 vRp;\nvarying vec3 vSp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvRp = position; vSp = sp;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
-      varying vec3 vRp; varying vec3 vSp; uniform float uCmdr;
+      varying vec3 vRp; varying vec3 vSp; uniform float uCmdr; uniform vec3 uRef;
       float sH(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
       float sV(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
         return mix(mix(mix(sH(i), sH(i + vec3(1, 0, 0)), f.x), mix(sH(i + vec3(0, 1, 0)), sH(i + vec3(1, 1, 0)), f.x), f.y),
-                   mix(mix(sH(i + vec3(0, 0, 1)), sH(i + vec3(1, 0, 1)), f.x), mix(sH(i + vec3(0, 1, 1)), sH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }`)
+                   mix(mix(sH(i + vec3(0, 0, 1)), sH(i + vec3(1, 0, 1)), f.x), mix(sH(i + vec3(0, 1, 1)), sH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+      float bunch(float v, float c, float w) { float d = (v - c) / w; return exp(-d * d); }
+      vec3 folds(vec3 q) {      // relief (metres), how deep in a fold valley, and how soft the cloth is there, from the standing suit
+        float ax = abs(q.x), y = q.y, wA = smoothstep(.26, .36, ax) * smoothstep(1.08, 1.2, y);
+        float hard = max(max(step(1.6, y) * step(ax, .24), step(.71, ax) * wA), step(.15, q.z) * step(1.04, y) * step(y, 1.5) * step(ax, .18));      // helmet, gloves and the chest box do not fold
+        float body = step(1.04, y) * (1. - wA);      // the torso: only at the waist, and faintly
+        float soft = (1. - hard) * (1. - .7 * step(q.z, -.12) * step(1., y) * step(ax, .3)) * mix(1., .25 + 1.5 * bunch(y, 1.06, .05), body);
+        float wl = sV(q * vec3(9., 3., 9.)) * 1.1 + sV(q * 21.) * .35, wa = sV(q * vec3(3., 9., 9.)) * 1.1 + sV(q * 21. + 5.) * .35;
+        float sl = .5 + .5 * sin(y * (80. + 25. * sV(q * 3.)) + wl * 7.), sa = .5 + .5 * sin(ax * (90. + 30. * sV(q * 3. + 7.)) + wa * 7.);
+        float seg = smoothstep(.3, .7, sV(q * vec3(12., 5., 12.) + 3.));      // a fold runs part way round, not in a ring
+        float al = .25 + 1.1 * bunch(y, .5, .08) + .7 * bunch(y, .97, .07) + .6 * bunch(y, .17, .06), aa = .25 + 1.1 * bunch(ax, .53, .06) + .7 * bunch(ax, .33, .05) + .5 * bunch(ax, .68, .03);
+        float sv = mix(sl, sa, wA), a = mix(al, aa, wA) * soft * (.35 + .65 * seg);
+        return vec3(a * sv * sv * .003, a * (1. - sv), 1. - hard); }
+      vec3 bumpN(vec3 p, vec3 n, float h) { vec3 dx = dFdx(p), dy = dFdy(p), r1 = cross(dy, n), r2 = cross(n, dx); float det = dot(dx, r1);
+        vec3 g = sign(det) * (dFdx(h) * r1 + dFdy(h) * r2); return normalize(abs(det) * n - g); }`)
+      .replace('#include <map_fragment>', `#ifdef USE_MAP
+        { vec4 tx = texture2D(map, vMapUv); float mk = smoothstep(.07, .18, length(tx.rgb - uRef));      // a marking, not plain cloth
+          diffuseColor.rgb *= mix(vec3(1.), tx.rgb / uRef, mk); }
+        #endif`)
       .replace('#include <color_fragment>', `#include <color_fragment>
-        { float t = sV(vRp * 6.) * .6 + sV(vRp * 17. + 3.) * .4, d = smoothstep(.55, .85, sV(vRp * 4.3 + 9.) * .7 + sV(vRp * 13. + 1.) * .3);
-          diffuseColor.rgb *= (.9 + .14 * t) * (1. - .28 * d); }      // uneven tone, patches of dust
-        { vec3 q = vSp; float ax = abs(q.x), y = q.y, arm = step(1.15, y) * step(.3, ax);      // the standing suit, arms out: x to his left, y up from the soles, z forward
+        { float t = sV(vRp * 6.) * .6 + sV(vRp * 17. + 3.) * .4, d = smoothstep(.55, .85, sV(vRp * 11. + 9.) * .6 + sV(vRp * 31. + 1.) * .4);
+          diffuseColor.rgb *= (.92 + .1 * t) * (1. - .12 * d); }      // uneven tone, patches of dust
+        { vec3 q = vSp; float ax = abs(q.x), y = q.y, arm = step(1.15, y) * step(.3, ax);
           float glove = arm * smoothstep(.71, .73, ax), tip = arm * smoothstep(.83, .845, ax);      // EVA gloves: gray-silver shell, blue rubber fingertips
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.42, .42, .43), glove); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.12, .2, .42), tip);
           float knee = smoothstep(.05, .035, abs(y - .5)) * step(y, .9), elbow = arm * smoothstep(.035, .02, abs(ax - .53)) * (1. - glove);      // ribbed restraint bands
-          diffuseColor.rgb *= 1. - (knee + elbow) * (.1 + .08 * step(.5, fract((knee > 0. ? y : ax) * 90.)));
+          diffuseColor.rgb *= 1. - (knee + elbow) * (.08 + .07 * step(.5, fract((knee > 0. ? y : ax) * 90.)));
           float cuff = arm * step(0., q.x) * smoothstep(.64, .65, ax) * smoothstep(.71, .70, ax) * step(.04, q.z + .02);      // the cuff checklist on the left wrist
           diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.86, .85, .8) * (1. - .25 * step(.82, fract(ax * 260.))), cuff * .9);
           float pocket = step(0., q.x) * smoothstep(.07, .08, q.x) * smoothstep(.21, .2, q.x) * smoothstep(.58, .59, y) * smoothstep(.8, .79, y) * step(.02, q.z);      // the thigh pocket
           diffuseColor.rgb *= 1. - .1 * pocket - .18 * pocket * (step(abs(q.x - .075), .006) + step(abs(q.x - .205), .006) + step(abs(y - .585), .006) + step(abs(y - .74), .005));
           float boot = smoothstep(.17, .15, y), sole = smoothstep(.045, .035, y);      // lunar overshoes: brighter, with a dark ribbed sole
           diffuseColor.rgb = mix(diffuseColor.rgb, diffuseColor.rgb * 1.08, boot); diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.16, .16, .17) * (.8 + .4 * step(.5, fract(q.z * 60.))), sole);
-          float red = uCmdr * (arm * smoothstep(.025, .015, abs(ax - .38)) + step(y, .9) * step(.5, y) * smoothstep(.025, .015, abs(y - .66)) + step(1.72, y) * smoothstep(.022, .014, abs(q.x)));      // the commander's red bands: arms, legs, helmet
-          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.5, .04, .04), red * .9); }`)
+          float red = uCmdr * (arm * smoothstep(.025, .015, abs(ax - .38)) + step(y, .9) * step(.5, y) * smoothstep(.025, .015, abs(y - .66)) + step(1.72, y) * smoothstep(.022, .014, abs(q.x)));      // the commander's red bands
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.5, .04, .04), red * .9);
+          diffuseColor.rgb *= 1. - .3 * smoothstep(.15, .9, folds(vSp).y); }      // the fold valleys, in shade`)
       .replace('#include <normal_fragment_maps>', `#include <normal_fragment_maps>
-        { vec3 q = vRp * 9.; vec3 f = vec3(sV(q), sV(q + 17.3), sV(q + 31.7)) - .5, g = vec3(sV(q * 3.1 + 5.), sV(q * 3.1 + 23.), sV(q * 3.1 + 41.)) - .5;
-          normal = normalize(normal + (viewMatrix * vec4(f * .55 + g * .18, 0.)).xyz); }      // soft folds and creases in the cloth`);
+        { vec3 f = folds(vSp); float fw = length(fwidth(vRp));
+          float h = f.x + f.z * (sV(vRp * 38.) - .5) * .0022 * smoothstep(.02, .005, fw)      // creases
+                  + f.z * sin(vRp.x * 2100.) * sin(vRp.y * 2100. + vRp.z * 1700.) * .00012 * smoothstep(.0012, .0004, fw);      // the weave, close up
+          normal = bumpN(-vViewPosition, normal, h); }`);
   };
   m.customProgramCacheKey = () => 'suit';
   return m;
 }
+const SUIT_REF = new Map();
 let VISOR = null;
 function visorMaterial() {
   if (VISOR) return VISOR;

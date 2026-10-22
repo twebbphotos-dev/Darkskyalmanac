@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v4.99 (zion-sky-v468)
+Lunar Rover: the suits' cloth is rebuilt. The NASA model's single 1024 px picture, with a weave and folds painted in, smeared up close and beat into wood-grain stripes; it is now used only where it has markings (flags, patches, stripes). The cloth is worked out per pixel from the suit's shape, sharp at any distance: folds as relief, part-way round the arms and legs and bunching at the knees, elbows, shoulders, waist and ankles, smaller creases, the weave close up, fold valleys in shade. Helmet, gloves and the chest box stay smooth. The suit texture is mipmapped and anisotropically filtered.
+
 ## v4.98 (zion-sky-v467)
 Lunar Rover: suit details after the Apollo suits in the Smithsonian's collection: gray-silver EVA gloves with blue rubber fingertips, ribbed restraint bands at the elbows and knees, the cuff checklist on the left wrist, a thigh pocket, white lunar overshoes with dark ribbed soles, and on Gene Cernan the commander's red bands on arms and legs and a red stripe across the helmet. The chest's hose connectors stay hidden, as they were on the Moon, under the control unit box. The model's own texture keeps its flag and NASA patch.
 
