@@ -80,6 +80,7 @@
   #menu .btn{display:block;width:100%;margin-top:8px;padding:13px 14px}
   #menu .btn:first-of-type{margin-top:4px}
   .pick.det{grid-template-columns:repeat(5,1fr)}
+  .pick.cam{grid-template-columns:repeat(4,1fr)}
   .setgo{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
   .setgo .btn{flex:1}
   .pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
@@ -132,7 +133,7 @@
 <div id="air"></div>
 <div id="objmark"><i></i><b></b></div>
 <div id="clock"></div>
-<button class="btn" id="btn-pov" title="Camera: chase, wide, or from the driver's seat">Chase</button>
+<button class="btn" id="btn-pov" title="Camera: chase, low, wide, or from the driver's seat (drag to look around)">Chase</button>
 <div id="toast"></div>
 <button class="btn" id="btn-replay">▶ Replay the jump</button>
 <button class="btn" id="btn-rejoin">↺ Back to the route</button>
@@ -179,7 +180,7 @@
     <h1>Settings</h1>
     <h2>Lunar Rover</h2>
     <div class="pick spd"><span>Speed</span><button data-v="1">Real<small>18 km/h</small></button><button data-v="2">Double<small>36 km/h</small></button><button data-v="3">Triple<small>54 km/h</small></button></div>
-    <div class="pick cam"><span>Camera</span><button data-c="0">Chase</button><button data-c="1">Wide</button><button data-c="2">Seat</button></div>
+    <div class="pick cam"><span>Camera</span><button data-c="0">Chase</button><button data-c="3">Low</button><button data-c="1">Wide</button><button data-c="2">Seat</button></div>
     <div class="pick det"><span>Detail · shared with the Mars simulator</span><button data-q="auto">Auto</button><button data-q="low">Low</button><button data-q="medium">Med</button><button data-q="high">High</button><button data-q="ultra">Ultra</button></div>
     <p class="fine" id="set-note"></p>
     <div class="setgo"><button class="btn" id="set-rec">Reset records</button><button class="btn primary" id="set-apply" hidden>Reload to apply</button><button class="btn" id="set-done">Done</button></div>

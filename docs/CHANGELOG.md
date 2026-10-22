@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.05 (zion-sky-v474)
+Lunar Rover: Earth as the crew saw it on the first moonwalk, worked out with Astronomy Engine for 12 December 1972 at Taurus–Littrow: 45° up toward 240° (it was drawn 54° up), 1.88° across (already right), about two-thirds lit, its disc centered on the eastern Pacific with the Americas toward the eastern limb and its axis lying nearly sideways in the lunar sky. The surface is NASA's Blue Marble instead of invented continents; the clouds on it are drawn, since that hour's are not known. Cameras: the opening film is shot from low on the plain, the lander and rover against the black sky; a crash is filmed one of three ways, never the same twice running (low beside the tumble, low and wide behind it, or rising high over the wreck); a new Low view follows wide from just above the ground; and in the driver's seat you can drag to look around.
+
 ## v5.04 (zion-sky-v473)
 Lunar Rover: the astronauts' arms no longer look bloated. Two causes: the cloth was puffed out up to 2.6 cm on arms about 6 cm in radius (now 0.6 cm, the body 1 cm), and the arms were rigged from straight out level, so reaching down to the seat swung them about 80° and the shoulder skin ballooned and smeared. They are now rigged 30° below level, near how they are used, so the swing is about 50°, and the arm is picked out along its own axis instead of as everything past a fixed width.
 

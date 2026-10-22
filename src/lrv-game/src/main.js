@@ -802,15 +802,43 @@ function layTracks() {
 /* ── Earth, where it really hangs over Taurus–Littrow: about 54° up in the west-southwest, almost still in the
    sky because the Moon keeps one face to it. It is lit by the same Sun as the ground, so its phase comes out right
    for the Sun's place in the sky. About 1.9° across, nearly four times the full Moon seen from Earth. ── */
+/* Earth as the crew saw it on the first moonwalk (12 December 1972, 00:00 to 04:00 UT, at 20.19° N 30.77° E), worked
+   out with Astronomy Engine (src/lrv-game/tools/earth-sky.mjs): 45° above the horizon toward 240° (southwest), 1.88°
+   across, about two-thirds lit. It never moves in the lunar sky. The disc facing the Moon is centered on 111° W, 8.5° S,
+   the eastern Pacific, with the Americas toward the eastern limb, and Earth's axis tilted as the pole vector gives.
+   The surface is NASA's Blue Marble (land, ocean and ice, public domain, models/earth-bm.jpg); the clouds on it are
+   drawn, since the actual clouds of that hour are not known. It is lit by the same Sun as the ground, so its phase follows. */
+const EARTH_SKY = { az: 240.7, el: 45.1, diam: 1.88, sub: [-110.9, -8.5], pole: [-0.3895, 0.2953, -0.8724] };
 function earth() {
-  const S = 512, c = document.createElement('canvas'); c.width = S; c.height = S / 2; const x = c.getContext('2d'), im = x.createImageData(S, S / 2), r = rng(5);
-  for (let j = 0; j < S / 2; j++) for (let i = 0; i < S; i++) { const lat = Math.abs(j / (S / 2) - .5) * 2, land = fbm(i / 60, j / 60, 5) > 0.56, cloud = Math.max(0, fbm(i / 22 + 9, j / 14, 5) - 0.5) * 3.2 + (lat > 0.85 ? 1 : 0);
-    let R = land ? 120 : 22, G2 = land ? 105 : 58, Bc = land ? 70 : 128; const k = Math.min(1, cloud); R += (245 - R) * k; G2 += (245 - G2) * k; Bc += (250 - Bc) * k;
-    const o = (j * S + i) * 4; im.data[o] = R; im.data[o + 1] = G2; im.data[o + 2] = Bc; im.data[o + 3] = 255; }
-  x.putImageData(im, 0, 0); const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace;
-  const D = 60000, el = 54 * Math.PI / 180, az = 240 * Math.PI / 180, rad = D * Math.tan(0.95 * Math.PI / 180);
-  const m = new THREE.Mesh(new THREE.SphereGeometry(rad, 48, 24), new THREE.MeshStandardMaterial({ map: t, roughness: 0.9, metalness: 0, fog: false }));
-  m.position.set(Math.sin(az) * Math.cos(el) * D, Math.sin(el) * D, -Math.cos(az) * Math.cos(el) * D);
+  const D = 60000, el = EARTH_SKY.el * Math.PI / 180, az = EARTH_SKY.az * Math.PI / 180, rad = D * Math.tan(EARTH_SKY.diam / 2 * Math.PI / 180);
+  const mat = new THREE.MeshStandardMaterial({ roughness: 0.85, metalness: 0, fog: false, color: new THREE.Color(2.2, 2.2, 2.2) });      // Earth's daylit clouds and seas are brighter than the gray ground beside you
+  new THREE.TextureLoader().load('../models/earth-bm.jpg', t => { t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 4; mat.map = t; mat.needsUpdate = true; });
+  mat.onBeforeCompile = sh => {      // drawn cloud swirls over the map, thicker toward the poles and along the storm belts, and a thin blue rim of air
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOp;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvOp = normalize(position);');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
+      varying vec3 vOp;
+      float eH(vec3 p) { p = fract(p * .3183099 + .1); p *= 17.; return fract(p.x * p.y * p.z * (p.x + p.y + p.z)); }
+      float eV(vec3 x) { vec3 i = floor(x), f = fract(x); f = f * f * (3. - 2. * f);
+        return mix(mix(mix(eH(i), eH(i + vec3(1, 0, 0)), f.x), mix(eH(i + vec3(0, 1, 0)), eH(i + vec3(1, 1, 0)), f.x), f.y),
+                   mix(mix(eH(i + vec3(0, 0, 1)), eH(i + vec3(1, 0, 1)), f.x), mix(eH(i + vec3(0, 1, 1)), eH(i + vec3(1, 1, 1)), f.x), f.y), f.z); }
+      float eF(vec3 p) { float a = 0., w = .5; for (int k = 0; k < 5; k++) { a += w * eV(p); p = p * 2.03 + 1.7; w *= .5; } return a; }`)
+      .replace('#include <map_fragment>', `#include <map_fragment>
+        { vec3 q = vOp; float lat = abs(q.y);
+          vec3 sw = q * 3. + vec3(eF(q * 2.5) , eF(q * 2.5 + 4.), eF(q * 2.5 + 8.)) * 1.6;      // swirled
+          float belt = .56 - .08 * smoothstep(.35, .75, lat) - .06 * smoothstep(.12, .02, abs(lat - .08));      // more at mid-latitudes and along the equatorial belt
+          float c = smoothstep(belt, belt + .14, eF(sw * 2.2)) * .8;
+          diffuseColor.rgb = mix(diffuseColor.rgb, vec3(.93, .94, .96), clamp(c, 0., 1.)); }`)
+      .replace('#include <emissivemap_fragment>', `#include <emissivemap_fragment>
+        { float rim = 1. - abs(dot(normalize(vNormal), vec3(0., 0., 1.))); totalEmissiveRadiance += vec3(.12, .25, .55) * pow(rim, 4.) * .35; }`);
+  };
+  const m = new THREE.Mesh(new THREE.SphereGeometry(rad, 64, 32), mat);
+  const dir = new THREE.Vector3(Math.sin(az) * Math.cos(el), Math.sin(el), -Math.cos(az) * Math.cos(el));
+  m.position.copy(dir).multiplyScalar(D);
+  // turn it: three's sphere puts longitude L, latitude B at (cos B cos L, sin B, -cos B sin L), north up
+  const ll = (L, B) => { L *= Math.PI / 180; B *= Math.PI / 180; return new THREE.Vector3(Math.cos(B) * Math.cos(L), Math.sin(B), -Math.cos(B) * Math.sin(L)); };
+  const basis = (a, b) => { const x = a.clone().normalize(), y = b.clone().addScaledVector(x, -b.dot(x)).normalize(); return new THREE.Matrix4().makeBasis(x, y, new THREE.Vector3().crossVectors(x, y)); };
+  const A = basis(ll(...EARTH_SKY.sub), new THREE.Vector3(0, 1, 0)), B = basis(dir.clone().negate(), new THREE.Vector3(...EARTH_SKY.pole));
+  m.quaternion.setFromRotationMatrix(B.multiply(A.transpose()));      // the sub-lunar point faces the site, the pole points where it does
   return m;
 }
 const EARTH = earth(); scene.add(EARTH);
@@ -868,11 +896,12 @@ addEventListener('keydown', e => { keys[e.key.toLowerCase()] = true; if (e.key.t
 addEventListener('keyup', e => { keys[e.key.toLowerCase()] = false; });
 const stick = createStick($('stick'));
 const ORB = { yaw: 0, pitch: 0.18, id: null, x: 0, y: 0, idle: 9 };
-let pov = 0;      // 0 chase, 1 wide, 2 the driver's seat
-function setPov(n) { pov = n; $('btn-pov').textContent = ['Chase', 'Wide', 'Seat'][pov]; camInit = false; rover.visible = true; }
-$('btn-pov').addEventListener('click', () => setPov((pov + 1) % 3));
+let pov = 0;      // 0 chase, 1 wide, 2 the driver's seat, 3 low: a wide follow from just above the ground
+const POV_ORDER = [0, 3, 1, 2], POV_NAME = ['Chase', 'Wide', 'Seat', 'Low'];
+function setPov(n) { pov = n; $('btn-pov').textContent = POV_NAME[pov]; camInit = false; rover.visible = true; if (n === 2) { ORB.yaw = 0; ORB.pitch = 0.18; } }
+$('btn-pov').addEventListener('click', () => setPov(POV_ORDER[(POV_ORDER.indexOf(pov) + 1) % 4]));
 addEventListener('pointerdown', e => { if (e.target !== renderer.domElement) return; ORB.id = e.pointerId; ORB.x = e.clientX; ORB.y = e.clientY; });
-addEventListener('pointermove', e => { if (e.pointerId !== ORB.id) return; ORB.yaw -= (e.clientX - ORB.x) * 0.006; ORB.pitch = Math.max(-0.1, Math.min(1.1, ORB.pitch + (e.clientY - ORB.y) * 0.004)); ORB.x = e.clientX; ORB.y = e.clientY; ORB.idle = 0; });
+addEventListener('pointermove', e => { if (e.pointerId !== ORB.id) return; ORB.yaw -= (e.clientX - ORB.x) * 0.006; ORB.pitch = Math.max(pov === 2 ? -0.7 : -0.1, Math.min(1.1, ORB.pitch + (e.clientY - ORB.y) * 0.004)); ORB.x = e.clientX; ORB.y = e.clientY; ORB.idle = 0; });
 addEventListener('pointerup', e => { if (e.pointerId === ORB.id) ORB.id = null; });
 document.addEventListener('touchmove', e => { if (!e.target.closest('.sheet')) e.preventDefault(); }, { passive: false });
 
@@ -1062,7 +1091,7 @@ function debrisBody(m, sz, wheel) {      // contact points and box-shaped inerti
 }
 function breakApart(hit = 8) {      // hit: how hard, m/s
   const k = Math.max(0, Math.min(1, (hit - 3.5) / 8));      // 0 a slow roll onto the roof .. 1 a hard tumble
-  CRASH.on = true; CRASH.t = 0; CRASH.fade = 0; rover.visible = false;
+  CRASH.on = true; CRASH.t = 0; CRASH.fade = 0; rover.visible = false; CRASH.id = (CRASH.id || 0) + 1;
   CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = [];
   DEBRIS_MATS.forEach(m => { m.opacity = 1; m.transparent = false; m.needsUpdate = true; });
   rover.updateMatrixWorld(true);
@@ -1323,23 +1352,28 @@ function frame(now) {
   rover.position.copy(car.p); rover.quaternion.copy(car.q); turnWheels(); stepCrew(dt);
   if (INTRO.on) { stepIntro(dt); renderer.render(scene, camera); requestAnimationFrame(frame); return; }
   // chase camera, held a little above the ground
-  ORB.idle += dt; if (ORB.idle > 2.5) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
+  ORB.idle += dt; if (ORB.idle > (pov === 2 ? 4 : 2.5)) { ORB.yaw *= Math.exp(-dt * 1.5); ORB.pitch += (0.18 - ORB.pitch) * Math.min(1, dt * 1.5); }
   _up.set(0, 1, 0).applyQuaternion(car.q); _fw.set(1, 0, 0).applyQuaternion(car.q);
   const wreck = CRASH.on && CRASH.pieces.find(p => p.main);
   if (CREW[0] && !INTRO.on && OBJ.live) CREW[0].visible = pov !== 2;      // in his seat you see through his eyes, not his helmet
-  if (wreck) {      // the crash: follow the biggest piece, the chassis, rising to look almost straight down on the wreck
-    const k = ss(0, 2.2, CRASH.t), heading = Math.atan2(-_fw.z, _fw.x) + Math.PI, D = 8 - k, H = 2.5 + 18 * k, t = wreck.m.position;
-    const want = _tmp.set(t.x + Math.cos(heading) * D, t.y + H, t.z - Math.sin(heading) * D); want.y = Math.max(want.y, ground(want.x, want.z) + 1.5);
+  if (wreck) {      // the crash, one of three shots, never the same twice running: low beside the tumble, low and wide behind it, or rising high to look down on the wreck
+    if (CRASH.camFor !== CRASH.id) { CRASH.camFor = CRASH.id; let c; do c = Math.floor(Math.random() * 3); while (c === CRASH.cam); CRASH.cam = c; CRASH.side = Math.random() < 0.5 ? 1 : -1; }
+    const k = ss(0, 2.2, CRASH.t), heading = Math.atan2(-_fw.z, _fw.x) + Math.PI, t = wreck.m.position, sh = heading + CRASH.side * Math.PI / 2;
+    const want = CRASH.cam === 0 ? _tmp.set(t.x + Math.cos(sh) * (9 + 3 * k), t.y + 0.45, t.z - Math.sin(sh) * (9 + 3 * k))
+      : CRASH.cam === 1 ? _tmp.set(t.x + Math.cos(heading + 0.5 * CRASH.side) * (14 + 4 * k), t.y + 0.9 + 0.6 * k, t.z - Math.sin(heading + 0.5 * CRASH.side) * (14 + 4 * k))
+      : _tmp.set(t.x + Math.cos(heading) * (8 - k), t.y + 2.5 + 18 * k, t.z - Math.sin(heading) * (8 - k));
+    want.y = Math.max(want.y, ground(want.x, want.z) + (CRASH.cam === 2 ? 1.5 : 0.35));
     camPos.lerp(want, 1 - Math.exp(-dt * 3)); camTgt.lerp(t, 1 - Math.exp(-dt * 6));
     camera.position.copy(camPos); camera.lookAt(camTgt);
-  } else if (pov === 2) {      // Gene Cernan's seat: the camera rides with the rover, every bump included
+  } else if (pov === 2) {      // Gene Cernan's seat: the camera rides with the rover, every bump included; drag to look around, as far as a turn of the shoulders lets him
     camera.position.copy(_a.set(-0.62, 0.95, -0.32).applyQuaternion(car.q).add(car.p));
-    camera.up.copy(_up); camera.lookAt(_r.copy(camera.position).addScaledVector(_fw, 10).addScaledVector(_up, -1.4).add(_tmp.set(0, 0, 0)));
-    camera.up.set(0, 1, 0);
+    const ly = Math.max(-2.3, Math.min(2.3, ORB.yaw)), lp = ORB.pitch - 0.18 - 0.14;      // level is a little below the horizon, the ground ahead in view
+    _r.set(Math.cos(ly) * Math.cos(lp), Math.sin(lp), -Math.sin(ly) * Math.cos(lp)).applyQuaternion(car.q);
+    camera.up.copy(_up); camera.lookAt(_tmp.copy(camera.position).add(_r)); camera.up.set(0, 1, 0);
   } else {
-    const heading = Math.atan2(-_fw.z, _fw.x), yaw = heading + Math.PI + ORB.yaw, D = pov === 1 ? 16 : 7.5, lift = pov === 1 ? 0.35 : 0;
-    const want = _tmp.set(car.p.x + Math.cos(yaw) * Math.cos(ORB.pitch + lift) * D, car.p.y + 1.6 + Math.sin(ORB.pitch + lift) * D, car.p.z - Math.sin(yaw) * Math.cos(ORB.pitch + lift) * D);
-    want.y = Math.max(want.y, ground(want.x, want.z) + 1.2);
+    const low = pov === 3, heading = Math.atan2(-_fw.z, _fw.x), yaw = heading + Math.PI + ORB.yaw, D = pov === 1 ? 16 : low ? 12 : 7.5, lift = pov === 1 ? 0.35 : low ? -0.2 : 0;
+    const want = _tmp.set(car.p.x + Math.cos(yaw) * Math.cos(ORB.pitch + lift) * D, car.p.y + (low ? 0.2 : 1.6) + Math.sin(ORB.pitch + lift) * D, car.p.z - Math.sin(yaw) * Math.cos(ORB.pitch + lift) * D);
+    want.y = Math.max(want.y, ground(want.x, want.z) + (low ? 0.45 : 1.2));      // the low view: from just over the ground, wide, the rover against the sky
     if (!camInit) { camPos.copy(want); camTgt.copy(car.p); camInit = true; }
     camPos.lerp(want, 1 - Math.exp(-dt * 4)); camTgt.lerp(_a.copy(car.p).add(_r.set(0, 0.6, 0)), 1 - Math.exp(-dt * 8));
     camera.position.copy(camPos); camera.lookAt(camTgt);
@@ -1568,11 +1602,11 @@ function stepIntro(dt) {
   if (low < 0.02) rover.position.y += 0.02 - low;
   // three shots: the lander from out on the plain, alongside the bay, then round behind the rover
   const side = _ip.set(-INTRO.d.z, 0, INTRO.d.x), c = INTRO.P;
-  const a = _ic.set(c.x + INTRO.d.x * 13 + side.x * 6, c.y + 3.2, c.z + INTRO.d.z * 13 + side.z * 6);
-  const b = _it.set(c.x + INTRO.d.x * 3.5 + side.x * 6.5, c.y + 1.2, c.z + INTRO.d.z * 3.5 + side.z * 6.5);
+  const a = _ic.set(c.x + INTRO.d.x * 13 + side.x * 6, c.y + 0.3, c.z + INTRO.d.z * 13 + side.z * 6);      // low on the plain, the lander against the black sky
+  const b = _it.set(c.x + INTRO.d.x * 3.5 + side.x * 6.5, c.y - 0.2, c.z + INTRO.d.z * 3.5 + side.z * 6.5);
   const kb = sm(4, 8);
   camera.position.copy(a).lerp(b, kb);
-  const cE = new THREE.Vector3(car.p.x + INTRO.d.x * 6 - side.x * 3, car.p.y + 2.2, car.p.z + INTRO.d.z * 6 - side.z * 3);
+  const cE = new THREE.Vector3(car.p.x + INTRO.d.x * 6 - side.x * 3, car.p.y + 0.4, car.p.z + INTRO.d.z * 6 - side.z * 3);
   camera.position.lerp(cE, sm(17, 23.5));
   if (T > BACK[0] - 0.6) {      // up and off to the side for the turn, away from the lander, then down behind it for the start
     const P = INTRO.path, m = P[P.length >> 1], e = P[P.length - 1], fx = Math.cos(e[2]), fz = -Math.sin(e[2]);
@@ -1582,7 +1616,7 @@ function stepIntro(dt) {
     const D = pov === 1 ? 16 : 7.5, lift = pov === 1 ? 0.35 : 0, pc = Math.cos(ORB.pitch + lift) * D;
     camera.position.lerp(_tmp.set(e[0] - fx * pc, ground(e[0], e[1]) + 0.8 + 1.6 + Math.sin(ORB.pitch + lift) * D, e[1] - fz * pc), sm(BACK[1] - 1.8, INTRO_LEN));
   }
-  camera.position.y = Math.max(camera.position.y, ground(camera.position.x, camera.position.z) + 1.2);
+  camera.position.y = Math.max(camera.position.y, ground(camera.position.x, camera.position.z) + 0.45);
   camera.lookAt(_ip.copy(c).add(_it.set(0, 1.0 - 0.4 * sm(4, 10), 0)).lerp(_tmp.copy(rover.position).add(_it.set(0, 0.4, 0)), sm(6, 12)));
   sun.position.copy(rover.position).addScaledVector(SUN, 120); sun.target.position.copy(rover.position);
   let cap = ''; for (const [t0, t1, txt] of INTRO_CAPS) if (T >= t0 && T < t1) cap = txt;
