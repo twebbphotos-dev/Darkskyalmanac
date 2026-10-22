@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.19 (zion-sky-v488)
+Lunar Rover: Sample here (right-click menu, rover stopped). Both astronauts climb out, Cernan with the tongs on the driver's side and Schmitt with the scoop on his, take a sample, look it over and climb back aboard. Usually it is ordinary soil, said plainly. About one time in four a card appears for a rock like a famous Apollo find, each labeled with its own mission: the Genesis Rock (15415, Apollo 15), Big Bertha (14321, Apollo 14, with the 2019 report of a fragment of early Earth), Big Muley (61016, Apollo 16) and the goodwill basalt (70017, Apollo 17). Facts checked against the Lunar Sample Compendium, NASA and the published study. Schmitt's walk-out code now runs for either astronaut.
+
 ## v5.18 (zion-sky-v487)
 Lunar Rover: the real Grand Prix and a truer dodge. Watch the real Grand Prix (right-click menu and main menu) plays NASA's 16 mm film of John Young driving the rover on Apollo 16's first moonwalk, filmed by Charlie Duke (public domain; the Wikimedia Commons cut, cropped and stabilized; 0.9 MB, saved for offline with the 3D downloads). Schmitt's evasive action was one instant 2.2 m leap; now he sees the rover sooner (2 s out), crouches to load his legs, makes a long sideways hop and a shorter second one, leans into the push with his arms out, lands on bent knees, and never takes his eyes off the rover. He moves only as far as he needs to clear the wheels.
 

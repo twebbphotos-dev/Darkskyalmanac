@@ -1372,6 +1372,7 @@ function toDrive() {      // out of the opening film, a time trial's briefing or
   if (HOME.on) homeEnd();
   if (SAMPLE.on) { SAMPLE.t = 99; stepSample(CREW[1], 0.016); }      // back in his seat at once
   if (FILM.on) filmAboard();
+  if (DIG.on) DIG.s.forEach((S, i) => { if (S.on) { S.t = 99; stepSample(CREW[i], 0.016, S); } });
   RUN.on = false; RUN.save = null; REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); $('clock').textContent = '';
   CREW.forEach(c => { c.visible = true; }); OBJ.live = true; camInit = false;
 }
@@ -1470,7 +1471,7 @@ function frame(now) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
     if (homeStep(dt)) { throttle = HOME.th; steerIn = HOME.st; }
-    if (SAMPLE.on || FILM.ph === 'out' || FILM.ph === 'in') { throttle = 0; steerIn = 0; car.v.multiplyScalar(Math.exp(-dt * 3)); }      // held still while he is out      // Cernan driving, the player's controls set aside
+    if (SAMPLE.on || DIG.on || FILM.ph === 'out' || FILM.ph === 'in') { throttle = 0; steerIn = 0; car.v.multiplyScalar(Math.exp(-dt * 3)); }      // held still while he is out      // Cernan driving, the player's controls set aside
     if (Math.abs(throttle) > 0.02 || Math.abs(steerIn) > 0.02) parked = false;
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
     if (!CRASH.on) for (let i = 0; i < n; i++) step(h);
@@ -2136,7 +2137,7 @@ function soleY(legs) { const qa = _lq.setFromAxisAngle(_lr.set(1, 0, 0), legs[0]
 function startFilm(px, pz) {
   const h = CREW[1];
   if (FILM.on) { if (FILM.ph !== 'out' && FILM.ph !== 'in') { FILM.tx = px; FILM.tz = pz; FILM.ph = 'walk'; FILM.t = 0; } return; }      // out already: a new spot
-  if (!h || !h.visible || SAMPLE.on || CRASH.on || REPLAY.on) return;
+  if (!h || !h.visible || SAMPLE.on || DIG.on || CRASH.on || REPLAY.on) return;
   if (Math.hypot(car.v.x, car.v.z) > 1.5) { toast('Slow down first: Schmitt climbs out of a stopped rover'); return; }
   Object.assign(FILM, { on: true, ph: 'out', t: 0, tx: px, tz: pz, land: -1, crash: 0, dodge: null }); SCH.mode = '';
 }
@@ -2226,7 +2227,8 @@ function ctxOpen(cx, cy) {
   if (d > 20) { p = [car.p.x + dx / d * 20, car.p.z + dz / d * 20]; } else if (d < 4) { const k = 4 / Math.max(0.01, d); p = [car.p.x + dx * k, car.p.z + dz * k]; }      // close enough to walk to, far enough to film from
   CTX.x = p[0]; CTX.z = p[1];
   const items = [];
-  if (CREW[1] && !SAMPLE.on && !CRASH.on) items.push([FILM.on ? 'Film from here instead' : 'Hold the camera here', () => startFilm(CTX.x, CTX.z)]);
+  if (CREW[1] && !SAMPLE.on && !DIG.on && !CRASH.on) items.push([FILM.on ? 'Film from here instead' : 'Hold the camera here', () => startFilm(CTX.x, CTX.z)]);
+  if (CREW[1] && !SAMPLE.on && !DIG.on && !FILM.on && !CRASH.on) items.push(['Sample here', startDig]);
   if (FILM.on && FILM.ph !== 'in') items.push(['Schmitt back aboard', filmAboard]);
   if (upsideT > 0.5) items.push(['Back on its wheels', recover]);
   if (REPLAY.jump && REPLAY.offerT > 0) items.push(['Replay the jump', startReplay]);
@@ -2276,6 +2278,7 @@ function stepCrew(dt) {
     if (FILM.on && h === CREW[1]) { stepFilm(h, dt); continue; }
     if (CRASH.on) { Object.assign(st, { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null }); continue; }
     if (SAMPLE.on && h === CREW[1]) { stepSample(h, dt); continue; }
+    if (DIG.on) { const S = DIG.s[CREW.indexOf(h)]; if (S && S.on) { stepSample(h, dt, S); continue; } }
     // the seat's acceleration, from the rover's motion; then felt gravity and true up in his own frame
     const r = _ca.copy(h.position).applyQuaternion(car.q), v = _cb.copy(car.w).cross(r).add(car.v);
     if (!st.v) st.v = v.clone();
@@ -2311,8 +2314,10 @@ function stepCrew(dt) {
 /* At a discovery, Harrison Schmitt climbs out and takes the sample, as the crew did at each station: off the seat, a few
    loping steps out from the rover, the long-handled scoop the Apollo crews used so they need not kneel in the stiff
    suits, a scoop of the ground, and back aboard. The card opens as the sample comes up. The rover is held still meanwhile. */
-const SAMPLE = { on: false, t: 0, st: null, opened: false, scoop: null };
+const SAMPLE = { on: false, t: 0, st: null, opened: false, scoop: null, tool: null, faceOut: 0, card: () => showSiteCard(SAMPLE.st) };
 const SEAT1 = new THREE.Vector3(-0.66, 0.16, 0.33), OUT1 = new THREE.Vector3(-0.5, 0, 1.2), SPOT1 = new THREE.Vector3(0.2, 0, 2.25);
+const SEAT0 = new THREE.Vector3(-0.66, 0.16, -0.33), OUT0 = new THREE.Vector3(-0.5, 0, -1.2), SPOT0 = new THREE.Vector3(0.0, 0, -2.3);      // Cernan's side, the driver's
+Object.assign(SAMPLE, { seat: SEAT1, out: OUT1, spot: SPOT1 });
 // Where Schmitt climbs out on his own: stop the rover at the station and he takes its sample, as the crew did there
 const STOPS = [
   { find: '76535,0', in: (x, z) => Math.hypot(x - BOULDER.x, z - BOULDER.z) < 30, what: 'a sample beside the boulder' },
@@ -2320,7 +2325,7 @@ const STOPS = [
   { find: '74220,0', in: (x, z) => Math.abs(Math.hypot(x - SHORTY.x, z - SHORTY.z) - SHORTY.R) < 22, what: 'the orange soil' },
 ].map(o => Object.assign(o, { here: false, done: false, hint: false, still: 0 }));
 function sampleStops(dt) {
-  const busy = SAMPLE.on || FILM.on || CRASH.on || HOME.on || INTRO.on || BRIEF.on || REPLAY.on || RUN.on, sp = Math.hypot(car.v.x, car.v.z);
+  const busy = SAMPLE.on || FILM.on || DIG.on || CRASH.on || HOME.on || INTRO.on || BRIEF.on || REPLAY.on || RUN.on, sp = Math.hypot(car.v.x, car.v.z);
   for (const o of STOPS) {
     const here = o.in(car.p.x, car.p.z);
     if (!here) { o.here = o.done = o.hint = false; o.still = 0; continue; }      // gone: on the next visit, again
@@ -2331,7 +2336,7 @@ function sampleStops(dt) {
   }
 }
 function startSample(st) {
-  if (SAMPLE.on || FILM.on || !CREW[1] || !CREW[1].visible || CRASH.on || car.v.length() > 1.2) return false;
+  if (SAMPLE.on || FILM.on || DIG.on || !CREW[1] || !CREW[1].visible || CRASH.on || car.v.length() > 1.2) return false;
   Object.assign(SAMPLE, { on: true, t: 0, st, opened: false });
   if (!SAMPLE.scoop) {      // the scoop: an aluminium extension handle about 75 cm long and a small pan at its end
     const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0xb8b4ac, roughness: 0.5, metalness: 0.6 });
@@ -2339,11 +2344,56 @@ function startSample(st) {
     const pan = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.03, 0.12), m); pan.position.y = 1; g.add(pan); g.userData.pan = pan;
     g.traverse(o => { o.castShadow = true; }); SAMPLE.scoop = g;
   }
-  CREW[1].add(SAMPLE.scoop); SAMPLE.scoop.visible = true; return true;
+  SAMPLE.tool = SAMPLE.scoop; CREW[1].add(SAMPLE.scoop); SAMPLE.scoop.visible = true; return true;
 }
 const lerpV = (a, b, u, out) => out.copy(a).lerp(b, u);
-function stepSample(h, dt) {
-  const T = (SAMPLE.t += dt), st = h.userData.st, sm = (a, b) => ss(a, b, T), K = CREW_K, sd = st;
+/* "Sample here": both climb out, Cernan with the tongs and Schmitt with the scoop, each on his own side of the rover, as
+   at any Apollo station. Most of the time it is ordinary soil; now and then a rock like one of the famous Apollo finds. */
+const DIG = { on: false, s: [], tongs: null };
+const EXTRA = [      // facts from the Lunar Sample Compendium, NASA and the published studies cited
+  { kind: 'extra', name: 'An anorthosite', sub: 'Like 15415, the Genesis Rock · Apollo 15', imgs: [], body: [
+    'Almost pure white plagioclase feldspar: anorthosite, a piece of the Moon’s first crust. Rocks like it formed as the young Moon’s ocean of molten rock cooled and its light feldspar crystals floated to the top.',
+    'The most famous is 15415, which Dave Scott and Jim Irwin found sitting on top of another rock on the rim of Spur crater on Apollo 15 in 1971. It weighs about 269 g. It was quickly nicknamed the Genesis Rock, though later dating put it at about 4.1 billion years, younger than the Moon itself.'] },
+  { kind: 'extra', name: 'A breccia', sub: 'Like 14321, Big Bertha · Apollo 14', imgs: [], body: [
+    'Broken rock welded back together by the shock of impacts: a breccia, the most common kind of rock in the lunar highlands.',
+    'The biggest of the Apollo 14 samples, 14321, nicknamed Big Bertha, is one, about 9 kg. In 2019 a team led by Jeremy Bellucci reported that a fragment of granite inside it, just under 2 g, most likely formed on Earth about 4 billion years ago and was blasted to the Moon by a large impact. If they are right, it is the oldest known piece of Earth, found on the Moon.'] },
+  { kind: 'extra', name: 'A big shocked rock', sub: 'Like 61016, Big Muley · Apollo 16', imgs: [], body: [
+    'Pale shocked anorthosite fused to a darker rock that was melted by an impact.',
+    'The largest rock any Apollo crew brought back was one like it: 61016, 11.7 kg, picked up near Plum crater in the Descartes highlands on Apollo 16 in 1972. It is nicknamed Big Muley, after Bill Muehlberger, who led the mission’s field geology team.'] },
+  { kind: 'extra', name: 'A mare basalt', sub: 'Like 70017, the goodwill rock · Apollo 17', imgs: [], body: [
+    'Dark, fine-grained lava rock rich in titanium: the high-titanium basalt that flooded this valley about 3.7 billion years ago and lies beneath its floor.',
+    'One rock like it, 70017, weighed 2,957 g when Apollo 17 brought it home. In 1973 President Nixon had small pieces of it, about 1.1 g each, set in acrylic as goodwill gifts for 135 countries and the 50 US states. Several have since been stolen or lost.'] },
+];
+const NOTHING = ['Just regolith: fine, gray and ordinary. Bagged and numbered anyway.', 'A few glassy beads and rock chips. Nothing out of the ordinary.',
+  'Ordinary soil, the same as the rest of the valley floor. Bagged anyway: every sample counts.', 'Nothing noteworthy here. Small rock fragments in gray soil.'];
+const EXTRA_SEEN = new Set((() => { try { return JSON.parse(localStorage.getItem('lrv-extra')) || []; } catch (e) { return []; } })());
+function digResult() {
+  const fresh = EXTRA.filter(x => !EXTRA_SEEN.has(x.name)), pool = fresh.length ? fresh : EXTRA;
+  if (Math.random() < (fresh.length ? 0.25 : 0.1)) {
+    const x = pool[Math.floor(Math.random() * pool.length)]; EXTRA_SEEN.add(x.name); try { localStorage.setItem('lrv-extra', JSON.stringify([...EXTRA_SEEN])); } catch (e) { /* not kept */ }
+    showSiteCard(x);
+  } else toast(NOTHING[Math.floor(Math.random() * NOTHING.length)]);
+}
+function startDig() {
+  if (DIG.on || SAMPLE.on || FILM.on || CRASH.on || !CREW[0] || !CREW[1] || !CREW[1].visible) return;
+  if (car.v.length() > 1.2) { toast('Stop the rover first'); return; }
+  if (!SAMPLE.scoop) { startSample({}); SAMPLE.on = false; }      // builds the scoop
+  if (!DIG.tongs) {      // the tongs: a long handle, and jaws that close on a rock
+    const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0xb8b4ac, roughness: 0.5, metalness: 0.6 });
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.011, 0.011, 1, 8), m); rod.position.y = 0.5; g.add(rod);
+    const tip = new THREE.Group(); tip.position.y = 1; g.add(tip); g.userData.pan = tip;
+    for (const sd of [-1, 1]) { const j = new THREE.Mesh(new THREE.BoxGeometry(0.012, 0.09, 0.02), m); j.position.set(sd * 0.025, 0.035, 0); j.rotation.z = sd * 0.25; tip.add(j); }
+    const rock = new THREE.Mesh(new THREE.IcosahedronGeometry(0.03, 0), new THREE.MeshStandardMaterial({ color: 0x6e6a64, roughness: 0.95 })); rock.position.y = 0.06; rock.visible = false; tip.add(rock); g.userData.rock = rock;
+    g.traverse(o => { o.castShadow = true; }); DIG.tongs = g;
+  }
+  CREW[0].add(DIG.tongs); CREW[1].add(SAMPLE.scoop); DIG.tongs.visible = SAMPLE.scoop.visible = true;
+  DIG.s = [{ on: true, t: 0, seat: SEAT0, out: OUT0, spot: SPOT0, faceOut: Math.PI, tool: DIG.tongs, opened: false },
+           { on: true, t: -0.5, seat: SEAT1, out: OUT1, spot: SPOT1, faceOut: 0, tool: SAMPLE.scoop, opened: false, card: digResult }];      // Schmitt a moment behind
+  DIG.s.forEach(S => { S.done = () => { if (!DIG.s.some(q => q.on)) DIG.on = false; }; });
+  DIG.on = true; SCH.mode = ''; toast('Cernan and Schmitt climb out to take a sample');
+}
+function stepSample(h, dt, S = SAMPLE) {      // S: his walk-out (SAMPLE, or one of DIG's two)
+  const T = (S.t += dt), st = h.userData.st, sm = (a, b) => ss(a, b, T), K = CREW_K, sd = st;
   const walk = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return { u: u * u * (3 - 2 * u), on: u > 0 && u < 1, ph: (T - a) * 5.6 }; };
   // the lunar lope the crews settled on: unhurried strides, a long float between them, the knees taking each landing
   const lope = w => { const s = Math.abs(Math.sin(w.ph)), sw = 0.22 * Math.sin(w.ph), give = w.on ? 0.4 * (1 - s) : 0;
@@ -2352,13 +2402,13 @@ function stepSample(h, dt) {
   // where he is (rover frame), which way he faces, and how his legs are
   let pos = new THREE.Vector3(), face, legs, lean = 0, hands;
   const stand = [1.45, -1.35], sit = [0, 0], down = (j) => _c0.set(j ? 0.24 : -0.24, -0.38, 0.06).multiplyScalar(K).clone();
-  if (T < 1.1) { const u = sm(0, 1.1); lerpV(SEAT1, OUT1, sm(0.2, 1.1), pos); pos.y = 0; face = Math.PI / 2 * (1 - u); legs = [stand.map(v => v * u), stand.map(v => v * u)]; hands = null; }
-  else if (T < 2.7) { const w = walk(1.1, 2.7); lerpV(OUT1, SPOT1, w.u, pos); face = Math.atan2(SPOT1.x - OUT1.x, SPOT1.z - OUT1.z); const l = lope(w); legs = l.legs; pos.y = l.y; lean = 0.14 * (w.on ? 1 : 0); }
-  else if (T < 6.2) { pos.copy(SPOT1); face = 0; legs = [[1.25, -1.0 + 0.15 * insp], [1.3, -1.1 + 0.15 * insp]]; lean = 0.18 - 0.32 * insp; }
-  else if (T < 7.8) { const w = walk(6.2, 7.8); lerpV(SPOT1, OUT1, w.u, pos); face = Math.atan2(OUT1.x - SPOT1.x, OUT1.z - SPOT1.z); const l = lope(w); legs = l.legs; pos.y = l.y; lean = 0.14 * (w.on ? 1 : 0); }
-  else if (T < 9) { const u = 1 - sm(7.8, 9); lerpV(SEAT1, OUT1, 1 - sm(7.8, 8.7), pos); pos.y = 0; face = Math.PI / 2 * (1 - u); legs = [stand.map(v => v * u), stand.map(v => v * u)]; }
+  if (T < 1.1) { const u = sm(0, 1.1); lerpV(S.seat, S.out, sm(0.2, 1.1), pos); pos.y = 0; face = Math.PI / 2 + (S.faceOut - Math.PI / 2) * u; legs = [stand.map(v => v * u), stand.map(v => v * u)]; hands = null; }
+  else if (T < 2.7) { const w = walk(1.1, 2.7); lerpV(S.out, S.spot, w.u, pos); face = Math.atan2(S.spot.x - S.out.x, S.spot.z - S.out.z); const l = lope(w); legs = l.legs; pos.y = l.y; lean = 0.14 * (w.on ? 1 : 0); }
+  else if (T < 6.2) { pos.copy(S.spot); face = S.faceOut; legs = [[1.25, -1.0 + 0.15 * insp], [1.3, -1.1 + 0.15 * insp]]; lean = 0.18 - 0.32 * insp; }
+  else if (T < 7.8) { const w = walk(6.2, 7.8); lerpV(S.spot, S.out, w.u, pos); face = Math.atan2(S.out.x - S.spot.x, S.out.z - S.spot.z); const l = lope(w); legs = l.legs; pos.y = l.y; lean = 0.14 * (w.on ? 1 : 0); }
+  else if (T < 9) { const u = 1 - sm(7.8, 9); lerpV(S.seat, S.out, 1 - sm(7.8, 8.7), pos); pos.y = 0; face = Math.PI / 2 + (S.faceOut - Math.PI / 2) * u; legs = [stand.map(v => v * u), stand.map(v => v * u)]; }
   else {      // back in his seat
-    SAMPLE.on = false; SAMPLE.scoop.visible = false; h.position.copy(SEAT1); h.rotation.y = Math.PI / 2; st.legs = null; st.hands[0].copy(h.userData.grips[0]); st.hands[1].copy(h.userData.grips[1]); st.v = null; poseCrew(h); return;
+    S.on = false; S.tool.visible = false; h.position.copy(S.seat); h.rotation.y = Math.PI / 2; st.legs = null; st.hands[0].copy(h.userData.grips[0]); st.hands[1].copy(h.userData.grips[1]); st.v = null; poseCrew(h); if (S.done) S.done(); return;
   }
   // the height that puts his boots on the ground: hip to sole for this leg pose, and the ground beneath, in the rover's frame
   st.legs = legs; st.lx = 0; st.lz = lean; st.yaw = 0; st.y = 0; st.up = 0;
@@ -2367,7 +2417,7 @@ function stepSample(h, dt) {
   const seated = T < 1.1 ? 1 - sm(0, 1.1) : T >= 7.8 ? sm(7.8, 9) : 0;
   const wp = rover.localToWorld(_bt.set(pos.x, 0, pos.z)), gy = rover.worldToLocal(_bc.set(wp.x, ground(wp.x, wp.z), wp.z)).y;
   const yStand = gy - sole.y + pos.y;
-  h.position.set(pos.x, SEAT1.y + (yStand - SEAT1.y) * (1 - seated), pos.z); h.rotation.y = face;
+  h.position.set(pos.x, S.seat.y + (yStand - S.seat.y) * (1 - seated), pos.z); h.rotation.y = face;
   // hands: on the seat while getting up and down, at his sides while walking, the scoop in his right at the spot
   const g = h.userData.grips;
   if (T < 1.1 || T >= 7.8) { st.hands[0].copy(g[0]).lerp(down(0), 1 - seated); st.hands[1].copy(g[1]).lerp(down(1), 1 - seated); }
@@ -2375,13 +2425,14 @@ function stepSample(h, dt) {
   else { const dig = sm(3.1, 3.9) - sm(4.4, 5.2); st.hands[0].set(-0.14, -0.08 + 0.1 * sm(4.4, 5.2) + 0.22 * insp, 0.32 - 0.04 * insp).multiplyScalar(K); st.hands[1].set(0.18, -0.2, 0.2).multiplyScalar(K); st.hands[0].z += 0.06 * dig; }
   poseCrew(h);
   // the scoop: from his right glove down and forward to the ground, sweeping in, then lifted with the sample
-  const sc = SAMPLE.scoop, hand = st.hand[0], show = T > 2.4 && T < 6.6;
+  const sc = S.tool, hand = st.hand[0], show = T > 2.4 && T < 6.6;
   sc.visible = show;
   if (show) {
     const tipY = gy - h.position.y + 0.03 + 0.45 * sm(4.4, 5.4) + 0.55 * insp, tip = _bs.set(-0.12 * K, tipY, (0.82 - 0.2 * sm(3.1, 3.9) - 0.2 * insp) * K);
     const dir = tip.clone().sub(hand), len = dir.length(); sc.position.copy(hand); sc.quaternion.setFromUnitVectors(_cY, dir.normalize()); sc.scale.set(1, len, 1); sc.userData.pan.scale.set(1, 1 / len, 1);
   }
-  if (!SAMPLE.opened && T > 5.5) { SAMPLE.opened = true; showSiteCard(SAMPLE.st); }      // the sample comes up: the card
+  if (sc.userData.rock) sc.userData.rock.visible = T > 4.3;      // the tongs: a rock in their jaws once they close
+  if (!S.opened && T > 5.5) { S.opened = true; if (S.card) S.card(); }      // the sample comes up: the card
 }
 function handController() {      // the T-handle on its post between the seats
   const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.6, metalness: 0.4 });
