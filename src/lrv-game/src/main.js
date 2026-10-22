@@ -2116,6 +2116,33 @@ function poseCrew(h) {
     setBone(B, u, qu, S0, S); setBone(B, f, qf, E0, E); (st.hand || (st.hand = [new THREE.Vector3(), new THREE.Vector3()]))[sd < 0 ? 0 : 1].copy(H);
   }
 }
+/* Harrison Schmitt riding: a geologist in the field. He turns to the station ahead as it comes into view, points it out
+   once as they near it, and when the rover slows he raises both gloves to the camera on his chest for a picture (the
+   crews photographed constantly from the rover). A hard bump sends both hands back to the grips. */
+const SCH = { mode: '', t: 0, len: 0, side: 0, aim: 0, w: [0, 0], hand: [new THREE.Vector3(), new THREE.Vector3()], seen: new Set(), camT: 10 }, _sv = new THREE.Vector3();
+function schmitt(h, dt, yawT, drift, jolt, sp) {
+  let best = null, bd = 1e9, ang = 0, dl = null; h.updateWorldMatrix(true, false);
+  for (const s of SITES) {      // the nearest station in front of him
+    if (s.kind === 'find') continue; const [x, z, hh] = s.at(), d = Math.hypot(x - car.p.x, z - car.p.z); if (d > 300) SCH.seen.delete(s.name);
+    if (d > 260 || d > bd) continue; const v = h.worldToLocal(_sv.set(x, ground(x, z) + hh * 0.3, z)).normalize(), a = Math.atan2(v.x, v.z);
+    if (Math.abs(a) < 1.6) { bd = d; best = s; ang = a; dl = (dl || new THREE.Vector3()).copy(v); }
+  }
+  const inView = !!dl;
+  if (SCH.mode) SCH.t += dt;
+  if (jolt > 5 || FUN.on || (SCH.mode && SCH.t > SCH.len)) SCH.mode = '';
+  if (!SCH.mode && !FUN.on) {
+    if (inView && bd < 150 && sp > 0.8 && Math.abs(ang) < 1.3 && !SCH.seen.has(best.name)) { SCH.seen.add(best.name); Object.assign(SCH, { mode: 'point', t: 0, len: 2.8, side: ang > 0 ? 1 : 0 }); }
+    else if (sp < 1.5 && (SCH.camT -= dt) < 0) { SCH.camT = 12 + Math.random() * 12; Object.assign(SCH, { mode: 'photo', t: 0, len: 2.6, aim: inView ? Math.max(-0.45, Math.min(0.45, ang)) : (Math.random() - 0.5) * 0.8 }); }
+  }
+  const e = SCH.mode ? ss(0, 0.45, SCH.t) * (1 - ss(SCH.len - 0.5, SCH.len, SCH.t)) : 0;
+  SCH.w[0] = SCH.w[1] = 0;
+  if (SCH.mode === 'point' && dl) {      // the arm out toward it, a little above the horizon
+    const j = SCH.side, sd = j ? 1 : -1; SCH.hand[j].set(sd * ARM.S.x, ARM.S.y, ARM.S.z).addScaledVector(_sv.set(dl.x, Math.max(0.15, dl.y + 0.2), dl.z).normalize(), 0.6 * CREW_K); SCH.w[j] = e;
+    yawT = Math.max(-0.5, Math.min(0.5, ang)) * 0.8;
+  } else if (SCH.mode === 'photo') { for (let j = 0; j < 2; j++) { SCH.hand[j].set(j ? 0.075 : -0.075, 0.27, 0.21).multiplyScalar(CREW_K); SCH.w[j] = e; } yawT = SCH.aim; }
+  else if (inView && !drift) yawT = Math.max(-0.5, Math.min(0.5, ang));      // his eyes on the station ahead
+  return yawT;
+}
 function stepCrew(dt) {
   if (!dt) return;
   if (!AIR.grounded && AIR.t > 1 && !FUN.rolled) { FUN.rolled = true; FUN.on = Math.random() < 0.12; }      // a big jump: now and then, hands in the air
@@ -2136,7 +2163,8 @@ function stepCrew(dt) {
     if ((st.lookT -= dt) < 0) { st.lookT = 2.5 + Math.random() * 4; st.look = Math.random() < 0.35 ? 0 : (Math.random() - 0.5) * 2 * P.look; }
     const vl = _cb.copy(car.v).applyQuaternion(qi), sp = Math.hypot(vl.x, vl.z), slip = sp > 1.5 ? Math.atan2(vl.x, vl.z) : 0;
     const drift = Math.abs(slip) > 0.15 && Math.abs(slip) < 2.6 ? Math.max(-0.35, Math.min(0.35, slip * P.glance)) : 0;
-    const yawT = drift + st.look * (drift ? 0.6 : 1); st.vyaw += dt * (14 * (yawT - st.yaw) - 6.5 * st.vyaw); st.yaw = Math.max(-0.5, Math.min(0.5, st.yaw + dt * st.vyaw));
+    let yawT = drift + st.look * (drift ? 0.6 : 1); if (h === CREW[1]) yawT = schmitt(h, dt, yawT, drift, jolt, sp);
+    st.vyaw += dt * (14 * (yawT - st.yaw) - 6.5 * st.vyaw); st.yaw = Math.max(-0.5, Math.min(0.5, st.yaw + dt * st.vyaw));
     const n = Math.ceil(dt / 0.004), hh = dt / n;
     for (let i = 0; i < n; i++) {
       // the torso: pulled toward true up (balance), swayed by felt gravity (less than it would be: he is holding on), damped
@@ -2151,6 +2179,7 @@ function stepCrew(dt) {
     st.y = Math.max(-0.03, Math.min(0.09, st.y));
     const want = FUN.on && h === CREW[1] ? 1 : 0; st.up += (want - st.up) * (1 - Math.exp(-dt * (want ? 7 : 4)));
     for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.29 : -0.29, 0.95, 0.2).multiplyScalar(CREW_K), st.up);      // straight up, elbows soft
+    if (h === CREW[1]) for (let j = 0; j < 2; j++) if (SCH.w[j] > 0) st.hands[j].lerp(SCH.hand[j], SCH.w[j]);
     poseCrew(h);
   }
 }
@@ -2190,14 +2219,18 @@ function startSample(st) {
 const lerpV = (a, b, u, out) => out.copy(a).lerp(b, u);
 function stepSample(h, dt) {
   const T = (SAMPLE.t += dt), st = h.userData.st, sm = (a, b) => ss(a, b, T), K = CREW_K, sd = st;
-  const walk = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return { u: u * u * (3 - 2 * u), on: u > 0 && u < 1, ph: (T - a) * 7.5 }; };
+  const walk = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return { u: u * u * (3 - 2 * u), on: u > 0 && u < 1, ph: (T - a) * 5.6 }; };
+  // the lunar lope the crews settled on: unhurried strides, a long float between them, the knees taking each landing
+  const lope = w => { const s = Math.abs(Math.sin(w.ph)), sw = 0.22 * Math.sin(w.ph), give = w.on ? 0.4 * (1 - s) : 0;
+    return { legs: [[stand[0] + sw - give * 0.5, stand[1] - Math.max(0, -sw) * 0.6 + give], [stand[0] - sw - give * 0.5, stand[1] - Math.max(0, sw) * 0.6 + give]], y: w.on ? 0.11 * Math.pow(s, 0.6) : 0 }; };
+  const insp = sm(5.0, 5.5) - sm(5.9, 6.2);      // the sample held up to his visor: a geologist's first look
   // where he is (rover frame), which way he faces, and how his legs are
   let pos = new THREE.Vector3(), face, legs, lean = 0, hands;
   const stand = [1.45, -1.35], sit = [0, 0], down = (j) => _c0.set(j ? 0.24 : -0.24, -0.38, 0.06).multiplyScalar(K).clone();
   if (T < 1.1) { const u = sm(0, 1.1); lerpV(SEAT1, OUT1, sm(0.2, 1.1), pos); pos.y = 0; face = Math.PI / 2 * (1 - u); legs = [stand.map(v => v * u), stand.map(v => v * u)]; hands = null; }
-  else if (T < 2.7) { const w = walk(1.1, 2.7); lerpV(OUT1, SPOT1, w.u, pos); face = Math.atan2(SPOT1.x - OUT1.x, SPOT1.z - OUT1.z); const sw = 0.32 * Math.sin(w.ph); legs = [[stand[0] + sw, stand[1] - Math.max(0, -sw) * 0.8], [stand[0] - sw, stand[1] - Math.max(0, sw) * 0.8]]; pos.y = 0.05 * Math.abs(Math.sin(w.ph)); }
-  else if (T < 6.2) { pos.copy(SPOT1); face = 0; legs = [[1.25, -1.0], [1.3, -1.1]]; lean = 0.18; }
-  else if (T < 7.8) { const w = walk(6.2, 7.8); lerpV(SPOT1, OUT1, w.u, pos); face = Math.atan2(OUT1.x - SPOT1.x, OUT1.z - SPOT1.z); const sw = 0.32 * Math.sin(w.ph); legs = [[stand[0] + sw, stand[1] - Math.max(0, -sw) * 0.8], [stand[0] - sw, stand[1] - Math.max(0, sw) * 0.8]]; pos.y = 0.05 * Math.abs(Math.sin(w.ph)); }
+  else if (T < 2.7) { const w = walk(1.1, 2.7); lerpV(OUT1, SPOT1, w.u, pos); face = Math.atan2(SPOT1.x - OUT1.x, SPOT1.z - OUT1.z); const l = lope(w); legs = l.legs; pos.y = l.y; lean = 0.14 * (w.on ? 1 : 0); }
+  else if (T < 6.2) { pos.copy(SPOT1); face = 0; legs = [[1.25, -1.0 + 0.15 * insp], [1.3, -1.1 + 0.15 * insp]]; lean = 0.18 - 0.32 * insp; }
+  else if (T < 7.8) { const w = walk(6.2, 7.8); lerpV(SPOT1, OUT1, w.u, pos); face = Math.atan2(OUT1.x - SPOT1.x, OUT1.z - SPOT1.z); const l = lope(w); legs = l.legs; pos.y = l.y; lean = 0.14 * (w.on ? 1 : 0); }
   else if (T < 9) { const u = 1 - sm(7.8, 9); lerpV(SEAT1, OUT1, 1 - sm(7.8, 8.7), pos); pos.y = 0; face = Math.PI / 2 * (1 - u); legs = [stand.map(v => v * u), stand.map(v => v * u)]; }
   else {      // back in his seat
     SAMPLE.on = false; SAMPLE.scoop.visible = false; h.position.copy(SEAT1); h.rotation.y = Math.PI / 2; st.legs = null; st.hands[0].copy(h.userData.grips[0]); st.hands[1].copy(h.userData.grips[1]); st.v = null; poseCrew(h); return;
@@ -2213,17 +2246,17 @@ function stepSample(h, dt) {
   // hands: on the seat while getting up and down, at his sides while walking, the scoop in his right at the spot
   const g = h.userData.grips;
   if (T < 1.1 || T >= 7.8) { st.hands[0].copy(g[0]).lerp(down(0), 1 - seated); st.hands[1].copy(g[1]).lerp(down(1), 1 - seated); }
-  else if (T < 2.7 || T >= 6.2) { st.hands[0].copy(down(0)); st.hands[1].copy(down(1)); }
-  else { const dig = sm(3.1, 3.9) - sm(4.4, 5.2); st.hands[0].set(-0.14, -0.08 + 0.1 * sm(4.4, 5.2), 0.32).multiplyScalar(K); st.hands[1].set(0.18, -0.2, 0.2).multiplyScalar(K); st.hands[0].z += 0.06 * dig; }
+  else if (T < 2.7 || T >= 6.2) { const sw = 0.05 * Math.sin((T - (T < 2.7 ? 1.1 : 6.2)) * 5.6); for (let j = 0; j < 2; j++) st.hands[j].set(j ? 0.31 : -0.31, -0.22, 0.13 + (j ? -sw : sw)).multiplyScalar(K); }      // arms a little out, for balance
+  else { const dig = sm(3.1, 3.9) - sm(4.4, 5.2); st.hands[0].set(-0.14, -0.08 + 0.1 * sm(4.4, 5.2) + 0.22 * insp, 0.32 - 0.04 * insp).multiplyScalar(K); st.hands[1].set(0.18, -0.2, 0.2).multiplyScalar(K); st.hands[0].z += 0.06 * dig; }
   poseCrew(h);
   // the scoop: from his right glove down and forward to the ground, sweeping in, then lifted with the sample
   const sc = SAMPLE.scoop, hand = st.hand[0], show = T > 2.4 && T < 6.6;
   sc.visible = show;
   if (show) {
-    const tipY = gy - h.position.y + 0.03 + 0.45 * sm(4.4, 5.4), tip = _bs.set(-0.12 * K, tipY, (0.82 - 0.2 * sm(3.1, 3.9)) * K);
+    const tipY = gy - h.position.y + 0.03 + 0.45 * sm(4.4, 5.4) + 0.55 * insp, tip = _bs.set(-0.12 * K, tipY, (0.82 - 0.2 * sm(3.1, 3.9) - 0.2 * insp) * K);
     const dir = tip.clone().sub(hand), len = dir.length(); sc.position.copy(hand); sc.quaternion.setFromUnitVectors(_cY, dir.normalize()); sc.scale.set(1, len, 1); sc.userData.pan.scale.set(1, 1 / len, 1);
   }
-  if (!SAMPLE.opened && T > 4.6) { SAMPLE.opened = true; showSiteCard(SAMPLE.st); }      // the sample comes up: the card
+  if (!SAMPLE.opened && T > 5.5) { SAMPLE.opened = true; showSiteCard(SAMPLE.st); }      // the sample comes up: the card
 }
 function handController() {      // the T-handle on its post between the seats
   const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.6, metalness: 0.4 });

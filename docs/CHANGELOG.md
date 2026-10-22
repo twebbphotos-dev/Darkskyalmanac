@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.16 (zion-sky-v485)
+Lunar Rover: Schmitt behaves like a geologist in the field. Riding, he turns to the station ahead as it comes into view and points it out once as you approach; when the rover slows he raises both gloves to the camera on his chest for a picture, and a hard bump sends his hands back to the grips. On a sample walk-out he moves in the lunar lope the crews used (slower strides, a longer float, knees taking each landing, arms out for balance) and lifts the scoop to his visor for a first look before heading back. The card now opens at that moment.
+
 ## v5.15 (zion-sky-v484)
 Lunar Rover: Schmitt now climbs out at the stations. The walk-out only ran when you tapped a small discovery marker with the rover stopped, so most drivers never saw it. Now stop at Tracy's Rock, on the rim of Van Serg or on the rim of Shorty and he climbs out on his own to take that station's sample (76535, 79115, 74220); a notice says so as you arrive. Sample 79115 now has its own 3D model (NASA Astromaterials 3D, public domain, reduced). The sample viewer fills the card's width, opens full screen, and zooms with a pinch or the scroll wheel.
 
