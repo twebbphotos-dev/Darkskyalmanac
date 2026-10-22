@@ -92,11 +92,11 @@ const craters = [], rocks = [], VAN = { x: 0, z: 0 }, SHORTY = { x: -158, z: 62,
       rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.08 + Math.pow(v(), 4) * 0.8, yaw: v() * 6.28, k: v() }); }
     // as the Station 4 photographs show it: the floor and lower walls heaped with angular blocks, a mound of them in the
     // middle; and on the rim where the orange soil was found, a big boulder with smaller blocks round it
-    for (let i = 0; i < 300; i++) { const a = v() * 6.2832, d = SHORTY.R * (Math.pow(v(), 0.7) * 0.64);
-      rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.25 + Math.pow(v(), 2.2) * 1.6 * (1.25 - d / SHORTY.R), yaw: v() * 6.28, k: v(), bury: 0.32 }); }      // fresh blocks, less buried than the old ones out on the plain
+    for (let i = 0; i < 90; i++) { const a = v() * 6.2832, d = SHORTY.R * (Math.pow(v(), 0.7) * 0.6);
+      rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.25 + Math.pow(v(), 2.5) * 1.2 * (1.2 - d / SHORTY.R), yaw: v() * 6.28, k: v(), bury: 0.4 }); }      // fresh blocks, less buried than the old ones out on the plain
     const bx = SHORTY.x + Math.cos(2.27) * SHORTY.R * 1.13, bz = SHORTY.z + Math.sin(2.27) * SHORTY.R * 1.13;
     rocks.push({ x: bx, z: bz, s: 1.7, yaw: 0.6, k: 0.3, bury: 0.22 });
-    for (let i = 0; i < 14; i++) { const a = v() * 6.2832, d = 2 + v() * 7; rocks.push({ x: bx + Math.cos(a) * d, z: bz + Math.sin(a) * d, s: 0.15 + Math.pow(v(), 2) * 0.55, yaw: v() * 6.28, k: v(), bury: 0.4 }); } }
+    for (let i = 0; i < 8; i++) { const a = v() * 6.2832, d = 2.5 + v() * 7; rocks.push({ x: bx + Math.cos(a) * d, z: bz + Math.sin(a) * d, s: 0.15 + Math.pow(v(), 2) * 0.55, yaw: v() * 6.28, k: v(), bury: 0.4 }); } }
 }
 // The orange soil: glass beads from fire-fountain eruptions, buried under later lava and dug out by the impact. In the
 // Station 4 photographs (AS17-137-20990) it is one compact patch on the rim beside a big boulder, a meter or two across
@@ -166,7 +166,7 @@ function indexRocks() { for (let i = rocks.length - 1; i >= 0; i--) if (Math.hyp
 function rockH(x, z) {
   let h = 0; const gx = Math.floor(x / RG), gz = Math.floor(z / RG);
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = ROCK_GRID.get((gx + a) + ',' + (gz + b)); if (!l) continue;
-    for (const n of l) { const k = rocks[n], d2 = ((x - k.x) ** 2 + (z - k.z) ** 2) / (k.s * k.s); if (d2 < 1) h = Math.max(h, k.s * Math.max(0.55, 0.68 - (k.bury ?? 0.62)) * Math.sqrt(1 - d2)); } }
+    for (const n of l) { const k = rocks[n], d2 = ((x - k.x) ** 2 + (z - k.z) ** 2) / (1.6 * k.s * k.s); if (d2 < 1) { const u = 1 - d2; h = Math.max(h, k.s * Math.max(0.5, 0.66 - (k.bury ?? 0.62)) * u * Math.sqrt(u)); } } }      // a rounded rise a little wider than the rock, no sudden step at its edge (a dome with a vertical side threw the wheels)
   return h;
 }
 /* Craterlets a few tens of centimeters to a meter or two across, and the grain of the soil: too small for the
@@ -531,22 +531,33 @@ function splitBoulder() {
   buildSlab({ x: C.x - dc * back, z: C.z - ds * back, c: dc, s: ds, L: 10, W: 4.4, H: 1.5 }, mat, 13.1);
 }
 function rockMeshes() {
-  const geo = new THREE.IcosahedronGeometry(1, 1), p = geo.attributes.position, r = rng(11);
-  for (let k = 0; k < p.count; k++) { const s = 0.75 + r() * 0.4; p.setXYZ(k, p.getX(k) * s, p.getY(k) * s * 0.7, p.getZ(k) * s); }
-  geo.computeVertexNormals();
-  const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x77736d, roughness: .95, flatShading: true }), rocks.length);
-  const o = new THREE.Object3D();
-  rocks.forEach((k, n) => { o.position.set(k.x, groundBase(k.x, k.z) + microRaw(k.x, k.z) - k.s * (k.bury ?? 0.62), k.z); /* most sit 62 % buried; fresh blocks stand higher */ o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(n, o.matrix); });
+  // Three shapes of rock, each an icosahedron with its corners joined first (three.js gives every triangle its own
+  // corners; reshaped one corner at a time, the triangles pulled apart and left gaps), roughened, then cut by three flat
+  // fracture planes into an angular block, as the fresh blocks round young lunar craters are. Each rock takes one of them, turned and sized its own way.
+  const shapes = [0, 1, 2].map(n => {
+    let geo = new THREE.IcosahedronGeometry(1, 1); geo.deleteAttribute('normal'); geo.deleteAttribute('uv'); geo = mergeVertices(geo);
+    const p = geo.attributes.position, V = new THREE.Vector3(), q = rng(31 + n);
+    const cuts = [0, 1, 2].map(() => { const c = new THREE.Vector3(q() - 0.5, (q() - 0.3) * 0.8, q() - 0.5).normalize(); return [c, 0.45 + q() * 0.3]; });      // fracture planes: flat broken faces
+    for (let k = 0; k < p.count; k++) { V.fromBufferAttribute(p, k).multiplyScalar(0.8 + 0.4 * q());
+      for (const [c, d] of cuts) { const e = V.dot(c) - d; if (e > 0) V.addScaledVector(c, -e); }
+      p.setXYZ(k, V.x * [1, 1.1, 0.9][n], V.y * [0.85, 0.75, 0.95][n], V.z * [1, 0.85, 1.1][n]); }
+    geo.computeVertexNormals(); return geo; });
+  const mat = new THREE.MeshStandardMaterial({ color: 0x77736d, roughness: .95, flatShading: true }), o = new THREE.Object3D();
+  shapes.forEach((geo, n) => {
+    const mine = rocks.filter(k => Math.floor(k.k * 3) % 3 === n); if (!mine.length) return;
+    const im = new THREE.InstancedMesh(geo, mat, mine.length);
+    mine.forEach((k, i) => { o.position.set(k.x, groundBase(k.x, k.z) + microRaw(k.x, k.z) - k.s * (k.bury ?? 0.62), k.z); /* most sit 62 % buried; fresh blocks stand higher */ o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(i, o.matrix); });
   // Each rock is mostly buried, only its top showing, and the ground casts no shadow of its own: so on a slope facing
   // away from the Sun (a crater wall) the buried part used to throw a shadow up through the ground, a dark blot with no
   // rock to explain it. Only the part above the ground casts one now.
-  const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
+    const depth = new THREE.MeshDepthMaterial({ depthPacking: THREE.RGBADepthPacking });
   depth.onBeforeCompile = sh => {
     sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying float vLy;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvLy = position.y;');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying float vLy;').replace('void main() {', 'void main() {\n  if ( vLy < 0.56 ) discard;      // below the ground line (the rock sits 0.62 of its size down)');
   };
   im.customDepthMaterial = depth;
   im.castShadow = im.receiveShadow = true; scene.add(im);
+  });
 }
 
 /* ── the rover: one rigid body on four sprung wheels ─────────────

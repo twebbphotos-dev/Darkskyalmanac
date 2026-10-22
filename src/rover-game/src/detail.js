@@ -7,7 +7,7 @@
 const TIERS = {
   // reach: how far away each size of rock is still drawn (m) — boulders, mid-size rocks, pebbles; scanMid: photo-scanned mid-size rocks; devils: how many dust devils can be out at once
   low:    { pr: 1.0, aa: false, shadow: 1024, shadowR: 0.8, grid: 1.45, rocks: 0.45, reach: [380, 90, 55],   scanMid: false, devils: 0 },
-  medium: { pr: 1.5, aa: true,  shadow: 1024, shadowR: 1.0, grid: 1.18, rocks: 0.7,  reach: [560, 130, 75],  scanMid: false, devils: 1 },
+  medium: { pr: 1.25, aa: false, shadow: 1024, shadowR: 1.0, grid: 1.25, rocks: 0.55, reach: [480, 110, 60],  scanMid: false, devils: 0 },      // phones and tablets: no antialiasing (costly on their dense screens), fewer rocks
   high:   { pr: 2.0, aa: true,  shadow: 2048, shadowR: 1.0, grid: 1.0,  rocks: 1.0,  reach: [900, 210, 110], scanMid: true, devils: 2 },
   ultra:  { pr: 2.0, aa: true,  shadow: 4096, shadowR: 1.35, grid: 0.82, rocks: 1.35, reach: [1400, 300, 150], scanMid: true, devils: 3 },
 };

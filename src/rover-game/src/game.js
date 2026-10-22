@@ -110,12 +110,12 @@ const renderer = new THREE.WebGLRenderer({ canvas, antialias: DETAIL.aa, powerPr
 const PR_MAX = Math.min(devicePixelRatio || 1, DETAIL.pr);      // phones: 1.5× is sharp on a small screen and far lighter than 3×
 let pr = PR_MAX;
 renderer.setPixelRatio(pr);
-const perf = { t: 0, n: 0, lo: Math.min(DETAIL_NAME === 'low' ? 0.75 : 1, PR_MAX) };
+const perf = { t: 0, n: 0, lo: Math.min(DETAIL_NAME === 'low' || DETAIL_NAME === 'medium' ? 0.65 : 1, PR_MAX) };      // phones and tablets may drop well below native to keep moving
 function adaptRes(dt) {
   perf.t += dt; perf.n++;
-  if (perf.t < 2) return;
+  if (perf.t < 1.2) return;
   const ms = perf.t / perf.n * 1000; perf.t = perf.n = 0;
-  const want = ms > 24 ? pr - 0.15 : ms < 13 ? pr + 0.1 : pr;
+  const want = ms > 30 ? pr - 0.25 : ms > 21 ? pr - 0.12 : ms < 13 ? pr + 0.08 : pr;      // quicker down when it is well behind
   const np = Math.max(perf.lo, Math.min(PR_MAX, want));
   if (Math.abs(np - pr) > 0.01) { pr = np; renderer.setPixelRatio(pr); resize(); }
 }
