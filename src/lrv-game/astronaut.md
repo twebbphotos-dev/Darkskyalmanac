@@ -11,7 +11,7 @@ occlusion-roughness-metal maps (1024 px). It has no backpack.
    EXT_meshopt_compression (quantized). 4.2 MB.
 
 At load, `prepSuit` in `src/main.js`: the arms raised from the A-pose to level about the top of the shoulder (so the
-shoulder pad rises with them), the shoulders and chest broadened by 4 cm a side and 10 % deeper, the cloth puffed out
+shoulder pad rises with them), the shoulders and chest broadened by 1 cm a side and 3 % deeper (v5.02; 4 cm and 10 % read as too big), the cloth puffed out
 1.4 to 2.6 cm (connectors and straps moved out with it), and built on: the portable life support system (47 × 64 ×
 25 cm), the oxygen purge system on top, and the remote control unit on the chest. `buildCrew` bends it into the seat,
 skins it to ten bones and grinds gray dust into the boots and lower legs; `cmdrMaterial` gives Gene Cernan the

@@ -1726,7 +1726,7 @@ const CREW_SEATS = [[-0.66, 0.16, -0.33], [-0.66, 0.16, 0.33]];      // where ea
 const HAND_CTRL = new THREE.Vector3(-0.3, 0.4, 0);      // the grip of the hand controller, rover frame
 // Segments: 0 torso and head, 1 2 thighs, 3 4 shins, 5 6 upper arms, 7 backpack, 8 9 forearms (odd-even: right, left).
 // The arm's joints in the scan's standing frame, relative to the seat: shoulder, elbow, the middle of the glove.
-const ARM = { S: new THREE.Vector3(0.3, 0.47, -0.07), E: new THREE.Vector3(0.56, 0.46, -0.08), H: new THREE.Vector3(0.91, 0.44, -0.09) };      // after prepSuit: arms out level at 1.39 m, wrist at 0.80, glove 0.91
+const ARM = { S: new THREE.Vector3(0.26, 0.47, -0.07), E: new THREE.Vector3(0.5, 0.46, -0.08), H: new THREE.Vector3(0.84, 0.44, -0.09) };      // after prepSuit: arms out level at 1.39 m, wrist at 0.73, glove 0.84
 const armBones = sd => sd < 0 ? [5, 8] : [6, 9];
 /* The suits: "Space suit" by IgorSholopov (sketchfab.com/3d-models/space-suit-bdc42075279746dab4c8b54784276a20, CC BY 4.0),
    an Apollo A7L, its textures re-encoded and its mesh compressed (src/lrv-game/astronaut.md). Changed here at load
@@ -1741,7 +1741,7 @@ function prepSuit(src) {
   src.updateMatrixWorld(true);
   const box = new THREE.Box3().setFromObject(src), k = 1.85 / (box.max.y - box.min.y), cx = (box.min.x + box.max.x) / 2, out = new THREE.Group();
   let zb = new THREE.Box3(); src.traverse(o => { if (o.isMesh && o.material.name === 'base_002') zb.expandByObject(o); }); const cz = (zb.min.z + zb.max.z) / 2;
-  const PIV = [0.22, 1.38], ROT = [0.25, 1.48], TH = Math.PI / 4, SH = 0.04,      // the arm's line from the armpit; it turns about the top of the shoulder, so the shoulder pad rises with it
+  const PIV = [0.22, 1.38], ROT = [0.23, 1.43], TH = Math.PI / 4, SH = 0.01,      // the arm's line from the armpit; it turns about the top of the shoulder, so the shoulder pad rises with it
     V = new THREE.Vector3(), N = new THREE.Vector3();
   src.traverse(o => {
     if (!o.isMesh) return;
@@ -1756,7 +1756,7 @@ function prepSuit(src) {
         V.x = sd * ROT[0] + lx * c - ly * s; V.y = ROT[1] + lx * s + ly * c; const nx = N.x * c - N.y * s; N.y = N.x * s + N.y * c; N.x = nx; }
       // the shoulders and chest broadened (the arms move out with them), the cloth filled out
       const band = ss(0.98, 1.28, V.y) * ss(1.62, 1.5, V.y);
-      if (wArm > 0.5) V.x += sd * SH * band; else if (!hard) { V.x *= 1 + (SH / PIV[0]) * band; V.z *= 1 + 0.1 * band; }
+      if (wArm > 0.5) V.x += sd * SH * band; else if (!hard) { V.x *= 1 + (SH / PIV[0]) * band; V.z *= 1 + 0.03 * band; }
       if (cloth) V.addScaledVector(N, 0.014 + 0.008 * wArm + 0.004 * band);
       else if (fitted) { const l = Math.hypot(V.x * 0.3, V.z) || 1; V.x += V.x * 0.3 / l * 0.018; V.z += V.z / l * 0.018; }      // out with the cloth beneath
       p.setXYZ(i, V.x, V.y, V.z); n.setXYZ(i, N.x, N.y, N.z);
@@ -1812,7 +1812,7 @@ function buildCrew(src) {
       const w = [];      // [bone, weight]: blended across the waist, knees, shoulders and elbows, so the suit bends instead of breaking
       if (o.userData.addon === 'pack') w.push([7, 1]);
       else if (y0 > 1.15 && ax > 0.24) {
-        const wa = Math.max(ss(0.24, 0.4, ax) * ss(1.15, 1.3, y0), ss(0.36, 0.42, ax)), wf = ss(0.52, 0.6, ax);      // past the armpit it is all arm, the drooping fingertips too
+        const wa = Math.max(ss(0.24, 0.4, ax) * ss(1.15, 1.3, y0), ss(0.36, 0.42, ax)), wf = ss(0.46, 0.54, ax);      // past the armpit it is all arm, the drooping fingertips too
         w.push([0, 1 - wa], [5 + r, wa * (1 - wf)], [8 + r, wa * wf]);
       } else {
         const wt = ss(hipY - 0.06, hipY + 0.1, y0), wk = ss(kneeY - 0.05, kneeY + 0.05, y0);
@@ -1864,7 +1864,7 @@ function seatCrew(parts) {
     const mine = parts.map(([g, m0, l]) => [g, i === 0 && /^(base_002|helmet)$/.test(m0.name) ? cmdrMaterial(m0) : m0, l]);      // Gene Cernan, the commander: red bands
     mine.forEach(([g, m]) => { const sk = new THREE.SkinnedMesh(g, m); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); holder.add(sk); });
     // the grips, in his own frame (x to his left, z forward): Cernan's right hand on the hand controller
-    const grip = sd => i === 0 && sd < 0 ? new THREE.Vector3(-(HAND_CTRL.z - pos[2]), HAND_CTRL.y - pos[1], HAND_CTRL.x - pos[0]) : new THREE.Vector3(sd * 0.27, -0.05, 0.17);      // the front corner of the seat, beside the thigh
+    const grip = sd => i === 0 && sd < 0 ? new THREE.Vector3(-(HAND_CTRL.z - pos[2]), HAND_CTRL.y - pos[1], HAND_CTRL.x - pos[0]) : new THREE.Vector3(sd * 0.27, -0.02, 0.16);      // the front corner of the seat, beside the thigh
     const P = CREW_P[i];
     holder.userData = { parts: mine, bones, grips: [grip(-1), grip(1)], P,
       st: { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null, hands: [grip(-1), grip(1)], up: 0, yaw: 0, vyaw: 0, look: 0, lookT: 1 + i * 2, fx: 0, fz: 0, t: i * 7 } };

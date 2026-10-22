@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.02 (zion-sky-v471)
+Lunar Rover: the astronauts' shoulders back close to the original model (broadened 1 cm a side instead of 4, the chest 3 % deeper instead of 10 %, the arms turned about a point only a little above the armpit), keeping the cloth filled out as a pressurized suit. The arm rig and the seat grips follow the new arm.
+
 ## v5.01 (zion-sky-v470)
 Lunar Rover: the crew sit and move more naturally. They are 8 % smaller, so they fit the seats and reach the front corners of them, beside the thighs, with a bent elbow (Cernan keeps a hand on the T-handle). Their torsos are softer and each moves on his own: Cernan, holding the hand controller, rides with the rover more; Schmitt holds himself upright more and sways further; each feels a jolt a moment late, his own moment, with his own slow fidget and harder random knocks on bumps. The A7L helmet is fixed to the suit, so to look around they turn their shoulders: Schmitt looks about the valley every few seconds, Cernan mostly ahead, and both glance into the direction of travel when the rover slides.
 
