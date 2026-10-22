@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.00 (zion-sky-v469)
+Lunar Rover: new astronauts. "Space suit" by IgorSholopov (CC BY 4.0, credited on the Sources page) replaces NASA's low-poly astronaut, whose single 1024 px picture could not hold up close: a detailed A7L with real fabric folds, the NASA patch, chest connectors, wrist rings, gloves and boots. Changed for the Moon: arms raised about the top of the shoulder so the shoulder pads rise with them, shoulders and chest broadened and the cloth filled out as a pressurized suit stood (the model's were slim), and the backpack, oxygen purge system and chest control unit built on, which the model lacks. Gene Cernan keeps the commander's red bands and helmet stripe; both keep the gold visors, the dust and the rag doll. Textures re-encoded from 16.9 MB to 2.4 MB; the file is 4.2 MB, downloaded only with the game.
+
 ## v4.99 (zion-sky-v468)
 Lunar Rover: the suits' cloth is rebuilt. The NASA model's single 1024 px picture, with a weave and folds painted in, smeared up close and beat into wood-grain stripes; it is now used only where it has markings (flags, patches, stripes). The cloth is worked out per pixel from the suit's shape, sharp at any distance: folds as relief, part-way round the arms and legs and bunching at the knees, elbows, shoulders, waist and ankles, smaller creases, the weave close up, fold valleys in shade. Helmet, gloves and the chest box stay smooth. The suit texture is mipmapped and anisotropically filtered.
 
