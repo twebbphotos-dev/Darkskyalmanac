@@ -163,3 +163,5 @@ v4.97: suitMaterial() (folds, tone, dust patches from the rest position, vRp) an
 v4.98: attribute sp (standing position, before the seat bend) drives the suit details in suitMaterial; uCmdr from userData.cmdr (Cernan gets his own materials, kept in holder.userData.parts so the rag doll keeps them).
 
 v4.99: suitMaterial: the map multiplies in only where it differs from its plain cloth color (uRef, measured from the picture); folds(vSp) gives relief, valley depth and softness; bumpN perturbs the normal from screen derivatives (follows the skinned pose).
+
+v5.01: CREW_K 0.92 scales the built crew (geometry, CREW_SEG, CREW_JOINTS, ARM). CREW_P adds tau (felt-gravity lag), fid (fidget), look, ph, bal (upright balance), glance (into a slide). st.yaw: shoulder turn, applied after the lean in poseCrew.

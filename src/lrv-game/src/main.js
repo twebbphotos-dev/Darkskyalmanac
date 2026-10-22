@@ -1846,6 +1846,12 @@ function buildCrew(src) {
   for (let sg = 0; sg < 10; sg++) { const b = new THREE.Box3(); let any = false;
     parts.forEach(([g], j) => { const p = g.attributes.position, seg = segOf[j]; for (let i = 0; i < p.count; i++) if (seg[i] === sg) { b.expandByPoint(V.fromBufferAttribute(p, i)); any = true; } });
     CREW_SEG.push(any ? { c: b.getCenter(new THREE.Vector3()), size: b.getSize(new THREE.Vector3()) } : { c: new THREE.Vector3(), size: new THREE.Vector3(0.12, 0.12, 0.12) }); }
+  // A little smaller than the suit stands (1.70 m instead of 1.85), so the two sit within the seats and reach their edges.
+  // The shapes above are worked out at full size; everything the rig uses is scaled together here, the standing
+  // coordinates (sp) for the commander's bands excepted.
+  parts.forEach(([g]) => g.scale(CREW_K, CREW_K, CREW_K));
+  CREW_SEG.forEach(S => { S.c.multiplyScalar(CREW_K); S.size.multiplyScalar(CREW_K); }); CREW_JOINTS.forEach(J => J[2].multiplyScalar(CREW_K));
+  if (!ARM.scaled) { ARM.S.multiplyScalar(CREW_K); ARM.E.multiplyScalar(CREW_K); ARM.H.multiplyScalar(CREW_K); ARM.scaled = true; }
   return parts;
 }
 // bone b's skeleton slot: the backpack rides the torso's bone until it breaks loose
@@ -1858,24 +1864,28 @@ function seatCrew(parts) {
     const mine = parts.map(([g, m0, l]) => [g, i === 0 && /^(base_002|helmet)$/.test(m0.name) ? cmdrMaterial(m0) : m0, l]);      // Gene Cernan, the commander: red bands
     mine.forEach(([g, m]) => { const sk = new THREE.SkinnedMesh(g, m); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); holder.add(sk); });
     // the grips, in his own frame (x to his left, z forward): Cernan's right hand on the hand controller
-    const grip = sd => i === 0 && sd < 0 ? new THREE.Vector3(-(HAND_CTRL.z - pos[2]), HAND_CTRL.y - pos[1], HAND_CTRL.x - pos[0]) : new THREE.Vector3(sd * 0.37, -0.03, 0.1);
+    const grip = sd => i === 0 && sd < 0 ? new THREE.Vector3(-(HAND_CTRL.z - pos[2]), HAND_CTRL.y - pos[1], HAND_CTRL.x - pos[0]) : new THREE.Vector3(sd * 0.27, -0.05, 0.17);      // the front corner of the seat, beside the thigh
     const P = CREW_P[i];
     holder.userData = { parts: mine, bones, grips: [grip(-1), grip(1)], P,
-      st: { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null, hands: [grip(-1), grip(1)], up: 0 } };
+      st: { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null, hands: [grip(-1), grip(1)], up: 0, yaw: 0, vyaw: 0, look: 0, lookT: 1 + i * 2, fx: 0, fz: 0, t: i * 7 } };
     holder.visible = false; rover.add(holder); CREW.push(holder); poseCrew(holder);
   });
 }
 // how each rides: torso stiffness and damping (balance), how far felt gravity sways him, seat cushion stiffness
-const CREW_P = [{ K: 95, C: 7, kg: 0.24, ks: 1700 }, { K: 80, C: 5.5, kg: 0.3, ks: 1300 }];
+const CREW_K = 0.92;
+// how each rides: torso stiffness and damping (balance; soft, so the body sways), how far felt gravity sways him, seat
+// cushion stiffness, how quickly he reacts to a jolt (seconds), and his own slow fidget; the passenger looks about more
+// how far he holds himself upright when the rover tilts (Cernan, gripping the hand controller, rides with it more), and how far he glances into a slide
+const CREW_P = [{ K: 68, C: 5.2, kg: 0.22, ks: 1700, tau: 0.05, fid: 0.035, look: 0.12, ph: 0.3, bal: 0.55, glance: 0.55 }, { K: 50, C: 3.6, kg: 0.36, ks: 1300, tau: 0.14, fid: 0.055, look: 0.5, ph: 2.1, bal: 1.05, glance: 0.35 }];
 const FUN = { rolled: false, on: false, t: 0 };      // the rare big jump when Schmitt throws his hands up
 const _cY = new THREE.Vector3(0, 1, 0), _c0 = new THREE.Vector3(), _ca = new THREE.Vector3(), _cb = new THREE.Vector3(), _cc = new THREE.Vector3(), _cd = new THREE.Vector3(), _ce = new THREE.Vector3();
-const _cq = new THREE.Quaternion(), _cq2 = new THREE.Quaternion(), _cP = new THREE.Vector3(), _cS = new THREE.Vector3(), _cE = new THREE.Vector3(), _cH = new THREE.Vector3();
+const _cq = new THREE.Quaternion(), _cq2 = new THREE.Quaternion(), _cqI = new THREE.Quaternion(), _cP = new THREE.Vector3(), _cS = new THREE.Vector3(), _cE = new THREE.Vector3(), _cH = new THREE.Vector3();
 function setBone(B, b, q, piv0, piv) { B[b].quaternion.copy(q); B[b].position.copy(CREW_SEG[b].c).sub(piv0).applyQuaternion(q).add(piv); }
 function poseCrew(h) {
   const { bones: B, st } = h.userData, P = _cP.set(0, st.y, 0);
-  const qt = _cq.setFromUnitVectors(_cY, _ca.set(st.lx, 1, st.lz).normalize());
+  const qt = _cq.setFromUnitVectors(_cY, _ca.set(st.lx, 1, st.lz).normalize()).multiply(_cq2.setFromAxisAngle(_cY, st.yaw));      // lean, then the turn of the shoulders (the helmet is fixed to the suit: to look, he turns)
   setBone(B, 0, qt, _c0.set(0, 0, 0), P);      // the torso swings about the hips
-  for (const b of [1, 2, 3, 4]) setBone(B, b, _cq2.identity(), _c0.set(0, 0, 0), P);
+  for (const b of [1, 2, 3, 4]) setBone(B, b, _cqI, _c0.set(0, 0, 0), P);
   for (const sd of [-1, 1]) {      // two-bone reach: shoulder, elbow, hand on its grip
     const [u, f] = armBones(sd), S0 = _cb.copy(ARM.S).setX(sd * ARM.S.x), E0 = _cc.copy(ARM.E).setX(sd * ARM.E.x), H0 = _cd.copy(ARM.H).setX(sd * ARM.H.x);
     const L1 = S0.distanceTo(E0), L2 = E0.distanceTo(H0), S = _cS.copy(S0).applyQuaternion(qt).add(P);
@@ -1902,11 +1912,18 @@ function stepCrew(dt) {
     if (!st.v) st.v = v.clone();
     const acc = _cc.copy(v).sub(st.v).divideScalar(dt); st.v.copy(v); if (acc.lengthSq() > 900) acc.setLength(30);
     const qi = _cq2.copy(car.q).multiply(h.quaternion).invert(), f = _cd.set(0, -G, 0).sub(acc).applyQuaternion(qi), up = _ce.set(0, 1, 0).applyQuaternion(qi);
-    const jolt = Math.abs(f.y + G * up.y); if (jolt > 4) { st.vx += (Math.random() - 0.5) * jolt * 0.03; st.vz += (Math.random() - 0.5) * jolt * 0.02; }      // a hard bump knocks each a little differently
+    const jolt = Math.abs(f.y + G * up.y); if (jolt > 4) { st.vx += (Math.random() - 0.5) * jolt * 0.07; st.vz += (Math.random() - 0.5) * jolt * 0.05; st.vyaw += (Math.random() - 0.5) * jolt * 0.05; }      // a hard bump knocks each a little differently
+    const a = 1 - Math.exp(-dt / P.tau); st.fx += (f.x - st.fx) * a; st.fz += (f.z - st.fz) * a;      // each feels the sway a moment late, his own moment
+    st.t += dt; const fid = P.fid, fx0 = fid * (Math.sin(st.t * 0.61 + P.ph) + 0.6 * Math.sin(st.t * 1.37 + 2 * P.ph)), fz0 = fid * 0.7 * Math.sin(st.t * 0.83 + 3 * P.ph);      // a slow fidget, never in step
+    // where he looks: about the valley now and then (the passenger more), and round toward the way the rover is going when it slides
+    if ((st.lookT -= dt) < 0) { st.lookT = 2.5 + Math.random() * 4; st.look = Math.random() < 0.35 ? 0 : (Math.random() - 0.5) * 2 * P.look; }
+    const vl = _cb.copy(car.v).applyQuaternion(qi), sp = Math.hypot(vl.x, vl.z), slip = sp > 1.5 ? Math.atan2(vl.x, vl.z) : 0;
+    const drift = Math.abs(slip) > 0.15 && Math.abs(slip) < 2.6 ? Math.max(-0.35, Math.min(0.35, slip * P.glance)) : 0;
+    const yawT = drift + st.look * (drift ? 0.6 : 1); st.vyaw += dt * (14 * (yawT - st.yaw) - 6.5 * st.vyaw); st.yaw = Math.max(-0.5, Math.min(0.5, st.yaw + dt * st.vyaw));
     const n = Math.ceil(dt / 0.004), hh = dt / n;
     for (let i = 0; i < n; i++) {
       // the torso: pulled toward true up (balance), swayed by felt gravity (less than it would be: he is holding on), damped
-      st.vx += hh * (P.K * (up.x - st.lx) + P.kg * P.K * f.x / 2.5 - P.C * st.vx); st.vz += hh * (P.K * (up.z - st.lz) + P.kg * P.K * f.z / 2.5 - P.C * st.vz);
+      st.vx += hh * (P.K * (up.x * P.bal + fx0 - st.lx) + P.kg * P.K * st.fx / 2.5 - P.C * st.vx); st.vz += hh * (P.K * (up.z * P.bal + fz0 - st.lz) + P.kg * P.K * st.fz / 2.5 - P.C * st.vz);
       const L = Math.hypot(st.lx, st.lz); if (L > 0.35) { const g = -3 * P.K * (L - 0.35) / L * hh; st.vx += g * st.lx; st.vz += g * st.lz; }      // the suit stiffens at the end of its bend
       st.lx += hh * st.vx; st.lz += hh * st.vz;
       // the body on the seat: the cushion below, the seat belt about 5 cm up
@@ -1916,7 +1933,7 @@ function stepCrew(dt) {
     const L = Math.hypot(st.lx, st.lz); if (L > 0.5) { st.lx *= 0.5 / L; st.lz *= 0.5 / L; }
     st.y = Math.max(-0.03, Math.min(0.09, st.y));
     const want = FUN.on && h === CREW[1] ? 1 : 0; st.up += (want - st.up) * (1 - Math.exp(-dt * (want ? 7 : 4)));
-    for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.29 : -0.29, 0.95, 0.2), st.up);      // straight up, elbows soft
+    for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.29 : -0.29, 0.95, 0.2).multiplyScalar(CREW_K), st.up);      // straight up, elbows soft
     poseCrew(h);
   }
 }

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.01 (zion-sky-v470)
+Lunar Rover: the crew sit and move more naturally. They are 8 % smaller, so they fit the seats and reach the front corners of them, beside the thighs, with a bent elbow (Cernan keeps a hand on the T-handle). Their torsos are softer and each moves on his own: Cernan, holding the hand controller, rides with the rover more; Schmitt holds himself upright more and sways further; each feels a jolt a moment late, his own moment, with his own slow fidget and harder random knocks on bumps. The A7L helmet is fixed to the suit, so to look around they turn their shoulders: Schmitt looks about the valley every few seconds, Cernan mostly ahead, and both glance into the direction of travel when the rover slides.
+
 ## v5.00 (zion-sky-v469)
 Lunar Rover: new astronauts. "Space suit" by IgorSholopov (CC BY 4.0, credited on the Sources page) replaces NASA's low-poly astronaut, whose single 1024 px picture could not hold up close: a detailed A7L with real fabric folds, the NASA patch, chest connectors, wrist rings, gloves and boots. Changed for the Moon: arms raised about the top of the shoulder so the shoulder pads rise with them, shoulders and chest broadened and the cloth filled out as a pressurized suit stood (the model's were slim), and the backpack, oxygen purge system and chest control unit built on, which the model lacks. Gene Cernan keeps the commander's red bands and helmet stripe; both keep the gold visors, the dust and the rag doll. Textures re-encoded from 16.9 MB to 2.4 MB; the file is 4.2 MB, downloaded only with the game.
 
