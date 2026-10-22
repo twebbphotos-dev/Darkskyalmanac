@@ -23,7 +23,7 @@ bufs = [pos.tobytes(), uv.tobytes(), idx.tobytes(), img]; offs = []; blob = b''
 for x in bufs:
   while len(blob) % 4: blob += b'\0'
   offs.append(len(blob)); blob += x
-g = {'asset': {'version': '2.0', 'extras': {'source': 'NASA Astromaterials 3D, lunar sample 76535,0 (public domain)'}},
+g = {'asset': {'version': '2.0', 'extras': {'source': 'NASA Astromaterials 3D, lunar sample ' + (sys.argv[4] if len(sys.argv) > 4 else '76535,0') + ' (public domain)'}},
   'buffers': [{'byteLength': len(blob)}],
   'bufferViews': [{'buffer': 0, 'byteOffset': offs[0], 'byteLength': len(bufs[0]), 'target': 34962}, {'buffer': 0, 'byteOffset': offs[1], 'byteLength': len(bufs[1]), 'target': 34962},
                   {'buffer': 0, 'byteOffset': offs[2], 'byteLength': len(bufs[2]), 'target': 34963}, {'buffer': 0, 'byteOffset': offs[3], 'byteLength': len(bufs[3])}],

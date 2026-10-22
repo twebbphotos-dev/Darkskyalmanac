@@ -1509,7 +1509,7 @@ function frame(now) {
   const kmh = Math.abs(car.v.dot(_fw)) * 3.6; $('speed').textContent = U.speed(kmh).toFixed(1); if (running) speedRecord(kmh, AIR.grounded && AIR.t === 0, dt); lineFade(dt);
   $('air').textContent = AIR.t > 0.15 ? `Airborne ${AIR.t.toFixed(1)} s` : '';
   if (toastT > 0) { toastT -= dt; if (toastT <= 0) $('toast').classList.remove('on'); }
-  siteMarks(); if (running) mapTick(dt);
+  siteMarks(); if (running) { mapTick(dt); sampleStops(dt); }
   renderer.render(scene, camera);
   requestAnimationFrame(frame);
 }
@@ -1771,11 +1771,11 @@ const SITES = [
     '<i>The real Shorty is about 4.3 km west of the lander. It is drawn here at its true size but much closer, so the drive to it is short.</i>'] },
   // Discoveries: rocks and soils brought back, each where it was found. Masses and descriptions from the Lunar Sample
   // Compendium and NASA's Astromaterials 3D; img, when given, is a photograph in img/lrv/ (shown only if it loads).
-  { kind: 'find', model: '../models/sample-76535.glb', at: () => [BOULDER.x - 10, BOULDER.z + 9, 2.5], label: '76535 · troctolite', name: '76535,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 6', body: [
+  { kind: 'find', model: '../models/sample-76535.glb', cap: '76535,0 today, about 2 cm across: the largest piece left after samples were cut for study. Drag to turn it, pinch or scroll to zoom. 3D model: NASA Astromaterials 3D.', at: () => [BOULDER.x - 10, BOULDER.z + 9, 2.5], label: '76535 · troctolite', name: '76535,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 6', body: [
     'A troctolite: a coarse-grained igneous rock made almost entirely of large grains of pale green olivine and white plagioclase feldspar. It weighs about 156 g and came back in a rake sample from the soil at Station 6, the stop at the split boulder, on the third moonwalk.',
     'It crystallized deep in the young Moon’s crust about 4.2 to 4.3 billion years ago, slowly enough to grow its large, interlocking grains, and was later dug out by impacts.',
     'Few rocks have been studied so closely. In 2009 researchers at MIT found it weakly magnetized since it formed, evidence that the young Moon had a magnetic field from a molten core. In 2021, chemical differences still preserved inside its crystals showed it must have cooled within about 20 million years, far faster than the more than 100 million years once thought.'] },
-  { kind: 'find', at: () => { const dx = -0.65, dz = -0.76; return [VAN.x + dx * 48, VAN.z + dz * 48, 2.5]; }, label: '79115 · breccia', name: '79115,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 9', body: [
+  { kind: 'find', model: '../models/sample-79115.glb', cap: '79115,0 today, about 9 cm long. Drag to turn it, pinch or scroll to zoom. 3D model: NASA Astromaterials 3D.', at: () => { const dx = -0.65, dz = -0.76; return [VAN.x + dx * 48, VAN.z + dz * 48, 2.5]; }, label: '79115 · breccia', name: '79115,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 9', body: [
     'Regolith breccia: loose lunar soil and broken rock welded into stone by the shock of an impact. On the third moonwalk the crew broke this 346 g piece off the top of a fractured boulder on the rim of Van Serg crater, hoping it would tell how and when the crater formed. Its partner, 79135, 2.3 kg, came from the bottom of the same boulder.',
     'About 60% of it is a fine matrix of mineral debris and glass. Mixed through it are fragments of highland rock, mare basalt and other basalts, and beads of orange volcanic glass like those at Shorty crater: soil from across the valley, swept up and pressed together.'] },
   { kind: 'find', at: () => [SHORTY.x + Math.cos(2.4) * SHORTY.R * 1.05, SHORTY.z + Math.sin(2.4) * SHORTY.R * 1.05, 2.5], label: '74220 · orange soil', name: '74220,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 4', body: [
@@ -1859,30 +1859,43 @@ function showSiteCard(st) {
   $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub;
   const fig = ([src, cap]) => `<figure><img src="${src}" alt="" loading="lazy" onerror="this.parentNode.remove()"><figcaption>${cap}</figcaption></figure>`;
   $('sc-b').innerHTML = (st.imgs[0] ? fig(st.imgs[0]) : '') + st.body.map(t => `<p>${t}</p>`).join('') + st.imgs.slice(1).map(fig).join('');      // the first picture leads, any others follow the text
-  if (st.model) rockView(st.model);
-  $('sitecard').classList.add('on'); siteRun = running; running = false;
+  $('sitecard').classList.toggle('wide', !!st.model); $('sitecard').classList.add('on'); siteRun = running; running = false;
+  if (st.model) rockView(st.model, st.cap);
   if (st.kind === 'find' && !MAP.seen.has(st.name)) { MAP.seen.add(st.name); try { localStorage.setItem('lrv-found', JSON.stringify([...MAP.seen])); } catch (e) { /* not kept */ } }
 }
 $('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; if (ROCK.stop) ROCK.stop(); });
 /* The sample itself, turning in the card: NASA Astromaterials 3D's photogrammetry model of 76535,0 (public domain),
    reduced (src/lrv-game/tools/sample-*.{py,mjs}). Drag to turn it. */
 const ROCK = { stop: null };
-function rockView(url) {
+function rockView(url, capText) {
   const box = document.createElement('figure'); box.className = 'rock3d'; const cv = document.createElement('canvas'); box.appendChild(cv);
-  const cap = document.createElement('figcaption'); cap.textContent = '76535,0 today, about 2 cm across: the largest piece left after samples were cut for study. Drag to turn it. 3D model: NASA Astromaterials 3D.'; box.appendChild(cap);
+  const fs = document.createElement('button'); fs.className = 'rock-fs'; fs.textContent = 'Full screen'; box.appendChild(fs);
+  const cap = document.createElement('figcaption'); cap.textContent = capText || ''; box.appendChild(cap);
   $('sc-b').prepend(box);
-  const W = Math.min(420, $('sc-b').clientWidth || 360), Hh = Math.round(W * 0.62); cv.width = W * 2; cv.height = Hh * 2; cv.style.width = W + 'px'; cv.style.height = Hh + 'px';
-  const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); r.setPixelRatio(1); r.setSize(W * 2, Hh * 2, false); r.outputColorSpace = THREE.SRGBColorSpace;
-  const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, W / Hh, 0.001, 10); cam.position.set(0, 0, 0.09);
+  const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); r.outputColorSpace = THREE.SRGBColorSpace;
+  const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, 1, 0.001, 10);
   sc.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.4)); const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(0.5, 0.8, 0.6); sc.add(key);
-  const piv = new THREE.Group(); sc.add(piv); let alive = true, rx = 0.3, ry = 0, drag = null;
-  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url).then(g => { const o = g.scene, b = new THREE.Box3().setFromObject(o), s2 = 0.035 / b.getSize(new THREE.Vector3()).length();
+  const piv = new THREE.Group(); sc.add(piv); let alive = true, rx = 0.3, ry = 0, zoom = 1;
+  const fit = () => {      // the card's width in the card, the whole screen when enlarged
+    const big = box.classList.contains('big'), W = big ? innerWidth : (box.clientWidth || 360), H = big ? innerHeight : Math.round(Math.min(W * 0.8, innerHeight * 0.55));
+    r.setPixelRatio(Math.min(2, devicePixelRatio || 1)); r.setSize(W, H); cam.aspect = W / H; cam.updateProjectionMatrix();
+  };
+  fit(); addEventListener('resize', fit);
+  fs.addEventListener('click', () => { box.classList.toggle('big'); fs.textContent = box.classList.contains('big') ? 'Close' : 'Full screen'; fit(); });
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url).then(g => { const o = g.scene, b = new THREE.Box3().setFromObject(o), s2 = 0.05 / b.getSize(new THREE.Vector3()).length();
     o.scale.setScalar(s2); o.position.copy(b.getCenter(new THREE.Vector3())).multiplyScalar(-s2); piv.add(o); }).catch(() => box.remove());
-  cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
-  cv.addEventListener('pointermove', e => { if (!drag) return; ry += (e.clientX - drag[0]) * 0.01; rx += (e.clientY - drag[1]) * 0.01; drag = [e.clientX, e.clientY]; });
-  cv.addEventListener('pointerup', () => { drag = null; });
-  const loop = () => { if (!alive) return; if (!drag) ry += 0.006; piv.rotation.set(rx, ry, 0); r.render(sc, cam); requestAnimationFrame(loop); }; loop();
-  ROCK.stop = () => { alive = false; r.dispose(); ROCK.stop = null; };
+  const pts = new Map(); let pinch = 0;      // one finger turns it, two pinch to zoom
+  cv.addEventListener('pointerdown', e => { pts.set(e.pointerId, [e.clientX, e.clientY]); cv.setPointerCapture(e.pointerId); pinch = 0; });
+  cv.addEventListener('pointermove', e => {
+    const p = pts.get(e.pointerId); if (!p) return;
+    if (pts.size === 1) { ry += (e.clientX - p[0]) * 0.01; rx += (e.clientY - p[1]) * 0.01; }
+    pts.set(e.pointerId, [e.clientX, e.clientY]);
+    if (pts.size === 2) { const [a, b] = [...pts.values()], d = Math.hypot(a[0] - b[0], a[1] - b[1]); if (pinch) zoom = Math.max(0.6, Math.min(4, zoom * d / pinch)); pinch = d; }
+  });
+  const up = e => { pts.delete(e.pointerId); pinch = 0; }; cv.addEventListener('pointerup', up); cv.addEventListener('pointercancel', up);
+  cv.addEventListener('wheel', e => { e.preventDefault(); zoom = Math.max(0.6, Math.min(4, zoom * Math.exp(-e.deltaY * 0.0015))); }, { passive: false });
+  const loop = () => { if (!alive) return; if (!pts.size) ry += 0.006; piv.rotation.set(rx, ry, 0); cam.position.set(0, 0, 0.09 / zoom); r.render(sc, cam); requestAnimationFrame(loop); }; loop();
+  ROCK.stop = () => { alive = false; removeEventListener('resize', fit); r.dispose(); ROCK.stop = null; };
 }
 SITES.forEach(st => { const b = document.createElement('button'); b.className = st.kind === 'find' ? 'site find' : 'site'; b.innerHTML = `<i></i>${st.label || st.name}`; b.addEventListener('click', () => openSite(st)); $('sites').appendChild(b); st.el = b; });
 function siteMarks() {      // shown when near, or when looked at fairly directly; fading out with distance and off to the side
@@ -2146,6 +2159,23 @@ function stepCrew(dt) {
    suits, a scoop of the ground, and back aboard. The card opens as the sample comes up. The rover is held still meanwhile. */
 const SAMPLE = { on: false, t: 0, st: null, opened: false, scoop: null };
 const SEAT1 = new THREE.Vector3(-0.66, 0.16, 0.33), OUT1 = new THREE.Vector3(-0.5, 0, 1.2), SPOT1 = new THREE.Vector3(0.2, 0, 2.25);
+// Where Schmitt climbs out on his own: stop the rover at the station and he takes its sample, as the crew did there
+const STOPS = [
+  { find: '76535,0', in: (x, z) => Math.hypot(x - BOULDER.x, z - BOULDER.z) < 30, what: 'a sample beside the boulder' },
+  { find: '79115,0', in: (x, z) => Math.abs(Math.hypot(x - VAN.x, z - VAN.z) - 50) < 22, what: 'a piece of a boulder on the rim' },
+  { find: '74220,0', in: (x, z) => Math.abs(Math.hypot(x - SHORTY.x, z - SHORTY.z) - SHORTY.R) < 22, what: 'the orange soil' },
+].map(o => Object.assign(o, { here: false, done: false, hint: false, still: 0 }));
+function sampleStops(dt) {
+  const busy = SAMPLE.on || CRASH.on || HOME.on || INTRO.on || BRIEF.on || REPLAY.on || RUN.on, sp = Math.hypot(car.v.x, car.v.z);
+  for (const o of STOPS) {
+    const here = o.in(car.p.x, car.p.z);
+    if (!here) { o.here = o.done = o.hint = false; o.still = 0; continue; }      // gone: on the next visit, again
+    o.here = true; if (busy || o.done) continue;
+    if (!o.hint) { o.hint = true; toast(`Stop here and Schmitt climbs out for ${o.what}`); }
+    o.still = sp < 0.4 ? o.still + dt : 0;
+    if (o.still > 0.8) { const st = SITES.find(q => q.name === o.find); if (st && startSample(st)) { o.done = true; toast('Harrison Schmitt climbs out to take the sample'); } }
+  }
+}
 function startSample(st) {
   if (SAMPLE.on || !CREW[1] || !CREW[1].visible || CRASH.on || car.v.length() > 1.2) return false;
   Object.assign(SAMPLE, { on: true, t: 0, st, opened: false });

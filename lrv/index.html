@@ -31,7 +31,7 @@
     letter-spacing:.14em;text-transform:uppercase;color:#E6CC85;text-shadow:0 1px 3px #000;pointer-events:none;font-variant-numeric:tabular-nums}
   #toast{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 108px);transform:translateX(-50%);z-index:21;background:var(--panel);
     border:1px solid var(--line);border-left:2px solid var(--gold);border-radius:7px;padding:7px 12px;font-size:11px;color:var(--hi);
-    opacity:0;transition:opacity .25s;pointer-events:none;white-space:nowrap;max-width:92vw;overflow:hidden;text-overflow:ellipsis}
+    opacity:0;transition:opacity .25s;pointer-events:none;width:max-content;max-width:min(420px,88vw);text-align:center;line-height:1.45}
   #toast.on{opacity:1}
   #edgewarn{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 146px);transform:translateX(-50%);z-index:21;background:var(--panel);
     border:1px solid var(--line);border-left:2px solid #E68C5A;border-radius:7px;padding:8px 13px;font-size:11.5px;line-height:1.45;color:var(--hi);
@@ -86,7 +86,14 @@
   #menu .btn:first-of-type{margin-top:4px}
   .pick.det{grid-template-columns:repeat(5,1fr)}
   .pick.cam{grid-template-columns:repeat(4,1fr)}
-  .rock3d canvas{display:block;margin:0 auto;cursor:grab;touch-action:none;border-radius:8px;background:radial-gradient(circle at 50% 45%,#2a2733,#0d0a18 70%)}
+  .rock3d{position:relative}
+  .rock3d canvas{display:block;width:100%;margin:0 auto;cursor:grab;touch-action:none;border-radius:8px;background:radial-gradient(circle at 50% 45%,#2a2733,#0d0a18 70%)}
+  .rock-fs{position:absolute;right:8px;top:8px;font:inherit;font-size:9px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:var(--gold);background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 11px;cursor:pointer}
+  #sc-b .rock3d.big{position:fixed;inset:0;z-index:60;margin:0;background:#0d0a18}
+  .rock3d.big canvas{border-radius:0;width:100vw;height:100vh}
+  .rock3d.big .rock-fs{top:calc(env(safe-area-inset-top,0px) + 12px);right:14px}
+  #sc-b .rock3d.big figcaption{position:absolute;left:16px;right:16px;bottom:calc(env(safe-area-inset-bottom,0px) + 14px);text-align:center}
+  #sitecard.wide .card{max-width:640px}
   .setgo{display:flex;gap:8px;margin-top:6px;flex-wrap:wrap}
   .setgo .btn{flex:1}
   .pick{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin:0 0 16px}
