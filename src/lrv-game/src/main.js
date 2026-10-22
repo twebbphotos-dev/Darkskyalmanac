@@ -1751,7 +1751,9 @@ function prepSuit(src) {
       V.fromBufferAttribute(p, i); N.fromBufferAttribute(n, i); const sd = Math.sign(V.x) || 1;
       // the arm: points along the line from the shoulder down to the hand, raised to level, blended in at the armpit
       const dx = Math.abs(V.x) - PIV[0], dy = V.y - PIV[1], t = dx * Math.cos(TH) - dy * Math.sin(TH), r = Math.abs(dx * Math.sin(TH) + dy * Math.cos(TH));
-      const wArm = V.y > 0.86 && !hard ? ss(-0.04, 0.07, t) * ss(0.16, 0.11, r) * ss(1.62, 1.5, V.y) : 0;
+      // outside the torso only: the torso's side below the armpit lies close to that slanting line too, and used to go up with the arm and stretch
+      const out = V.y > 1.36 ? 1 : ss(0.2, 0.235, Math.abs(V.x));
+      const wArm = V.y > 0.86 && !hard ? ss(-0.04, 0.07, t) * ss(0.12, 0.085, r) * ss(1.62, 1.5, V.y) * out : 0;
       if (wArm > 0) { const a = TH * wArm * sd, c = Math.cos(a), s = Math.sin(a), lx = V.x - sd * ROT[0], ly = V.y - ROT[1];
         V.x = sd * ROT[0] + lx * c - ly * s; V.y = ROT[1] + lx * s + ly * c; const nx = N.x * c - N.y * s; N.y = N.x * s + N.y * c; N.x = nx; }
       // the shoulders and chest broadened (the arms move out with them), the cloth filled out
@@ -1812,7 +1814,7 @@ function buildCrew(src) {
       const w = [];      // [bone, weight]: blended across the waist, knees, shoulders and elbows, so the suit bends instead of breaking
       if (o.userData.addon === 'pack') w.push([7, 1]);
       else if (y0 > 1.15 && ax > 0.24) {
-        const wa = Math.max(ss(0.24, 0.4, ax) * ss(1.15, 1.3, y0), ss(0.36, 0.42, ax)), wf = ss(0.46, 0.54, ax);      // past the armpit it is all arm, the drooping fingertips too
+        const wa = Math.max(ss(0.22, 0.31, ax) * ss(1.26, 1.31, y0), ss(0.34, 0.4, ax)), wf = ss(0.46, 0.54, ax);      // the torso's side below the arm (under 1.29 m) stays torso: tied to the arm, it was dragged into a sheet when the arm came down      // past the armpit it is all arm, the drooping fingertips too
         w.push([0, 1 - wa], [5 + r, wa * (1 - wf)], [8 + r, wa * wf]);
       } else {
         const wt = ss(hipY - 0.06, hipY + 0.1, y0), wk = ss(kneeY - 0.05, kneeY + 0.05, y0);

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.03 (zion-sky-v472)
+Lunar Rover: no more stretched torso fabric at the astronauts' sides. The fabric of the torso's side below the armpit was partly tied to the upper arm (in the rig, and in raising the arms from the model's A-pose), so when an arm came down to the seat it dragged that fabric into a smooth stretched sheet. Now only fabric at the arm itself moves with it, blended over a narrower band at the shoulder.
+
 ## v5.02 (zion-sky-v471)
 Lunar Rover: the astronauts' shoulders back close to the original model (broadened 1 cm a side instead of 4, the chest 3 % deeper instead of 10 %, the arms turned about a point only a little above the armpit), keeping the cloth filled out as a pressurized suit. The arm rig and the seat grips follow the new arm.
 
