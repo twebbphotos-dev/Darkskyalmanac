@@ -1,0 +1,11 @@
+import { NodeIO } from '@gltf-transform/core';
+import { ALL_EXTENSIONS, EXTMeshoptCompression } from '@gltf-transform/extensions';
+import { weld, simplify, prune, dedup, normals } from '@gltf-transform/functions';
+import { MeshoptEncoder, MeshoptDecoder, MeshoptSimplifier } from 'meshoptimizer';
+const [,, inp, out, ratio] = process.argv;
+await MeshoptEncoder.ready; await MeshoptSimplifier.ready;
+const io = new NodeIO().registerExtensions(ALL_EXTENSIONS).registerDependencies({ 'meshopt.encoder': MeshoptEncoder, 'meshopt.decoder': MeshoptDecoder });
+const doc = await io.read(inp);
+await doc.transform(weld({}), simplify({ simplifier: MeshoptSimplifier, ratio: +ratio, error: 0.004 }), normals({ overwrite: true }), dedup(), prune());
+doc.createExtension(EXTMeshoptCompression).setRequired(true).setEncoderOptions({ method: EXTMeshoptCompression.EncoderMethod.QUANTIZE });
+await io.write(out, doc);

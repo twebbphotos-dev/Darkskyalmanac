@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.08 (zion-sky-v477)
+Lunar Rover: the rag dolls' joints bend only as a body does. Elbows and knees are hinges, from straight to about 145° and 140°, one way only, with a little give sideways; hips from about 20° behind to 120° forward. Each is a hard stop, applied again after every physics step, so even a violent tumble stays within 2° of the limits (a soft spring had let elbows fold 150° backward). Thrown or rolling, each astronaut instinctively reaches for the ground with both arms to catch himself. At a discovery, Harrison Schmitt climbs out, lopes a few steps from the rover, takes the sample with the long-handled scoop the Apollo crews used (so they need not kneel in the stiff suits) and climbs back aboard; the card opens as the sample comes up, and the rover is held still meanwhile. The 76535 card shows the sample itself in 3D, turning, from NASA Astromaterials 3D's photogrammetry scan of 76535,0 (public domain; drag to turn it). Shorty matches the Station 4 photographs more closely: its floor and lower walls heaped with angular blocks, a big boulder on the rim with smaller blocks round it, and the orange soil one compact, mottled rust-orange patch beside it, a few meters long, instead of broad patches along the rim.
+
 ## v5.07 (zion-sky-v476)
 Lunar Rover: the discovery and site markers grow as the mouse comes near (up to 1.6 times) and have a larger invisible tap area for fingers, so they are easier to hit. Hard bumps and crashes vibrate the device where the browser allows it (Android; Safari on iPhone does not let web pages vibrate). On tablets the joystick sits further in from the corner and a little larger.
 

@@ -89,19 +89,27 @@ const craters = [], rocks = [], VAN = { x: 0, z: 0 }, SHORTY = { x: -158, z: 62,
   for (let i = craters.length - 1; i >= 0; i--) if (Math.hypot(craters[i].x - SHORTY.x, craters[i].z - SHORTY.z) < SHORTY.R * 1.25 + craters[i].R * 0.5) craters.splice(i, 1);
   { const v = rng(74); craters.push({ x: SHORTY.x, z: SHORTY.z, R: SHORTY.R, fresh: 0.5, depth: 14, rim: 2.2 });
     for (let i = 0; i < 70; i++) { const a = v() * 6.2832, d = SHORTY.R * (0.9 + Math.pow(v(), 1.5) * 0.8);
-      rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.08 + Math.pow(v(), 4) * 0.8, yaw: v() * 6.28, k: v() }); } }
+      rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.08 + Math.pow(v(), 4) * 0.8, yaw: v() * 6.28, k: v() }); }
+    // as the Station 4 photographs show it: the floor and lower walls heaped with angular blocks, a mound of them in the
+    // middle; and on the rim where the orange soil was found, a big boulder with smaller blocks round it
+    for (let i = 0; i < 300; i++) { const a = v() * 6.2832, d = SHORTY.R * (Math.pow(v(), 0.7) * 0.64);
+      rocks.push({ x: SHORTY.x + Math.cos(a) * d, z: SHORTY.z + Math.sin(a) * d, s: 0.25 + Math.pow(v(), 2.2) * 1.6 * (1.25 - d / SHORTY.R), yaw: v() * 6.28, k: v(), bury: 0.32 }); }      // fresh blocks, less buried than the old ones out on the plain
+    const bx = SHORTY.x + Math.cos(2.27) * SHORTY.R * 1.13, bz = SHORTY.z + Math.sin(2.27) * SHORTY.R * 1.13;
+    rocks.push({ x: bx, z: bz, s: 1.7, yaw: 0.6, k: 0.3, bury: 0.22 });
+    for (let i = 0; i < 14; i++) { const a = v() * 6.2832, d = 2 + v() * 7; rocks.push({ x: bx + Math.cos(a) * d, z: bz + Math.sin(a) * d, s: 0.15 + Math.pow(v(), 2) * 0.55, yaw: v() * 6.28, k: v(), bury: 0.4 }); } }
 }
-// The orange soil: glass beads from fire-fountain eruptions, buried under later lava and dug out by the impact. Schmitt
-// found it as a narrow zone on the rim, not a ring round the crater: here two patches on the rim, the larger where the
-// sample was scooped (74220), elongated along the rim and broken up at the edges. A light tint on the ground's own color.
-const ORANGE = [[2.4, 1.02, 0.15, 0.09, 1], [2.95, 1.06, 0.08, 0.06, 0.7]];      // angle round the rim, distance out (radii), spread along and across, strength
+// The orange soil: glass beads from fire-fountain eruptions, buried under later lava and dug out by the impact. In the
+// Station 4 photographs (AS17-137-20990) it is one compact patch on the rim beside a big boulder, a meter or two across
+// where the crew trenched it, rust-orange and mottled, gray soil all round: here a patch a few meters long where 74220
+// was scooped, and a fainter trace beside it.
+const ORANGE = [[2.4, 1.05, 0.05, 0.035, 1], [2.47, 1.0, 0.02, 0.018, 0.55]];      // angle round the rim, distance out (radii), spread along and across, strength
 function orangeAt(x, z) {
   const dx = x - SHORTY.x, dz = z - SHORTY.z, d = Math.hypot(dx, dz) / SHORTY.R; if (d < 0.75 || d > 1.35) return 0;
   const a = Math.atan2(dz, dx); let w = 0;
   for (const [a0, d0, sa, sd, k] of ORANGE) { let da = a - a0; da -= 6.2832 * Math.round(da / 6.2832); w = Math.max(w, k * Math.exp(-(da * da) / (2 * sa * sa) - ((d - d0) * (d - d0)) / (2 * sd * sd))); }
-  return w < 0.02 ? 0 : ss(0.15, 0.55, w * (0.6 + 0.8 * fbm(x / 5 + 3, z / 5 - 5, 3)));
+  return w < 0.02 ? 0 : ss(0.12, 0.6, w * (0.5 + 1.0 * fbm(x / 1.6 + 3, z / 1.6 - 5, 3)));      // mottled at the scale of the trench
 }
-const tintOrange = (b, w, out) => { out[0] = b * (1 + 0.38 * w); out[1] = b * (1 + 0.06 * w); out[2] = b * (1 - 0.36 * w); return out; };
+const tintOrange = (b, w, out) => { out[0] = b * (1 + 0.62 * w); out[1] = b * (1 + 0.04 * w); out[2] = b * (1 - 0.5 * w); return out; };      // the rust-orange of the photographs
 const CG = 16, CRATER_GRID = new Map();      // craters by 16 m cell, so each point checks only its neighbors
 function indexCraters() { craters.forEach(c => { const e = c.R * 2.2; for (let a = Math.floor((c.x - e) / CG); a <= Math.floor((c.x + e) / CG); a++) for (let b = Math.floor((c.z - e) / CG); b <= Math.floor((c.z + e) / CG); b++) { const k = a + ',' + b; if (!CRATER_GRID.has(k)) CRATER_GRID.set(k, []); CRATER_GRID.get(k).push(c); } }); }
 function craterH(x, z) {
@@ -158,7 +166,7 @@ function indexRocks() { for (let i = rocks.length - 1; i >= 0; i--) if (Math.hyp
 function rockH(x, z) {
   let h = 0; const gx = Math.floor(x / RG), gz = Math.floor(z / RG);
   for (let a = -1; a <= 1; a++) for (let b = -1; b <= 1; b++) { const l = ROCK_GRID.get((gx + a) + ',' + (gz + b)); if (!l) continue;
-    for (const n of l) { const k = rocks[n], d2 = ((x - k.x) ** 2 + (z - k.z) ** 2) / (k.s * k.s); if (d2 < 1) h = Math.max(h, k.s * 0.55 * Math.sqrt(1 - d2)); } }
+    for (const n of l) { const k = rocks[n], d2 = ((x - k.x) ** 2 + (z - k.z) ** 2) / (k.s * k.s); if (d2 < 1) h = Math.max(h, k.s * Math.max(0.55, 0.68 - (k.bury ?? 0.62)) * Math.sqrt(1 - d2)); } }
   return h;
 }
 /* Craterlets a few tens of centimeters to a meter or two across, and the grain of the soil: too small for the
@@ -528,7 +536,7 @@ function rockMeshes() {
   geo.computeVertexNormals();
   const im = new THREE.InstancedMesh(geo, new THREE.MeshStandardMaterial({ color: 0x77736d, roughness: .95, flatShading: true }), rocks.length);
   const o = new THREE.Object3D();
-  rocks.forEach((k, n) => { o.position.set(k.x, groundBase(k.x, k.z) + microRaw(k.x, k.z) - k.s * 0.62, k.z); o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(n, o.matrix); });
+  rocks.forEach((k, n) => { o.position.set(k.x, groundBase(k.x, k.z) + microRaw(k.x, k.z) - k.s * (k.bury ?? 0.62), k.z); /* most sit 62 % buried; fresh blocks stand higher */ o.rotation.set(0, k.yaw, 0); o.scale.setScalar(k.s); o.updateMatrix(); im.setMatrixAt(n, o.matrix); });
   // Each rock is mostly buried, only its top showing, and the ground casts no shadow of its own: so on a slope facing
   // away from the Sun (a crater wall) the buried part used to throw a shadow up through the ground, a dark blot with no
   // rock to explain it. Only the part above the ground casts one now.
@@ -1041,7 +1049,7 @@ function speedRecord(kmh, grounded, dt) {
 }
 /* A catastrophic crash, rolling onto the roof hard or tumbling at speed: the rover breaks apart, pieces fly in clean
    lunar arcs and bounce, and after a few seconds it is back on its wheels where it last drove safely. */
-const CRASH = { roof: 0, on: false, t: 0, fade: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, pieces: [], joints: [], extra: [] };      // extra: the crew's skinned meshes
+const CRASH = { roof: 0, on: false, t: 0, fade: 0, safe: { x: 0, z: 0, yaw: 0 }, safeT: 0, pieces: [], joints: [], extra: [], brace: [] };      // extra: the crew's skinned meshes
 /* The pieces are the rover itself: each wheel whole, and the rest cut into chunks by where they sit (a 4 × 2 × 2 grid
    over the chassis), with their own textures. Built once, after the wheels are rigged. They fade out after 10 s. */
 const DEBRIS = [], DEBRIS_MATS = new Map();
@@ -1104,7 +1112,7 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
   buzz([70, 50, 140, 40, 60]);      // a crash: felt, where the phone allows it (Android; iPhone Safari has no vibration for web pages)
   const k = Math.max(0, Math.min(1, (hit - 3.5) / 8));      // 0 a slow roll onto the roof .. 1 a hard tumble
   CRASH.on = true; CRASH.t = 0; CRASH.fade = 0; rover.visible = false; CRASH.id = (CRASH.id || 0) + 1;
-  CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = [];
+  CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = []; CRASH.brace = [];
   DEBRIS_MATS.forEach(m => { m.opacity = 1; m.transparent = false; m.needsUpdate = true; });
   rover.updateMatrixWorld(true);
   const mesh = d => { const g = new THREE.Group(); g.userData.part = true; d.parts.forEach(({ geo, mat }) => { const n = new THREE.Mesh(geo, mat); n.castShadow = true; g.add(n); }); return g; };
@@ -1162,7 +1170,8 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
       let geo = g; if (pack) { geo = new THREE.BufferGeometry(); for (const a in g.attributes) geo.setAttribute(a, g.attributes[a]); geo.setIndex(loose); }
       const sk = new THREE.SkinnedMesh(geo, mat); sk.castShadow = true; sk.frustumCulled = false; sk.bind(skel, new THREE.Matrix4()); scene.add(sk); CRASH.extra.push(sk);
     }
-    for (const [a, b2, at] of CREW_JOINTS) CRASH.joints.push({ A: segP[a], B: segP[b2], la: at.clone().sub(CREW_SEG[a].c), lb: at.clone().sub(CREW_SEG[b2].c) });
+    for (const [a, b2, at] of CREW_JOINTS) CRASH.joints.push({ A: segP[a], B: segP[b2], la: at.clone().sub(CREW_SEG[a].c), lb: at.clone().sub(CREW_SEG[b2].c), lim: jointLimit(a, b2) });
+    CRASH.brace.push({ T: segP[0], arms: [-1, 1].map(sd => { const [u, f] = armBones(sd); return [segP[u], segP[f], armDir(sd), sd]; }) });
   }
 
 
@@ -1175,8 +1184,47 @@ function breakApart(hit = 8) {      // hit: how hard, m/s
   toast(k < 0.4 ? 'Rollover · the rover is wrecked' : 'Crash · the rover breaks apart');
 }
 const _ja = new THREE.Vector3(), _jb = new THREE.Vector3(), _je = new THREE.Vector3(), _jv = new THREE.Vector3(), _jt = new THREE.Vector3();
+/* How far the rag dolls' joints bend, measured from the suit's rest (seated, arms 30° down and straight). Elbows and knees
+   are hinges: they bend one way only, from straight to about 145° (elbow) or 140° (knee), with a little give sideways.
+   Hips swing from about 20° behind the body to 120° forward. Shoulders are left free. Each limit is [hinge axis in the
+   body part's own frame, least and most turn about it (radians), give off the hinge]. */
+const armDir = sd => new THREE.Vector3(sd * (ARM.H.x - ARM.S.x), ARM.H.y - ARM.S.y, ARM.H.z - ARM.S.z).normalize();
+function jointLimit(a, b) {
+  if (b === 3 || b === 4) return { k: new THREE.Vector3(1, 0, 0), lo: -1.5, hi: 0.85, tol: 0.15 };      // knee: seated it is bent 90°
+  if (b === 1 || b === 2) return { k: new THREE.Vector3(1, 0, 0), lo: -0.5, hi: 1.92, tol: 0.6 };      // hip: seated, 90° forward
+  if (b === 8 || b === 9) { const d = armDir(b === 8 ? -1 : 1); return { k: d.clone().cross(new THREE.Vector3(0, 0, 1)).normalize(), lo: -0.05, hi: 2.5, tol: 0.35 }; }      // elbow: the forearm folds forward
+  return null;
+}
+const _lq = new THREE.Quaternion(), _lr = new THREE.Vector3(), _lp = new THREE.Vector3(), _le = new THREE.Vector3(), _lw = new THREE.Vector3(), _bt = new THREE.Vector3(), _bc = new THREE.Vector3(), _bf = new THREE.Vector3(), _bs = new THREE.Vector3();
+function limitJoint(J, h) {      // a stiff, damped stop where the joint runs out of travel
+  const L = J.lim, A = J.A, B = J.B; _lq.copy(A.m.quaternion).invert().multiply(B.m.quaternion); if (_lq.w < 0) { _lq.x *= -1; _lq.y *= -1; _lq.z *= -1; _lq.w *= -1; }
+  const ang = 2 * Math.acos(Math.min(1, _lq.w)), sn = Math.sqrt(Math.max(1e-12, 1 - _lq.w * _lq.w)); _lr.set(_lq.x, _lq.y, _lq.z).multiplyScalar(ang / sn);      // the turn as a rotation vector
+  const th = _lr.dot(L.k); _lp.copy(_lr).addScaledVector(L.k, -th); const pl = _lp.length();
+  _le.copy(L.k).multiplyScalar(th - Math.max(L.lo, Math.min(L.hi, th))); if (pl > L.tol) _le.addScaledVector(_lp, 1 - L.tol / pl);
+  const el = _le.length(); if (el < 1e-4) return;
+  // a hard stop: the two parts are turned back to the limit at once (each by its share), and any turning further into it is taken out
+  _le.applyQuaternion(A.m.quaternion); const dir = _bt.copy(_le).divideScalar(el);
+  const iA = A.inv * 3 / (A.I.x + A.I.y + A.I.z), iB = B.inv * 3 / (B.I.x + B.I.y + B.I.z), fA = iA / (iA + iB), fB = iB / (iA + iB);
+  B.m.quaternion.premultiply(_lq.setFromAxisAngle(dir, -el * fB)).normalize(); A.m.quaternion.premultiply(_lq.setFromAxisAngle(dir, el * fA)).normalize();
+  const into = _lw.copy(B.w).sub(A.w).dot(dir); if (into > 0) { B.w.addScaledVector(dir, -into * fB); A.w.addScaledVector(dir, into * fA); }
+  A.rest = B.rest = false;
+}
+// Thrown or rolling, each instinctively reaches for the ground with both arms, nearly straight, to catch himself
+function brace(h) {
+  if (CRASH.t > 4) return;
+  for (const C of CRASH.brace) {
+    const T = C.T; if (T.rest || (T.v.lengthSq() < 0.3 && T.w.lengthSq() < 2)) continue;      // only while still tumbling
+    const q = T.m.quaternion; _bf.set(0, 0, 1).applyQuaternion(q); _bs.set(1, 0, 0).applyQuaternion(q);
+    for (const [U, F, d, sd] of C.arms) {
+      _bt.set(0, -1, 0).addScaledVector(_bf, 0.35).addScaledVector(_bs, 0.3 * sd).normalize();      // down, a little ahead and out to that side
+      for (const [P, k] of [[U, 30], [F, 18]]) { _bc.copy(d).applyQuaternion(P.m.quaternion).cross(_bt); P.w.addScaledVector(_bc, k * h); P.rest = false; }
+    }
+  }
+}
 function stepJoints(h) {      // the rag dolls' joints: a soft spring and damper pulling the two anchor points together, pushing each part by its share
+  brace(h);
   for (const J of CRASH.joints) {
+    if (J.lim) limitJoint(J, h);
     const A = J.A, B = J.B, ra = _ja.copy(J.la).applyQuaternion(A.m.quaternion), rb = _jb.copy(J.lb).applyQuaternion(B.m.quaternion);
     const e = _je.copy(B.m.position).add(rb).sub(A.m.position).sub(ra);
     const dv = _jv.copy(B.w).cross(rb).add(B.v).sub(_jt.copy(A.w).cross(ra)).sub(A.v);
@@ -1222,9 +1270,9 @@ function stepCrash(dt) {
   }
   if (CRASH.pieces.length && (CRASH.fade += dt) > 10) {      // the wreck fades away after 10 s
     const o = Math.max(0, 1 - (CRASH.fade - 10) / 1.5); DEBRIS_MATS.forEach(m => { if (!m.transparent) { m.transparent = true; m.needsUpdate = true; } m.opacity = o; });
-    if (o === 0) { CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = []; }
+    if (o === 0) { CRASH.pieces.forEach(p => scene.remove(p.m)); CRASH.extra.forEach(m => scene.remove(m)); CRASH.pieces = []; CRASH.joints = []; CRASH.extra = []; CRASH.brace = []; }
   }
-  const n = Math.min(12, Math.ceil(dt * 200)); for (let i = 0; i < n; i++) { stepJoints(dt / n); for (const p of CRASH.pieces) stepDebris(p, dt / n); }
+  const n = Math.min(12, Math.ceil(dt * 200)); for (let i = 0; i < n; i++) { stepJoints(dt / n); for (const p of CRASH.pieces) stepDebris(p, dt / n); for (const J of CRASH.joints) if (J.lim) limitJoint(J); }      // the joint stops once more, after the parts have moved
 }
 let upsideT = 0;
 function recover() { const yaw = Math.atan2(-_fw.z, _fw.x); place(car.p.x, car.p.z, yaw); toast('Back on its wheels'); }
@@ -1257,6 +1305,7 @@ function toDrive() {      // out of the opening film, a time trial's briefing or
   if (BRIEF.on) { BRIEF.on = false; document.body.classList.remove('briefing'); $('cine-cap').classList.remove('on'); BRIEF.cap = ''; }
   if (CRASH.on) { CRASH.on = false; rover.visible = true; }
   if (HOME.on) homeEnd();
+  if (SAMPLE.on) { SAMPLE.t = 99; stepSample(CREW[1], 0.016); }      // back in his seat at once
   RUN.on = false; RUN.save = null; REJOIN.t = 0; $('btn-rejoin').classList.remove('on'); $('clock').textContent = '';
   CREW.forEach(c => { c.visible = true; }); OBJ.live = true; camInit = false;
 }
@@ -1348,7 +1397,8 @@ function frame(now) {
   if (running) {
     const kf = (keys.w || keys.arrowup ? 1 : 0) - (keys.s || keys.arrowdown ? 1 : 0), kt = (keys.a || keys.arrowleft ? 1 : 0) - (keys.d || keys.arrowright ? 1 : 0);
     throttle = kf || stick.y; steerIn = -(kt || -stick.x);
-    if (homeStep(dt)) { throttle = HOME.th; steerIn = HOME.st; }      // Cernan driving, the player's controls set aside
+    if (homeStep(dt)) { throttle = HOME.th; steerIn = HOME.st; }
+    if (SAMPLE.on) { throttle = 0; steerIn = 0; car.v.multiplyScalar(Math.exp(-dt * 3)); }      // held still while he is out      // Cernan driving, the player's controls set aside
     if (Math.abs(throttle) > 0.02 || Math.abs(steerIn) > 0.02) parked = false;
     const n = Math.min(12, Math.ceil(dt / (1 / 240))), h = dt / n;
     if (!CRASH.on) for (let i = 0; i < n; i++) step(h);
@@ -1658,7 +1708,7 @@ const SITES = [
     '<i>The real Shorty is about 4.3 km west of the lander. It is drawn here at its true size but much closer, so the drive to it is short.</i>'] },
   // Discoveries: rocks and soils brought back, each where it was found. Masses and descriptions from the Lunar Sample
   // Compendium and NASA's Astromaterials 3D; img, when given, is a photograph in img/lrv/ (shown only if it loads).
-  { kind: 'find', at: () => [BOULDER.x - 10, BOULDER.z + 9, 2.5], label: '76535 · troctolite', name: '76535,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 6', body: [
+  { kind: 'find', model: '../models/sample-76535.glb', at: () => [BOULDER.x - 10, BOULDER.z + 9, 2.5], label: '76535 · troctolite', name: '76535,0', sub: 'Apollo Lunar Collection · Apollo 17 · Station 6', body: [
     'A troctolite: a coarse-grained igneous rock made almost entirely of large grains of pale green olivine and white plagioclase feldspar. It weighs about 156 g and came back in a rake sample from the soil at Station 6, the stop at the split boulder, on the third moonwalk.',
     'It crystallized deep in the young Moon’s crust about 4.2 to 4.3 billion years ago, slowly enough to grow its large, interlocking grains, and was later dug out by impacts.',
     'Few rocks have been studied so closely. In 2009 researchers at MIT found it weakly magnetized since it formed, evidence that the young Moon had a magnetic field from a molten core. In 2021, chemical differences still preserved inside its crystals showed it must have cooled within about 20 million years, far faster than the more than 100 million years once thought.'] },
@@ -1737,13 +1787,38 @@ $('minimap').addEventListener('click', () => { if (INTRO.on || REPLAY.on || BRIE
 $('mapsheet-close').addEventListener('click', () => { $('mapsheet').classList.remove('on'); running = mapRun; });
 let siteRun = false;
 function openSite(st) {
+  if (st.kind === 'find' && !SAMPLE.on && startSample(st)) return;      // at a find, he climbs out first; the card follows
+  showSiteCard(st);
+}
+function showSiteCard(st) {
   $('sc-t').textContent = st.name; $('sc-s').textContent = st.sub;
   const fig = ([src, cap]) => `<figure><img src="${src}" alt="" loading="lazy" onerror="this.parentNode.remove()"><figcaption>${cap}</figcaption></figure>`;
   $('sc-b').innerHTML = (st.imgs[0] ? fig(st.imgs[0]) : '') + st.body.map(t => `<p>${t}</p>`).join('') + st.imgs.slice(1).map(fig).join('');      // the first picture leads, any others follow the text
+  if (st.model) rockView(st.model);
   $('sitecard').classList.add('on'); siteRun = running; running = false;
   if (st.kind === 'find' && !MAP.seen.has(st.name)) { MAP.seen.add(st.name); try { localStorage.setItem('lrv-found', JSON.stringify([...MAP.seen])); } catch (e) { /* not kept */ } }
 }
-$('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; });
+$('sc-close').addEventListener('click', () => { $('sitecard').classList.remove('on'); running = siteRun; if (ROCK.stop) ROCK.stop(); });
+/* The sample itself, turning in the card: NASA Astromaterials 3D's photogrammetry model of 76535,0 (public domain),
+   reduced (src/lrv-game/tools/sample-*.{py,mjs}). Drag to turn it. */
+const ROCK = { stop: null };
+function rockView(url) {
+  const box = document.createElement('figure'); box.className = 'rock3d'; const cv = document.createElement('canvas'); box.appendChild(cv);
+  const cap = document.createElement('figcaption'); cap.textContent = '76535,0 today, about 2 cm across: the largest piece left after samples were cut for study. Drag to turn it. 3D model: NASA Astromaterials 3D.'; box.appendChild(cap);
+  $('sc-b').prepend(box);
+  const W = Math.min(420, $('sc-b').clientWidth || 360), Hh = Math.round(W * 0.62); cv.width = W * 2; cv.height = Hh * 2; cv.style.width = W + 'px'; cv.style.height = Hh + 'px';
+  const r = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: true }); r.setPixelRatio(1); r.setSize(W * 2, Hh * 2, false); r.outputColorSpace = THREE.SRGBColorSpace;
+  const sc = new THREE.Scene(), cam = new THREE.PerspectiveCamera(30, W / Hh, 0.001, 10); cam.position.set(0, 0, 0.09);
+  sc.add(new THREE.HemisphereLight(0xffffff, 0x404040, 1.4)); const key = new THREE.DirectionalLight(0xffffff, 2.2); key.position.set(0.5, 0.8, 0.6); sc.add(key);
+  const piv = new THREE.Group(); sc.add(piv); let alive = true, rx = 0.3, ry = 0, drag = null;
+  new GLTFLoader().setMeshoptDecoder(MeshoptDecoder).loadAsync(url).then(g => { const o = g.scene, b = new THREE.Box3().setFromObject(o), s2 = 0.035 / b.getSize(new THREE.Vector3()).length();
+    o.scale.setScalar(s2); o.position.copy(b.getCenter(new THREE.Vector3())).multiplyScalar(-s2); piv.add(o); }).catch(() => box.remove());
+  cv.addEventListener('pointerdown', e => { drag = [e.clientX, e.clientY]; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (!drag) return; ry += (e.clientX - drag[0]) * 0.01; rx += (e.clientY - drag[1]) * 0.01; drag = [e.clientX, e.clientY]; });
+  cv.addEventListener('pointerup', () => { drag = null; });
+  const loop = () => { if (!alive) return; if (!drag) ry += 0.006; piv.rotation.set(rx, ry, 0); r.render(sc, cam); requestAnimationFrame(loop); }; loop();
+  ROCK.stop = () => { alive = false; r.dispose(); ROCK.stop = null; };
+}
 SITES.forEach(st => { const b = document.createElement('button'); b.className = st.kind === 'find' ? 'site find' : 'site'; b.innerHTML = `<i></i>${st.label || st.name}`; b.addEventListener('click', () => openSite(st)); $('sites').appendChild(b); st.el = b; });
 function siteMarks() {      // shown when near, or when looked at fairly directly; fading out with distance and off to the side
   camera.updateMatrixWorld();      // this frame's view (lookAt refreshes the matrix before it turns the camera)
@@ -1908,6 +1983,7 @@ function buildCrew(src) {
   parts.forEach(([g]) => g.scale(CREW_K, CREW_K, CREW_K));
   CREW_SEG.forEach(S => { S.c.multiplyScalar(CREW_K); S.size.multiplyScalar(CREW_K); }); CREW_JOINTS.forEach(J => J[2].multiplyScalar(CREW_K));
   if (!ARM.scaled) { ARM.S.multiplyScalar(CREW_K); ARM.E.multiplyScalar(CREW_K); ARM.H.multiplyScalar(CREW_K); ARM.scaled = true; }
+  for (let r = 0; r < 2; r++) LEGJ[r] = { hip: CREW_JOINTS.find(J => J[0] === 0 && J[1] === 1 + r)[2], knee: CREW_JOINTS.find(J => J[0] === 1 + r && J[1] === 3 + r)[2], shin: 0.5 * CREW_K };
   return parts;
 }
 // bone b's skeleton slot: the backpack rides the torso's bone until it breaks loose
@@ -1928,7 +2004,7 @@ function seatCrew(parts) {
   });
 }
 // how each rides: torso stiffness and damping (balance), how far felt gravity sways him, seat cushion stiffness
-const CREW_K = 0.92, BUZZ = { t: 0 };
+const CREW_K = 0.92, BUZZ = { t: 0 }, LEGJ = [];
 // how each rides: torso stiffness and damping (balance; soft, so the body sways), how far felt gravity sways him, seat
 // cushion stiffness, how quickly he reacts to a jolt (seconds), and his own slow fidget; the passenger looks about more
 // how far he holds himself upright when the rover tilts (Cernan, gripping the hand controller, rides with it more), and how far he glances into a slide
@@ -1941,7 +2017,13 @@ function poseCrew(h) {
   const { bones: B, st } = h.userData, P = _cP.set(0, st.y, 0);
   const qt = _cq.setFromUnitVectors(_cY, _ca.set(st.lx, 1, st.lz).normalize()).multiply(_cq2.setFromAxisAngle(_cY, st.yaw));      // lean, then the turn of the shoulders (the helmet is fixed to the suit: to look, he turns)
   setBone(B, 0, qt, _c0.set(0, 0, 0), P);      // the torso swings about the hips
-  for (const b of [1, 2, 3, 4]) setBone(B, b, _cqI, _c0.set(0, 0, 0), P);
+  if (!st.legs) for (const b of [1, 2, 3, 4]) setBone(B, b, _cqI, _c0.set(0, 0, 0), P);
+  else for (let r = 0; r < 2; r++) {      // standing or walking: the thigh swings down from seated (a, + toward straight down), the knee opens (b, - toward straight)
+    const [a, b] = st.legs[r], J = LEGJ[r], qa = _lq.setFromAxisAngle(_lr.set(1, 0, 0), a);
+    setBone(B, 1 + r, qa, J.hip, _lp.copy(J.hip).add(P));
+    const kn = _le.copy(J.knee).sub(J.hip).applyQuaternion(qa).add(J.hip).add(P);
+    setBone(B, 3 + r, _cq2.setFromAxisAngle(_lr.set(1, 0, 0), a + b), J.knee, kn);
+  }
   for (const sd of [-1, 1]) {      // two-bone reach: shoulder, elbow, hand on its grip
     const [u, f] = armBones(sd), S0 = _cb.copy(ARM.S).setX(sd * ARM.S.x), E0 = _cc.copy(ARM.E).setX(sd * ARM.E.x), H0 = _cd.copy(ARM.H).setX(sd * ARM.H.x);
     const L1 = S0.distanceTo(E0), L2 = E0.distanceTo(H0), S = _cS.copy(S0).applyQuaternion(qt).add(P);
@@ -1953,7 +2035,7 @@ function poseCrew(h) {
     if (st.up > 0.01) qu.premultiply(_cq2.setFromAxisAngle(_ce.copy(E).sub(S).normalize(), sd * Math.PI / 4 * st.up));      // hands up: the arm turns so the backs of the gloves face forward (the scan's fingers are curled: palms out read as claws)
     const qf = new THREE.Quaternion().setFromUnitVectors(_ca.copy(H0).sub(E0).normalize().applyQuaternion(qu), _ce.copy(H).sub(E).normalize()).multiply(qu);
     if (st.up > 0.01) qf.premultiply(_cq2.setFromAxisAngle(_ce.copy(H).sub(E).normalize(), sd * Math.PI / 4 * st.up));
-    setBone(B, u, qu, S0, S); setBone(B, f, qf, E0, E);
+    setBone(B, u, qu, S0, S); setBone(B, f, qf, E0, E); (st.hand || (st.hand = [new THREE.Vector3(), new THREE.Vector3()]))[sd < 0 ? 0 : 1].copy(H);
   }
 }
 function stepCrew(dt) {
@@ -1963,6 +2045,7 @@ function stepCrew(dt) {
   for (const h of CREW) {
     const { st, P, grips } = h.userData;
     if (CRASH.on) { Object.assign(st, { lx: 0, lz: 0, vx: 0, vz: 0, y: 0, vy: 0, v: null }); continue; }
+    if (SAMPLE.on && h === CREW[1]) { stepSample(h, dt); continue; }
     // the seat's acceleration, from the rover's motion; then felt gravity and true up in his own frame
     const r = _ca.copy(h.position).applyQuaternion(car.q), v = _cb.copy(car.w).cross(r).add(car.v);
     if (!st.v) st.v = v.clone();
@@ -1992,6 +2075,60 @@ function stepCrew(dt) {
     for (let j = 0; j < 2; j++) st.hands[j].copy(grips[j]).lerp(_c0.set(j ? 0.29 : -0.29, 0.95, 0.2).multiplyScalar(CREW_K), st.up);      // straight up, elbows soft
     poseCrew(h);
   }
+}
+/* At a discovery, Harrison Schmitt climbs out and takes the sample, as the crew did at each station: off the seat, a few
+   loping steps out from the rover, the long-handled scoop the Apollo crews used so they need not kneel in the stiff
+   suits, a scoop of the ground, and back aboard. The card opens as the sample comes up. The rover is held still meanwhile. */
+const SAMPLE = { on: false, t: 0, st: null, opened: false, scoop: null };
+const SEAT1 = new THREE.Vector3(-0.66, 0.16, 0.33), OUT1 = new THREE.Vector3(-0.5, 0, 1.2), SPOT1 = new THREE.Vector3(0.2, 0, 2.25);
+function startSample(st) {
+  if (SAMPLE.on || !CREW[1] || !CREW[1].visible || CRASH.on || car.v.length() > 1.2) return false;
+  Object.assign(SAMPLE, { on: true, t: 0, st, opened: false });
+  if (!SAMPLE.scoop) {      // the scoop: an aluminium extension handle about 75 cm long and a small pan at its end
+    const g = new THREE.Group(), m = new THREE.MeshStandardMaterial({ color: 0xb8b4ac, roughness: 0.5, metalness: 0.6 });
+    const rod = new THREE.Mesh(new THREE.CylinderGeometry(0.012, 0.012, 1, 8), m); rod.position.y = 0.5; g.add(rod);
+    const pan = new THREE.Mesh(new THREE.BoxGeometry(0.09, 0.03, 0.12), m); pan.position.y = 1; g.add(pan); g.userData.pan = pan;
+    g.traverse(o => { o.castShadow = true; }); SAMPLE.scoop = g;
+  }
+  CREW[1].add(SAMPLE.scoop); SAMPLE.scoop.visible = true; return true;
+}
+const lerpV = (a, b, u, out) => out.copy(a).lerp(b, u);
+function stepSample(h, dt) {
+  const T = (SAMPLE.t += dt), st = h.userData.st, sm = (a, b) => ss(a, b, T), K = CREW_K, sd = st;
+  const walk = (a, b) => { const u = Math.max(0, Math.min(1, (T - a) / (b - a))); return { u: u * u * (3 - 2 * u), on: u > 0 && u < 1, ph: (T - a) * 7.5 }; };
+  // where he is (rover frame), which way he faces, and how his legs are
+  let pos = new THREE.Vector3(), face, legs, lean = 0, hands;
+  const stand = [1.45, -1.35], sit = [0, 0], down = (j) => _c0.set(j ? 0.24 : -0.24, -0.38, 0.06).multiplyScalar(K).clone();
+  if (T < 1.1) { const u = sm(0, 1.1); lerpV(SEAT1, OUT1, sm(0.2, 1.1), pos); pos.y = 0; face = Math.PI / 2 * (1 - u); legs = [stand.map(v => v * u), stand.map(v => v * u)]; hands = null; }
+  else if (T < 2.7) { const w = walk(1.1, 2.7); lerpV(OUT1, SPOT1, w.u, pos); face = Math.atan2(SPOT1.x - OUT1.x, SPOT1.z - OUT1.z); const sw = 0.32 * Math.sin(w.ph); legs = [[stand[0] + sw, stand[1] - Math.max(0, -sw) * 0.8], [stand[0] - sw, stand[1] - Math.max(0, sw) * 0.8]]; pos.y = 0.05 * Math.abs(Math.sin(w.ph)); }
+  else if (T < 6.2) { pos.copy(SPOT1); face = 0; legs = [[1.25, -1.0], [1.3, -1.1]]; lean = 0.18; }
+  else if (T < 7.8) { const w = walk(6.2, 7.8); lerpV(SPOT1, OUT1, w.u, pos); face = Math.atan2(OUT1.x - SPOT1.x, OUT1.z - SPOT1.z); const sw = 0.32 * Math.sin(w.ph); legs = [[stand[0] + sw, stand[1] - Math.max(0, -sw) * 0.8], [stand[0] - sw, stand[1] - Math.max(0, sw) * 0.8]]; pos.y = 0.05 * Math.abs(Math.sin(w.ph)); }
+  else if (T < 9) { const u = 1 - sm(7.8, 9); lerpV(SEAT1, OUT1, 1 - sm(7.8, 8.7), pos); pos.y = 0; face = Math.PI / 2 * (1 - u); legs = [stand.map(v => v * u), stand.map(v => v * u)]; }
+  else {      // back in his seat
+    SAMPLE.on = false; SAMPLE.scoop.visible = false; h.position.copy(SEAT1); h.rotation.y = Math.PI / 2; st.legs = null; st.hands[0].copy(h.userData.grips[0]); st.hands[1].copy(h.userData.grips[1]); st.v = null; poseCrew(h); return;
+  }
+  // the height that puts his boots on the ground: hip to sole for this leg pose, and the ground beneath, in the rover's frame
+  st.legs = legs; st.lx = 0; st.lz = lean; st.yaw = 0; st.y = 0; st.up = 0;
+  const qa = _lq.setFromAxisAngle(_lr.set(1, 0, 0), legs[0][0]), knee = _le.copy(LEGJ[0].knee).sub(LEGJ[0].hip).applyQuaternion(qa);
+  const sole = knee.add(_lp.set(0, -LEGJ[0].shin, 0).applyQuaternion(_cq2.setFromAxisAngle(_lr.set(1, 0, 0), legs[0][0] + legs[0][1])));
+  const seated = T < 1.1 ? 1 - sm(0, 1.1) : T >= 7.8 ? sm(7.8, 9) : 0;
+  const wp = rover.localToWorld(_bt.set(pos.x, 0, pos.z)), gy = rover.worldToLocal(_bc.set(wp.x, ground(wp.x, wp.z), wp.z)).y;
+  const yStand = gy - sole.y + pos.y;
+  h.position.set(pos.x, SEAT1.y + (yStand - SEAT1.y) * (1 - seated), pos.z); h.rotation.y = face;
+  // hands: on the seat while getting up and down, at his sides while walking, the scoop in his right at the spot
+  const g = h.userData.grips;
+  if (T < 1.1 || T >= 7.8) { st.hands[0].copy(g[0]).lerp(down(0), 1 - seated); st.hands[1].copy(g[1]).lerp(down(1), 1 - seated); }
+  else if (T < 2.7 || T >= 6.2) { st.hands[0].copy(down(0)); st.hands[1].copy(down(1)); }
+  else { const dig = sm(3.1, 3.9) - sm(4.4, 5.2); st.hands[0].set(-0.14, -0.08 + 0.1 * sm(4.4, 5.2), 0.32).multiplyScalar(K); st.hands[1].set(0.18, -0.2, 0.2).multiplyScalar(K); st.hands[0].z += 0.06 * dig; }
+  poseCrew(h);
+  // the scoop: from his right glove down and forward to the ground, sweeping in, then lifted with the sample
+  const sc = SAMPLE.scoop, hand = st.hand[0], show = T > 2.4 && T < 6.6;
+  sc.visible = show;
+  if (show) {
+    const tipY = gy - h.position.y + 0.03 + 0.45 * sm(4.4, 5.4), tip = _bs.set(-0.12 * K, tipY, (0.82 - 0.2 * sm(3.1, 3.9)) * K);
+    const dir = tip.clone().sub(hand), len = dir.length(); sc.position.copy(hand); sc.quaternion.setFromUnitVectors(_cY, dir.normalize()); sc.scale.set(1, len, 1); sc.userData.pan.scale.set(1, 1 / len, 1);
+  }
+  if (!SAMPLE.opened && T > 4.6) { SAMPLE.opened = true; showSiteCard(SAMPLE.st); }      // the sample comes up: the card
 }
 function handController() {      // the T-handle on its post between the seats
   const g = new THREE.Group(), mat = new THREE.MeshStandardMaterial({ color: 0x3a3a3c, roughness: 0.6, metalness: 0.4 });

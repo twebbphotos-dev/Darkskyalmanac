@@ -171,3 +171,5 @@ v5.04: prepSuit raises the arms by TH (15°) about ROT, selecting arm points alo
 v5.05: EARTH_SKY (from tools/earth-sky.mjs) places and turns Earth; models/earth-bm.jpg (Blue Marble, 1024 x 512) with drawn clouds. pov 3 = Low; POV_ORDER cycles chase, low, wide, seat; seat look from ORB.yaw/pitch. CRASH.cam picks one of three crash shots per crash (CRASH.id).
 
 v5.06: buildGround fits a plane (LM.plane) over 14 m and blends toward it within 22 m; indexRocks clears 7 m round LM; the LM is tilted to its four pads and set by its lowest point.
+
+v5.08: jointLimit/limitJoint (hinge limits as hard stops, also after each debris substep), brace() (arms toward the ground while tumbling, first 4 s). SAMPLE/startSample/stepSample: the passenger walk-out with st.legs [thigh, knee] per side (LEGJ), the scoop. rockView: three.js viewer of models/sample-76535.glb in the card (tools/sample-obj2gltf.py, sample-simplify.mjs). Rocks may carry bury (default 0.62).
