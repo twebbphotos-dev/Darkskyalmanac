@@ -2,8 +2,8 @@
 
 Offline astronomy PWA at **app.darkskyalmanac.com**. Built and owned by Tyler Webb (Zion Canyon Light, Springdale UT). Solo developer. Tested on a physical iPhone in Safari.
 
-**Current release: v5.24, service-worker cache `zion-sky-v493`.**
-Next release: v5.25, cache `zion-sky-v494`.
+**Current release: v5.25, service-worker cache `zion-sky-v494`.**
+Next release: v5.26, cache `zion-sky-v495`.
 
 Read `docs/HANDOFF.md` for history, open items and how the work used to run. Read `docs/STAR-ID.md` before touching anything in `solver/`.
 
@@ -37,7 +37,7 @@ The repo root is the site root. There is no build step: each page is a standalon
 index.html            Home (canonical 7-item nav: Home · Forecast · Objects · Map · Tools · Finder · Settings)
 tonight.html forecast.html clouds.html daylight.html     tonight, multi-model cloud forecast (+ live GOES satellite loop), daylight planner
 objects.html catalog.html constellations.html events.html  objects hub, deep-sky catalog, constellations (IAU figures + mythology), cosmic events
-moonrocks.html moonrocks.bundle.js                       Moon Rocks in 3D: Apollo 17 sample viewers (source src/moonrocks.js; models in OFFLINE3D, photos in img/moonrocks/)
+moonrocks.html moonrocks.bundle.js                       Moon Rocks in 3D: Apollo sample viewers (source src/moonrocks.js; models/rock-*.glb built by src/moonrocks/, in OFFLINE3D; stills in img/moonrocks/)
 solar.html mercury..pluto.html jupiter.html moon.html earth.html  planets and moons
 finder.html meridian.html                                 Sky Finder (overlay + star catalog), Meridian & Transit (66+ targets)
 photography.html npf.html integration.html session-log.html  astrophotography tools hub + tools

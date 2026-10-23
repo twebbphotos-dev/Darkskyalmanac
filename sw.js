@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v493';
+const CACHE = 'zion-sky-v494';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -22,6 +22,7 @@ const CRITICAL = [
   // 3D spacecraft pages (their text works offline; the 3D view itself needs the optional download below)
   'spacecraft.html','voyager.html','moonrocks.html',
   'img/moonrocks/76535.jpg','img/moonrocks/79115.jpg','img/moonrocks/orange-soil.jpg','img/moonrocks/orange-beads.jpg',
+  'img/moonrocks/60025-3d.jpg','img/moonrocks/70175-3d.jpg','img/moonrocks/15016-3d.jpg','img/moonrocks/14321-3d.jpg','img/moonrocks/65035-3d.jpg',
   // Astrophotography tools
   'photography.html','sources.html','npf.html','session-log.html','integration.html','meridian.html',
   'map-zion.html','map-bryce.html','map-cedar-breaks.html',
@@ -124,6 +125,7 @@ const OFFLINE3D = [
   'rover/tex/slab_diff.jpg', 'rover/tex/slab_disp.jpg', 'rover/tex/slab_nor.jpg',
   // Apollo 17 lunar rover (lrv/): page and code; it shares models/lrv.glb, lm.glb and moon-a17.bin
   'lrv/', 'lrv/lrv.bundle.js', 'moonrocks.bundle.js', 'models/astronaut-a7l.glb', 'models/earth-bm.jpg', 'models/sample-76535.glb', 'models/sample-79115.glb', 'models/a17-wac.jpg',
+  'models/rock-76535.glb', 'models/rock-60025.glb', 'models/rock-70175.glb', 'models/rock-15016.glb', 'models/rock-14321.glb', 'models/rock-65035.glb', 'models/rock-79115.glb',
   'lrv/img/tracys-rock.jpg', 'lrv/img/van-serg.jpg', 'lrv/img/shorty.jpg', 'lrv/img/orange-soil.jpg', 'lrv/img/orange-beads.jpg', 'lrv/img/76535.jpg', 'lrv/img/79115.jpg', 'lrv/grand-prix.mp4', 'lrv/grand-prix.jpg'
 ];
 // ── Star ID (solver/) ────────────────────────────────────
