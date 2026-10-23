@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.28 (zion-sky-v497)
+Lunar Rover on foot: livelier arms, and faster at double and triple speed. The arms looked stiff because they were pinned at the suit's sides with only a small swing. Now they ride a little forward and out, as the pressurized suits held them, swing against the leading leg, come up with a jump, and lag each push-off and landing on a soft spring, so they float and settle a moment after the body. At double and triple speed the astronauts' pace, push-off and jump scale with the rover's top speed (2.24x and 3x): Cernan runs up to 4.9 and 6.6 m/s and jumps about 2 m and 3.6 m high. Schmitt now plans a stride ahead to keep his place beside Cernan at any speed.
+
 ## v5.27 (zion-sky-v496)
 Lunar Rover on foot. Two new right-click (long-press) commands. "Send Schmitt here": a small marker flag goes in where you pointed (up to 150 m) and Harrison Schmitt climbs out and bounds to it at about 1.8 m/s, then waits to be picked up. "Leave the rover on foot": both astronauts climb out; you move Gene Cernan (W/S or the stick, A/D to turn, Space or Jump for a two-footed jump of about 40 cm and 1.4 s) and Schmitt keeps pace off his right shoulder; "Back to the rover" and they hop back and climb in. Every stride is now a real ballistic hop under lunar gravity, so a hop floats longer over a dip and is cut short up a slope; one push changes speed by at most about 0.75 m/s, so stopping takes two or three hops, as the Apollo crews reported (Apollo Lunar Surface Journal). Cernan skips with one foot leading (his habit on Apollo 17), Schmitt lopes, and both switch to two-footed kangaroo hops down steep slopes, as they did. Each hop's time, length and height show on screen. Before, Schmitt's walk was a fixed sliding bob, not tied to gravity or the ground.
 

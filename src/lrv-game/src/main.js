@@ -2216,7 +2216,7 @@ function stepFilm(h, dt) {
   }
   const walk = (tx, tz, v) => {      // real hops (hop()): he bounds toward it, easing off over the last strides
     const W = FILM.W || (FILM.W = hopper(FILM.x, FILM.z)); W.x = FILM.x; W.z = FILM.z;
-    const dx = tx - FILM.x, dz = tz - FILM.z, d = Math.hypot(dx, dz), want = d < 0.3 ? 0 : Math.min(v, Math.max(0.5, (d - 0.2) * 0.9));
+    const dx = tx - FILM.x, dz = tz - FILM.z, d = Math.hypot(dx, dz), want = d < 0.3 ? 0 : Math.min(v, Math.max(0.5, (d - 0.2) * 0.9 / Math.sqrt(footK())));
     hop(W, dt, dx, dz, want, Math.atan2(dx, dz) - FILM.face, 'lope'); FILM.x = W.x; FILM.z = W.z;
     legs = W.legs; bob = W.hy - ground(W.x, W.z) + soleY(W.legs); lean = W.lean; if (d > 0.3) faceT = Math.atan2(dx, dz); FILM.armSw = W.sw; return W.air || Math.hypot(W.vx, W.vz) > 0.25 ? Math.max(d, 0.31) : d; };
   if (FILM.dodge) {      // a crouch to load the legs, a long sideways hop, the knees taking the landing, a shorter second hop; eyes on the rover throughout
@@ -2229,7 +2229,7 @@ function stepFilm(h, dt) {
     const f = FILM.face, lx = D.dx * Math.cos(f) - D.dz * Math.sin(f); D.lx = Math.sign(lx) * 0.2 * ss(0.1, 0.3, t) * (1 - ss(1.6, 1.95, t));      // leaning into the push
     D.arms = ss(0, 0.2, t) * (1 - ss(1.65, 1.95, t)); faceT = Math.atan2(rx, rz); if (t > 1.95) FILM.dodge = null;
   } else if (FILM.ph === 'walk') {
-    if (walk(FILM.tx, FILM.tz, FILM.go ? 1.8 : 1.5) < 0.3) {
+    if (walk(FILM.tx, FILM.tz, (FILM.go ? 1.8 : 1.5) * footK()) < 0.3) {
       if (FILM.go) { FILM.ph = 'wait'; FILM.t = 0; beacon(null); toast('Schmitt is there · stop the rover beside him to pick him up'); }
       else { FILM.ph = 'film'; FILM.t = 0; FILM.t0 = simT; FILM.land = -1; FILM.crash = 0; toast('Schmitt is filming for 30 s · show him something good'); }
     }
@@ -2247,7 +2247,8 @@ function stepFilm(h, dt) {
   }
   const tr = FILM.dodge ? 4.5 : 3; let dy = faceT - FILM.face; dy -= 2 * Math.PI * Math.round(dy / (2 * Math.PI)); FILM.face += Math.max(-tr * dt, Math.min(tr * dt, dy));      // he turns at a walk, in his stiff suit (quicker when he must)
   st.legs = legs; st.lz = lean; st.lx = FILM.dodge ? FILM.dodge.lx : 0; h.rotation.set(0, FILM.face, 0); h.position.set(FILM.x, ground(FILM.x, FILM.z) - soleY(legs) + bob, FILM.z);
-  for (let j = 0; j < 2; j++) { st.hands[j].copy(side(j)); if (FILM.W && (FILM.ph === 'walk' || FILM.ph === 'board')) st.hands[j].z += (j ? -1 : 1) * FILM.W.sw * 0.06 * K;
+  if (FILM.W && (FILM.ph === 'walk' || FILM.ph === 'board') && !FILM.dodge) armHands(FILM.W, st, K);
+  for (let j = 0; j < 2; j++) { if (!(FILM.W && (FILM.ph === 'walk' || FILM.ph === 'board') && !FILM.dodge)) st.hands[j].copy(side(j));
     if (cam) st.hands[j].lerp(_fv.set(j ? 0.07 : -0.07, 0.36, 0.25).multiplyScalar(K), cam); }      // the camera up in both gloves
   if (FILM.dodge) for (let j = 0; j < 2; j++) st.hands[j].lerp(_fv.set(j ? 0.44 : -0.44, 0.1, 0.12).multiplyScalar(K), FILM.dodge.arms);      // arms out for balance
   poseCrew(h);
@@ -2260,24 +2261,25 @@ function stepFilm(h, dt) {
    grows with speed, about 0.57 s and 7 cm up at 1.6 m/s on level ground. Gaits: the lope (alternating feet), Gene Cernan's skip (one foot
    always leading) and the two-footed kangaroo hop the Apollo 17 crew used coming down a steep slope. */
 const STANCE = 0.24, STAND = [1.45, -1.35];
-function hopper(x, z) { return { x, z, y: ground(x, z), hy: 0, vx: 0, vz: 0, vy: 0, air: false, st: 1, ta: 0, tf: 0, imp: 0, lead: 0, legs: [STAND.slice(), STAND.slice()], lean: 0.05, sw: 0, jump: 0, landed: null, x0: x, z0: z, y0: 0, peak: 0, gait: 'lope' }; }
+const footK = () => VMAX / 5;      // double and triple speed: the crew's pace, push and jump scale with the rover's top speed (2.24x, 3x)
+function hopper(x, z) { return { x, z, y: ground(x, z), hy: 0, vx: 0, vz: 0, vy: 0, air: false, st: 1, ta: 0, tf: 0, imp: 0, lead: 0, legs: [STAND.slice(), STAND.slice()], lean: 0.05, sw: 0, ho: 0, hv: 0, ht: Math.random() * 9, jump: 0, landed: null, x0: x, z0: z, y0: 0, peak: 0, gait: 'lope' }; }
 function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about `want` m/s; turn: how far he still has to turn (rad)
   const d = Math.hypot(dx, dz), ux = d > 1e-6 ? dx / d : 0, uz = d > 1e-6 ? dz / d : 0;
   W.landed = null;
   if (W.air) {
     W.vy -= G * dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y += W.vy * dt; W.ta += dt; W.peak = Math.max(W.peak, W.y);
     const g0 = ground(W.x, W.z);
-    if (W.y <= g0 && W.vy < 0) { W.landed = { t: W.ta, d: Math.hypot(W.x - W.x0, W.z - W.z0), h: W.peak - W.y0, jump: W.jumped }; W.air = false; W.st = 0; W.imp = -W.vy; W.y = g0; W.vy = 0; }
+    if (W.y <= g0 && W.vy < 0) { W.landed = { t: W.ta, d: Math.hypot(W.x - W.x0, W.z - W.z0), h: W.peak - W.y0, jump: W.jumped }; W.air = false; W.st = 0; W.imp = -W.vy; W.hv -= 0.25 * Math.min(4, W.imp); W.y = g0; W.vy = 0; }
   } else {
     W.st += dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y = ground(W.x, W.z);
     const sp = Math.hypot(W.vx, W.vz), turning = Math.abs(turn) > 0.6 && sp < 0.5;      // a big turn from a standstill: small shuffling steps first
     if (!W.jump && (want < 0.05 && sp < 0.35 || turning && want > 0 && W.st < 0.5)) { const k = Math.exp(-dt * 7); W.vx *= k; W.vz *= k; }      // standing (boots braking in the dust)
     else if (W.st >= STANCE || W.jump) {      // push off
-      let ex = ux * want - W.vx, ez = uz * want - W.vz; const e = Math.hypot(ex, ez); if (e > 0.75) { ex *= 0.75 / e; ez *= 0.75 / e; }
+      const dvm = 0.75 * footK(); let ex = ux * want - W.vx, ez = uz * want - W.vz; const e = Math.hypot(ex, ez); if (e > dvm) { ex *= dvm / e; ez *= dvm / e; }
       W.vx += ex; W.vz += ez; const v = Math.hypot(W.vx, W.vz);
       let tf = gait === 'kanga' ? 0.45 + 0.2 * v : 0.25 + 0.2 * v;      // the flight: longer the faster he goes
       W.jumped = !!W.jump; if (W.jump) { tf = 2 * W.jump / G; W.jump = 0; gait = 'kanga'; }
-      W.gait = gait; W.tf = tf; W.vy = G * tf / 2; W.air = true; W.ta = 0; W.x0 = W.x; W.z0 = W.z; W.y0 = W.y; W.peak = W.y; if (gait === 'lope') W.lead ^= 1;
+      W.gait = gait; W.tf = tf; W.vy = G * tf / 2; W.hv -= 0.12 + 0.1 * W.vy; W.air = true; W.ta = 0; W.x0 = W.x; W.z0 = W.z; W.y0 = W.y; W.peak = W.y; if (gait === 'lope') W.lead ^= 1;
     }
   }
   // the legs: open in flight (a long stride, or both boots tucked for a hop), and the landing taken in the knees
@@ -2294,8 +2296,19 @@ function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about
   }
   W.lean = 0.06 + 0.07 * Math.min(2, v) + (W.air ? 0 : 0.05 * s);      // the backpack: the crews leaned well forward to move
   // the hips: in flight they follow the ballistic arc (the boots swing beneath), never letting a boot sink into the ground
+  // the arms: carried a little forward and out (the pressurized suit holds them there), swinging against the legs, and
+  // lagging each push and landing on a soft spring, so they float and settle a moment after the body in the low gravity
+  { const n = Math.ceil(dt / 0.01), hh = dt / n; for (let i = 0; i < n; i++) { W.hv += hh * (-70 * W.ho - 5 * W.hv); W.ho += hh * W.hv; } W.ho = Math.max(-0.12, Math.min(0.1, W.ho)); W.ht += dt; }
   const gNow = ground(W.x, W.z); W.hy = W.air ? Math.max(W.y - soleY([STAND, STAND]), gNow - soleY(L)) : gNow - soleY(L);
   return W;
+}
+function armHands(W, st, K) {
+  const v = Math.hypot(W.vx, W.vz), s = Math.min(1, v / 1.8), jump = W.air && W.gait === 'kanga', u = W.air ? Math.min(1, W.ta / Math.max(0.2, W.tf)) : 0;
+  for (let j = 0; j < 2; j++) {
+    const sd = j ? 1 : -1, swing = -sd * W.sw * (0.08 + 0.05 * s), idle = 0.008 * Math.sin(W.ht * (1.3 + 0.4 * j) + j * 2);      // the swing opposes the leading leg; a faint drift at rest
+    const up = jump ? 0.14 * Math.sin(Math.PI * u) : 0;      // a jump: both arms come up with it
+    st.hands[j].set(sd * (0.29 + 0.03 * s), -0.2 + 0.08 * s + W.ho + up + idle, 0.15 + 0.08 * s + swing + 0.5 * up).multiplyScalar(K);
+  }
 }
 /* The spot Schmitt is heading for: a small marker flag on a thin pole, as the crews planted to mark a spot */
 let BEACON = null;
@@ -2350,21 +2363,23 @@ function stepFoot(dt) {
   let goC, goS, tC, tS;
   if (FOOT.ph === 'walk') {
     // Cernan: turned by the player at a suited man's pace, and hopping the way he faces
-    FOOT.face += -FOOT.s * 1.5 * dt;
-    let fx = Math.sin(FOOT.face), fz = Math.cos(FOOT.face), want = FOOT.f > 0 ? FOOT.f * 2.2 : 0;
-    if (FOOT.f < -0.2) { fx = -fx; fz = -fz; want = 0.4 * -FOOT.f; }      // a careful step backward
+    const M = footK(); FOOT.face += -FOOT.s * 1.5 * Math.sqrt(M) * dt;
+    let fx = Math.sin(FOOT.face), fz = Math.cos(FOOT.face), want = FOOT.f > 0 ? FOOT.f * 2.2 * M : 0;
+    if (FOOT.f < -0.2) { fx = -fx; fz = -fz; want = 0.4 * M * -FOOT.f; }      // a careful step backward
     if (edgeDist(Wc.x + fx * 3, Wc.z + fz * 3) < 6) { want = 0; if (!FOOT.told) { FOOT.told = true; toast('Mission Control · That’s the edge of the mission area. Head back toward the LM.'); } } else FOOT.told = false;
     goC = [fx, fz, want, 0]; tC = gaitOn(Wc, fx, fz, 'skip');
     // Schmitt: to his place off Cernan's right shoulder, faster when he has fallen behind
     const cf = Math.sin(FOOT.face), cz = Math.cos(FOOT.face), px = Wc.x - cz * 2.2 - cf * 1.0, pz = Wc.z + cf * 2.2 - cz * 1.0, ex = px - Ws.x, ez = pz - Ws.z, d = Math.hypot(ex, ez);
-    let vx = Wc.vx + 0.9 * ex, vz = Wc.vz + 0.9 * ez; const vm = Math.hypot(vx, vz); if (vm > 2.8) { vx *= 2.8 / vm; vz *= 2.8 / vm; }      // Cernan's pace, plus whatever closes the gap
+    const Tp = 0.9 + 0.2 * Math.hypot(Wc.vx, Wc.vz);      // about one stride: he pushes once per hop, so he closes the gap over the next one, no faster
+    let vx = Wc.vx + ex / Tp, vz = Wc.vz + ez / Tp; const vm = Math.hypot(vx, vz), cap = 2.8 * M; if (vm > cap) { vx *= cap / vm; vz *= cap / vm; }      // Cernan's pace, plus whatever closes the gap
     goS = [vx, vz, d < 0.5 && Math.hypot(Wc.vx, Wc.vz) < 0.3 ? 0 : Math.hypot(vx, vz), 0]; tS = gaitOn(Ws, vx, vz, 'lope');
-    if ((keys[' '] || FOOT.jumpQ) && !Wc.air && Wc.st > 0.15) { Wc.jump = 1.15; FOOT.jumpQ = 0; }      // about 1.15 m/s straight up: some 40 cm, 1.4 s in the air
+    if ((keys[' '] || FOOT.jumpQ) && !Wc.air && Wc.st > 0.15) { Wc.jump = 1.15 * M; FOOT.jumpQ = 0; }      // about 1.15 m/s straight up: some 40 cm, 1.4 s in the air (2 m at double speed, 3.7 m at triple)
     FOOT.jumpQ = 0;
   } else {      // 'home': both to their own side of the rover, then aboard
     rover.updateMatrixWorld(true); const oc = rover.localToWorld(_fv.copy(OUT0)).clone(), os = rover.localToWorld(_fv.copy(OUT1)).clone();
     const dc = Math.hypot(oc.x - Wc.x, oc.z - Wc.z), ds = Math.hypot(os.x - Ws.x, os.z - Ws.z);
-    goC = [oc.x - Wc.x, oc.z - Wc.z, dc < 0.3 ? 0 : Math.min(1.8, Math.max(0.5, (dc - 0.2) * 0.9)), 0]; goS = [os.x - Ws.x, os.z - Ws.z, ds < 0.3 ? 0 : Math.min(1.8, Math.max(0.5, (ds - 0.2) * 0.9)), 0];
+    const M = footK(), ap = d => d < 0.3 ? 0 : Math.min(1.8 * M, Math.max(0.5, (d - 0.2) * 0.9 / Math.sqrt(M)));      // easing off sooner when faster: a push changes speed by more
+    goC = [oc.x - Wc.x, oc.z - Wc.z, ap(dc), 0]; goS = [os.x - Ws.x, os.z - Ws.z, ap(ds), 0];
     tC = 'lope'; tS = 'lope';
     const still = W => !W.air && Math.hypot(W.vx, W.vz) < 0.25;
     if (dc < 0.35 && ds < 0.35 && still(Wc) && still(Ws)) { CREW.forEach((h, i) => { rover.attach(h); h.position.copy(FOOT_SIDE[i].out); }); FOOT.ph = 'in'; FOOT.t = 0; stepFoot(0); return; }
@@ -2378,7 +2393,7 @@ function stepFoot(dt) {
     }
     st.legs = W.legs; st.lz = W.lean; st.lx = 0; st.yaw = 0; st.y = 0; st.up = 0; st.v = null;
     h.rotation.set(0, faces[i], 0); h.position.set(W.x, W.hy, W.z);
-    for (let j = 0; j < 2; j++) st.hands[j].set(j ? 0.31 : -0.31, -0.22 + 0.06 * (W.air ? 1 : 0), 0.13 + (j ? -1 : 1) * W.sw * 0.07).multiplyScalar(K);      // arms a little out, for balance
+    armHands(W, st, K);
     poseCrew(h);
   });
   FOOT.face = faces[0]; FOOT.sface = faces[1];
