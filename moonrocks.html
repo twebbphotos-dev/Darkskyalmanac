@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover,maximum-scale=1">
+<meta name="theme-color" content="#141319">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Dark Sky Almanac">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-180.png">
+<title>Moon Rocks in 3D · Dark Sky Almanac</title>
+<meta name="description" content="Turn real Apollo Moon rocks in 3D: a 4.2-billion-year-old troctolite from Tracy’s Rock, a breccia from Van Serg crater, and the orange volcanic glass of Shorty crater.">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Moon Rocks in 3D · Dark Sky Almanac">
+<meta property="og:description" content="Turn real Apollo Moon rocks in 3D: a 4.2-billion-year-old troctolite from Tracy’s Rock, a breccia from Van Serg crater, and the orange volcanic glass of Shorty crater.">
+<meta property="og:image" content="social.png">
+<link rel="canonical" href="https://app.darkskyalmanac.com/moonrocks">
+<meta property="og:url" content="https://app.darkskyalmanac.com/moonrocks">
+<meta property="og:site_name" content="Dark Sky Almanac">
+<meta name="twitter:image" content="https://app.darkskyalmanac.com/social.png">
+<meta name="twitter:card" content="summary">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+html,body{background:#141319;min-height:100dvh;font-family:'Montserrat',-apple-system,sans-serif;color:#E4D9B8}
+body{padding-top:calc(env(safe-area-inset-top) + 56px);padding-bottom:40px;overscroll-behavior:none;-webkit-text-size-adjust:100%}
+a{color:inherit}
+/* top nav */
+.pwa-nav{position:fixed;top:0;left:0;right:0;z-index:9999;transform:translateZ(0);
+  display:flex;justify-content:space-around;align-items:stretch;
+  background:rgba(13,10,24,.96);backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  border-bottom:1px solid rgba(203,168,90,.32);padding-top:env(safe-area-inset-top)}
+.pwa-navitem{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  gap:2px;padding:7px 0 6px;text-decoration:none;color:#7A6E55;font-size:8px;letter-spacing:.04em;
+  text-transform:uppercase;transition:color .15s}
+.pwa-navitem svg{width:18px;height:18px}
+.pwa-navitem.active{color:#CBA85A}
+.pwa-navitem:active{color:#E6CC85}
+/* page frame */
+.zcl-page{max-width:760px;margin:0 auto;padding:0 20px;position:relative}
+.zcl-stars{position:fixed;inset:0;width:100%;height:100%;pointer-events:none;opacity:.4;z-index:0}
+.zcl-page>*{position:relative;z-index:1}
+/* title banner */
+.zcl-titlebar{text-align:center;padding:26px 8px 14px}
+.zcl-kicker{font-size:10px;font-weight:600;letter-spacing:.26em;text-transform:uppercase;color:#9A8A66;margin-bottom:9px}
+.zcl-maintitle{font-size:clamp(22px,5vw,30px);font-weight:600;letter-spacing:.05em;color:#F2E4BE;text-transform:uppercase;line-height:1.2}
+.zcl-titlerule{display:flex;align-items:center;justify-content:center;gap:13px;margin:12px auto 10px;max-width:300px}
+.zcl-rline{height:1px;flex:1;background:linear-gradient(to right,transparent,rgba(203,168,90,.55))}
+.zcl-titlerule .zcl-rline:last-child{background:linear-gradient(to left,transparent,rgba(203,168,90,.55))}
+.zcl-rstar{width:15px;height:15px;flex-shrink:0;opacity:.9;filter:drop-shadow(0 0 5px rgba(203,168,90,.5))}
+.zcl-subtitle{font-size:13px;font-style:italic;color:#9A8E6E;max-width:500px;margin:0 auto;line-height:1.5}
+.zcl-back{display:inline-flex;align-items:center;gap:6px;font-size:11px;letter-spacing:.1em;text-transform:uppercase;
+  color:#9A8A66;text-decoration:none;margin:6px 0 0}
+.zcl-back:hover{color:#CBA85A}
+.zcl-seclabel{font-size:11px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:#CBA85A;
+  margin:22px 0 12px;padding-bottom:7px;border-bottom:1px solid rgba(203,168,90,.26)}
+
+/* moon rocks */
+.zcl-lede{background:radial-gradient(ellipse 90% 80% at 50% 0%,rgba(40,38,52,.5),transparent 70%),#0d0a18;
+  border:1px solid rgba(203,168,90,.22);border-radius:11px;padding:16px 18px;margin:8px 0 4px;font-size:13.5px;line-height:1.6;color:#C9BD97}
+.zcl-lede b{color:#F2E4BE;font-weight:600}
+.mr-card{background:#0d0a18;border:1px solid rgba(203,168,90,.2);border-radius:12px;padding:14px;margin:0 0 16px}
+.mr-name{font-size:17px;font-weight:600;color:#F2E4BE;letter-spacing:.02em}
+.mr-sub{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;margin:4px 0 12px}
+.mr-view{position:relative;border-radius:9px;overflow:hidden;background:radial-gradient(circle at 50% 45%,#2a2733,#0d0a18 70%);min-height:200px}
+.mr-view canvas{display:block;width:100%;cursor:grab;touch-action:none}
+.mr-view img{display:block;width:100%;height:auto}
+.mr-view.big{position:fixed;inset:0;z-index:10000;border-radius:0;background:#0d0a18}
+.mr-view.big canvas{width:100vw;height:100vh}
+.mr-fs{position:absolute;right:8px;top:8px;font:inherit;font-size:9.5px;font-weight:600;letter-spacing:.1em;text-transform:uppercase;color:#CBA85A;
+  background:rgba(13,10,24,.8);border:1px solid rgba(203,168,90,.4);border-radius:999px;padding:6px 11px;cursor:pointer}
+.mr-view.big .mr-fs{top:calc(env(safe-area-inset-top,0px) + 12px);right:14px}
+.mr-cap{font-size:10.5px;line-height:1.5;color:#9A8E6E;margin:6px 0 10px}
+.mr-card p{font-size:13px;line-height:1.6;color:#C9BD97;margin-top:9px}
+.mr-card p b{color:#E6CC85;font-weight:600}
+.mr-photos{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.mr-photos img{display:block;width:100%;height:100%;object-fit:cover;border-radius:8px}
+.mr-links{display:flex;flex-wrap:wrap;gap:10px;justify-content:center;margin:6px 0 4px}
+.mr-links a{font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#CBA85A;text-decoration:none;
+  border:1px solid rgba(203,168,90,.4);border-radius:999px;padding:9px 15px}
+.mr-links a:hover{color:#E6CC85;border-color:#CBA85A}
+.zcl-foot{font-size:11.5px;line-height:1.55;color:#7A6E55;text-align:center;margin:22px auto 6px;max-width:520px}
+
+/* Respect the OS "reduce motion" setting: the app is full of twinkling stars,
+   pulsing markers and sweeps that can trigger vestibular discomfort. Content
+   stays fully functional — only the motion stops. */
+@media (prefers-reduced-motion: reduce){
+  *, *::before, *::after{
+    animation-duration:0.01ms !important;
+    animation-iteration-count:1 !important;
+    transition-duration:0.01ms !important;
+    scroll-behavior:auto !important;
+  }
+}
+/* fit */
+
+@media(max-width:374px){.pwa-navitem{font-size:7.5px;letter-spacing:.02em}}@media(max-width:340px){.pwa-navitem{font-size:7px;letter-spacing:0}}
+/* /fit */
+</style></head>
+<body>
+<nav class="pwa-nav">
+<a class="pwa-navitem" href="."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 3 L13 9 L19 12 L13 15 L12 21 L11 15 L5 12 L11 9 Z" stroke-width="1.3"/></svg><span>Home</span></a>
+<a class="pwa-navitem" href="forecast"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M10 18a4 4 0 0 1 0-8 5 5 0 0 1 9.6-1.5A3.5 3.5 0 0 1 19 18z" stroke-width="1.5"/></svg><span>Forecast</span></a>
+<a class="pwa-navitem active" href="objects"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M12 4 L13 11 L20 12 L13 13 L12 20 L11 13 L4 12 L11 11 Z" stroke-width="1.3"/></svg><span>Objects</span></a>
+<a class="pwa-navitem" href="maps"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M3 7 L9 4 L15 7 L21 4 L21 17 L15 20 L9 17 L3 20 Z" stroke-width="1.4" stroke-linejoin="round"/><path d="M9 4 L9 17" stroke-width="1"/><path d="M15 7 L15 20" stroke-width="1"/></svg><span>Map</span></a>
+<a class="pwa-navitem" href="photography"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.3" stroke-linejoin="round"><rect x="2.5" y="7" width="19" height="12.5" rx="2.6"/><path d="M8.4 7 L9.7 4.6 L14.3 4.6 L15.6 7"/><circle cx="12" cy="13.2" r="3.7"/><circle cx="12" cy="13.2" r="1.4"/><circle cx="18.2" cy="10" r="0.7" fill="currentColor" stroke="none"/></svg><span>Tools</span></a>
+<a class="pwa-navitem" href="finder"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor"><circle cx="12" cy="12" r="8" stroke-width="1.5"/><line x1="12" y1="2" x2="12" y2="7" stroke-width="1.5"/><line x1="12" y1="17" x2="12" y2="22" stroke-width="1.5"/><line x1="2" y1="12" x2="7" y2="12" stroke-width="1.5"/><line x1="17" y1="12" x2="22" y2="12" stroke-width="1.5"/></svg><span>Finder</span></a>
+<a class="pwa-navitem" href="settings"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg><span>Settings</span></a>
+</nav>
+<svg class="zcl-stars"></svg>
+<div class="zcl-page">
+  <a class="zcl-back" href="objects">&#8249; Objects</a>
+  <div class="zcl-titlebar">
+    <div class="zcl-kicker">The Apollo samples</div>
+    <div class="zcl-maintitle">Moon Rocks in 3D</div>
+    <div class="zcl-titlerule"><span class="zcl-rline"></span>
+      <svg class="zcl-rstar" viewBox="0 0 24 24"><path d="M12 2 L13.6 9.2 L21 12 L13.6 14.8 L12 22 L10.4 14.8 L3 12 L10.4 9.2 Z" fill="#CBA85A"/></svg>
+      <span class="zcl-rline"></span></div>
+    <div class="zcl-subtitle">Pieces of the Moon brought home by Apollo 17, scanned in 3D by NASA. Drag to turn them, pinch or scroll to zoom.</div>
+  </div>
+  <div class="zcl-lede"><b>382 kg of the Moon.</b> The six Apollo landings brought back rocks, soil, pebbles and drill cores, most of it still kept at NASA’s Johnson Space Center in Houston for scientists to study. Apollo 17, the last, collected about 110 kg in the Taurus–Littrow valley. These three are among its best known.</div>
+
+  <div class="zcl-seclabel">Tracy’s Rock · Station 6</div>
+  <div class="mr-card">
+    <div class="mr-name">76535 · troctolite</div>
+    <div class="mr-sub">Apollo 17 · third moonwalk · 13 December 1972</div>
+    <div class="mr-view" data-model="models/sample-76535.glb"><img src="img/moonrocks/76535.jpg" alt="Sample 76535, a coarse-grained pale green and white rock"></div>
+    <div class="mr-cap" data-cap3d="76535,0 today, about 2 cm across: the largest piece left after samples were cut for study. 3D model: NASA Astromaterials 3D.">Sample 76535, photographed at NASA’s Manned Spacecraft Center (now Johnson Space Center) in 1973. NASA photo S73-19456.</div>
+    <p>A troctolite: a coarse-grained igneous rock made almost entirely of large grains of pale green olivine and white plagioclase feldspar. It weighs about 156 g and came back in a rake sample from the soil at Station 6, the stop at the split boulder, on the third moonwalk.</p>
+    <p>It crystallized deep in the young Moon’s crust about 4.2 to 4.3 billion years ago, slowly enough to grow its large, interlocking grains, and was later dug out by impacts.</p>
+    <p>Few rocks have been studied so closely. In 2009 researchers at MIT found it weakly magnetized since it formed, evidence that the young Moon had a magnetic field from a molten core. In 2021, chemical differences still preserved inside its crystals showed it must have cooled within about 20 million years, far faster than the more than 100 million years once thought.</p>
+  </div>
+
+  <div class="zcl-seclabel">Van Serg crater · Station 9</div>
+  <div class="mr-card">
+    <div class="mr-name">79115 · regolith breccia</div>
+    <div class="mr-sub">Apollo 17 · third moonwalk · 13 December 1972</div>
+    <div class="mr-view" data-model="models/sample-79115.glb"><img src="img/moonrocks/79115.jpg" alt="Sample 79115, a dark, fragmented rock"></div>
+    <div class="mr-cap" data-cap3d="79115,0 today, about 9 cm long. 3D model: NASA Astromaterials 3D.">Sample 79115, photographed at NASA’s Manned Spacecraft Center (now Johnson Space Center) in 1973. NASA photo S73-15396.</div>
+    <p>Regolith breccia: loose lunar soil and broken rock welded into stone by the shock of an impact. On the third moonwalk the crew broke this 346 g piece off the top of a fractured boulder on the rim of Van Serg crater, hoping it would tell how and when the crater formed. Its partner, 79135, 2.3 kg, came from the bottom of the same boulder.</p>
+    <p>About 60% of it is a fine matrix of mineral debris and glass. Mixed through it are fragments of highland rock, mare basalt and other basalts, and beads of orange volcanic glass like those at Shorty crater: soil from across the valley, swept up and pressed together.</p>
+  </div>
+
+  <div class="zcl-seclabel">Shorty crater · Station 4</div>
+  <div class="mr-card">
+    <div class="mr-name">74220 · orange soil</div>
+    <div class="mr-sub">Apollo 17 · second moonwalk · 12 December 1972</div>
+    <div class="mr-photos"><img src="img/moonrocks/orange-soil.jpg" alt="Orange soil exposed on the rim of Shorty crater, with the gnomon tripod for scale"><img src="img/moonrocks/orange-beads.jpg" alt="Orange glass beads seen through a microscope"></div>
+    <div class="mr-cap">Left: the orange soil at Station 4, with the gnomon, the crew’s reference for scale, sun angle and color. AS17-137-20990, 12 December 1972, color gently enhanced. Right: beads and fragments from the soil, 0.02 to 0.045 mm across, magnified 160 times. NASA photo S73-15171. NASA.</div>
+    <p>The orange soil itself: 1,180 g scooped from the rim of Shorty crater on the second moonwalk. With the samples from the trench Harrison Schmitt dug across the orange zone and the core tube driven beside it, the set comes to about 4.6 kg.</p>
+    <p>About 99% of it is beads and broken bits of orange glass; the rest is mostly fragments of basalt. Each bead is a droplet of lava sprayed from a fire fountain about 3.6 billion years ago and frozen to glass in flight. The color comes from titanium.</p>
+    <p>The beads still hold traces of the gases that drove the eruption. In 2008 and 2011 they gave the first strong evidence of water inside the Moon.</p>
+  </div>
+
+  <div class="mr-links"><a href="lrv/">Drive to where they were found</a><a href="moon">The Moon</a><a href="spacecraft?m=lrv">Apollo 17 in 3D</a></div>
+  <div class="zcl-foot">The 3D rocks are part of Settings → Download everything; without that download, offline, each shows its photograph instead. 3D models: NASA Astromaterials 3D (public domain). Photographs: NASA.</div>
+</div>
+<script>
+"use strict";
+(function(){
+  // Each viewer starts as the photograph; as it comes into view the 3D model replaces it, if it loads
+  var views = document.querySelectorAll('.mr-view[data-model]'), lib = null;
+  function load(){ return lib || (lib = import('./moonrocks.bundle.js')); }
+  var io = new IntersectionObserver(function(es){ es.forEach(function(e){ if (!e.isIntersecting) return; io.unobserve(e.target); var box = e.target, img = box.querySelector('img');
+    load().then(function(m){ img.style.display = 'none'; return m.mountRock(box, box.dataset.model); }).then(function(){ var c = box.nextElementSibling; if (c && c.dataset.cap3d) c.textContent = c.dataset.cap3d; img.remove(); })
+      .catch(function(){ img.style.display = ''; }); }); }, { rootMargin: '200px' });
+  views.forEach(function(v){ io.observe(v); });
+})();
+</script>
+<script>(function(){var s='';for(var i=0;i<120;i++){s+='<circle cx="'+(Math.random()*100).toFixed(1)+'%" cy="'+(Math.random()*100).toFixed(1)+'%" r="'+(Math.random()*0.9+0.2).toFixed(2)+'" fill="#fff" opacity="'+(Math.random()*0.5+0.1).toFixed(2)+'"/>';}var el=document.querySelector('.zcl-stars');if(el)el.innerHTML=s;})();</script>
+</body>
+</html>

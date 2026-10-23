@@ -130,7 +130,7 @@ const CRAFT = {
       seat: { label: 'Driver’s seat', short: 'Seat', pos: [-0.62, 1.72, -0.32], tgt: [2.0, 1.25, -1.5], look: true },
       lander: { label: 'Lander', pos: [-3.2, 1.7, 1.4], tgt: [-145, 5.2, 39], look: true, fov: 9 },
       sky: { label: 'Earth overhead', short: 'Earth', pos: [0.9, 0.22, -1.45], tgt: [0.69, 0.396, -1.33], look: true, fov: 56 },      // from the ground by the driver’s side, looking up past the chassis to Earth
-      above: { label: 'From above', short: 'Above', pos: [-1500, 27000, 2900], tgt: [-1500, 0, 200] },
+      above: { label: 'From above', short: 'Above', pos: [-1500, 27000, 2900], tgt: [-1500, 0, 200], abs: true },
     },
     parts: [
       { p: [1.29, 1.5, -0.43], name: 'High-gain antenna', txt: 'A gold-mesh umbrella that the astronauts aimed at Earth by hand at every stop, sending live colour television straight home without going through the lander.' },
@@ -481,6 +481,23 @@ function wheelTracks(T) {
   const trail = new THREE.Mesh(tg, new THREE.MeshBasicMaterial({ map: band, transparent: true, opacity: 0, depthWrite: false, side: THREE.DoubleSide, polygonOffset: true, polygonOffsetFactor: -2, polygonOffsetUnits: -4 })); trail.renderOrder = 1;
   const grp = new THREE.Group(); grp.add(m, trail); grp.userData.trail = trail.material; return grp;
 }
+/* What a tap on a named place in the Taurus–Littrow valley shows. Photographs: Apollo 17, NASA, from the Lunar Rover game's set (lrv/img/). */
+const A17_CARDS = {
+  'Landing site': { t: 'Challenger’s landing site', d: '11 December 1972', x: 'Gene Cernan and Harrison Schmitt set the lunar module Challenger down on the floor of the Taurus–Littrow valley, at the eastern edge of Mare Serenitatis, while Ron Evans orbited overhead in the command module America. They stayed about 75 hours and made three moonwalks, the last of the Apollo program.' },
+  '1': { t: 'Station 1 · Steno-Apollo', d: 'First moonwalk · 11 December 1972', x: 'The one stop of the first drive, near the crater Steno-Apollo, about 1.1 km south of the lander. Most of the drive’s time went to setting up the experiments beside the lander.' },
+  '2 · Nansen': { t: 'Station 2 · Nansen-Apollo', d: 'Second moonwalk · 12 December 1972', x: 'At the foot of the South Massif, about 7.4 km from the lander: the farthest point of the three drives. Boulders here had rolled down the mountain, bringing pieces of its ancient highland rock within reach.' },
+  '3': { t: 'Station 3 · Lara', d: 'Second moonwalk · 12 December 1972', x: 'Near the crater Lara, at the base of the Lee–Lincoln scarp, a fault that runs across the valley floor and up the slope of the North Massif.' },
+  '4 · Shorty': { t: 'Station 4 · Shorty crater', d: 'Second moonwalk · 12 December 1972', x: 'Harrison Schmitt saw orange soil on the rim of this crater, about 110 m across. It turned out to be tiny beads of volcanic glass, sprayed out by fire-fountain eruptions about 3.6 billion years ago.',
+    img: 'lrv/img/shorty.jpg', cap: 'Looking into Shorty crater from Station 4, with the orange soil on its rim. AS17-137-20992, 12 December 1972. NASA.' },
+  '5 · Camelot': { t: 'Station 5 · Camelot', d: 'Second moonwalk · 12 December 1972', x: 'On the rim of Camelot, a crater about 600 m across, among boulders of the valley’s dark basalt thrown out by the impact.' },
+  '6 · 7': { t: 'Stations 6 and 7 · Tracy’s Rock', d: 'Third moonwalk · 13 December 1972', x: 'At the foot of the North Massif, a boulder that had rolled and bounced about a kilometer down the slope and split into five pieces. Gene Cernan named it for his daughter, Tracy. Station 7 was a short drive east along the slope.',
+    img: 'lrv/img/tracys-rock.jpg', cap: 'Harrison Schmitt beside the boulder at Station 6, with the front of the rover at left. AS17-146-22294, photographed by Gene Cernan, 13 December 1972. NASA.' },
+  '8': { t: 'Station 8 · Sculptured Hills', d: 'Third moonwalk · 13 December 1972', x: 'At the foot of the Sculptured Hills, the knobby, hummocky highlands on the eastern side of the valley.' },
+  '9 · Van Serg': { t: 'Station 9 · Van Serg crater', d: 'Third moonwalk · 13 December 1972', x: 'A crater about 100 m across, its rim strewn with blocks thrown out by the impact. Nearly every rock the crew sampled was a dark breccia: the valley floor’s own soil, hardened into rock by the impact.',
+    img: 'lrv/img/van-serg.jpg', cap: 'Harrison Schmitt in the rover at Station 9, Van Serg crater, on the third moonwalk. AS17-134-20454, photographed by Gene Cernan, 13 December 1972. NASA.' },
+  'South Massif': { t: 'South Massif', d: 'About 2.4 km above the landing site', x: 'One of the great blocks of highland crust that wall the valley, raised by the giant impact that made the Serenitatis basin. A landslide from its slope spread a pale apron across the valley floor.' },
+  'North Massif': { t: 'North Massif', d: 'About 1.8 km above the landing site', x: 'The valley’s northern wall. Boulders that rolled down it, like Tracy’s Rock, let the crew sample rock from high on the mountain without climbing it.' },
+};
 /* The three drives of Apollo 17, seen from above. The stops are the surveyed positions (Haase et al. 2019, from Lunar
    Reconnaissance Orbiter images), in metres east and south of the lander; the line between stops follows the general
    route. Lines keep a constant width on screen and only appear once the camera is well above the ground. */
@@ -515,8 +532,16 @@ function traverse(T, labels) {
   const dm = new THREE.PointsMaterial({ map: dot, size: 11, sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false, toneMapped: false, opacity: 0 });
   const dots = new THREE.Points(dg, dm); dots.frustumCulled = false; dots.renderOrder = 4; grp.add(dots);
   const at = (k, dx, dz) => { const x = LM[0] + STN[k][0] + (dx || 0), z = LM[1] + STN[k][1] + (dz || 0); return new THREE.Vector3(x, T.surf(x, z) + 3, z); };
-  [['1', 1], ['2 · Nansen', 2], ['3', 3], ['4 · Shorty', 4, 'L'], ['5 · Camelot', 5, 'T'], ['6 · 7', 7], ['8', 8], ['9 · Van Serg', 9]].forEach(l => labels.push([l[0], at(l[1]), 0, 0, 900, l[2]]));      // shown only from well above the ground; two labels sit left of or above their dots to keep clear of the others
-  grp.userData = { U, dm }; return grp;
+  [['1', 1], ['2 · Nansen', 2], ['3', 3], ['4 · Shorty', 4, 'L'], ['5 · Camelot', 5, 'T'], ['6 · 7', 7], ['8', 8], ['9 · Van Serg', 9]].forEach(l => labels.push([l[0], at(l[1]), 0, 0, 900, l[2], A17_CARDS[l[0]]]));      // shown only from well above the ground; two labels sit left of or above their dots to keep clear of the others
+  // the three drives as one line, for the flight along them (as over Jezero, a drive where Perseverance has a year)
+  const path = [], cum = [0], ys = [];
+  DRIVES.forEach(dr => { ys.push(path.length); const C = dr[2].map(q => [LM[0] + q[0], LM[1] + q[1]]), P = i => C[Math.max(0, Math.min(C.length - 1, i))];
+    for (let i = 0; i < C.length - 1; i++) { const n = Math.max(2, Math.ceil(Math.hypot(C[i + 1][0] - C[i][0], C[i + 1][1] - C[i][1]) / 35));
+      for (let k = 0; k < n; k++) { const t = k / n, x = cr(P(i - 1)[0], P(i)[0], P(i + 1)[0], P(i + 2)[0], t), z = cr(P(i - 1)[1], P(i)[1], P(i + 1)[1], P(i + 2)[1], t); path.push(new THREE.Vector3(x, T.surf(x, z) + 6, z)); } } });
+  for (let i = 1; i < path.length; i++) cum.push(cum[i - 1] + Math.hypot(path[i].x - path[i - 1].x, path[i].z - path[i - 1].z));
+  const tdm = new THREE.PointsMaterial({ map: dot, size: 15, sizeAttenuation: false, transparent: true, depthTest: false, depthWrite: false, toneMapped: false });
+  const tg = new THREE.BufferGeometry(); tg.setAttribute('position', new THREE.Float32BufferAttribute([0, 0, 0], 3)); const tdot = new THREE.Points(tg, tdm); tdot.frustumCulled = false; tdot.renderOrder = 8; tdot.visible = false; grp.add(tdot);
+  grp.userData = { U, dm, path, cum, yl: ys.map((i, k) => [cum[i], cum[k + 1 < ys.length ? ys[k + 1] : path.length - 1]]), tdot, cols: DRIVES.map(d => d[1]) }; return grp;
 }
 function landerShadow(T, sun) {      // the lander is far outside the range of the scene's real shadows, so give it a soft painted one
   const tex = noiseTex(64, (x, S) => { const g = x.createRadialGradient(S / 2, S / 2, 0, S / 2, S / 2, S / 2); g.addColorStop(0, 'rgba(0,0,0,.8)'); g.addColorStop(.55, 'rgba(0,0,0,.62)'); g.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = g; x.fillRect(0, 0, S, S); });
@@ -698,6 +723,20 @@ function detailTiles(J, idx, dir, L) {      // L: grid points across a tile, fad
     }
   };
   return grp;
+}
+/* The Taurus–Littrow valley from orbit: a 64 km square of the LROC Wide Angle Camera mosaic (NASA/GSFC/Arizona State University),
+   about 42 m a pixel, north up, centred like the terrain grid (models/a17-wac.jpg, made by src/apollo17-map/). From the air it
+   replaces the generated soil; close to the ground the generated soil stays. */
+function orbitalMap(mat, tex) {
+  const prev = mat.onBeforeCompile;
+  mat.onBeforeCompile = (sh, r) => { if (prev) prev(sh, r); sh.uniforms.wacMap = { value: tex };
+    sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec2 vWxz;').replace('#include <begin_vertex>', '#include <begin_vertex>\n  vWxz = ( modelMatrix * vec4( position, 1.0 ) ).xz;');
+    sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nuniform sampler2D wacMap; varying vec2 vWxz;').replace('#include <color_fragment>', `#include <color_fragment>
+      vec2 wuv = vWxz / 64000.0 + .5; float wIn = smoothstep( 0.0, .04, min( min( wuv.x, 1.0 - wuv.x ), min( wuv.y, 1.0 - wuv.y ) ) );
+      float wUp = max( smoothstep( 150.0, 1600.0, cameraPosition.y ), smoothstep( 1500.0, 6000.0, vViewPosition.z ) ) * wIn;
+      vec3 wac = texture2D( wacMap, vec2( wuv.x, 1.0 - wuv.y ) ).rgb;      // north, −z, at the top of the picture
+      diffuseColor.rgb = mix( diffuseColor.rgb, wac * vec3( 1.04, .96, .88 ) * WACGAIN, wUp );`.replace('WACGAIN', '1.15')); };
+  mat.customProgramCacheKey = () => 'untile-wac'; mat.needsUpdate = true;
 }
 /* A repeating texture shows its repeat from a distance. Mix three copies at
    unrelated scales and rotations (and normalise by the texture's average) so
@@ -1084,6 +1123,7 @@ function buildSetting(c) {
       const T = moonTerrain(dem), ground = new THREE.Mesh(T.geo, new THREE.MeshStandardMaterial({ map: tex, bumpMap: detail, bumpScale: .9, roughness: 1, vertexColors: true }));
       ground.material.color.setRGB(1.25, .92, .9);      // the warm brown-grey of the soil in the Apollo 17 surface photographs
       untile(ground.material, craterTile(29), T.relief); ground.receiveShadow = true; g.add(ground); g.userData.soil = ground.material;
+      if (dem) new THREE.TextureLoader().load('models/a17-wac.jpg', t => { if (!g.parent) return; t.colorSpace = THREE.SRGBColorSpace; t.anisotropy = 8; orbitalMap(ground.material, t); });      // the real valley from orbit, for the view from above
       const wt = wheelTracks(T); g.userData.trail = wt.userData.trail; g.add(wt); if (!atLM) g.add(landerShadow(T, sun)); if (dem) { const tr = traverse(T, labels); g.add(tr); g.userData.route = tr.userData; }
       const lmY = T.surf(LM[0], LM[1]);
       if (atLM) loader.load('models/lrv.glb', q => { if (!g.parent) return; tuneMaterials(q.scene, 'lrv'); g.add(q.scene); });      // the other vehicle stands in the distance
@@ -1092,7 +1132,7 @@ function buildSetting(c) {
       g.userData.T = T; if (g.userData.seat) g.userData.seat();
       labels.push(atLM ? ['Lunar Rover', new THREE.Vector3(0, 3.2, 0), 12, 1500] : ['Lunar Module', new THREE.Vector3(LM[0], lmY + 11, LM[1]), 12, 1500], ['Landing site', new THREE.Vector3(0, 60, 0), 2500]);
       g.add(rocks(matchMedia('(max-width:600px)').matches ? 300 : 520, 3, 70, 0x58463d, 3, (x, z) => Math.hypot(x, z) < 3.2, .2, T.height));
-      if (dem) { [['South Massif', -10500, 6800], ['North Massif', 2500, -6400]].forEach(m => labels.push([m[0], T.peak(m[1], m[2]).add(new THREE.Vector3(0, 900, 0))])); drawLabels(); }
+      if (dem) { [['South Massif', -10500, 6800], ['North Massif', 2500, -6400]].forEach(m => labels.push([m[0], T.peak(m[1], m[2]).add(new THREE.Vector3(0, 900, 0))])); labels.forEach(l => { if (!l[6] && A17_CARDS[l[0]]) l[6] = A17_CARDS[l[0]]; }); $('sc-tour').hidden = false; drawLabels(); }      // a card for each named place, and the flight along the drives, as over Jezero
       renderer.shadowMap.needsUpdate = true; window.__moonMs = Math.round(performance.now() - t0); };
     fetch('models/moon-a17.bin').then(r => { if (!r.ok) throw 0; return r.arrayBuffer(); }).then(b => build(new Int16Array(b))).catch(() => build(null));      // without the terrain file: plain rolling ground
     g.add(g.userData.fill = new THREE.HemisphereLight(0x1c1a1a, 0x5a473c, .62));       // only light bounced off the ground fills the shadows
@@ -1476,7 +1516,7 @@ function setView(k, instant, keep) {
   if (v.look) to.t.sub(to.p).setLength(.04).add(to.p);      // the pivot is the lens itself, so looking up never drags the camera down through the seat
   lookView = !!v.look; viewFov = v.fov || (v.look ? (camera.aspect < 1.1 ? 50 : 38) : 0); controls.enableZoom = !v.look; const env = CRAFT[craftKey].env; camera.near = (env === 'l2' || env === 'saturn') ? .4 : env === 'leo' ? .3 : env === 'moon' ? .06 : .03; camera.far = env === 'leo' ? 6500 : env === 'moon' ? 110000 : env === 'mars' ? 200000 : 1300; camera.updateProjectionMatrix();
   $('sc-cv').parentElement.classList.toggle('sc-above', k === 'above');      // the vehicle's own buttons (Parts, Drive, Stow) step aside over the map
-  mapMode = k === 'above' && env === 'mars'; const T = THREE;      // over Jezero the view handles like a map: drag to move across it, two fingers or right-drag to tilt and turn
+  mapMode = k === 'above' && (env === 'mars' || env === 'moon'); const T = THREE;      // over Jezero and the Taurus–Littrow valley the view handles like a map: drag to move across it, two fingers or right-drag to tilt and turn
   Object.assign(controls, { enablePan: mapMode, screenSpacePanning: !mapMode, zoomToCursor: mapMode, mouseButtons: mapMode ? { LEFT: T.MOUSE.PAN, MIDDLE: T.MOUSE.ROTATE, RIGHT: T.MOUSE.ROTATE } : { LEFT: T.MOUSE.ROTATE, MIDDLE: T.MOUSE.DOLLY, RIGHT: T.MOUSE.PAN },
     touches: mapMode ? { ONE: T.TOUCH.PAN, TWO: T.TOUCH.DOLLY_ROTATE } : { ONE: T.TOUCH.ROTATE, TWO: T.TOUCH.DOLLY_PAN } });
   { const hp = document.querySelector('.vg-help'); if (hp) { hp.dataset.d = hp.dataset.d || hp.textContent; hp.textContent = mapMode ? (matchMedia('(pointer:coarse)').matches ? 'Drag to move · two fingers to tilt and turn · pinch to zoom · tap a name' : 'Drag to move · right- or middle-drag to tilt and turn · scroll to zoom · click a name') : hp.dataset.d; } }
@@ -1515,13 +1555,18 @@ function moonCam() {      // one Moon scene runs from the driver's seat to 25 km
   const t = Math.max(0, Math.min(1, (camera.position.y - 150) / 2500)), up = t * t * (3 - 2 * t), u = world && world.userData, t2 = Math.max(0, Math.min(1, (camera.position.y - 4) / 50));
   renderer.toneMappingExposure = 1.08 * (1 + 1.4 * t2 * t2 * (3 - 2 * t2));      // seen from straight above, sunlit ground under a low Sun is dim: open up the exposure as the camera climbs…
   if (u && u.fill) u.fill.intensity = .62 - .37 * up;        // …and let the shadows deepen, so the mountains stand out
-  if (u && u.route) { const o = Math.max(0, Math.min(1, (camera.position.y - 700) / 1500)); u.route.U.op.value = o; u.route.dm.opacity = o; if (u.route.dp) u.route.dp.opacity = o; /* the Moon’s Apollo traverse has no year dots */ u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
+  if (u && u.route) { const o = mapMode ? Math.max(0, Math.min(1, (camera.position.y - 120) / 300)) : Math.max(0, Math.min(1, (camera.position.y - 700) / 1500)); u.route.U.op.value = o; u.route.dm.opacity = o; if (u.route.dp) u.route.dp.opacity = o; /* the Moon’s Apollo traverse has no year dots */ u.route.U.px.value = 3.2 * 2 * Math.tan(camera.fov * D2R / 2) / renderer.domElement.clientHeight;
     const lg = $('sc-legend'); if (lg) lg.classList.toggle('on', o > .5); }
   if (u && u.soil) u.soil.bumpScale = .9 * (1 - .75 * Math.max(0, Math.min(1, (camera.position.y - 6) / 60)));      // the grain of the soil turns to noise seen from the air
   if (u && u.trail) u.trail.opacity = .34 * Math.max(0, Math.min(1, (camera.position.y - 12) / 50));
   if (u && u.stars) u.stars.position.copy(camera.position);  // the stars are infinitely far away, wherever the camera goes
 }
 let mapMode = false;
+function moonMap() {      // after the controls move the camera, as over Jezero: the map stays under the view, and the camera never goes into the ground
+  const cc = CRAFT[craftKey], u = world && world.userData; if (!mapMode || !cc || cc.env !== 'moon' || !u || !u.T || tween) return;
+  const t = controls.target, r = Math.hypot(t.x, t.z), lim = 22000; if (r > lim) { const dx = t.x * (lim / r - 1), dz = t.z * (lim / r - 1); t.x += dx; t.z += dz; camera.position.x += dx; camera.position.z += dz; }
+  const gy = u.T.surf(camera.position.x, camera.position.z) + 25; if (camera.position.y < gy) camera.position.y = gy;
+}
 /* Zooming out past the rover's own scene carries on up into the map of the crater. */
 function pullOut() {
   const u = world && world.userData; if (mapMode || lookView || tween || !u || !u.crater || !CRAFT[craftKey].views.above) return;
@@ -1549,7 +1594,7 @@ function stepTour(dt) {
   tour.t += dt / TOUR_YEAR; const ny = r.yl.length; if (tour.t >= ny) { stopTour(); return; }
   const yi = Math.floor(tour.t), f = tour.t - yi, e = f, L = r.yl[yi][0] + (r.yl[yi][1] - r.yl[yi][0]) * e;
   routeAt(r, L, _tp); r.tdot.geometry.attributes.position.setXYZ(0, _tp.x, _tp.y, _tp.z); r.tdot.geometry.attributes.position.needsUpdate = true;
-  r.tdot.material.color.set(YEARS[yi % YEARS.length]); if (tour.yi !== yi) { tour.yi = yi; tourYear(yi); }
+  r.tdot.material.color.set(r.cols ? r.cols[yi % r.cols.length] : YEARS[yi % YEARS.length]); if (tour.yi !== yi) { tour.yi = yi; tourYear(yi); }
   routeAt(r, L + 500, _tb).sub(routeAt(r, L - 500, _ta)); _tb.y = 0; if (_tb.lengthSq() < 1) _tb.set(0, 0, -1); _tb.normalize();      // the way the drive is heading, over a kilometre
   if (tour.t < (tour.lookT || -1)) { _tb.set(14700 - _tp.x, 0, 4500 - _tp.z).normalize(); }      // at Lookout Hill: from up on the rim, looking down into the crater
   if (!tour.hd) tour.hd = _tb.clone(); tour.hd.lerp(_tb, 1 - Math.exp(-dt * .7)).normalize(); tour.sw += dt; tour.age = (tour.age || 0) + dt; tour.low = (tour.low || 0) + ((tour.t < (tour.lowT || -1) ? 1 : 0) - (tour.low || 0)) * (1 - Math.exp(-dt * .6));      // at each named place the camera sweeps down low over the ground, then climbs again
@@ -1557,7 +1602,7 @@ function stepTour(dt) {
   const dist = (2300 - 1000 * ph) * (1 - lo) + 650 * lo, pitch = ((.5 + .12 * Math.sin(tour.sw * .13)) * (1 - ph) + (.3 + .07 * Math.sin(tour.sw * .13)) * ph) * (1 - lo) + .17 * lo;      // swing a little side to side and up and down for depth
   const h = tour.hd, cx = h.x * Math.cos(sw) - h.z * Math.sin(sw), cz = h.x * Math.sin(sw) + h.z * Math.cos(sw);
   _ta.set(_tp.x - cx * dist * Math.cos(pitch), _tp.y + dist * Math.sin(pitch), _tp.z - cz * dist * Math.cos(pitch));
-  const J = world.userData.J; if (J) { let lift = 0; for (let f = .25; f <= 1.001; f += .25) { const x = _tp.x + (_ta.x - _tp.x) * f, z = _tp.z + (_ta.z - _tp.z) * f, y = _tp.y + (_ta.y - _tp.y) * f; lift = Math.max(lift, (J.ground(x, z) + 60 * f - y) / f); } if (lift > 0) _ta.y += lift; }      // keep the camera, and its line of sight to the dot, clear of the hills
+  const J = world.userData.J, MT = world.userData.T, gnd = J ? J.ground : MT ? MT.surf : null; if (gnd) { let lift = 0; for (let f = .25; f <= 1.001; f += .25) { const x = _tp.x + (_ta.x - _tp.x) * f, z = _tp.z + (_ta.z - _tp.z) * f, y = _tp.y + (_ta.y - _tp.y) * f; lift = Math.max(lift, (gnd(x, z) + 60 * f - y) / f); } if (lift > 0) _ta.y += lift; }      // keep the camera, and its line of sight to the dot, clear of the hills
   controls.target.lerp(_tp, k); camera.position.lerp(_ta, k);
   const now = tour.t;      // a small card for each named place as the dot passes it, for about three seconds of the flight
   if (tcard && now - tcard.t0 > 3.2 / TOUR_YEAR) hideTourCard();
@@ -1610,7 +1655,7 @@ function loop() {
   const now = performance.now(), dt = Math.min(.05, (now - lastT) / 1000); lastT = now;
   advance(dt); stepTour(dt); pullOut();
   moonCam();
-  controls.update(); marsCam(); renderer.render(scene, camera); place(); placeTourCard();
+  controls.update(); marsCam(); moonMap(); renderer.render(scene, camera); place(); placeTourCard();
 }
 
 /* ───────────── Page wiring ───────────── */
