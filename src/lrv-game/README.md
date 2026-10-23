@@ -203,3 +203,5 @@ v5.27: hop(W, dt, dx, dz, want, turn, gait) / hopper(x, z): ballistic stride und
 v5.28: armHands(W, st, K): hands forward and out, counter-swing from W.sw, jump raise, vertical lag spring W.ho/W.hv (k 70, c 5, kicked at push-off and landing). footK() = VMAX / 5 scales on-foot speeds, the per-push velocity change, turn rate (sqrt), Schmitt's cap and Cernan's jump. Schmitt's follow: Cernan's velocity plus the gap over one stride (Tp = 0.9 + 0.2 v).
 
 v5.29: hop() push limit when speeding up: min(0.75 footK(), 0.3 + 0.35 v); slowing keeps 0.75 footK().
+
+v5.30: bootDust(W, land) into its own Points (BN 900, bootTick in stepCrew): push-off kick back, landing ring scaled by W.imp. rimAt(x, z, vx, vz): via CRATER_GRID, R >= 1.5, within max(0.8, 0.12 R) of the rim, moving across it (radial share > 0.45); hop() then multiplies speed by up to 1.35 and stretches the flight to at least 0.9 + 0.3 v, once per crater (W.rim).

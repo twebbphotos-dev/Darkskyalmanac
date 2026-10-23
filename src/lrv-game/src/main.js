@@ -2269,7 +2269,7 @@ function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about
   if (W.air) {
     W.vy -= G * dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y += W.vy * dt; W.ta += dt; W.peak = Math.max(W.peak, W.y);
     const g0 = ground(W.x, W.z);
-    if (W.y <= g0 && W.vy < 0) { W.landed = { t: W.ta, d: Math.hypot(W.x - W.x0, W.z - W.z0), h: W.peak - W.y0, jump: W.jumped }; W.air = false; W.st = 0; W.imp = -W.vy; W.hv -= 0.25 * Math.min(4, W.imp); W.y = g0; W.vy = 0; }
+    if (W.y <= g0 && W.vy < 0) { W.landed = { t: W.ta, d: Math.hypot(W.x - W.x0, W.z - W.z0), h: W.peak - W.y0, jump: W.jumped }; W.air = false; W.st = 0; W.imp = -W.vy; W.hv -= 0.25 * Math.min(4, W.imp); W.y = g0; W.vy = 0; bootDust(W, true); }
   } else {
     W.st += dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y = ground(W.x, W.z);
     const sp = Math.hypot(W.vx, W.vz), turning = Math.abs(turn) > 0.6 && sp < 0.5;      // a big turn from a standstill: small shuffling steps first
@@ -2283,7 +2283,9 @@ function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about
       W.vx += ex; W.vz += ez; const v = Math.hypot(W.vx, W.vz);
       let tf = gait === 'kanga' ? 0.45 + 0.2 * v : 0.25 + 0.2 * v;      // the flight: longer the faster he goes
       W.jumped = !!W.jump; if (W.jump) { tf = 2 * W.jump / G; W.jump = 0; gait = 'kanga'; }
-      W.gait = gait; W.tf = tf; W.vy = G * tf / 2; W.hv -= 0.12 + 0.1 * W.vy; W.air = true; W.ta = 0; W.x0 = W.x; W.z0 = W.z; W.y0 = W.y; W.peak = W.y; if (gait === 'lope') W.lead ^= 1;
+      const c = rimAt(W.x, W.z, W.vx, W.vz);      // at a crater's rim, heading across it: a big leap over the edge, once per crossing
+      if (!c) W.rim = null; else if (c !== W.rim && v > 0.5 && want > 0.3) { W.rim = c; const k = Math.min(1.35, (v + 0.4 * footK()) / v); W.vx *= k; W.vz *= k; tf = Math.max(tf, 0.9 + 0.3 * v); W.jumped = true; }
+      W.gait = gait; W.tf = tf; W.vy = G * tf / 2; W.hv -= 0.12 + 0.1 * W.vy; bootDust(W, false); W.air = true; W.ta = 0; W.x0 = W.x; W.z0 = W.z; W.y0 = W.y; W.peak = W.y; if (gait === 'lope') W.lead ^= 1;
     }
   }
   // the legs: open in flight (a long stride, or both boots tucked for a hop), and the landing taken in the knees
@@ -2305,6 +2307,35 @@ function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about
   { const n = Math.ceil(dt / 0.01), hh = dt / n; for (let i = 0; i < n; i++) { W.hv += hh * (-70 * W.ho - 5 * W.hv); W.ho += hh * W.hv; } W.ho = Math.max(-0.12, Math.min(0.1, W.ho)); W.ht += dt; }
   const gNow = ground(W.x, W.z); W.hy = W.air ? Math.max(W.y - soleY([STAND, STAND]), gNow - soleY(L)) : gNow - soleY(L);
   return W;
+}
+function rimAt(x, z, vx, vz) {      // a crater (3 m across or more) whose rim he is on, moving across it rather than along it
+  const L = CRATER_GRID.get(Math.floor(x / CG) + ',' + Math.floor(z / CG)), v = Math.hypot(vx, vz); if (!L || v < 0.1) return null;
+  for (const c of L) { if (c.R < 1.5) continue; const dx = x - c.x, dz = z - c.z, r = Math.hypot(dx, dz) || 1;
+    if (Math.abs(r - c.R) < Math.max(0.8, 0.12 * c.R) && Math.abs(dx * vx + dz * vz) / (r * v) > 0.45) return c; }
+  return null;
+}
+/* Dust from the boots: a kick of grains backward at each push-off, and a low ring blasted out at each landing, harder the
+   harder he comes down. Like the rover's, it flies in clean arcs and falls straight back: no air to hold it. */
+const BN = 900, bpos = new Float32Array(BN * 3), bvel = new Float32Array(BN * 3), blife = new Float32Array(BN);      // their own grains: bigger, denser and lighter than the rover's spray (fresh soil thrown up catches the Sun), so a footfall reads
+const bgeo = new THREE.BufferGeometry(); bgeo.setAttribute('position', new THREE.BufferAttribute(bpos, 3)); bpos.fill(-9999);
+const bootPts = new THREE.Points(bgeo, new THREE.PointsMaterial({ color: 0xdcd6ca, size: 0.08, map: DOT, transparent: true, opacity: 0.8, depthWrite: false })); bootPts.frustumCulled = false; scene.add(bootPts);
+let bnext = 0;
+function bootGrain(x, y, z, vx, vy, vz) { const i = bnext; bnext = (bnext + 1) % BN; bpos[i * 3] = x; bpos[i * 3 + 1] = y; bpos[i * 3 + 2] = z; bvel[i * 3] = vx; bvel[i * 3 + 1] = vy; bvel[i * 3 + 2] = vz; blife[i] = 1; }
+function bootDust(W, land) {
+  const g = ground(W.x, W.z), v = Math.hypot(W.vx, W.vz);
+  if (land) { const k = Math.min(2.5, 0.4 + W.imp * 0.6), m = Math.round(14 + 16 * k);
+    for (let j = 0; j < m; j++) { const ang = Math.random() * 6.2832, out = (0.2 + Math.random() * 0.55) * k;
+      bootGrain(W.x + Math.cos(ang) * 0.12, g + 0.03, W.z + Math.sin(ang) * 0.12, Math.cos(ang) * out + W.vx * 0.5, (0.25 + Math.random() * 0.6) * k, Math.sin(ang) * out + W.vz * 0.5); } }
+  else if (v > 0.2) { const m = Math.round(6 + 10 * Math.min(1, v / 2));
+    for (let j = 0; j < m; j++) bootGrain(W.x + (Math.random() - 0.5) * 0.15, g + 0.03, W.z + (Math.random() - 0.5) * 0.15,
+      -W.vx * (0.15 + Math.random() * 0.35) + (Math.random() - 0.5) * 0.4, 0.3 + Math.random() * 0.6, -W.vz * (0.15 + Math.random() * 0.35) + (Math.random() - 0.5) * 0.4); }
+}
+function bootTick(dt) {
+  let any = false;
+  for (let i = 0; i < BN; i++) { if (blife[i] <= 0) continue; any = true;
+    bvel[i * 3 + 1] -= G * dt; bpos[i * 3] += bvel[i * 3] * dt; bpos[i * 3 + 1] += bvel[i * 3 + 1] * dt; bpos[i * 3 + 2] += bvel[i * 3 + 2] * dt;
+    if (bpos[i * 3 + 1] < ground(bpos[i * 3], bpos[i * 3 + 2])) { blife[i] = 0; bpos[i * 3 + 1] = -9999; } }
+  if (any) bgeo.attributes.position.needsUpdate = true;
 }
 function armHands(W, st, K) {
   const v = Math.hypot(W.vx, W.vz), s = Math.min(1, v / 1.8), jump = W.air && W.gait === 'kanga', u = W.air ? Math.min(1, W.ta / Math.max(0.2, W.tf)) : 0;
@@ -2471,7 +2502,7 @@ function schmitt(h, dt, yawT, drift, jolt, sp) {
 }
 function stepCrew(dt) {
   if (!dt) return;
-  beaconTick(dt); if (FOOT.on) { stepFoot(dt); return; }
+  beaconTick(dt); bootTick(dt); if (FOOT.on) { stepFoot(dt); return; }
   if (!AIR.grounded && AIR.t > 1 && !FUN.rolled) { FUN.rolled = true; FUN.on = Math.random() < 0.12; }      // a big jump: now and then, hands in the air
   if (AIR.grounded) { FUN.rolled = false; if (FUN.on && (FUN.t += dt) > 0.6) { FUN.on = false; FUN.t = 0; } }
   for (const h of CREW) {

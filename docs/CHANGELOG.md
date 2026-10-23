@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.30 (zion-sky-v499)
+Lunar Rover on foot: boot dust and crater-rim leaps. Each push-off kicks a little spray of soil back from the boots and each landing blasts a low ring of it, harder the harder they come down; like the rover's dust it flies in clean arcs and falls straight back, with no air to hold it. The grains are their own, larger and lighter than the rover's spray, because at the rover's grain size a footfall did not show. On a crater's rim (craters 3 m across and up), heading across it, an astronaut takes one big leap over the edge: a longer, higher flight and a burst of speed, once per crossing, in or out.
+
 ## v5.29 (zion-sky-v498)
 Lunar Rover on foot: a natural speed ramp. Every push could add up to 0.75 m/s (2.25 m/s at triple speed), so from a standstill the first hop was already a big leap. Now speeding up builds: each push adds 0.3 m/s plus a third of the current speed, so the first hops are small and low and each gets longer, reaching full pace in about four hops (2.7 s) at real speed and eight (5.6 s) at triple. Slowing down still takes two or three hops.
 
