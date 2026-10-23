@@ -396,18 +396,21 @@ CRATER_TILE.value = craterTile();
    across. Drawn at its true size (like the craters, it is not shrunk with the map), resting on the hillside beside
    where the rover parked. Each piece is the same rough block, cut flat along the cracks between them and pushed a little apart. ── */
 const BOULDER = { x: 0, z: 0, cyl: [] };
-// the crater the route crosses about 80 m before stop 8, about 15 m across (one of the generated craters, picked by place)
-const RAMP_CRATER = craters.reduce((b, c) => Math.hypot(c.x - 677.6, c.z + 699.9) < Math.hypot(b.x - 677.6, b.z + 699.9) ? c : b);
+// the double crater the route crosses just east of stop 6, two overlapping craters about 45 and 37 m across (generated ones, picked by place)
+const near = (x, z) => craters.reduce((b, c) => Math.hypot(c.x - x, c.z - z) < Math.hypot(b.x - x, b.z - z) ? c : b);
+const RAMP_PAIR = [near(292, -765), near(312, -752)];
 // Tilted slabs of rock, one end bedded in the soil and the other raised, their long faces ramps you can drive: the fifth
-// piece of Tracy's Rock, lying low beside the others, and a slab on the near rim of a crater the route crosses before
-// stop 8, a jump straight along the route. Each surface is ground for the wheels (slabAt, in ground()), and the same
+// piece of Tracy's Rock, lying low beside the others, and a kicker on the near rim of the double crater east of stop 6,
+// a jump right across both along the route. Each surface is ground for the wheels (slabAt, in ground()), and the same
 // function shapes its mesh. c, s: the direction from the bedded end to the lip.
 const SLABS = [];
 function slabRel(S, u, v) {      // height above the hillside at u along (0 at the bedded end, L at the raised lip) and v across
   const { L, W, H } = S;
   if (u < -0.6 || u > L + 1.2 || Math.abs(v) > W / 2 + 1.4) return -9;
-  const hw = W / 2 * (0.86 + 0.28 * fbm(u * 0.45 + 7, 3.3, 3)), le = L + 0.8 * (fbm(v * 0.6 + 2, 8.1, 3) - 0.5);      // a ragged outline, not a box
-  const top = H * Math.max(0, u) / L - 0.12 + (0.1 * (fbm(u * 0.9 + 4, v * 0.9, 3) - 0.5) + 0.035 * (fbm(u * 4 + 1, v * 4 - 3, 2) - 0.5)) * Math.min(1, Math.max(0, u));
+  const hw = W / 2 * (S.th ? 0.95 + 0.1 * fbm(u * 0.45 + 7, 3.3, 3) : 0.86 + 0.28 * fbm(u * 0.45 + 7, 3.3, 3)), le = L + 0.8 * (fbm(v * 0.6 + 2, 8.1, 3) - 0.5);      // a ragged outline, not a box
+  const uu = Math.max(0, u), t = Math.tan(S.th || 0), r0 = L - 2.3, rd = Math.max(0, uu - r0);      // a kicker: curving up over Lt, straight, then the last 2.3 m (a wheelbase) easing off by S.round,
+  const ramp = S.th ? t * (uu < S.Lt ? uu * uu / (2 * S.Lt) : S.Lt / 2 + uu - S.Lt) - t * (S.round || 0) * rd * rd / (2 * 2.3) : H * uu / L;      // so the rover leaves without much spin
+  const top = ramp - 0.12 + (0.1 * (fbm(u * 0.9 + 4, v * 0.9, 3) - 0.5) + 0.035 * (fbm(u * 4 + 1, v * 4 - 3, 2) - 0.5)) * Math.min(1, Math.max(0, u)) * (S.th ? 0.25 : 1);      // a kicker's top worn smoother
   const side = ss(hw + 0.6, hw - 0.9, Math.abs(v)), lip = ss(le + 0.5, le - 0.45, u);      // sides that fall away in a broken curve, a snapped-off lip
   return top * side * lip - 1.2 * (1 - side * lip);
 }
@@ -416,7 +419,7 @@ function slabAt(x, z) {
   for (const S of SLABS) {
     const dx = x - S.x, dz = z - S.z; if (Math.abs(dx) > S.L || Math.abs(dz) > S.L) continue;
     const u = dx * S.c + dz * S.s + S.L / 2, v = -dx * S.s + dz * S.c, r = slabRel(S, u, v);
-    if (r > -8) best = Math.max(best, groundBase(x, z) + r);
+    if (r > -8) best = Math.max(best, (S.g0 ?? groundBase(x, z)) + r);      // a kicker stands level on its own base, not tilted by the slope under it
   }
   return best;
 }
@@ -425,7 +428,7 @@ function buildSlab(S, mat, tone) {      // the slab's mesh, from the same surfac
   const NU = 70, NV = 36, U0 = -0.5, U1 = S.L + 1.1, V0 = -S.W / 2 - 1.3, pos = [], idx = [];
   for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
     const u = U0 + (U1 - U0) * i / NU, v = V0 + (-2 * V0) * j / NV, x = S.x + (u - S.L / 2) * S.c - v * S.s, z = S.z + (u - S.L / 2) * S.s + v * S.c;
-    const r = slabRel(S, u, v); pos.push(x, groundBase(x, z) + (r < -8 ? -1.2 : r), z);
+    const r = slabRel(S, u, v); pos.push(x, (S.g0 ?? groundBase(x, z)) + (r < -8 ? -1.2 : r), z);
   }
   for (let j = 0; j < NV; j++) for (let i = 0; i < NU; i++) { const k = j * (NU + 1) + i; idx.push(k, k + NU + 1, k + 1, k + 1, k + NU + 1, k + NU + 2); }
   const sg = new THREE.BufferGeometry(); sg.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3)); sg.setIndex(idx); sg.computeVertexNormals();
@@ -525,10 +528,15 @@ function splitBoulder() {
   // the fifth piece, below the boulder on its downhill side, lying low
   const a = Math.PI / 2 - 0.15;
   buildSlab({ x: BOULDER.x + 9, z: BOULDER.z + 13, c: Math.cos(a), s: Math.sin(a), L: 8, W: 4.2, H: 0.7 }, mat, 21.7);
-  // the ramp: on the near rim of the crater the route crosses 80 m before stop 8 (15 m across), pointing across it along
-  // the route, a gentle 8° so it reads as a slab of rock, not a launcher; its lip a meter short of the rim
-  const C = RAMP_CRATER, ra = Math.atan2(0.358, 0.934), dc = Math.cos(ra), ds = Math.sin(ra), back = C.R + 1 + 5;
-  buildSlab({ x: C.x - dc * back, z: C.z - ds * back, c: dc, s: ds, L: 10, W: 4.4, H: 1.5 }, mat, 13.1);
+  // The ramp: a kicker on the near rim of the double crater, along the route, set by simulated runs so that at double speed and
+  // full throttle the rover clears both craters (about 58 m) and comes down upright beyond the far rim, about 7 s in the air.
+  // It stands level on its own base (on the rim's cross-slope it had tilted, and the rover left it rolling), curves up over
+  // 14 m to 20° and runs straight for 8 m, so it leaves the lip turning only slowly nose-down. Its lip is 2.5 m short of the rim.
+  const ra = 4.5 * Math.PI / 180, dc = Math.cos(ra), ds = Math.sin(ra), Mx = 302, Mz = -756, L = 22;
+  const inPair = (x, z) => RAMP_PAIR.some(c => Math.hypot(x - c.x, z - c.z) < c.R);
+  let sn = -40; for (let q = -70; q < 0; q += 0.25) if (inPair(Mx + dc * q, Mz + ds * q)) { sn = q; break; }
+  const lip = sn - 2.5, kx = Mx + dc * (lip - L / 2), kz = Mz + ds * (lip - L / 2);
+  buildSlab({ x: kx, z: kz, c: dc, s: ds, L, W: 7, H: 1, th: 23 * Math.PI / 180, Lt: 14, g0: groundBase(kx - dc * L / 2, kz - ds * L / 2) }, mat, 13.1);
 }
 function rockMeshes() {
   // Three shapes of rock, each an icosahedron with its corners joined first (three.js gives every triangle its own

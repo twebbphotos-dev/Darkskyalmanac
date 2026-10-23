@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.23 (zion-sky-v492)
+Lunar Rover: the ramp is now a kicker on the near rim of the double crater the time trial crosses just east of stop 6 (two overlapping craters about 45 and 37 m across), facing along the route. The old 8° slab sat at a small crater before stop 8 and followed the ground under it, so it barely showed. The new one stands on a level base (on the rim's cross-slope the slab had tilted and the rover left it rolling), curves up over 14 m to 23° and runs straight for 8 m, so the rover leaves the lip turning only slowly. Shape, heading and lip position were chosen by simulated full-throttle runs: at double speed it clears both craters, about 7 s and some 70 m in the air, and comes down upright beyond the far rim, including runs up to 2° off line or 0.8 m off center; at triple speed it lands farther out.
+
 ## v5.22 (zion-sky-v491)
 Lunar Rover: light crashes no longer launch the wreck. In a slow rollover the crew stay belted in, and the chassis deck is solid to crew and loose parts. But the seated astronauts' legs start inside the deck's box, and their hips sit right on it: every step the deck shoved them out and the belt pulled them back, and only the crew were pushed, so each step added energy until the chassis flew off at up to 20 m/s, spinning at 13 rad/s, with the legs forced out under the floor (which made the belts look tied to the feet). Now a belted man is held by his belt, not pushed by the deck; the deck blocks only parts that come in from outside, and pushes the chassis back by its share; the chassis counts as heavy; and each belt starts slack at the hips wherever the body ended up. In test rollovers the chassis keeps its own 1.6 m/s and under 1 rad/s, and the crew stay in their seats.
 
