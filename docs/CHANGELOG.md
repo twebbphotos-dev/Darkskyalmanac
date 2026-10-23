@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.29 (zion-sky-v498)
+Lunar Rover on foot: a natural speed ramp. Every push could add up to 0.75 m/s (2.25 m/s at triple speed), so from a standstill the first hop was already a big leap. Now speeding up builds: each push adds 0.3 m/s plus a third of the current speed, so the first hops are small and low and each gets longer, reaching full pace in about four hops (2.7 s) at real speed and eight (5.6 s) at triple. Slowing down still takes two or three hops.
+
 ## v5.28 (zion-sky-v497)
 Lunar Rover on foot: livelier arms, and faster at double and triple speed. The arms looked stiff because they were pinned at the suit's sides with only a small swing. Now they ride a little forward and out, as the pressurized suits held them, swing against the leading leg, come up with a jump, and lag each push-off and landing on a soft spring, so they float and settle a moment after the body. At double and triple speed the astronauts' pace, push-off and jump scale with the rover's top speed (2.24x and 3x): Cernan runs up to 4.9 and 6.6 m/s and jumps about 2 m and 3.6 m high. Schmitt now plans a stride ahead to keep his place beside Cernan at any speed.
 

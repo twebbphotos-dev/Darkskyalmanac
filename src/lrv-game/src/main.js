@@ -2275,7 +2275,11 @@ function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about
     const sp = Math.hypot(W.vx, W.vz), turning = Math.abs(turn) > 0.6 && sp < 0.5;      // a big turn from a standstill: small shuffling steps first
     if (!W.jump && (want < 0.05 && sp < 0.35 || turning && want > 0 && W.st < 0.5)) { const k = Math.exp(-dt * 7); W.vx *= k; W.vz *= k; }      // standing (boots braking in the dust)
     else if (W.st >= STANCE || W.jump) {      // push off
-      const dvm = 0.75 * footK(); let ex = ux * want - W.vx, ez = uz * want - W.vz; const e = Math.hypot(ex, ez); if (e > dvm) { ex *= dvm / e; ez *= dvm / e; }
+      const v0 = Math.hypot(W.vx, W.vz), faster = want > v0 + 0.05;
+      // speeding up is a ramp: small, low first hops from a standstill, each push a little stronger as speed builds (about
+      // four hops to full pace at real speed, eight at triple); slowing down keeps the full push, two or three hops to stop
+      const dvm = faster ? Math.min(0.75 * footK(), 0.3 + 0.35 * v0) : 0.75 * footK();
+      let ex = ux * want - W.vx, ez = uz * want - W.vz; const e = Math.hypot(ex, ez); if (e > dvm) { ex *= dvm / e; ez *= dvm / e; }
       W.vx += ex; W.vz += ez; const v = Math.hypot(W.vx, W.vz);
       let tf = gait === 'kanga' ? 0.45 + 0.2 * v : 0.25 + 0.2 * v;      // the flight: longer the faster he goes
       W.jumped = !!W.jump; if (W.jump) { tf = 2 * W.jump / G; W.jump = 0; gait = 'kanga'; }
