@@ -57,6 +57,8 @@
   #btn-pov{position:fixed;right:14px;top:calc(env(safe-area-inset-top,0px) + 62px);z-index:21;padding:8px 12px}
   #rec{font-size:9px;letter-spacing:.06em;color:var(--mute);margin-bottom:6px;max-width:300px;line-height:1.5}
   #btn-recover.on{display:block}
+  #btn-board,#btn-jump{display:none} body.foot #btn-board,body.foot #btn-jump{display:inline-block} #btn-jump{margin-left:8px}
+  body.foot #hint{display:none}
   #btn-replay{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 146px);transform:translateX(-50%);z-index:21;display:none}
   #btn-replay.on{display:block}
   #filmcd{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 64px);transform:translateX(-50%);z-index:20;display:none;align-items:center;gap:8px;font-size:13px;font-weight:600;letter-spacing:.08em;color:#F2E4BE;background:var(--panel);border:1px solid var(--line);border-radius:999px;padding:6px 14px;pointer-events:none;font-variant-numeric:tabular-nums}
@@ -170,6 +172,7 @@
   <div>
     <div id="rec"></div>
     <button class="btn" id="btn-recover">Back on its wheels · R</button>
+    <button class="btn" id="btn-board">Back to the rover</button><button class="btn" id="btn-jump">Jump · Space</button>
     <div id="hint"><b>W S</b> drive and brake · <b>A D</b> steer · drag to look around · <b>R</b> to right the rover</div>
   </div>
   <div class="stick" id="stick"><i></i></div>
