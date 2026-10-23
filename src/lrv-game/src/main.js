@@ -2163,7 +2163,7 @@ function startFilm(px, pz, go = false) {      // go: just to the spot, no filmin
 function filmAboard() {      // back in his seat at once
   $('filmcd').classList.remove('on'); beacon(null);
   const h = CREW[1], st = h.userData.st, g = h.userData.grips; if (h.parent !== rover) rover.add(h);
-  FILM.on = false; FILM.ph = ''; h.position.copy(SEAT1); h.rotation.set(0, Math.PI / 2, 0); st.legs = null; st.lz = 0; st.up = 0; st.v = null; st.hands[0].copy(g[0]); st.hands[1].copy(g[1]); h.visible = true; poseCrew(h);
+  FILM.on = false; FILM.ph = ''; h.position.copy(SEAT1); h.rotation.order = 'XYZ'; h.rotation.set(0, Math.PI / 2, 0); st.legs = null; st.lz = 0; st.up = 0; st.v = null; st.hands[0].copy(g[0]); st.hands[1].copy(g[1]); h.visible = true; poseCrew(h);
 }
 /* The best 15 s of his 30: each moment scored for speed, height off the ground, tumbling, a close pass by him and a
    wreck at the end, and the window with the most of it wins */
@@ -2190,13 +2190,8 @@ function stepFilm(h, dt) {
   const st = h.userData.st, K = CREW_K, T = (FILM.t += dt), g = h.userData.grips; st.yaw = 0; st.up = 0; st.lx = 0; st.y = 0; st.v = null;
   const side = j => _c0.set(j ? 0.31 : -0.31, -0.22, 0.13).multiplyScalar(K);
   if (FILM.ph === 'out' || FILM.ph === 'in') {      // off the seat, or back onto it, beside the rover (in its frame)
-    const out = FILM.ph === 'out', u = out ? ss(0, 1.1, T) : 1 - ss(0, 1.1, T), legs = [[1.45 * u, -1.35 * u], [1.45 * u, -1.35 * u]];
-    const pos = _fv.copy(SEAT1).lerp(OUT1, out ? ss(0.2, 1.1, T) : 1 - ss(0, 0.9, T));
-    const wp = rover.localToWorld(_bt.set(pos.x, 0, pos.z)), gy = rover.worldToLocal(_bc.set(wp.x, ground(wp.x, wp.z), wp.z)).y;
-    st.legs = legs; st.lz = 0; h.position.set(pos.x, SEAT1.y + (gy - soleY(legs) - SEAT1.y) * u, pos.z); h.rotation.set(0, Math.PI / 2 * (1 - u), 0);
-    for (let j = 0; j < 2; j++) st.hands[j].copy(g[j]).lerp(side(j), u);
-    poseCrew(h);
-    if (T >= 1.1) {
+    const out = FILM.ph === 'out', u = Math.min(1, T / 1.5); climbPose(h, SEAT1, OUT1, 0, out ? u : 1 - u);
+    if (T >= 1.5) {
       if (!out) { filmAboard(); return; }
       scene.attach(h); FILM.x = h.position.x; FILM.z = h.position.z; _fw2.set(0, 0, 1).applyQuaternion(h.quaternion); FILM.face = Math.atan2(_fw2.x, _fw2.z); FILM.ph = 'walk'; FILM.t = 0;
     }
@@ -2215,7 +2210,7 @@ function stepFilm(h, dt) {
     }
   }
   const walk = (tx, tz, v) => {      // real hops (hop()): he bounds toward it, easing off over the last strides
-    const W = FILM.W || (FILM.W = hopper(FILM.x, FILM.z)); W.x = FILM.x; W.z = FILM.z;
+    const W = FILM.W || (FILM.W = hopper(FILM.x, FILM.z, 'Schmitt')); W.x = FILM.x; W.z = FILM.z;
     const dx = tx - FILM.x, dz = tz - FILM.z, d = Math.hypot(dx, dz), want = d < 0.3 ? 0 : Math.min(v, Math.max(0.5, (d - 0.2) * 0.9 / Math.sqrt(footK())));
     hop(W, dt, dx, dz, want, Math.atan2(dx, dz) - FILM.face, 'lope'); FILM.x = W.x; FILM.z = W.z;
     legs = W.legs; bob = W.hy - ground(W.x, W.z) + soleY(W.legs); lean = W.lean; if (d > 0.3) faceT = Math.atan2(dx, dz); FILM.armSw = W.sw; return W.air || Math.hypot(W.vx, W.vz) > 0.25 ? Math.max(d, 0.31) : d; };
@@ -2243,10 +2238,12 @@ function stepFilm(h, dt) {
   } else if (FILM.ph === 'board') {      // to the seat side of the rover, and aboard
     rover.updateMatrixWorld(true); const o = rover.localToWorld(_fv.copy(OUT1));
     if (Math.sqrt(v2) > 1.5) FILM.ph = 'wait';
-    else if (walk(o.x, o.z, 1.6) < 0.35) { rover.attach(h); h.position.copy(OUT1); h.rotation.set(0, 0, 0); FILM.ph = 'in'; FILM.t = 0; stepFilm(h, 0); return; }
+    else { const w = aroundRover(FILM.x, FILM.z, o.x, o.z, 1), d = walk(w[0], w[1], 1.6 * footK()); if (d < 0.35 && w[0] === o.x) { rover.attach(h); h.position.copy(OUT1); h.rotation.set(0, 0, 0); FILM.ph = 'in'; FILM.t = 0; stepFilm(h, 0); return; } }
   }
   const tr = FILM.dodge ? 4.5 : 3; let dy = faceT - FILM.face; dy -= 2 * Math.PI * Math.round(dy / (2 * Math.PI)); FILM.face += Math.max(-tr * dt, Math.min(tr * dt, dy));      // he turns at a walk, in his stiff suit (quicker when he must)
-  st.legs = legs; st.lz = lean; st.lx = FILM.dodge ? FILM.dodge.lx : 0; h.rotation.set(0, FILM.face, 0); h.position.set(FILM.x, ground(FILM.x, FILM.z) - soleY(legs) + bob, FILM.z);
+  const Wf = FILM.W && FILM.W.fall ? FILM.W : null; if (Wf) FILM.face = Math.atan2(Wf.fall.dx, Wf.fall.dz);
+  st.legs = legs; st.lz = lean; st.lx = FILM.dodge ? FILM.dodge.lx : 0; h.rotation.order = 'YXZ'; h.rotation.set(Wf ? Wf.pitch : 0, FILM.face, 0);
+  if (Wf) h.position.set(Wf.rx, Wf.hy, Wf.rz); else h.position.set(FILM.x, ground(FILM.x, FILM.z) - soleY(legs) + bob, FILM.z);
   if (FILM.W && (FILM.ph === 'walk' || FILM.ph === 'board') && !FILM.dodge) armHands(FILM.W, st, K);
   for (let j = 0; j < 2; j++) { if (!(FILM.W && (FILM.ph === 'walk' || FILM.ph === 'board') && !FILM.dodge)) st.hands[j].copy(side(j));
     if (cam) st.hands[j].lerp(_fv.set(j ? 0.07 : -0.07, 0.36, 0.25).multiplyScalar(K), cam); }      // the camera up in both gloves
@@ -2262,16 +2259,57 @@ function stepFilm(h, dt) {
    always leading) and the two-footed kangaroo hop the Apollo 17 crew used coming down a steep slope. */
 const STANCE = 0.24, STAND = [1.45, -1.35];
 const footK = () => VMAX / 5;      // double and triple speed: the crew's pace, push and jump scale with the rover's top speed (2.24x, 3x)
-function hopper(x, z) { return { x, z, y: ground(x, z), hy: 0, vx: 0, vz: 0, vy: 0, air: false, st: 1, ta: 0, tf: 0, imp: 0, lead: 0, legs: [STAND.slice(), STAND.slice()], lean: 0.05, sw: 0, ho: 0, hv: 0, ht: Math.random() * 9, jump: 0, landed: null, x0: x, z0: z, y0: 0, peak: 0, gait: 'lope' }; }
+/* Climbing in and out, in the rover's frame (u: 0 seated … 1 standing beside it). As the crews did it: swivel on the seat
+   toward the open side, lift the legs over the seat frame (its tubes stand about 6 cm above the seat, out to 55 cm from the
+   middle) and slide the hips out past it, boots down on the ground beside the rover, then stand and step clear. A straight
+   line from seat to ground would pass through the frame. */
+const _cl1 = new THREE.Vector3(), _cl2 = new THREE.Vector3();
+function climbPose(h, seat, out, faceOut, u, hands = true) {
+  const st = h.userData.st, g = h.userData.grips, K = CREW_K, sd = Math.sign(out.z);
+  const a = ss(0, 0.35, u), b = ss(0.3, 0.7, u), c = ss(0.65, 1, u), lift = 0.13 * Math.sin(Math.PI * b);
+  const edge = _cl1.set(-0.52, seat.y, sd * 0.8), p = _cl2.copy(seat).lerp(edge, b);
+  const thigh = 0.35 * a * (1 - b), dang = b * (1 - c);      // knees up to swing over, then legs hanging over the side, then standing
+  const legs = [0, 1].map(r => [Math.max(0, -thigh + 0.95 * dang + STAND[0] * c - (r === (sd > 0 ? 1 : 0) ? 0.08 * dang : 0)), -0.75 * dang + STAND[1] * c]);
+  const x = p.x + (out.x - p.x) * c, z = p.z + (out.z - p.z) * c;
+  const wp = rover.localToWorld(_bt.set(x, 0, z)), gy = rover.worldToLocal(_bc.set(wp.x, ground(wp.x, wp.z), wp.z)).y;
+  Object.assign(st, { legs, lz: 0.08 * b * (1 - c), lx: 0, yaw: 0, y: 0, up: 0, v: null });
+  h.position.set(x, seat.y + lift + (gy - soleY(legs) - seat.y) * c, z); h.rotation.set(0, Math.PI / 2 + (faceOut - Math.PI / 2) * a, 0);
+  if (hands) for (let j = 0; j < 2; j++) st.hands[j].copy(g[j]).lerp(_c0.set(j ? 0.31 : -0.31, -0.22, 0.13).multiplyScalar(K), c);
+  poseCrew(h);
+}
+/* The rover as an obstacle for anyone on foot: its frame and four wheels, as boxes in its own frame (meters), and a body
+   about 30 cm in radius. Pushed out along the shallowest way, and the speed into it taken away. Up high (a big jump),
+   they clear it. */
+const ROVER_BOX = [[0, 0, 1.6, 0.62], [1.15, 0.915, 0.45, 0.16], [1.15, -0.915, 0.45, 0.16], [-1.15, 0.915, 0.45, 0.16], [-1.15, -0.915, 0.45, 0.16]];
+function roverClear(W) {
+  if (W.y > car.p.y + 0.55) return;
+  const ps = Math.atan2(-_fw.z, _fw.x), c = Math.cos(ps), s = Math.sin(ps), dx = W.x - car.p.x, dz = W.z - car.p.z, R = 0.3;
+  let lx = dx * c - dz * s, lz = dx * s + dz * c, hit = false;
+  for (const [bx, bz, hx, hz] of ROVER_BOX) {
+    const ox = hx + R - Math.abs(lx - bx), oz = hz + R - Math.abs(lz - bz); if (ox <= 0 || oz <= 0) continue; hit = true;
+    if (ox < oz) lx += Math.sign(lx - bx || 1) * ox; else lz += Math.sign(lz - bz || 1) * oz;
+  }
+  if (!hit) return;
+  const nx = lx * c + lz * s, nz = -lx * s + lz * c, ex = car.p.x + nx - W.x, ez = car.p.z + nz - W.z, e = Math.hypot(ex, ez);
+  W.x += ex; W.z += ez; if (e > 1e-6) { const into = (W.vx * ex + W.vz * ez) / e; if (into < 0) { W.vx -= into * ex / e; W.vz -= into * ez / e; } }
+}
+function roverLocal(x, z) { const ps = Math.atan2(-_fw.z, _fw.x), c = Math.cos(ps), s = Math.sin(ps), dx = x - car.p.x, dz = z - car.p.z; return [dx * c - dz * s, dx * s + dz * c]; }
+function roverWorld(lx, lz) { const ps = Math.atan2(-_fw.z, _fw.x), c = Math.cos(ps), s = Math.sin(ps); return [car.p.x + lx * c + lz * s, car.p.z - lx * s + lz * c]; }
+function aroundRover(x, z, tx, tz, side) {      // the way to a spot beside the rover on `side` (+1 / -1): round its nose or tail, not through it
+  const [lx, lz] = roverLocal(x, z); if (lz * side > 0.85 || Math.hypot(lx, lz) > 6) return [tx, tz];
+  const end = Math.sign(lx || 1) * 2.3; return Math.abs(lx) < 2.0 ? roverWorld(end, lz) : roverWorld(end, side * 1.3);
+}
+function hopper(x, z, name = '') { return { name, x, z, rx: x, rz: z, pitch: 0, fall: null, y: ground(x, z), hy: 0, vx: 0, vz: 0, vy: 0, air: false, st: 1, ta: 0, tf: 0, imp: 0, lead: 0, legs: [STAND.slice(), STAND.slice()], lean: 0.05, sw: 0, ho: 0, hv: 0, ht: Math.random() * 9, jump: 0, landed: null, x0: x, z0: z, y0: 0, peak: 0, gait: 'lope' }; }
 function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about `want` m/s; turn: how far he still has to turn (rad)
   const d = Math.hypot(dx, dz), ux = d > 1e-6 ? dx / d : 0, uz = d > 1e-6 ? dz / d : 0;
   W.landed = null;
   if (W.air) {
-    W.vy -= G * dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y += W.vy * dt; W.ta += dt; W.peak = Math.max(W.peak, W.y);
+    W.vy -= G * dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y += W.vy * dt; W.ta += dt; W.peak = Math.max(W.peak, W.y); roverClear(W);
     const g0 = ground(W.x, W.z);
-    if (W.y <= g0 && W.vy < 0) { W.landed = { t: W.ta, d: Math.hypot(W.x - W.x0, W.z - W.z0), h: W.peak - W.y0, jump: W.jumped }; W.air = false; W.st = 0; W.imp = -W.vy; W.hv -= 0.25 * Math.min(4, W.imp); W.y = g0; W.vy = 0; bootDust(W, true); }
-  } else {
-    W.st += dt; W.x += W.vx * dt; W.z += W.vz * dt; W.y = ground(W.x, W.z);
+    if (W.y <= g0 && W.vy < 0) { W.landed = { t: W.ta, d: Math.hypot(W.x - W.x0, W.z - W.z0), h: W.peak - W.y0, jump: W.jumped }; W.air = false; W.st = 0; W.imp = -W.vy; W.hv -= 0.25 * Math.min(4, W.imp); W.y = g0; W.vy = 0; bootDust(W, true); slopeLanding(W); }
+  } else if (W.fall) { fallStep(W, dt); return W; }
+  else {
+    W.st += dt; W.x += W.vx * dt; W.z += W.vz * dt; roverClear(W); W.y = ground(W.x, W.z);
     const sp = Math.hypot(W.vx, W.vz), turning = Math.abs(turn) > 0.6 && sp < 0.5;      // a big turn from a standstill: small shuffling steps first
     if (!W.jump && (want < 0.05 && sp < 0.35 || turning && want > 0 && W.st < 0.5)) { const k = Math.exp(-dt * 7); W.vx *= k; W.vz *= k; }      // standing (boots braking in the dust)
     else if (W.st >= STANCE || W.jump) {      // push off
@@ -2305,6 +2343,7 @@ function hop(W, dt, dx, dz, want, turn, gait) {      // toward (dx, dz) at about
   // the arms: carried a little forward and out (the pressurized suit holds them there), swinging against the legs, and
   // lagging each push and landing on a soft spring, so they float and settle a moment after the body in the low gravity
   { const n = Math.ceil(dt / 0.01), hh = dt / n; for (let i = 0; i < n; i++) { W.hv += hh * (-70 * W.ho - 5 * W.hv); W.ho += hh * W.hv; } W.ho = Math.max(-0.12, Math.min(0.1, W.ho)); W.ht += dt; }
+  W.rx = W.x; W.rz = W.z; W.pitch = 0;
   const gNow = ground(W.x, W.z); W.hy = W.air ? Math.max(W.y - soleY([STAND, STAND]), gNow - soleY(L)) : gNow - soleY(L);
   return W;
 }
@@ -2338,12 +2377,44 @@ function bootTick(dt) {
   if (any) bgeo.attributes.position.needsUpdate = true;
 }
 function armHands(W, st, K) {
+  if (W.fall) { const t = W.fall.t, reach = ss(0.2, 0.8, t), push = ss(1.8, 2.4, t) * (1 - ss(3.2, 3.8, t));
+    for (let j = 0; j < 2; j++) st.hands[j].set((j ? 1 : -1) * 0.3, -0.2 + 0.25 * reach - 0.35 * push, 0.15 + 0.35 * reach).multiplyScalar(K); return; }
   const v = Math.hypot(W.vx, W.vz), s = Math.min(1, v / 1.8), jump = W.air && W.gait === 'kanga', u = W.air ? Math.min(1, W.ta / Math.max(0.2, W.tf)) : 0;
   for (let j = 0; j < 2; j++) {
     const sd = j ? 1 : -1, swing = -sd * W.sw * (0.08 + 0.05 * s), idle = 0.008 * Math.sin(W.ht * (1.3 + 0.4 * j) + j * 2);      // the swing opposes the leading leg; a faint drift at rest
     const up = jump ? 0.14 * Math.sin(Math.PI * u) : 0;      // a jump: both arms come up with it
     st.hands[j].set(sd * (0.29 + 0.03 * s), -0.2 + 0.08 * s + W.ho + up + idle, 0.15 + 0.08 * s + swing + 0.5 * up).multiplyScalar(K);
   }
+}
+/* Coming down on a steep slope rising ahead: the boots meet ground tilted against the motion. Some of the speed goes into
+   the slope (the steeper, the more: about 12% lost at 20°, a third at 35°), and if the speed into the slope is too much for
+   the legs to take, he trips and goes down, as the Apollo crews did now and then (Harrison Schmitt fell several times on
+   Apollo 17): a slow topple in the low gravity, a slide on the front of the suit, and a push back up from hands and knees.
+   So where a hop lands on a crater's far wall matters: come down on the gentle part, or arrive slowly. */
+function slopeLanding(W) {
+  const v = Math.hypot(W.vx, W.vz); if (v < 0.4) return;
+  const ux = W.vx / v, uz = W.vz / v, rise = (ground(W.x + ux * 0.5, W.z + uz * 0.5) - ground(W.x - ux * 0.5, W.z - uz * 0.5)), th = Math.atan(Math.max(0, rise));
+  if (th < 0.17) return;
+  const into = v * Math.sin(th) + 0.3 * W.imp, lim = 1.0 * Math.sqrt(footK());
+  if (into > lim && th > 0.38) {
+    W.fall = { t: 0, dx: ux, dz: uz }; W.vx *= Math.cos(th); W.vz *= Math.cos(th);
+    toast(`${W.name || 'He'} trips on the slope and goes down`); return;
+  }
+  const k = Math.cos(th) * Math.cos(th); W.vx *= k; W.vz *= k;      // checked: the slope takes some of the speed
+}
+function fallStep(W, dt) {
+  const F = W.fall, t = (F.t += dt), L = W.legs;
+  const v = Math.hypot(W.vx, W.vz), dec = t < 0.9 ? 0.6 : 2.2;      // the boots drag while he topples, then the whole suit slides
+  if (v > 0) { const k = Math.max(0, v - dec * dt) / v; W.vx *= k; W.vz *= k; }
+  W.x += W.vx * dt; W.z += W.vz * dt; roverClear(W); W.y = ground(W.x, W.z);
+  const down = ss(0, 0.95, t * t / 0.95), up = ss(2.1, 3.7, t), pitch = 1.25 * down * (1 - up) + 0.55 * ss(2.1, 2.6, t) * (1 - ss(3.0, 3.7, t));
+  if (t > 0.9 && !F.hit) { F.hit = true; W.imp = 1.2; const ox = W.x, oz = W.z; W.x += F.dx * 0.9; W.z += F.dz * 0.9; bootDust(W, true); W.x = ox; W.z = oz; }      // the suit hits: a burst of dust
+  const kneel = ss(1.9, 2.5, t) * (1 - ss(3.1, 3.7, t));      // up onto the knees, then the feet
+  for (let r = 0; r < 2; r++) { L[r][0] = STAND[0] - 0.15 * down * (1 - up) - 0.9 * kneel; L[r][1] = STAND[1] + 0.2 * down * (1 - up) + 1.6 * kneel; }
+  W.sw = 0; W.ho = 0; W.hv = 0; W.lean = 0.06; W.pitch = pitch;
+  const hip = -soleY(L), off = hip * Math.sin(pitch) * 0.9; W.rx = W.x + F.dx * off; W.rz = W.z + F.dz * off;
+  W.hy = W.y + Math.max(0.22, hip * Math.cos(pitch)); W.air = false;
+  if (t > 3.8) { W.fall = null; W.vx = W.vz = 0; W.st = 0; W.pitch = 0; }
 }
 /* The spot Schmitt is heading for: a small marker flag on a thin pole, as the crews planted to mark a spot */
 let BEACON = null;
@@ -2371,24 +2442,18 @@ function startFoot() {
   toast('On foot · W/S or the stick to go, A/D to turn, Space to jump');
 }
 function footBoard() { if (FOOT.on && FOOT.ph === 'walk') { FOOT.ph = 'home'; toast('Back to the rover'); } }
-function footClimb(h, i, u, out) {      // u: 0 seated … 1 standing beside the rover (rover frame)
-  const F = FOOT_SIDE[i], st = h.userData.st, g = h.userData.grips, K = CREW_K, legs = [STAND.map(v => v * u), STAND.map(v => v * u)];
-  const pos = _fv.copy(F.seat).lerp(F.out, out), wp = rover.localToWorld(_bt.set(pos.x, 0, pos.z)), gy = rover.worldToLocal(_bc.set(wp.x, ground(wp.x, wp.z), wp.z)).y;
-  Object.assign(st, { legs, lz: 0, lx: 0, yaw: 0, y: 0, up: 0, v: null }); h.position.set(pos.x, F.seat.y + (gy - soleY(legs) - F.seat.y) * u, pos.z); h.rotation.set(0, Math.PI / 2 + (F.faceOut - Math.PI / 2) * u, 0);
-  for (let j = 0; j < 2; j++) st.hands[j].copy(g[j]).lerp(_c0.set(j ? 0.31 : -0.31, -0.22, 0.13).multiplyScalar(K), u);
-  poseCrew(h);
-}
+function footClimb(h, i, u) { const F = FOOT_SIDE[i]; h.rotation.order = 'YXZ'; climbPose(h, F.seat, F.out, F.faceOut, u); }
 function stepFoot(dt) {
   const T = (FOOT.t += dt), K = CREW_K;
   if (FOOT.ph === 'out' || FOOT.ph === 'in') {
     const o = FOOT.ph === 'out';
-    CREW.forEach((h, i) => { const t = T - (i ? 0.35 : 0), u = o ? ss(0, 1.1, t) : 1 - ss(0, 1.1, t), m = o ? ss(0.2, 1.1, t) : 1 - ss(0, 0.9, t); footClimb(h, i, u, m); });
-    if (T < 1.45) return;
+    CREW.forEach((h, i) => { const t = T - (i ? 0.35 : 0), u = o ? Math.min(1, Math.max(0, t / 1.6)) : 1 - Math.min(1, Math.max(0, t / 1.6)); footClimb(h, i, u); });
+    if (T < 1.95) return;
     if (o) {      // standing beside the rover: into the world, each with his own hopper
-      FOOT.W = CREW.map((h, i) => { scene.attach(h); const W = hopper(h.position.x, h.position.z); _fw2.set(0, 0, 1).applyQuaternion(h.quaternion); const f = Math.atan2(_fw2.x, _fw2.z); if (i) FOOT.sface = f; else FOOT.face = f; return W; });
+      FOOT.W = CREW.map((h, i) => { scene.attach(h); const W = hopper(h.position.x, h.position.z, i ? 'Schmitt' : 'Cernan'); _fw2.set(0, 0, 1).applyQuaternion(h.quaternion); const f = Math.atan2(_fw2.x, _fw2.z); if (i) FOOT.sface = f; else FOOT.face = f; return W; });
       FOOT.ph = 'walk'; FOOT.t = 0;
     } else {      // aboard
-      CREW.forEach((h, i) => { const st = h.userData.st, g = h.userData.grips; h.position.copy(FOOT_SIDE[i].seat); h.rotation.set(0, Math.PI / 2, 0); st.legs = null; st.lz = 0; st.lx = 0; st.v = null; st.hands[0].copy(g[0]); st.hands[1].copy(g[1]); poseCrew(h); });
+      CREW.forEach((h, i) => { const st = h.userData.st, g = h.userData.grips; h.position.copy(FOOT_SIDE[i].seat); h.rotation.set(0, Math.PI / 2, 0); h.rotation.order = 'XYZ'; st.legs = null; st.lz = 0; st.lx = 0; st.v = null; st.hands[0].copy(g[0]); st.hands[1].copy(g[1]); poseCrew(h); });
       FOOT.on = false; FOOT.ph = ''; document.body.classList.remove('foot'); $('air').textContent = '';
     }
     return;
@@ -2399,7 +2464,7 @@ function stepFoot(dt) {
   if (FOOT.ph === 'walk') {
     // Cernan: turned by the player at a suited man's pace, and hopping the way he faces
     const M = footK(); FOOT.face += -FOOT.s * 1.5 * Math.sqrt(M) * dt;
-    let fx = Math.sin(FOOT.face), fz = Math.cos(FOOT.face), want = FOOT.f > 0 ? FOOT.f * 2.2 * M : 0;
+    let fx = Math.sin(FOOT.face), fz = Math.cos(FOOT.face), want = FOOT.f > 0 && !Wc.fall ? FOOT.f * 2.2 * M : 0;
     if (FOOT.f < -0.2) { fx = -fx; fz = -fz; want = 0.4 * M * -FOOT.f; }      // a careful step backward
     if (edgeDist(Wc.x + fx * 3, Wc.z + fz * 3) < 6) { want = 0; if (!FOOT.told) { FOOT.told = true; toast('Mission Control · That’s the edge of the mission area. Head back toward the LM.'); } } else FOOT.told = false;
     goC = [fx, fz, want, 0]; tC = gaitOn(Wc, fx, fz, 'skip');
@@ -2414,7 +2479,8 @@ function stepFoot(dt) {
     rover.updateMatrixWorld(true); const oc = rover.localToWorld(_fv.copy(OUT0)).clone(), os = rover.localToWorld(_fv.copy(OUT1)).clone();
     const dc = Math.hypot(oc.x - Wc.x, oc.z - Wc.z), ds = Math.hypot(os.x - Ws.x, os.z - Ws.z);
     const M = footK(), ap = d => d < 0.3 ? 0 : Math.min(1.8 * M, Math.max(0.5, (d - 0.2) * 0.9 / Math.sqrt(M)));      // easing off sooner when faster: a push changes speed by more
-    goC = [oc.x - Wc.x, oc.z - Wc.z, ap(dc), 0]; goS = [os.x - Ws.x, os.z - Ws.z, ap(ds), 0];
+    const wc = aroundRover(Wc.x, Wc.z, oc.x, oc.z, -1), ws = aroundRover(Ws.x, Ws.z, os.x, os.z, 1);      // round the nose or tail to his own side
+    goC = [wc[0] - Wc.x, wc[1] - Wc.z, wc[0] === oc.x ? ap(dc) : 1.4 * M, 0]; goS = [ws[0] - Ws.x, ws[1] - Ws.z, ws[0] === os.x ? ap(ds) : 1.4 * M, 0];
     tC = 'lope'; tS = 'lope';
     const still = W => !W.air && Math.hypot(W.vx, W.vz) < 0.25;
     if (dc < 0.35 && ds < 0.35 && still(Wc) && still(Ws)) { CREW.forEach((h, i) => { rover.attach(h); h.position.copy(FOOT_SIDE[i].out); }); FOOT.ph = 'in'; FOOT.t = 0; stepFoot(0); return; }
@@ -2427,11 +2493,13 @@ function stepFoot(dt) {
       const tgt = g[2] > 0 || Math.hypot(W.vx, W.vz) > 0.3 ? dirF : FOOT.face, dy = wrap(tgt - faces[i]); faces[i] += Math.max(-3 * dt, Math.min(3 * dt, dy));
     }
     st.legs = W.legs; st.lz = W.lean; st.lx = 0; st.yaw = 0; st.y = 0; st.up = 0; st.v = null;
-    h.rotation.set(0, faces[i], 0); h.position.set(W.x, W.hy, W.z);
+    if (W.fall) { const fd = Math.atan2(W.fall.dx, W.fall.dz), dy = wrap(fd - faces[i]); faces[i] += Math.max(-4 * dt, Math.min(4 * dt, dy)); }      // he goes down the way he was moving
+    h.rotation.order = 'YXZ'; h.rotation.set(W.pitch, faces[i], 0); h.position.set(W.rx, W.hy, W.rz);
     armHands(W, st, K);
     poseCrew(h);
   });
   FOOT.face = faces[0]; FOOT.sface = faces[1];
+  { const dx = Ws.x - Wc.x, dz = Ws.z - Wc.z, d = Math.hypot(dx, dz); if (d < 0.65 && d > 1e-4) { const k = (0.65 - d) / 2 / d; Ws.x += dx * k; Ws.z += dz * k; Wc.x -= dx * k; Wc.z -= dz * k; } }      // two suits do not pass through each other
   if (Wc.landed && Wc.landed.t > 0.25) { const L = Wc.landed; $('air').textContent = `${L.jump ? 'Jump' : 'Hop'} ${L.t.toFixed(2)} s · ${U.m(L.d, 1)} · ${Math.round(L.h * 100)} cm up`; FOOT.hopShow = 2.5; }
   else if (FOOT.hopShow > 0 && (FOOT.hopShow -= dt) <= 0) $('air').textContent = '';
 }
@@ -2630,6 +2698,7 @@ function stepSample(h, dt, S = SAMPLE) {      // S: his walk-out (SAMPLE, or one
   // the lunar lope the crews settled on: unhurried strides, a long float between them, the knees taking each landing
   const lope = w => { const s = Math.abs(Math.sin(w.ph)), sw = 0.22 * Math.sin(w.ph), give = w.on ? 0.4 * (1 - s) : 0;
     return { legs: [[stand[0] + sw - give * 0.5, stand[1] - Math.max(0, -sw) * 0.6 + give], [stand[0] - sw - give * 0.5, stand[1] - Math.max(0, sw) * 0.6 + give]], y: w.on ? 0.11 * Math.pow(s, 0.6) : 0 }; };
+  if (T < 1.1 || (T >= 7.8 && T < 9)) { climbPose(h, S.seat, S.out, S.faceOut, T < 1.1 ? sm(0, 1.1) : 1 - sm(7.8, 9)); if (S.tool) S.tool.visible = false; return; }      // over the seat frame, out or in
   const insp = sm(5.0, 5.5) - sm(5.9, 6.2);      // the sample held up to his visor: a geologist's first look
   // where he is (rover frame), which way he faces, and how his legs are
   let pos = new THREE.Vector3(), face, legs, lean = 0, hands;

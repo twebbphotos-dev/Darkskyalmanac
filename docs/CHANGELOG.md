@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.31 (zion-sky-v500)
+Lunar Rover: clean climbs, the rover as an obstacle, and slopes that bite. Climbing in and out slid the astronaut in a straight line from seat to ground, through the seat frame. Now every climb (on foot, Hold the camera, Send Schmitt here, the samples) swivels on the seat, lifts the legs over the frame, slides the hips out past it with the boots hanging over the side, then stands and steps clear, and the reverse to get in. On foot, the rover's frame and wheels are solid (a big jump clears it), the two suits keep apart, and both find their way round the nose or tail to their own side to board. Landing on a steep slope rising ahead now costs speed (about 12% at 20°, a third at 35°), and hitting it too fast trips the astronaut: a slow topple in the low gravity, a slide on the front of the suit, and a push back up from hands and knees, as Harrison Schmitt did several times on Apollo 17. Where a hop lands on a crater's far wall is now part of keeping speed.
+
 ## v5.30 (zion-sky-v499)
 Lunar Rover on foot: boot dust and crater-rim leaps. Each push-off kicks a little spray of soil back from the boots and each landing blasts a low ring of it, harder the harder they come down; like the rover's dust it flies in clean arcs and falls straight back, with no air to hold it. The grains are their own, larger and lighter than the rover's spray, because at the rover's grain size a footfall did not show. On a crater's rim (craters 3 m across and up), heading across it, an astronaut takes one big leap over the edge: a longer, higher flight and a burst of speed, once per crossing, in or out.
 
