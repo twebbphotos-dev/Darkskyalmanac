@@ -285,34 +285,53 @@
   // crystals sink to pile up as the mantle while light plagioclase floats up to build the crust; and at the end the last
   // dregs of the melt, rich in potassium, rare-earth elements and phosphorus (KREEP), trapped between crust and mantle.
   // Layer thicknesses are only roughly to scale (the crust is drawn a little thick to be seen). ──
-  var CUTP = []; (function () { var s = 21; function R() { s = (s * 16807) % 2147483647; return s / 2147483647; } for (var i = 0; i < 150; i++) CUTP.push({ up: i % 5 < 2, a: 0.04 + R() * 1.49, f: R(), v: 0.08 + R() * 0.1, z: 0.6 + R() * 0.8 }); })();
+  var CUTP = []; (function () { var s = 21; function R() { s = (s * 16807) % 2147483647; return s / 2147483647; } for (var i = 0; i < 110; i++) CUTP.push({ up: i % 5 < 2, a: 0.06 + R() * 1.45, f: R(), v: 0.07 + R() * 0.08, z: 0.7 + R() * 0.6, rot: R() * 3.14 }); })();
   function cutaway(x0, y0, rad, a) {
     if (a <= 0) return;
-    var rc = 0.21, base = 0.55 + 0.37 * ss(18, 30, t), crust = 1 - 0.04 * ss(22, 30, t), kreep = ss(27, 30, t);
+    var M = maps, rc = 0.21, base = 0.55 + 0.37 * ss(18, 30, t), kreep = ss(27, 30, t), crust = 1 - 0.04 * ss(22, 30, t), kw = 0.014 * kreep;
+    var m = Math.min(base, crust - kw - 0.004), n = Math.max(8, Math.ceil(rad)), b = bufCanvas('cut', n), bx = b.getContext('2d'), img = bx.createImageData(n, n), d = img.data;
+    var e = 1.2 / rad, flow = t * 0.03;
+    // the cut face, pixel by pixel: each layer with its own color and grain, soft one-pixel edges, a thin dark line at each boundary
+    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
+      var r = Math.hypot(x + 0.5, y + 0.5) / rad; if (r > 1.004) continue;
+      var th = Math.atan2(y + 0.5, x + 0.5), gi = (y % NH) * NW + (x % NW), gj = (((y * 2) % NH) * NW + ((x * 2 + 97) % NW)), g1 = M.n2[gi] - 0.5, g2 = M.n1[gj] - 0.5, R = 0, G = 0, B = 0;
+      if (r < rc) {      // molten iron: white-hot at the middle, orange at its edge
+        var c = 1 - r / rc; c = c * c; R = 1.0; G = 0.5 + 0.42 * c + g1 * 0.06; B = 0.12 + 0.55 * c * c;
+      } else if (r < m) {      // the mantle: crystals of olivine (dark green, deepest) and pyroxene (browner, higher), packed and grainy
+        var u = (r - rc) / Math.max(0.01, m - rc), gr = g2 > 0.18 ? 0.07 : g2 < -0.2 ? -0.05 : 0;
+        R = 0.2 + 0.13 * u + g1 * 0.08 + gr; G = 0.27 + 0.06 * u + g1 * 0.08 + gr; B = 0.14 + 0.06 * u + g1 * 0.05 + gr * 0.7;
+      } else if (r < crust - kw) {      // the magma ocean: hottest at depth, with slow convection streaks
+        var u2 = (r - m) / Math.max(0.01, crust - kw - m), cs = M.n1[((((r * 40) | 0) % NH) * NW + (((th * 90 + flow * 400) | 0) % NW + NW) % NW)] - 0.5;
+        R = 1.0 - 0.18 * u2 + cs * 0.1; G = 0.58 - 0.3 * u2 + cs * 0.16; B = 0.16 - 0.1 * u2 + cs * 0.05;
+      } else if (r < crust) {      // the last of the melt, rich in rare elements (KREEP): dark, rust-red
+        R = 0.44 + g1 * 0.06; G = 0.22 + g1 * 0.04; B = 0.13;
+      } else {      // the crust: pale anorthosite, finely grained
+        R = 0.84 + g2 * 0.1; G = 0.82 + g2 * 0.1; B = 0.77 + g2 * 0.09;
+      }
+      var line = 0, bs = [rc, m, crust - kw, crust]; for (var k = 0; k < 4; k++) { var dd = Math.abs(r - bs[k]); if (dd < e) line = Math.max(line, 1 - dd / e); }
+      var sh = 0.93 - 0.08 * r * Math.cos(th - 0.6);      // the flat face catches the light a little unevenly
+      var o = (y * n + x) * 4, k2 = 1 - 0.35 * line; d[o] = Math.min(255, R * sh * k2 * 255); d[o + 1] = Math.min(255, G * sh * k2 * 255); d[o + 2] = Math.min(255, B * sh * k2 * 255); d[o + 3] = r > 1 ? (1.004 - r) / 0.004 * 255 : 255;
+    }
+    bx.putImageData(img, 0, 0);
     cx.save(); cx.globalAlpha = a;
-    cx.beginPath(); cx.moveTo(x0, y0); cx.arc(x0, y0, rad * 1.002, 0, Math.PI / 2); cx.closePath(); cx.clip();
-    function ring(r, c0, c1) { var g = cx.createRadialGradient(x0, y0, 0, x0, y0, rad * r); g.addColorStop(0, c0); g.addColorStop(1, c1); cx.fillStyle = g; cx.beginPath(); cx.arc(x0, y0, rad * r, 0, 7); cx.fill(); }
-    ring(1.002, '#e8e0cf', '#cfc6b4');                                                    // the crust of plagioclase (anorthosite)
-    ring(crust, '#ff9a3c', '#c9441c');                                                    // the magma ocean
-    if (kreep > 0) { cx.globalAlpha = a * kreep; ring(crust, '#b5612e', '#8a3b1c'); cx.globalAlpha = a; ring(crust - 0.012 * kreep, '#ff9a3c', '#c9441c'); }
-    var m = base > crust - 0.012 * kreep - 0.004 ? crust - 0.012 * kreep - 0.004 : base;
-    ring(m, '#4a5a34', '#5d6a3c');                                                        // the mantle: piled-up olivine and pyroxene
-    ring(rc + 0.015, '#3a2a20', '#3a2a20');
-    ring(rc, '#fff3c8', '#ff8a2a');                                                       // the iron core, molten
-    // crystals: green ones sinking through the melt, white ones rising to the crust
-    for (var i = 0; i < CUTP.length; i++) { var p = CUTP[i], f = (t * p.v + p.f) % 1, rr = p.up ? m + (crust - m) * f : crust - (crust - m) * f;
-      if (crust - m < 0.02) break; var px = x0 + Math.cos(p.a) * rr * rad, py = y0 + Math.sin(p.a) * rr * rad, z = rad * 0.011 * p.z;
-      cx.fillStyle = p.up ? 'rgba(245,242,232,.95)' : 'rgba(70,95,45,.95)'; cx.fillRect(px - z, py - z, 2 * z, 2 * z); }
-    for (var j = 0; j < 40; j++) { var pa = CUTP[j].a, pr = rc + 0.03 + (m - rc - 0.04) * CUTP[j].f; cx.fillStyle = 'rgba(30,40,20,.5)'; var zz = rad * 0.008; cx.fillRect(x0 + Math.cos(pa) * pr * rad - zz, y0 + Math.sin(pa) * pr * rad - zz, 2 * zz, 2 * zz); }      // texture in the mantle
-    // the cut faces: shaded edges and a bright rim, so it reads as a slice out of a ball
-    cx.strokeStyle = 'rgba(0,0,0,.55)'; cx.lineWidth = Math.max(1.5, rad * 0.012); cx.beginPath(); cx.moveTo(x0 + rad, y0); cx.lineTo(x0, y0); cx.lineTo(x0, y0 + rad); cx.stroke();
+    cx.shadowColor = 'rgba(0,0,0,.7)'; cx.shadowBlur = rad * 0.05; cx.drawImage(b, x0, y0); cx.shadowBlur = 0;      // a soft shadow on the sphere along the cut
+    // crystals in the melt: dark green grains sinking, white laths of plagioclase rising
+    if (crust - kw - m > 0.02) for (var i = 0; i < CUTP.length; i++) {
+      var p = CUTP[i], f = (t * p.v + p.f) % 1, top = crust - kw - 0.01, bot = m + 0.01, rr = p.up ? bot + (top - bot) * f : top - (top - bot) * f;
+      var px = x0 + Math.cos(p.a) * rr * rad, py = y0 + Math.sin(p.a) * rr * rad, z = rad * 0.009 * p.z, fade = Math.min(1, f * 6, (1 - f) * 6);
+      cx.save(); cx.translate(px, py); cx.rotate(p.rot + t * 0.3); cx.globalAlpha = a * fade;
+      if (p.up) { cx.fillStyle = '#f4f1e6'; cx.fillRect(-z * 1.6, -z * 0.45, z * 3.2, z * 0.9); }
+      else { cx.fillStyle = '#3d5a2a'; cx.beginPath(); cx.moveTo(0, -z); cx.lineTo(z * 0.8, 0); cx.lineTo(0, z); cx.lineTo(-z * 0.8, 0); cx.closePath(); cx.fill(); }
+      cx.restore();
+    }
+    // the cut edges: a fine highlight where the face meets the surface
+    cx.strokeStyle = 'rgba(255,240,215,.45)'; cx.lineWidth = Math.max(1, rad * 0.006); cx.beginPath(); cx.moveTo(x0 + rad, y0); cx.lineTo(x0, y0); cx.lineTo(x0, y0 + rad); cx.stroke();
     cx.restore();
-    // what is what
-    var la = a * ss(18.5, 19.5, t), L2 = function (txt, r, ang, ly) { var px = x0 + Math.cos(ang) * r * rad, py = y0 + Math.sin(ang) * r * rad; label(txt, CW, y0 + ly * rad, la, px, py, 0.027); };      // stacked down the right side
-    L2('Crust', (1 + crust) / 2, 0.15, 0.1);
-    L2('Magma ocean', (crust + m) / 2, 0.5, 0.36);
-    L2('Sinking crystals', (m + rc) / 2 + 0.05, 0.85, 0.62);
-    L2('Iron core', rc * 0.6, 1.1, 0.88);
+    var la = a * ss(18.5, 19.5, t), L2 = function (txt, r, ang) { var px = x0 + Math.cos(ang) * r * rad, py = y0 + Math.sin(ang) * r * rad; label(txt, CW, py, la, px, py, 0.027); };      // down the right side, each level with its spot
+    L2('Iron core', rc * 0.55, 0.3);
+    L2('Mantle crystals', (m + rc) / 2, 0.55);
+    L2('Magma ocean', (crust - kw + m) / 2, 0.82);
+    L2('Crust', (1 + crust) / 2, 1.18);
   }
   function fountain(x, y, rad, s) {      // a fire fountain: molten spray thrown kilometers high, falling back as glass beads
     if (s < 0 || s > 3.4) return; var k = 9; function R() { k = (k * 16807) % 2147483647; return k / 2147483647; }
