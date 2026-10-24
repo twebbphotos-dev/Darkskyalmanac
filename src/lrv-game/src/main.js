@@ -624,7 +624,9 @@ function step(h) {
     const st = car.steer * wl.steer;
     _wf.copy(_fw).multiplyScalar(Math.cos(st)).addScaledVector(_rt, Math.sin(st)); _wf.addScaledVector(n, -_wf.dot(n)).normalize();
     _ws.copy(n).cross(_wf).normalize();
-    const vf = _vc.dot(_wf), vs = _vc.dot(_ws), lim = MU * Fn;
+    // grip falls off a little on a heavily loaded tire (as real tires do), so in a hard turn the outside wheels let go and
+    // the rover slides wide before it can lever itself over onto them
+    const vf = _vc.dot(_wf), vs = _vc.dot(_ws), Fn0 = MASS * G / 4, lim = MU * Fn * Math.max(0.6, 1 - 0.22 * Math.max(0, Fn / Fn0 - 1));
     let Fl;
     if (throttle > 0.02 && vf > -0.3) Fl = throttle * [520, 900, 1300][SPD - 1] * Math.max(0, 1 - vf / VMAX);      // each wheel's motor, governed to top speed
     else if (throttle < -0.02 && vf < 0.3) Fl = throttle * 300 * Math.max(0, 1 + vf / VREV);
@@ -637,8 +639,10 @@ function step(h) {
       const g = Math.hypot(Fl, Fs); if (g > lim) { wl.hx *= lim / g; wl.hy *= lim / g; }      // slipping: the hold gives way with it
     }
     const tot = Math.hypot(Fl, Fs); if (tot > lim) { Fl *= lim / tot; Fs *= lim / tot; }        // the friction circle: grip is shared
-    _tmp.copy(n).multiplyScalar(Fn).addScaledVector(_wf, Fl).addScaledVector(_ws, Fs);      // the ground pushes square to its own surface: a rising wall slows the rover as well as lifting its nose (along the chassis's up, all of a hit went into the pitch)
+    _tmp.copy(n).multiplyScalar(Fn).addScaledVector(_wf, Fl);      // the ground pushes square to its own surface: a rising wall slows the rover as well as lifting its nose (along the chassis's up, all of a hit went into the pitch)
     _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
+    // the sideways grip acts as if 25 cm up (the suspension's roll center, above the ground): less leverage to roll it over
+    _tmp.copy(_ws).multiplyScalar(Fs); _f.add(_tmp); _t.add(_L.copy(r).addScaledVector(_up, 0.25).cross(_tmp));
     wl.spin += vf / WHEEL_R * h;
   }
   // A turn assist while the tires bear on the ground: the yaw follows the turn the wheels ask for (four-wheel steering

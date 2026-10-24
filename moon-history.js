@@ -103,13 +103,18 @@
         var rs = M.wT[m] * (1 - P.tycho) + M.wC[m] * (1 - P.cop); if (rs > 1) rs = 1;
         if (rs > 0) { hl += (M.preB[m] - hl) * rs; tb += (M.todayB[m] - tb) * rs; }
         var a = M.age[ni]; if (a > 0) a += (M.n1[ni] - 0.5) * 0.3 + (M.n2[ni] - 0.5) * 0.1;      // ragged flow fronts, not straight lines between basins
-        var sm = M.smooth[m] * 1.05 + (M.n2[ni] - 0.5) * 0.08, alb = sm + (hl - sm) * P.detail, glow = 0;
-        if (a > 0 && P.ga < a) { alb = tb; var g = 1 - (a - P.ga) / 0.12; if (g > 0) glow = g * g; }      // flooded: dark basalt, glowing while fresh
+        var sm = M.smooth[m] * 1.05 + (M.n2[ni] - 0.5) * 0.08, alb = sm + (hl - sm) * P.detail;
+        var dl = a > 0 ? a - P.ga : -1;      // how long ago (billions of years) this spot flooded
+        if (dl > 0) alb = tb;      // flooded: dark basalt
         var tone = 0.92 + 0.5 * alb;
         R = alb * 1.02 * tone; G = alb * 0.99 * tone; B = alb * 0.94 * tone;
-        if (a > 0 && P.ga < a) { R *= 0.96; G *= 0.98; B *= 1.03; }      // the maria a touch bluer
+        if (dl > 0) { R *= 0.96; G *= 0.98; B *= 1.03; }      // the maria a touch bluer
         R *= lit; G *= lit; B *= lit;
-        if (glow > 0) { R += glow * 1.0; G += glow * 0.42; B += glow * 0.08; }
+        if (dl > 0 && dl < 0.22) {      // fresh lava: a glowing front, then a black crust whose cracks glow and fade as it cools
+          var hc = 1 - dl / 0.22, mg = magma(M, ni, 0, 0.25 + 0.9 * hc, lit), k = ss(0, 0.5, hc);
+          R = R * (1 - k) + mg[0] * k; G = G * (1 - k) + mg[1] * k; B = B * (1 - k) + mg[2] * k;
+          var fr = 1 - dl / 0.025; if (fr > 0) { R += fr * 1.1; G += fr * 0.6; B += fr * 0.15; }
+        }
         // molten stages on top: magma ocean, then rafts of floating plagioclase closing over it
         if (P.melt > 0) {      // molten: like a lava lake, a dark chilled skin split by glowing cracks, with open patches of melt while it is hot
           var mlt = magma(M, ni, drift, P.heat, lit);
@@ -137,21 +142,25 @@
     if (!sx) { cx.drawImage(b, x - rad, y - rad, 2 * rad, 2 * rad); return; }
     cx.save(); cx.translate(x, y); cx.rotate(rot || 0); cx.scale(sx, sy); cx.drawImage(b, -rad, -rad, 2 * rad, 2 * rad); cx.restore();
   }
-  var GA = [[0, 4.51], [10, 4.51], [16, 4.5], [24, 4.45], [32, 4.35], [42, 3.85], [53, 1.2], [59, 0.1], [66, 0]];
+  var GA = [[0, 4.51], [10, 4.51], [16, 4.5], [24, 4.45], [32, 4.35], [42, 3.9], [49.5, 3.1], [53, 1.2], [59, 0.1], [66, 0]];
   function gaAt(t) { for (var i = 1; i < GA.length; i++) if (t <= GA[i][0]) { var a = GA[i - 1], b = GA[i], u = (t - a[0]) / (b[0] - a[0]); return a[1] + (b[1] - a[1]) * u; } return 0; }
   var ERAS = [
     [0, 'The giant impact', '4.5 billion years ago', 'A body about the size of Mars strikes the young Earth. It is the leading explanation for the Moon’s birth, though the details are still debated.'],
     [10, 'The Moon gathers', 'Within a century, perhaps hours', 'Molten debris thrown into orbit collects into the Moon, far closer to Earth than it is today.'],
-    [16, 'A magma ocean', 'About 4.5 billion years ago', 'The Moon’s outer layers are molten rock, hundreds of kilometers deep. Its crust keeps forming and breaking up.'],
-    [24, 'The first crust', 'About 4.4 billion years ago', 'As the magma ocean cools, dense minerals sink. Light crystals of plagioclase feldspar float up and join into a pale crust: today’s bright highlands.'],
+    [16, 'A magma ocean', 'About 4.5 billion years ago', 'The Moon’s outer layers are molten rock, hundreds of kilometers deep, over a small core of molten iron. In the cut-away, dense crystals of olivine and pyroxene sink through the melt and pile up as the mantle.'],
+    [24, 'The first crust', 'About 4.4 billion years ago', 'Light crystals of plagioclase feldspar float up and join into a pale crust: today’s bright highlands. The last of the melt, rich in rare elements, is trapped between crust and mantle.'],
     [32, 'The great bombardment', '4.3 to 3.8 billion years ago', 'Asteroids and comets batter the crust, blasting out craters and basins hundreds to thousands of kilometers across.'],
-    [42, 'Lava floods the basins', 'Mostly 3.9 to 3.1 billion years ago', 'Rock melted deep inside rises and floods the low basins with dark basalt: the maria. Smaller eruptions go on for a billion years or more.'],
+    [42, 'Lava floods the basins', 'Mostly 3.9 to 3.1 billion years ago', 'Rock melted deep in the mantle rises through cracks in the crust and pours into the low basins, glowing as it spreads, then cooling to dark basalt: the maria. Fire fountains spray beads of glass. Smaller eruptions go on for a billion years or more.'],
     [53, 'Young craters', 'The last billion years', 'Little changes now. New impacts still scar the surface: Copernicus about 800 million years ago, Tycho about 110 million, its bright rays still fresh.'],
     [59, 'Today', 'Now', 'The Moon we see, little changed for a billion years. It still drifts away from Earth, about 3.8 cm a year.']];
   var EVENTS = [      // basins and craters, where and when they show
     { t: 33.0, lat: -53, lon: -169, s: 0.55, name: 'South Pole–Aitken basin, about 2,500 km across' },
     { t: 38.5, lat: 33, lon: -16, s: 0.38, name: 'Imbrium basin, about 3.9 billion years ago' },
     { t: 41.0, lat: -20, lon: -95, s: 0.3, name: 'Orientale basin, about 3.8 billion years ago' },
+    { t: 42.6, lat: 8.5, lon: 31.4, s: 0.1, name: 'Lava fills Mare Tranquillitatis', lava: 1 },
+    { t: 44.0, lat: 20.2, lon: 30.8, s: 0.1, name: 'Fire fountains spray volcanic glass', fount: 1 },
+    { t: 46.2, lat: 33, lon: -16, s: 0.1, name: 'Mare Imbrium floods', lava: 1 },
+    { t: 48.6, lat: 20, lon: -55, s: 0.1, name: 'Oceanus Procellarum, the largest', lava: 1 },
     { t: 54.0, lat: 9.6, lon: -20.1, s: 0.12, name: 'Copernicus' },
     { t: 57.0, lat: -43.3, lon: -11.4, s: 0.12, name: 'Tycho' }];
   var LON = [[16, 900], [24, 690], [32, 540], [42, 345], [53, 355], [66, 360]];
@@ -170,10 +179,11 @@
     if (big) { cx.strokeStyle = 'rgba(230,215,190,' + (0.5 * (1 - u)) + ')'; cx.lineWidth = Math.max(1, rad * 0.08); cx.beginPath(); cx.arc(x, y, rad * (0.6 + 1.4 * u), 0, 7); cx.stroke(); }
     cx.globalCompositeOperation = 'source-over';
   }
-  function label(txt, x, y, a, px, py) {      // a named event: a pill of text, with a line down to the spot (px, py)
-    if (a <= 0) return; var f = Math.round(CW * 0.033); cx.font = '600 ' + f + 'px Montserrat, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+  function label(txt, x, y, a, px, py, fs) {      // a named event: a pill of text, with a line down to the spot (px, py)
+    if (a <= 0) return; var f = Math.round(CW * (fs || 0.033)); cx.font = '600 ' + f + 'px Montserrat, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
     var w = cx.measureText(txt).width + f * 1.2, hh = f * 1.8, lx = Math.min(CW - w / 2 - 6, Math.max(w / 2 + 6, x)), ly = Math.max(hh / 2 + 6, y);
-    if (px != null) { cx.strokeStyle = 'rgba(230,204,133,' + 0.8 * a + ')'; cx.lineWidth = Math.max(1, f * 0.08); cx.beginPath(); cx.moveTo(lx, ly + hh / 2); cx.lineTo(px, py); cx.stroke(); }
+    if (px != null) { var side = px < lx - w / 2; cx.strokeStyle = 'rgba(230,204,133,' + 0.8 * a + ')'; cx.lineWidth = Math.max(1, f * 0.08); cx.beginPath(); cx.moveTo(side ? lx - w / 2 : lx, side ? ly : ly + hh / 2); cx.lineTo(px, py); cx.stroke();
+      cx.fillStyle = 'rgba(230,204,133,' + a + ')'; cx.beginPath(); cx.arc(px, py, Math.max(1.5, f * 0.12), 0, 7); cx.fill(); }      // from the label's near side, with a dot on the spot
     cx.fillStyle = 'rgba(13,10,24,' + 0.82 * a + ')'; cx.strokeStyle = 'rgba(203,168,90,' + 0.7 * a + ')'; cx.lineWidth = Math.max(1, f * 0.06);
     cx.beginPath(); if (cx.roundRect) cx.roundRect(lx - w / 2, ly - hh / 2, w, hh, hh / 2); else cx.rect(lx - w / 2, ly - hh / 2, w, hh); cx.fill(); cx.stroke();
     cx.fillStyle = 'rgba(242,228,190,' + a + ')'; cx.fillText(txt, lx, ly + f * 0.05); cx.textBaseline = 'alphabetic';
@@ -271,17 +281,63 @@
         drawSphere('m', mxz, myz, mrad, rr, lonAt(16), { kind: 'moon', heat: 1, melt: 1, raft: 0, detail: 0, ga: 9, tycho: 0, cop: 0, drift: t * 2 }); }
     }
   }
+  // ── inside the young Moon: a quarter cut away. A molten iron core; the magma ocean, in which dense olivine and pyroxene
+  // crystals sink to pile up as the mantle while light plagioclase floats up to build the crust; and at the end the last
+  // dregs of the melt, rich in potassium, rare-earth elements and phosphorus (KREEP), trapped between crust and mantle.
+  // Layer thicknesses are only roughly to scale (the crust is drawn a little thick to be seen). ──
+  var CUTP = []; (function () { var s = 21; function R() { s = (s * 16807) % 2147483647; return s / 2147483647; } for (var i = 0; i < 150; i++) CUTP.push({ up: i % 5 < 2, a: 0.04 + R() * 1.49, f: R(), v: 0.08 + R() * 0.1, z: 0.6 + R() * 0.8 }); })();
+  function cutaway(x0, y0, rad, a) {
+    if (a <= 0) return;
+    var rc = 0.21, base = 0.55 + 0.37 * ss(18, 30, t), crust = 1 - 0.04 * ss(22, 30, t), kreep = ss(27, 30, t);
+    cx.save(); cx.globalAlpha = a;
+    cx.beginPath(); cx.moveTo(x0, y0); cx.arc(x0, y0, rad * 1.002, 0, Math.PI / 2); cx.closePath(); cx.clip();
+    function ring(r, c0, c1) { var g = cx.createRadialGradient(x0, y0, 0, x0, y0, rad * r); g.addColorStop(0, c0); g.addColorStop(1, c1); cx.fillStyle = g; cx.beginPath(); cx.arc(x0, y0, rad * r, 0, 7); cx.fill(); }
+    ring(1.002, '#e8e0cf', '#cfc6b4');                                                    // the crust of plagioclase (anorthosite)
+    ring(crust, '#ff9a3c', '#c9441c');                                                    // the magma ocean
+    if (kreep > 0) { cx.globalAlpha = a * kreep; ring(crust, '#b5612e', '#8a3b1c'); cx.globalAlpha = a; ring(crust - 0.012 * kreep, '#ff9a3c', '#c9441c'); }
+    var m = base > crust - 0.012 * kreep - 0.004 ? crust - 0.012 * kreep - 0.004 : base;
+    ring(m, '#4a5a34', '#5d6a3c');                                                        // the mantle: piled-up olivine and pyroxene
+    ring(rc + 0.015, '#3a2a20', '#3a2a20');
+    ring(rc, '#fff3c8', '#ff8a2a');                                                       // the iron core, molten
+    // crystals: green ones sinking through the melt, white ones rising to the crust
+    for (var i = 0; i < CUTP.length; i++) { var p = CUTP[i], f = (t * p.v + p.f) % 1, rr = p.up ? m + (crust - m) * f : crust - (crust - m) * f;
+      if (crust - m < 0.02) break; var px = x0 + Math.cos(p.a) * rr * rad, py = y0 + Math.sin(p.a) * rr * rad, z = rad * 0.011 * p.z;
+      cx.fillStyle = p.up ? 'rgba(245,242,232,.95)' : 'rgba(70,95,45,.95)'; cx.fillRect(px - z, py - z, 2 * z, 2 * z); }
+    for (var j = 0; j < 40; j++) { var pa = CUTP[j].a, pr = rc + 0.03 + (m - rc - 0.04) * CUTP[j].f; cx.fillStyle = 'rgba(30,40,20,.5)'; var zz = rad * 0.008; cx.fillRect(x0 + Math.cos(pa) * pr * rad - zz, y0 + Math.sin(pa) * pr * rad - zz, 2 * zz, 2 * zz); }      // texture in the mantle
+    // the cut faces: shaded edges and a bright rim, so it reads as a slice out of a ball
+    cx.strokeStyle = 'rgba(0,0,0,.55)'; cx.lineWidth = Math.max(1.5, rad * 0.012); cx.beginPath(); cx.moveTo(x0 + rad, y0); cx.lineTo(x0, y0); cx.lineTo(x0, y0 + rad); cx.stroke();
+    cx.restore();
+    // what is what
+    var la = a * ss(18.5, 19.5, t), L2 = function (txt, r, ang, ly) { var px = x0 + Math.cos(ang) * r * rad, py = y0 + Math.sin(ang) * r * rad; label(txt, CW, y0 + ly * rad, la, px, py, 0.027); };      // stacked down the right side
+    L2('Crust', (1 + crust) / 2, 0.15, 0.1);
+    L2('Magma ocean', (crust + m) / 2, 0.5, 0.36);
+    L2('Sinking crystals', (m + rc) / 2 + 0.05, 0.85, 0.62);
+    L2('Iron core', rc * 0.6, 1.1, 0.88);
+  }
+  function fountain(x, y, rad, s) {      // a fire fountain: molten spray thrown kilometers high, falling back as glass beads
+    if (s < 0 || s > 3.4) return; var k = 9; function R() { k = (k * 16807) % 2147483647; return k / 2147483647; }
+    cx.globalCompositeOperation = 'lighter';
+    for (var i = 0; i < 160; i++) { var b = R() * 2.4, a2 = s - b; if (a2 < 0 || a2 > 1.0) continue; var ang = -Math.PI / 2 + (R() - 0.5) * 0.9, v = rad * (0.08 + R() * 0.07);
+      var px = x + Math.cos(ang) * v * a2 * 2, py = y + Math.sin(ang) * v * a2 * 2 + rad * 0.32 * a2 * a2, h = 1 - a2;
+      cx.fillStyle = 'rgba(255,' + (150 + 90 * h | 0) + ',' + (60 * h | 0) + ',' + (0.4 + 0.5 * h) + ')'; var z = Math.max(1.2, rad * 0.006); cx.fillRect(px - z, py - z, 2 * z, 2 * z); }
+    cx.globalCompositeOperation = 'source-over';
+  }
   function moonScene(S, rr) {
     var lon0 = lonAt(t), x0 = CW * 0.5, y0 = CH * 0.47, rad = S * 0.35;
+    // during the lava, closer in on the near side's maria, so the floods can be watched
+    var Z = 1 + 0.8 * ss(42.3, 44.3, t) * (1 - ss(49.8, 51.8, t));
+    if (Z > 1.001) { var tq = project(18, 0, lon0 - 360 * Math.floor(lon0 / 360), 0, 0, 1), w = (Z - 1) / 0.8; rad *= Z; x0 -= tq.x * rad * w; y0 -= tq.y * rad * w; rr = Math.min(300, Math.round(rr * Z)); }
     // Earth, huge and close at first, falling behind as the Moon's orbit grows
     var ea = 1 - ss(26, 33, t);
     if (ea > 0) { cx.globalAlpha = ea; drawSphere('e', -CW * 0.12 - CW * 0.4 * ss(16, 33, t), CH * 0.42, S * (0.55 - 0.25 * ss(16, 33, t)), rr, t * 6, { kind: 'earth', hot: 0.4 * (1 - ss(16, 22, t)), drift: t * 3 }); cx.globalAlpha = 1; }
     var P = { kind: 'moon', heat: 1 - 0.75 * ss(16, 26, t), melt: 1 - ss(29, 32.5, t), raft: ss(24, 30, t), detail: ss(32, 42, t), ga: gaAt(t), tycho: ss(57, 58, t), cop: ss(54, 55, t), drift: t * 2 };
     drawSphere('m', x0, y0, rad, rr, lon0, P);
+    cutaway(x0, y0, rad, ss(17, 18.5, t) * (1 - ss(30, 31.5, t)));
     // impacts
     for (var i = 0; i < smallHits.length; i++) { var h = smallHits[i], u = (t - h.t) / 0.7; if (u < 0 || u > 1) continue; var p = project(h.lat, h.lon, lon0 - 360 * Math.floor(lon0 / 360), x0, y0, rad); if (p.z > 0.1) flash(p.x, p.y, rad * h.s, u, false); }
     for (var j = 0; j < EVENTS.length; j++) { var E = EVENTS[j], v = (t - E.t) / 1.4; if (v < 0 || v > 2.6) continue; var q = project(E.lat, E.lon, lon0 - 360 * Math.floor(lon0 / 360), x0, y0, rad);
-      if (q.z > 0.05 && v <= 1) flash(q.x, q.y, rad * E.s, v, true);
+      if (q.z > 0.05 && v <= 1 && !E.lava && !E.fount) flash(q.x, q.y, rad * E.s, v, true);
+      if (q.z > 0.05 && E.fount) fountain(q.x, q.y, rad, t - E.t);
       if (q.z > 0.05) label(E.name, q.x, q.y - rad * E.s - CW * 0.09, Math.min(1, v * 3) * Math.min(1, (2.6 - v) * 2), q.x, q.y - rad * E.s * 0.3); }
   }
 
