@@ -6,7 +6,7 @@
    AND their sub-resources (the .woff2 files the font CSS points to)
    are cached too, so type renders correctly with no network.
    ════════════════════════════════════════════════════════════ */
-const CACHE = 'zion-sky-v500';
+const CACHE = 'zion-sky-v501';
 // ── CRITICAL same-origin shell ──────────────────────────────────
 // Everything the app itself is made of, in the form that ALWAYS resolves on
 // every host (real files: index.html, *.html, images, icons). If ANY of these
@@ -22,6 +22,7 @@ const CRITICAL = [
   // 3D spacecraft pages (their text works offline; the 3D view itself needs the optional download below)
   'spacecraft.html','voyager.html','moonrocks.html',
   'img/moonrocks/76535.jpg','img/moonrocks/79115.jpg','img/moonrocks/orange-soil.jpg','img/moonrocks/orange-beads.jpg',
+  'moon-history.js','img/moon-history/today.jpg','img/moon-history/premare.jpg','img/moon-history/flood.png',
   'img/moonrocks/60025-3d.jpg','img/moonrocks/70175-3d.jpg','img/moonrocks/15016-3d.jpg','img/moonrocks/14321-3d.jpg','img/moonrocks/65035-3d.jpg',
   // Astrophotography tools
   'photography.html','sources.html','npf.html','session-log.html','integration.html','meridian.html',

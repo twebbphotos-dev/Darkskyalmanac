@@ -256,6 +256,21 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 
 .zcl-m-play{display:block;text-decoration:none;transition:border-color .15s}
 .zcl-m-play:hover{border-color:#CBA85A}
+.zcl-m-hbtn{display:inline-block;margin-top:14px;padding:9px 20px;border-radius:7px;border:0;background:#CBA85A;color:#0d0a18;font:inherit;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;cursor:pointer}
+.mh{position:fixed;inset:0;z-index:10000;background:rgba(6,5,10,.94);display:flex;align-items:center;justify-content:center;padding:calc(env(safe-area-inset-top) + 10px) 12px calc(env(safe-area-inset-bottom) + 10px);overflow:auto}
+.mh[hidden]{display:none}
+.mh-box{width:100%;max-width:560px;position:relative}
+.mh canvas{display:block;width:100%;border-radius:10px;background:#000}
+.mh-x{position:absolute;right:8px;top:8px;z-index:2;width:34px;height:34px;border-radius:50%;border:1px solid rgba(203,168,90,.4);background:rgba(13,10,24,.8);color:#CBA85A;font-size:18px;line-height:1;cursor:pointer}
+.mh-era{margin-top:12px;font-size:16px;font-weight:600;color:#F2E4BE;letter-spacing:.03em}
+.mh-year{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;margin-top:3px}
+.mh-cap{font-size:13px;line-height:1.55;color:#C9BD97;margin-top:8px;min-height:60px}
+.mh-bar{position:relative;height:2px;background:rgba(203,168,90,.3);margin:14px 6px 18px}
+.mh-dot{position:absolute;top:-4px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#E6CC85;box-shadow:0 0 8px rgba(230,204,133,.7)}
+.mh-bar span{position:absolute;top:8px;font-size:9.5px;letter-spacing:.06em;color:#9A8A66}
+.mh-bar span:first-of-type{left:0}.mh-bar span:last-of-type{right:0}
+.mh-play{margin-top:10px;padding:8px 16px;border-radius:7px;border:1px solid rgba(203,168,90,.5);background:transparent;color:#CBA85A;font:inherit;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
+.mh-note{font-size:10px;line-height:1.5;color:#7A6E55;margin-top:12px}
 .zcl-m-playgo{display:inline-block;margin-top:12px;padding:9px 20px;border-radius:7px;background:#CBA85A;color:#0d0a18;font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase}
 .zcl-m-note{font-size:11px;color:#6E6450;text-align:center;margin:16px auto 0;max-width:540px;line-height:1.5}
 
@@ -337,6 +352,7 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
         <p><b>Then the lava.</b> Heat from radioactive elements melted rock deep in the Moon’s mantle. Most of it erupted between about 3.9 and 3.1 billion years ago, flooding the low basins with dark basalt rich in iron and titanium. Some eruptions were fire fountains that sprayed beads of volcanic glass, like the orange soil Apollo 17 found. The youngest lava sampled so far, brought back by China’s Chang’e 5 in 2020, is about 2 billion years old.</p>
         <p><b>The maria.</b> Those dark lava plains are the maria. They cover nearly a third of the near side but only a few percent of the far side, where the crust is much thicker and less lava could reach the surface. Since then the Moon has changed little: young craters like Tycho and Copernicus are among the latest marks.</p>
         <p><b>Saying it.</b> <i>Mare</i>, Latin for “sea,” is said MAH-ray; the plural, <i>maria</i>, is MAH-ree-uh. Early telescope observers took the dark plains for seas, and the names stuck, as in Mare Tranquillitatis, the Sea of Tranquility.</p>
+        <button class="zcl-m-hbtn" type="button" id="mh-open">&#9654; Watch it happen</button>
       </div>
     </div>
 
@@ -1602,6 +1618,32 @@ if('serviceWorker' in navigator){
       tellFrame({ type: deferred ? 'zcl-install-available' : 'zcl-install-none' });
     }
   });
+})();
+</script>
+<div class="mh" id="mh" hidden role="dialog" aria-label="The Moon’s history">
+  <div class="mh-box">
+    <button class="mh-x" type="button" aria-label="Close">&#215;</button>
+    <canvas aria-hidden="true"></canvas>
+    <div class="mh-era"></div><div class="mh-year"></div>
+    <div class="mh-bar"><i class="mh-dot"></i><span>4.5 billion years ago</span><span>Today</span></div>
+    <div class="mh-cap"></div>
+    <button class="mh-play" type="button">&#10074;&#10074; Pause</button>
+    <div class="mh-note">An illustration of the leading explanation, not to scale in size or time. The surface is the real Moon from NASA’s Lunar Reconnaissance Orbiter, shown before its maria and then flooding basin by basin at approximate ages from crater counts.</div>
+  </div>
+</div>
+<script>
+(function(){
+  // The Moon's history animation: loaded only when asked for
+  var o = document.getElementById('mh'), b = document.getElementById('mh-open'), lib = null;
+  if (!o || !b) return;
+  function close(){ o.hidden = true; document.body.style.overflow = ''; if (window.MoonHistory) MoonHistory.close(); }
+  b.addEventListener('click', function(){
+    o.hidden = false; document.body.style.overflow = 'hidden';
+    (lib || (lib = new Promise(function(ok, no){ var s = document.createElement('script'); s.src = 'moon-history.js'; s.onload = ok; s.onerror = no; document.head.appendChild(s); })))
+      .then(function(){ return MoonHistory.open(o); }).catch(function(){ o.querySelector('.mh-era').textContent = 'The animation could not be loaded.'; });
+  });
+  o.querySelector('.mh-x').addEventListener('click', close);
+  document.addEventListener('keydown', function(e){ if (e.key === 'Escape' && !o.hidden) close(); });
 })();
 </script>
 </body>
