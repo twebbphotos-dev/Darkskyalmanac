@@ -425,7 +425,9 @@ function slabAt(x, z) {
 }
 function buildSlab(S, mat, tone) {      // the slab's mesh, from the same surface the wheels drive
   SLABS.push(S);
-  const NU = 70, NV = 36, U0 = -0.5, U1 = S.L + 1.1, V0 = -S.W / 2 - 1.3, pos = [], idx = [];
+  // wide enough for the whole slope of its sides (on the ramp they spread with its height) and past the ragged lip: a mesh
+  // cut short while still above the ground left an open edge, holes you could see under it
+  const tall = S.th ? Math.tan(S.th) * (S.Lt / 2 + S.L - S.Lt) : S.H, NU = 80, NV = 64, U0 = -0.8, U1 = S.L + 1.6, V0 = -S.W / 2 - 1.6 - (S.th ? 1.0 + 0.45 * tall : 0), pos = [], idx = [];
   for (let j = 0; j <= NV; j++) for (let i = 0; i <= NU; i++) {
     const u = U0 + (U1 - U0) * i / NU, v = V0 + (-2 * V0) * j / NV, x = S.x + (u - S.L / 2) * S.c - v * S.s, z = S.z + (u - S.L / 2) * S.s + v * S.c;
     const b0 = S.g0 ?? groundBase(x, z), gb = groundBase(x, z), r = slabRel(S, u, v, gb - b0); pos.push(x, r < -8 ? gb - 0.5 : b0 + r, z);

@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.42 (zion-sky-v511)
+Lunar Rover: no holes in the ramp. Its mesh is built on a strip of ground around it, and when its sides were made to slope wider where it stands higher (v5.41), near the lip they ran past the edge of that strip while still above the ground, leaving open edges you could see under. The strip now spans the whole slope of its sides and past the ragged lip, and its outer edge ends under the ground all the way round.
+
 ## v5.41 (zion-sky-v510)
 Lunar Rover: the ramp sits in the ground. Its edges reached only a fixed 3.5 m below its level base, and on the crater rim the ground falls away further than that, so its downhill end still hung in the air; now its edges always go down to half a meter under the ground beside them. Its sides slope like a boulder's (wider where it stands higher) instead of standing as walls, and its outline wanders slowly, since quick wiggles had read as pleats down the sides. It is smaller again (16 m long, was 18; 22°), and a full-speed run at double speed still flies about 7 s and lands upright in all six test runs. A dozen loose chips of rock lie along both sides, off the drive line and away from the landing.
 
