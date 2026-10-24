@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.38 (zion-sky-v507)
+Lunar Rover: no tire tracks across thin air, and no crew through the chassis. After a wreck the rover is set back where it last drove upright, but each wheel's track simply carried on from its last mark, laying a strip straight across whatever lay between (here, a crater). Tracks now break whenever a wheel moves farther than it could roll in one frame, and while the rover is wrecked. In a slow rollover the belted crew passed through the chassis: they were exempt from its collision entirely (pushing seated legs out of the deck's rough box had fought the belts), so when it rolled onto them the ground pressed them up through it. Now the deck is solid to their bodies once they are outside it, their legs meet the floor pan rather than the rough box, and a body lying on the ground holds the chassis up rather than being pressed through it. In 12 test rollovers, frames with a crew member inside the chassis fell from nearly all to about 1%, and no deeper than 9 cm.
+
 ## v5.37 (zion-sky-v506)
 Moon history: a real 3D cut-away. The cut-away was a flat quarter-circle drawn over the sphere, so it read as a sticker rather than a slice. Now an eighth of the ball is carved away, as in a cut-away globe: for every pixel in the wedge the eye ray is traced to the first of the three cut faces it meets, which is colored by the layer at that depth and lit by the same Sun as the surface (each face at its own angle, darker in the inside corners), while the molten core and magma ocean glow on their own; crystals drift through the melt as flecks on the faces. The Moon now turns only slowly while the cut-away shows, so the wedge stays put on the globe, and the basin impacts were re-timed to the new turn.
 
