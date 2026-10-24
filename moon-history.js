@@ -48,6 +48,34 @@
         a[y * W + x] = u <= 0 ? 0 : Math.min(1, u * 2.5); } }
     return a;
   }
+  function up2(a) {      // a half-size map to full size, smoothly (bilinear; wraps in longitude)
+    var b = new Float32Array(W * H);
+    for (var y = 0; y < H; y++) { var fy = Math.max(0, Math.min(NH - 1.001, (y + 0.5) / 2 - 0.5)), y0 = fy | 0, ty = fy - y0;
+      for (var x = 0; x < W; x++) { var fx = (x + 0.5) / 2 - 0.5 + NW, x0 = fx | 0, tx = fx - x0, xa = x0 % NW, xb = (x0 + 1) % NW;
+        b[y * W + x] = (a[y0 * NW + xa] * (1 - tx) + a[y0 * NW + xb] * tx) * (1 - ty) + (a[(y0 + 1) * NW + xa] * (1 - tx) + a[(y0 + 1) * NW + xb] * tx) * ty; } }
+    return b;
+  }
+  // When each spot floods, at full resolution: the basin ages spread smoothly, the edges taken from the real maria's own
+  // dark outlines in the photograph (not the coarse age grid's square cells), and the fronts made ragged by smooth noise
+  function floodAge(age, today, n1f, n2f) {
+    var a = new Float32Array(age), b = new Float32Array(age.length), k, i, x, y;
+    for (k = 0; k < 6; k++) {      // carry each basin's age a few cells past its edge, so blending near the edge has a value
+      b.set(a);
+      for (y = 0; y < NH; y++) for (x = 0; x < NW; x++) { i = y * NW + x; if (a[i] > 0) continue; var s = 0, c = 0;
+        for (var dy = -1; dy <= 1; dy++) for (var dx = -1; dx <= 1; dx++) { var yy = y + dy; if (yy < 0 || yy >= NH) continue; var v = a[yy * NW + (x + dx + NW) % NW]; if (v > 0) { s += v; c++; } }
+        if (c) b[i] = s / c; }
+      a.set(b);
+    }
+    var inMare = new Float32Array(age.length); for (i = 0; i < age.length; i++) inMare[i] = age[i] > 0 ? 1 : 0;
+    var near = up2(blur(inMare, NW, NH, 3)), af = up2(a.map(function (v) { return v > 0 ? v : 0; })), dark = blur(today, W, H, 1), out = new Float32Array(W * H);
+    var mk = new Float32Array(W * H), wa = new Float32Array(W * H);
+    for (i = 0; i < out.length; i++) { mk[i] = near[i] > 0.25 && dark[i] < 0.265 + 0.05 * (near[i] - 0.5) ? 1 : 0; wa[i] = af[i] * mk[i]; }
+    // ages blended smoothly between neighboring basins (no straight seams), and the middle of each plain, farthest from its
+    // shore and so lowest, flooding first: the lava pools in the deepest part and spreads out to the edges
+    var num = blur(wa, W, H, 16), den = blur(mk, W, H, 16), depth = blur(mk, W, H, 9);
+    for (i = 0; i < out.length; i++) out[i] = mk[i] > 0 && den[i] > 0.01 ? num[i] / den[i] + 0.3 * (depth[i] - 0.7) + (n1f[i] - 0.5) * 0.22 + (n2f[i] - 0.5) * 0.1 : -1;
+    return out;
+  }
   function load() {
     if (maps) return Promise.resolve(maps);
     return Promise.all([loadGray('img/moon-history/today.jpg', W, H), loadGray('img/moon-history/premare.jpg', W, H), loadGray('img/moon-history/flood.png', NW, NH)]).then(function (r) {
@@ -55,8 +83,8 @@
       for (var i = 0; i < age.length; i++) { var v = Math.round(fl[i] * 255); age[i] = v >= 254 ? -1 : 4.0 - v / 250 * 3.0; }
       var smooth = blur(pre, W, H, 14), todayB = blur(today, W, H, 4), preB = blur(pre, W, H, 4);
       var wT = gcw(-43.3, -11.4, 32), wC = gcw(9.6, -20.1, 11);      // the reach of Tycho's and Copernicus's bright rays
-      maps = { today: today, pre: pre, smooth: smooth, todayB: todayB, preB: preB, age: age, wT: wT, wC: wC,
-        n1: noise(NW, NH, 12, 7), n2: noise(NW, NH, 20, 99), n3: noise(NW, NH, 6, 1234) };
+      var n1 = noise(NW, NH, 12, 7), n2 = noise(NW, NH, 20, 99), n3 = noise(NW, NH, 6, 1234), n1f = up2(n1), n2f = up2(n2), n3f = up2(n3);
+      maps = { today: today, pre: pre, smooth: smooth, todayB: todayB, preB: preB, age: floodAge(age, today, n1f, n2f), wT: wT, wC: wC, n1: n1, n2: n2, n3: n3, n1f: n1f, n2f: n2f, n3f: n3f };
       return maps;
     });
   }
@@ -78,8 +106,8 @@
 
   // molten rock: a chilled skin (dark, lit by the Sun) broken by incandescent cracks; the hotter, the more cracks and open melt
   var MG = [0, 0, 0];
-  function magma(M, ni, drift, heat, lit) {
-    var N = NW * NH, a = M.n1[(ni + ((drift * 7) | 0)) % N], b = M.n2[(ni + N - ((drift * 4) | 0) % N) % N], c = M.n3[ni];
+  function magma(M, ni, drift, heat, lit, full) {      // full: ni indexes the full-size noise (sharper cracks, for the close-up lava)
+    var A = full ? M.n1f : M.n1, Bn = full ? M.n2f : M.n2, Cn = full ? M.n3f : M.n3, N = A.length, a = A[(ni + ((drift * 7) | 0)) % N], b = Bn[(ni + N - ((drift * 4) | 0) % N) % N], c = Cn[ni];
     var glowing = ss(0, 0.15, heat);      // cold: solid rock, nothing glows
     var crack = ((1 - ss(0, 0.012 + 0.03 * heat, Math.abs(a - 0.5))) * 0.9 + (1 - ss(0, 0.008 + 0.02 * heat, Math.abs(b - 0.5))) * 0.6) * glowing;
     var open = ss(0.8 - 0.14 * heat, 0.86 - 0.14 * heat, a * 0.55 + c * 0.45) * glowing;      // open melt
@@ -102,7 +130,7 @@
         var hl = M.pre[m], tb = M.today[m];
         var rs = M.wT[m] * (1 - P.tycho) + M.wC[m] * (1 - P.cop); if (rs > 1) rs = 1;
         if (rs > 0) { hl += (M.preB[m] - hl) * rs; tb += (M.todayB[m] - tb) * rs; }
-        var a = M.age[ni]; if (a > 0) a += (M.n1[ni] - 0.5) * 0.3 + (M.n2[ni] - 0.5) * 0.1;      // ragged flow fronts, not straight lines between basins
+        var a = M.age[m];      // when this spot floods (full resolution, ragged fronts: floodAge)
         var sm = M.smooth[m] * 1.05 + (M.n2[ni] - 0.5) * 0.08, alb = sm + (hl - sm) * P.detail;
         var dl = a > 0 ? a - P.ga : -1;      // how long ago (billions of years) this spot flooded
         if (dl > 0) alb = tb;      // flooded: dark basalt
@@ -111,7 +139,7 @@
         if (dl > 0) { R *= 0.96; G *= 0.98; B *= 1.03; }      // the maria a touch bluer
         R *= lit; G *= lit; B *= lit;
         if (dl > 0 && dl < 0.22) {      // fresh lava: a glowing front, then a black crust whose cracks glow and fade as it cools
-          var hc = 1 - dl / 0.22, mg = magma(M, ni, 0, 0.25 + 0.9 * hc, lit), k = ss(0, 0.5, hc);
+          var hc = 1 - dl / 0.22, mg = magma(M, m, 0, 0.25 + 0.9 * hc, lit, true), k = ss(0, 0.5, hc);
           R = R * (1 - k) + mg[0] * k; G = G * (1 - k) + mg[1] * k; B = B * (1 - k) + mg[2] * k;
           var fr = 1 - dl / 0.025; if (fr > 0) { R += fr * 1.1; G += fr * 0.6; B += fr * 0.15; }
         }
@@ -135,7 +163,7 @@
   }
 
   // ── the show ──
-  var box, cv, cx, cap, eraEl, yearEl, gaEl, bar, barDot, btn, scrub = false, raf = 0, t = 0, last = 0, playing = false, CW = 0, CH = 0, stars = null, parts = [], buf = {};
+  var titleOn = false, box, cv, cx, cap, eraEl, yearEl, gaEl, bar, barDot, btn, scrub = false, raf = 0, t = 0, last = 0, playing = false, CW = 0, CH = 0, stars = null, parts = [], buf = {};
   function bufCanvas(key, n) { var b = buf[key]; if (!b || b.width !== n) { b = buf[key] = document.createElement('canvas'); b.width = b.height = n; } return b; }
   function drawSphere(key, x, y, rad, rr, lon0, P, sx, sy, rot) {      // rendered at rr pixels radius, drawn at rad (squashed sx, sy along angle rot)
     var b = bufCanvas(key, 2 * rr), bx = b.getContext('2d'); bx.putImageData(shadeSphere(bx, rr, lon0, P), 0, 0);
@@ -181,7 +209,7 @@
   }
   function label(txt, x, y, a, px, py, fs) {      // a named event: a pill of text, with a line down to the spot (px, py)
     if (a <= 0) return; var f = Math.round(CW * (fs || 0.033)); cx.font = '600 ' + f + 'px Montserrat, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
-    var w = cx.measureText(txt).width + f * 1.2, hh = f * 1.8, lx = Math.min(CW - w / 2 - 6, Math.max(w / 2 + 6, x)), ly = Math.max(hh / 2 + 6, y);
+    var w = cx.measureText(txt).width + f * 1.2, hh = f * 1.8, lx = Math.min(CW - w / 2 - 6, Math.max(w / 2 + 6, x)), ly = Math.max(hh / 2 + 6 + (titleOn ? CW * 0.15 : 0), y);      // below the era title while it shows
     if (px != null) { var side = px < lx - w / 2; cx.strokeStyle = 'rgba(230,204,133,' + 0.8 * a + ')'; cx.lineWidth = Math.max(1, f * 0.08); cx.beginPath(); cx.moveTo(side ? lx - w / 2 : lx, side ? ly : ly + hh / 2); cx.lineTo(px, py); cx.stroke();
       cx.fillStyle = 'rgba(230,204,133,' + a + ')'; cx.beginPath(); cx.arc(px, py, Math.max(1.5, f * 0.12), 0, 7); cx.fill(); }      // from the label's near side, with a dot on the spot
     cx.fillStyle = 'rgba(13,10,24,' + 0.82 * a + ')'; cx.strokeStyle = 'rgba(203,168,90,' + 0.7 * a + ')'; cx.lineWidth = Math.max(1, f * 0.06);
@@ -233,6 +261,7 @@
   function draw() {
     cx.globalCompositeOperation = 'source-over'; cx.fillStyle = '#000'; cx.fillRect(0, 0, CW, CH); cx.drawImage(stars, 0, 0);
     var S = Math.min(CW, CH), rr = Math.min(170, Math.round(S * 0.33)), ga = gaAt(t);
+    var ei0 = 0; for (var i0 = 0; i0 < ERAS.length; i0++) if (t >= ERAS[i0][0]) ei0 = i0; titleOn = scrub || t - ERAS[ei0][0] < 3.6;
     if (t < 16) impactScene(S, rr); else moonScene(S, rr);
     // the era: large on the picture as it begins (and while scrubbing), and in the caption below; the time line
     var ei = 0; for (var i = 0; i < ERAS.length; i++) if (t >= ERAS[i][0]) ei = i; var e = ERAS[ei], since = t - e[0];
@@ -368,7 +397,7 @@
     if (t >= T_END) { t = 0; resetParts(); }
     playing = true; btn.textContent = '❚❚ Pause'; last = performance.now(); if (!raf) raf = requestAnimationFrame(frame);
   }
-  function pause() { playing = false; btn.textContent = '▶ Play'; }
+  function pause() { playing = false; btn.textContent = '\u25B6\uFE0E Play'; }
   function seek(s) {      // jump to s seconds; the debris is re-run from the impact (cheap: no drawing)
     s = Math.max(0, Math.min(T_END, s)); var from = t;
     if (s < from || from < HIT) { t = 0; resetParts(); }

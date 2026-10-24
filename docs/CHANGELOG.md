@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.36 (zion-sky-v505)
+Moon history: lava with natural edges, and a tidier player. The maria flooded in square blocks because their timing came from a half-size grid read without smoothing, which showed as stair steps once the view zoomed in, and neighboring basins met along straight seams. Now each spot's flood time is worked out at full resolution: the edges follow the real maria's dark outlines in the photograph, ages blend smoothly between basins, and the middle of each plain (the lowest part, farthest from its shore) floods first, so the lava pools and spreads out to the edges in ragged glowing fronts; the cooling cracks use full-resolution noise too. Labels now stay below the era title instead of running into it, the player uses the app's Montserrat type and an opaque background (the page showed through on the phone), and the play symbols no longer turn into blue emoji on iPhone.
+
 ## v5.35 (zion-sky-v504)
 Moon history: a cleaner cut-away. The layers were flat fills with scattered square dots and crossing label lines. The cut face is now drawn pixel by pixel: a molten iron core white-hot at its middle, a grainy mantle shading from dark green olivine at depth to browner pyroxene above, a magma ocean hottest at the bottom with slow convection streaks, a thin rust-red layer of the last melt, and finely grained pale crust, with soft edges and a thin line at each boundary. Crystals in the melt are dark green grains sinking and white plagioclase laths rising; the cut casts a soft shadow on the sphere and its edges catch the light. Each label sits level with its layer, its line running straight across.
 
