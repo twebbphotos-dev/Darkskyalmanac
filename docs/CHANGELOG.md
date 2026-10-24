@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.41 (zion-sky-v510)
+Lunar Rover: the ramp sits in the ground. Its edges reached only a fixed 3.5 m below its level base, and on the crater rim the ground falls away further than that, so its downhill end still hung in the air; now its edges always go down to half a meter under the ground beside them. Its sides slope like a boulder's (wider where it stands higher) instead of standing as walls, and its outline wanders slowly, since quick wiggles had read as pleats down the sides. It is smaller again (16 m long, was 18; 22°), and a full-speed run at double speed still flies about 7 s and lands upright in all six test runs. A dozen loose chips of rock lie along both sides, off the drive line and away from the landing.
+
 ## v5.40 (zion-sky-v509)
 Lunar Rover: the reset button in Settings, now "Reset records and map", also clears the drives drawn on the map, which had been kept for good in the browser's storage with no way to erase them.
 
