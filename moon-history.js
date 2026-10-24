@@ -119,7 +119,7 @@
   // P: what the surface is doing now. kind 'moon' | 'earth' | 'theia'
   function shadeSphere(ctx, r, lon0, P) {
     var U = lut(r), M = maps, n = U.n, img = ctx.createImageData(n, n), d = img.data, off = ((lon0 / 360) * W + W / 2) % W; if (off < 0) off += W;      // the map's middle column is longitude 0
-    var drift = P.drift || 0, hot = P.hot || 0;
+    var drift = P.drift || 0, hot = P.hot || 0, cut = P.cut || 0, Ly = cut > 0 ? cutLayers() : null, ePix = 1.3 / r;
     for (var i = 0; i < n * n; i++) {
       if (!U.on[i]) continue;
       var col = (U.lon[i] + off + W * 2) % W | 0, row = U.row[i], m = row * W + col, ni = (row >> 1) * NW + (col >> 1);
@@ -156,6 +156,16 @@
       } else {      // Theia: a dark, Mars-sized rocky body
         var t1 = M.n2[ni]; R = (0.3 + 0.15 * t1) * lit; G = (0.24 + 0.12 * t1) * lit; B = (0.2 + 0.1 * t1) * lit;
       }
+      if (cut > 0) {      // in the carved-away wedge? then the eye ray goes on to the first cut face it meets
+        var px = U.nx[i], py = U.ny[i], pz = U.nz[i], c0 = CA[0][0] * px + CA[0][1] * py + CA[0][2] * pz, c1 = CA[1][0] * px + CA[1][1] * py + CA[1][2] * pz, c2 = CA[2][0] * px + CA[2][1] * py + CA[2][2] * pz;
+        if (c0 > 0 && c1 > 0 && c2 > 0) {
+          var sm = 1e9, fc = -1, cs = [c0, c1, c2];
+          for (var q = 0; q < 3; q++) if (CA[q][2] > 1e-4 && cs[q] / CA[q][2] < sm) { sm = cs[q] / CA[q][2]; fc = q; }
+          var hz = pz - sm, rr2 = Math.sqrt(px * px + py * py + hz * hz), cR = 0, cG = 0, cB = 0;
+          if (fc >= 0 && rr2 <= 1) { var cc = cutShade(fc, px, py, hz, rr2, Ly, ePix); cR = cc[0]; cG = cc[1]; cB = cc[2]; }
+          R = R * (1 - cut) + cR * cut; G = G * (1 - cut) + cG * cut; B = B * (1 - cut) + cB * cut;
+        }
+      }
       var k = U.on[i] === 2 ? 0.6 : 1;      // a soft limb
       d[i * 4] = Math.min(255, R * 255); d[i * 4 + 1] = Math.min(255, G * 255); d[i * 4 + 2] = Math.min(255, B * 255); d[i * 4 + 3] = 255 * k;
     }
@@ -182,16 +192,16 @@
     [53, 'Young craters', 'The last billion years', 'Little changes now. New impacts still scar the surface: Copernicus about 800 million years ago, Tycho about 110 million, its bright rays still fresh.'],
     [59, 'Today', 'Now', 'The Moon we see, little changed for a billion years. It still drifts away from Earth, about 3.8 cm a year.']];
   var EVENTS = [      // basins and craters, where and when they show
-    { t: 33.0, lat: -53, lon: -169, s: 0.55, name: 'South Pole–Aitken basin, about 2,500 km across' },
-    { t: 38.5, lat: 33, lon: -16, s: 0.38, name: 'Imbrium basin, about 3.9 billion years ago' },
-    { t: 41.0, lat: -20, lon: -95, s: 0.3, name: 'Orientale basin, about 3.8 billion years ago' },
+    { t: 34.5, lat: -53, lon: -169, s: 0.55, name: 'South Pole–Aitken basin, about 2,500 km across' },
+    { t: 39.5, lat: 33, lon: -16, s: 0.38, name: 'Imbrium basin, about 3.9 billion years ago' },
+    { t: 41.5, lat: -20, lon: -95, s: 0.3, name: 'Orientale basin, about 3.8 billion years ago' },
     { t: 42.6, lat: 8.5, lon: 31.4, s: 0.1, name: 'Lava fills Mare Tranquillitatis', lava: 1 },
     { t: 44.0, lat: 20.2, lon: 30.8, s: 0.1, name: 'Fire fountains spray volcanic glass', fount: 1 },
     { t: 46.2, lat: 33, lon: -16, s: 0.1, name: 'Mare Imbrium floods', lava: 1 },
     { t: 48.6, lat: 20, lon: -55, s: 0.1, name: 'Oceanus Procellarum, the largest', lava: 1 },
     { t: 54.0, lat: 9.6, lon: -20.1, s: 0.12, name: 'Copernicus' },
     { t: 57.0, lat: -43.3, lon: -11.4, s: 0.12, name: 'Tycho' }];
-  var LON = [[16, 900], [24, 690], [32, 540], [42, 345], [53, 355], [66, 360]];
+  var LON = [[16, 1000], [17.5, 880], [30.5, 860], [34, 560], [42, 345], [53, 355], [66, 360]];      // nearly still while the cut-away shows
   function lonAt(t) { if (t <= LON[0][0]) return LON[0][1]; for (var i = 1; i < LON.length; i++) if (t <= LON[i][0]) { var a = LON[i - 1], b = LON[i], u = ss(0, 1, (t - a[0]) / (b[0] - a[0])); return a[1] + (b[1] - a[1]) * u; } return 360; }
   var smallHits = []; (function () { var s = 5; function R() { s = (s * 16807) % 2147483647; return s / 2147483647; } for (var i = 0; i < 46; i++) smallHits.push({ t: 32 + R() * 10, lat: Math.asin(R() * 2 - 1) * 180 / Math.PI, lon: R() * 360 - 180, s: 0.03 + R() * 0.06 }); })();
 
@@ -310,57 +320,48 @@
         drawSphere('m', mxz, myz, mrad, rr, lonAt(16), { kind: 'moon', heat: 1, melt: 1, raft: 0, detail: 0, ga: 9, tycho: 0, cop: 0, drift: t * 2 }); }
     }
   }
-  // ── inside the young Moon: a quarter cut away. A molten iron core; the magma ocean, in which dense olivine and pyroxene
-  // crystals sink to pile up as the mantle while light plagioclase floats up to build the crust; and at the end the last
-  // dregs of the melt, rich in potassium, rare-earth elements and phosphorus (KREEP), trapped between crust and mantle.
+  // ── inside the young Moon: an eighth of the ball carved away, as in a cut-away globe. The three flat faces are traced per
+  // pixel and lit by the same Sun as the surface; molten layers glow on their own. A molten iron core; the mantle, piled up
+  // from olivine and pyroxene crystals that sank through the magma ocean; the magma ocean itself, crystals drifting in it;
+  // the last melt, rich in potassium, rare-earth elements and phosphorus (KREEP); and the floating crust of plagioclase.
   // Layer thicknesses are only roughly to scale (the crust is drawn a little thick to be seen). ──
-  var CUTP = []; (function () { var s = 21; function R() { s = (s * 16807) % 2147483647; return s / 2147483647; } for (var i = 0; i < 110; i++) CUTP.push({ up: i % 5 < 2, a: 0.06 + R() * 1.45, f: R(), v: 0.07 + R() * 0.08, z: 0.7 + R() * 0.6, rot: R() * 3.14 }); })();
-  function cutaway(x0, y0, rad, a) {
-    if (a <= 0) return;
-    var M = maps, rc = 0.21, base = 0.55 + 0.37 * ss(18, 30, t), kreep = ss(27, 30, t), crust = 1 - 0.04 * ss(22, 30, t), kw = 0.014 * kreep;
-    var m = Math.min(base, crust - kw - 0.004), n = Math.max(8, Math.ceil(rad)), b = bufCanvas('cut', n), bx = b.getContext('2d'), img = bx.createImageData(n, n), d = img.data;
-    var e = 1.2 / rad, flow = t * 0.03;
-    // the cut face, pixel by pixel: each layer with its own color and grain, soft one-pixel edges, a thin dark line at each boundary
-    for (var y = 0; y < n; y++) for (var x = 0; x < n; x++) {
-      var r = Math.hypot(x + 0.5, y + 0.5) / rad; if (r > 1.004) continue;
-      var th = Math.atan2(y + 0.5, x + 0.5), gi = (y % NH) * NW + (x % NW), gj = (((y * 2) % NH) * NW + ((x * 2 + 97) % NW)), g1 = M.n2[gi] - 0.5, g2 = M.n1[gj] - 0.5, R = 0, G = 0, B = 0;
-      if (r < rc) {      // molten iron: white-hot at the middle, orange at its edge
-        var c = 1 - r / rc; c = c * c; R = 1.0; G = 0.5 + 0.42 * c + g1 * 0.06; B = 0.12 + 0.55 * c * c;
-      } else if (r < m) {      // the mantle: crystals of olivine (dark green, deepest) and pyroxene (browner, higher), packed and grainy
-        var u = (r - rc) / Math.max(0.01, m - rc), gr = g2 > 0.18 ? 0.07 : g2 < -0.2 ? -0.05 : 0;
-        R = 0.2 + 0.13 * u + g1 * 0.08 + gr; G = 0.27 + 0.06 * u + g1 * 0.08 + gr; B = 0.14 + 0.06 * u + g1 * 0.05 + gr * 0.7;
-      } else if (r < crust - kw) {      // the magma ocean: hottest at depth, with slow convection streaks
-        var u2 = (r - m) / Math.max(0.01, crust - kw - m), cs = M.n1[((((r * 40) | 0) % NH) * NW + (((th * 90 + flow * 400) | 0) % NW + NW) % NW)] - 0.5;
-        R = 1.0 - 0.18 * u2 + cs * 0.1; G = 0.58 - 0.3 * u2 + cs * 0.16; B = 0.16 - 0.1 * u2 + cs * 0.05;
-      } else if (r < crust) {      // the last of the melt, rich in rare elements (KREEP): dark, rust-red
-        R = 0.44 + g1 * 0.06; G = 0.22 + g1 * 0.04; B = 0.13;
-      } else {      // the crust: pale anorthosite, finely grained
-        R = 0.84 + g2 * 0.1; G = 0.82 + g2 * 0.1; B = 0.77 + g2 * 0.09;
-      }
-      var line = 0, bs = [rc, m, crust - kw, crust]; for (var k = 0; k < 4; k++) { var dd = Math.abs(r - bs[k]); if (dd < e) line = Math.max(line, 1 - dd / e); }
-      var sh = 0.93 - 0.08 * r * Math.cos(th - 0.6);      // the flat face catches the light a little unevenly
-      var o = (y * n + x) * 4, k2 = 1 - 0.35 * line; d[o] = Math.min(255, R * sh * k2 * 255); d[o + 1] = Math.min(255, G * sh * k2 * 255); d[o + 2] = Math.min(255, B * sh * k2 * 255); d[o + 3] = r > 1 ? (1.004 - r) / 0.004 * 255 : 255;
-    }
-    bx.putImageData(img, 0, 0);
-    cx.save(); cx.globalAlpha = a;
-    cx.shadowColor = 'rgba(0,0,0,.7)'; cx.shadowBlur = rad * 0.05; cx.drawImage(b, x0, y0); cx.shadowBlur = 0;      // a soft shadow on the sphere along the cut
-    // crystals in the melt: dark green grains sinking, white laths of plagioclase rising
-    if (crust - kw - m > 0.02) for (var i = 0; i < CUTP.length; i++) {
-      var p = CUTP[i], f = (t * p.v + p.f) % 1, top = crust - kw - 0.01, bot = m + 0.01, rr = p.up ? bot + (top - bot) * f : top - (top - bot) * f;
-      var px = x0 + Math.cos(p.a) * rr * rad, py = y0 + Math.sin(p.a) * rr * rad, z = rad * 0.009 * p.z, fade = Math.min(1, f * 6, (1 - f) * 6);
-      cx.save(); cx.translate(px, py); cx.rotate(p.rot + t * 0.3); cx.globalAlpha = a * fade;
-      if (p.up) { cx.fillStyle = '#f4f1e6'; cx.fillRect(-z * 1.6, -z * 0.45, z * 3.2, z * 0.9); }
-      else { cx.fillStyle = '#3d5a2a'; cx.beginPath(); cx.moveTo(0, -z); cx.lineTo(z * 0.8, 0); cx.lineTo(0, z); cx.lineTo(-z * 0.8, 0); cx.closePath(); cx.fill(); }
-      cx.restore();
-    }
-    // the cut edges: a fine highlight where the face meets the surface
-    cx.strokeStyle = 'rgba(255,240,215,.45)'; cx.lineWidth = Math.max(1, rad * 0.006); cx.beginPath(); cx.moveTo(x0 + rad, y0); cx.lineTo(x0, y0); cx.lineTo(x0, y0 + rad); cx.stroke();
-    cx.restore();
-    var la = a * ss(18.5, 19.5, t), L2 = function (txt, r, ang) { var px = x0 + Math.cos(ang) * r * rad, py = y0 + Math.sin(ang) * r * rad; label(txt, CW, py, la, px, py, 0.027); };      // down the right side, each level with its spot
-    L2('Iron core', rc * 0.55, 0.3);
-    L2('Mantle crystals', (m + rc) / 2, 0.55);
-    L2('Magma ocean', (crust - kw + m) / 2, 0.82);
-    L2('Crust', (1 + crust) / 2, 1.18);
+  var CA = (function () {      // the cut's three axes in view space (x right, y up, z toward the viewer): the wedge faces us, lower right
+    var u = [1 / Math.sqrt(3), 1 / Math.sqrt(3), 1 / Math.sqrt(3)], v = [0.3, -0.24, 0.92], m = Math.hypot(v[0], v[1], v[2]); v = v.map(function (q) { return q / m; });
+    var k = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], s = Math.hypot(k[0], k[1], k[2]), c = u[0] * v[0] + u[1] * v[1] + u[2] * v[2]; k = k.map(function (q) { return q / s; });
+    function rot(e) { var kx = k[1] * e[2] - k[2] * e[1], ky = k[2] * e[0] - k[0] * e[2], kz = k[0] * e[1] - k[1] * e[0], kd = k[0] * e[0] + k[1] * e[1] + k[2] * e[2];
+      return [e[0] * c + kx * s + k[0] * kd * (1 - c), e[1] * c + ky * s + k[1] * kd * (1 - c), e[2] * c + kz * s + k[2] * kd * (1 - c)]; }
+    return [rot([1, 0, 0]), rot([0, 1, 0]), rot([0, 0, 1])];
+  })();
+  function cutLayers() { var rc = 0.21, base = 0.55 + 0.37 * ss(18, 30, t), kreep = ss(27, 30, t), crust = 1 - 0.04 * ss(22, 30, t), kw = 0.014 * kreep; return { rc: rc, m: Math.min(base, crust - kw - 0.004), crust: crust, kw: kw }; }
+  var CC = [0, 0, 0];
+  // the color of the cut face at view-space point (hx, hy, hz), radius r, on face f; e: one pixel, for the boundary lines
+  function cutShade(f, hx, hy, hz, r, Ly, e) {
+    var M = maps, a = CA[f], b = CA[(f + 1) % 3], c = CA[(f + 2) % 3], u = b[0] * hx + b[1] * hy + b[2] * hz, v = c[0] * hx + c[1] * hy + c[2] * hz;
+    var gi = ((((v * 0.5 + 0.5) * (NH - 1) * 3) | 0) % NH) * NW + ((((u * 0.5 + 0.5) * (NW - 1) * 1.5) | 0) + f * 97) % NW, g1 = M.n2[gi] - 0.5, g2 = M.n1[gi] - 0.5;
+    var lit = Math.max(0, a[0] * L[0] + a[1] * L[1] + a[2] * L[2]) * 0.75 + 0.28, ao = 0.72 + 0.28 * ss(0, 0.06, Math.min(u, v)), R, G, B, glow = 0;
+    if (r < Ly.rc) { var k = 1 - r / Ly.rc; k *= k; R = 1.0; G = 0.5 + 0.42 * k; B = 0.12 + 0.5 * k * k; glow = 1; }      // molten iron
+    else if (r < Ly.m) { var w = (r - Ly.rc) / Math.max(0.01, Ly.m - Ly.rc), gr = g2 > 0.2 ? 0.06 : g2 < -0.22 ? -0.04 : 0;      // olivine deep, pyroxene higher: grainy rock
+      R = 0.21 + 0.12 * w + g1 * 0.07 + gr; G = 0.27 + 0.05 * w + g1 * 0.07 + gr; B = 0.15 + 0.05 * w + g1 * 0.05 + gr * 0.7; }
+    else if (r < Ly.crust - Ly.kw) { var w2 = (r - Ly.m) / Math.max(0.01, Ly.crust - Ly.kw - Ly.m), q = (r * 30 - t * 0.6) % 1;      // the magma ocean: hottest at depth
+      R = 1.0 - 0.2 * w2 + g1 * 0.12; G = 0.56 - 0.3 * w2 + g1 * 0.14; B = 0.15 - 0.1 * w2; glow = 1;
+      var fs = M.n2[(gi + ((t * 9) | 0) * NW) % (NW * NH)], fu = M.n3[(gi + NW * NH - ((t * 7) | 0) * NW % (NW * NH)) % (NW * NH)];      // crystals: dark ones sinking, white ones rising
+      if (fs > 0.83) { R = 0.18; G = 0.26; B = 0.12; glow = 0; } else if (fu > 0.86) { R = 0.92; G = 0.9; B = 0.84; glow = 0; } void q; }
+    else if (r < Ly.crust) { R = 0.42 + g1 * 0.06; G = 0.21 + g1 * 0.04; B = 0.12; }      // KREEP: dark rust
+    else { R = 0.82 + g2 * 0.1; G = 0.8 + g2 * 0.1; B = 0.75 + g2 * 0.09; }      // anorthosite crust
+    var line = 0, bs = [Ly.rc, Ly.m, Ly.crust - Ly.kw, Ly.crust]; for (var j = 0; j < 4; j++) { var dd = Math.abs(r - bs[j]); if (dd < e) line = Math.max(line, 1 - dd / e); }
+    var sh = glow ? 1 : lit * ao, dk = 1 - 0.4 * line;
+    CC[0] = R * sh * dk; CC[1] = G * sh * dk; CC[2] = B * sh * dk;
+    if (glow) { CC[0] *= 0.85 + 0.15 * ao; CC[1] *= 0.85 + 0.15 * ao; CC[2] *= 0.85 + 0.15 * ao; }
+    return CC;
+  }
+  function cutLabels(x0, y0, rad, a) {      // each layer named, on the face that looks most toward us, with a level line to the right
+    if (a <= 0) return; var Ly = cutLayers(), f = 0; for (var i = 1; i < 3; i++) if (CA[i][2] > CA[f][2]) f = i;
+    var b = CA[(f + 1) % 3], c = CA[(f + 2) % 3], la = a * ss(18.5, 19.5, t);
+    function at(r, mix) { var s1 = r * Math.cos(mix), s2 = r * Math.sin(mix), X = b[0] * s1 + c[0] * s2, Y = b[1] * s1 + c[1] * s2; return [x0 + X * rad, y0 - Y * rad]; }
+    var L4 = [['Iron core', Ly.rc * 0.5, 0.78], ['Mantle crystals', (Ly.rc + Ly.m) / 2, 0.78], ['Magma ocean', (Ly.m + Ly.crust - Ly.kw) / 2, 0.78], ['Crust', (1 + Ly.crust) / 2, 0.78]];
+    var pts = L4.map(function (q) { return at(q[1], q[2]); }), ys = pts.map(function (p) { return p[1]; }), gap = CW * 0.055;
+    for (var j = 1; j < ys.length; j++) if (Math.abs(ys[j] - ys[j - 1]) < gap) ys[j] = ys[j - 1] + (ys[j] >= ys[j - 1] ? gap : -gap);      // keep the pills apart
+    for (var k2 = 0; k2 < 4; k2++) label(L4[k2][0], CW, ys[k2], la, pts[k2][0], pts[k2][1], 0.027);
   }
   function fountain(x, y, rad, s) {      // a fire fountain: molten spray thrown kilometers high, falling back as glass beads
     if (s < 0 || s > 3.4) return; var k = 9; function R() { k = (k * 16807) % 2147483647; return k / 2147483647; }
@@ -378,9 +379,9 @@
     // Earth, huge and close at first, falling behind as the Moon's orbit grows
     var ea = 1 - ss(26, 33, t);
     if (ea > 0) { cx.globalAlpha = ea; drawSphere('e', -CW * 0.12 - CW * 0.4 * ss(16, 33, t), CH * 0.42, S * (0.55 - 0.25 * ss(16, 33, t)), rr, t * 6, { kind: 'earth', hot: 0.4 * (1 - ss(16, 22, t)), drift: t * 3 }); cx.globalAlpha = 1; }
-    var P = { kind: 'moon', heat: 1 - 0.75 * ss(16, 26, t), melt: 1 - ss(29, 32.5, t), raft: ss(24, 30, t), detail: ss(32, 42, t), ga: gaAt(t), tycho: ss(57, 58, t), cop: ss(54, 55, t), drift: t * 2 };
+    var P = { kind: 'moon', cut: ss(17, 18.5, t) * (1 - ss(30, 31.5, t)), heat: 1 - 0.75 * ss(16, 26, t), melt: 1 - ss(29, 32.5, t), raft: ss(24, 30, t), detail: ss(32, 42, t), ga: gaAt(t), tycho: ss(57, 58, t), cop: ss(54, 55, t), drift: t * 2 };
     drawSphere('m', x0, y0, rad, rr, lon0, P);
-    cutaway(x0, y0, rad, ss(17, 18.5, t) * (1 - ss(30, 31.5, t)));
+    cutLabels(x0, y0, rad, P.cut);
     // impacts
     for (var i = 0; i < smallHits.length; i++) { var h = smallHits[i], u = (t - h.t) / 0.7; if (u < 0 || u > 1) continue; var p = project(h.lat, h.lon, lon0 - 360 * Math.floor(lon0 / 360), x0, y0, rad); if (p.z > 0.1) flash(p.x, p.y, rad * h.s, u, false); }
     for (var j = 0; j < EVENTS.length; j++) { var E = EVENTS[j], v = (t - E.t) / 1.4; if (v < 0 || v > 2.6) continue; var q = project(E.lat, E.lon, lon0 - 360 * Math.floor(lon0 / 360), x0, y0, rad);

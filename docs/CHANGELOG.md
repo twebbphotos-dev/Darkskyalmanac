@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.37 (zion-sky-v506)
+Moon history: a real 3D cut-away. The cut-away was a flat quarter-circle drawn over the sphere, so it read as a sticker rather than a slice. Now an eighth of the ball is carved away, as in a cut-away globe: for every pixel in the wedge the eye ray is traced to the first of the three cut faces it meets, which is colored by the layer at that depth and lit by the same Sun as the surface (each face at its own angle, darker in the inside corners), while the molten core and magma ocean glow on their own; crystals drift through the melt as flecks on the faces. The Moon now turns only slowly while the cut-away shows, so the wedge stays put on the globe, and the basin impacts were re-timed to the new turn.
+
 ## v5.36 (zion-sky-v505)
 Moon history: lava with natural edges, and a tidier player. The maria flooded in square blocks because their timing came from a half-size grid read without smoothing, which showed as stair steps once the view zoomed in, and neighboring basins met along straight seams. Now each spot's flood time is worked out at full resolution: the edges follow the real maria's dark outlines in the photograph, ages blend smoothly between basins, and the middle of each plain (the lowest part, farthest from its shore) floods first, so the lava pools and spreads out to the edges in ragged glowing fronts; the cooling cracks use full-resolution noise too. Labels now stay below the era title instead of running into it, the player uses the app's Montserrat type and an opaque background (the page showed through on the phone), and the play symbols no longer turn into blue emoji on iPhone.
 
