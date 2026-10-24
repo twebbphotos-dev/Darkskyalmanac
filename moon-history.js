@@ -80,10 +80,11 @@
   var MG = [0, 0, 0];
   function magma(M, ni, drift, heat, lit) {
     var N = NW * NH, a = M.n1[(ni + ((drift * 7) | 0)) % N], b = M.n2[(ni + N - ((drift * 4) | 0) % N) % N], c = M.n3[ni];
-    var crack = (1 - ss(0, 0.012 + 0.03 * heat, Math.abs(a - 0.5))) * 0.9 + (1 - ss(0, 0.008 + 0.02 * heat, Math.abs(b - 0.5))) * 0.6;
-    var open = ss(0.8 - 0.14 * heat, 0.86 - 0.14 * heat, a * 0.55 + c * 0.45);      // open melt
+    var glowing = ss(0, 0.15, heat);      // cold: solid rock, nothing glows
+    var crack = ((1 - ss(0, 0.012 + 0.03 * heat, Math.abs(a - 0.5))) * 0.9 + (1 - ss(0, 0.008 + 0.02 * heat, Math.abs(b - 0.5))) * 0.6) * glowing;
+    var open = ss(0.8 - 0.14 * heat, 0.86 - 0.14 * heat, a * 0.55 + c * 0.45) * glowing;      // open melt
     var e = Math.min(1.05, crack * (0.35 + 0.65 * heat) + open * (0.55 + 0.4 * heat));
-    var skin = 0.07 + 0.05 * b;
+    var skin = (0.07 + 0.05 * b) + (0.16 + 0.14 * c - 0.07) * (1 - glowing);      // chilled black skin, or weathered dark rock
     MG[0] = skin * 1.1 * lit + e * 1.25; MG[1] = skin * 0.95 * lit + e * e * 0.42 + e * 0.1; MG[2] = skin * 0.85 * lit + e * e * 0.1;      // orange-red cracks, yellow where hottest
     return MG;
   }
@@ -129,11 +130,12 @@
   }
 
   // ── the show ──
-  var box, cv, cx, cap, eraEl, yearEl, bar, barDot, btn, raf = 0, t = 0, last = 0, playing = false, CW = 0, CH = 0, stars = null, parts = [], buf = {};
+  var box, cv, cx, cap, eraEl, yearEl, gaEl, bar, barDot, btn, scrub = false, raf = 0, t = 0, last = 0, playing = false, CW = 0, CH = 0, stars = null, parts = [], buf = {};
   function bufCanvas(key, n) { var b = buf[key]; if (!b || b.width !== n) { b = buf[key] = document.createElement('canvas'); b.width = b.height = n; } return b; }
-  function drawSphere(key, x, y, rad, rr, lon0, P) {      // rendered at rr pixels radius, drawn at rad
+  function drawSphere(key, x, y, rad, rr, lon0, P, sx, sy, rot) {      // rendered at rr pixels radius, drawn at rad (squashed sx, sy along angle rot)
     var b = bufCanvas(key, 2 * rr), bx = b.getContext('2d'); bx.putImageData(shadeSphere(bx, rr, lon0, P), 0, 0);
-    cx.drawImage(b, x - rad, y - rad, 2 * rad, 2 * rad);
+    if (!sx) { cx.drawImage(b, x - rad, y - rad, 2 * rad, 2 * rad); return; }
+    cx.save(); cx.translate(x, y); cx.rotate(rot || 0); cx.scale(sx, sy); cx.drawImage(b, -rad, -rad, 2 * rad, 2 * rad); cx.restore();
   }
   var GA = [[0, 4.51], [10, 4.51], [16, 4.5], [24, 4.45], [32, 4.35], [42, 3.85], [53, 1.2], [59, 0.1], [66, 0]];
   function gaAt(t) { for (var i = 1; i < GA.length; i++) if (t <= GA[i][0]) { var a = GA[i - 1], b = GA[i], u = (t - a[0]) / (b[0] - a[0]); return a[1] + (b[1] - a[1]) * u; } return 0; }
@@ -168,64 +170,104 @@
     if (big) { cx.strokeStyle = 'rgba(230,215,190,' + (0.5 * (1 - u)) + ')'; cx.lineWidth = Math.max(1, rad * 0.08); cx.beginPath(); cx.arc(x, y, rad * (0.6 + 1.4 * u), 0, 7); cx.stroke(); }
     cx.globalCompositeOperation = 'source-over';
   }
-  function label(txt, x, y, a) {
-    if (a <= 0) return; cx.font = Math.round(CW * 0.026) + 'px Montserrat, sans-serif'; cx.textAlign = 'center';
-    cx.fillStyle = 'rgba(242,228,190,' + a + ')'; cx.fillText(txt, Math.min(CW * 0.8, Math.max(CW * 0.2, x)), Math.max(CW * 0.06, y));
+  function label(txt, x, y, a, px, py) {      // a named event: a pill of text, with a line down to the spot (px, py)
+    if (a <= 0) return; var f = Math.round(CW * 0.033); cx.font = '600 ' + f + 'px Montserrat, sans-serif'; cx.textAlign = 'center'; cx.textBaseline = 'middle';
+    var w = cx.measureText(txt).width + f * 1.2, hh = f * 1.8, lx = Math.min(CW - w / 2 - 6, Math.max(w / 2 + 6, x)), ly = Math.max(hh / 2 + 6, y);
+    if (px != null) { cx.strokeStyle = 'rgba(230,204,133,' + 0.8 * a + ')'; cx.lineWidth = Math.max(1, f * 0.08); cx.beginPath(); cx.moveTo(lx, ly + hh / 2); cx.lineTo(px, py); cx.stroke(); }
+    cx.fillStyle = 'rgba(13,10,24,' + 0.82 * a + ')'; cx.strokeStyle = 'rgba(203,168,90,' + 0.7 * a + ')'; cx.lineWidth = Math.max(1, f * 0.06);
+    cx.beginPath(); if (cx.roundRect) cx.roundRect(lx - w / 2, ly - hh / 2, w, hh, hh / 2); else cx.rect(lx - w / 2, ly - hh / 2, w, hh); cx.fill(); cx.stroke();
+    cx.fillStyle = 'rgba(242,228,190,' + a + ')'; cx.fillText(txt, lx, ly + f * 0.05); cx.textBaseline = 'alphabetic';
+  }
+  function title(e, a) {      // the era, large, at the top of the picture
+    if (a <= 0) return; var f = Math.round(CW * 0.062), g = Math.round(CW * 0.03); cx.textAlign = 'center';
+    cx.shadowColor = 'rgba(0,0,0,.9)'; cx.shadowBlur = f * 0.5;
+    cx.font = '600 ' + f + 'px Montserrat, sans-serif'; cx.fillStyle = 'rgba(242,228,190,' + a + ')'; cx.fillText(e[1], CW / 2, f * 1.35);
+    cx.font = '600 ' + g + 'px Montserrat, sans-serif'; cx.fillStyle = 'rgba(203,168,90,' + a + ')'; cx.fillText(e[2].toUpperCase(), CW / 2, f * 1.35 + g * 1.7);
+    cx.shadowBlur = 0;
   }
 
-  function resetParts() { parts = []; }
+  // ── the giant impact. Theia comes in at about 45° (the angle the classic simulations favor), is stretched by Earth's pull
+  // in the last moments, flattens against Earth and smears around it; a long arm of molten and vaporized rock is flung out
+  // along its path and wraps into a disk, much of it falling back; Earth's surface melts and puffs up a glowing atmosphere of
+  // rock vapor, and the planet, spun up, wobbles. Not to scale in time: the real collision took hours. ──
+  var HIT = 4.2, rs = 11;
+  function R() { rs = (rs * 16807) % 2147483647; return rs / 2147483647; }
+  function resetParts() { parts = []; parts.got = 0; rs = 11; }
+  function geo(t) {
+    var S = Math.min(CW, CH), zoom = ss(10, 16, t), ex = CW * (0.42 - 0.62 * zoom), ey = CH * (0.56 - 0.06 * zoom), er = S * (0.22 + 0.33 * zoom);
+    var ang = -Math.PI / 4, cxp = ex + Math.cos(ang) * er, cyp = ey + Math.sin(ang) * er;
+    var mAng = -2.2 - Math.max(0, t - HIT) * 0.55, mr0 = er * 3.2, mx = ex + Math.cos(mAng) * mr0, my = ey + Math.sin(mAng) * mr0 * 0.95;
+    return { S: S, zoom: zoom, ex: ex, ey: ey, er: er, ang: ang, cxp: cxp, cyp: cyp, tr: er * 0.53, GM: Math.pow(er * 1.6, 3) * Math.pow(2 * Math.PI / 4.0, 2), mx: mx, my: my, gather: ss(9, 15, t) };
+  }
+  function simStep(dt) {      // the debris: spawned as a stream from the contact point, then orbits under Earth's gravity
+    if (t < HIT || t >= 16) return; var g = geo(t);
+    var rx = g.cxp - g.ex, ry = g.cyp - g.ey, rl = Math.hypot(rx, ry), tx = ry / rl, ty = -rx / rl, vc = Math.sqrt(g.GM / rl);      // (tx, ty): along Theia's sideways motion
+    if (t < HIT + 0.9) { var n = Math.round(1700 * dt / 0.9);
+      for (var i = 0; i < n; i++) { var fwd = 0.55 + R() * 0.75, out = 0.1 + R() * 0.55 * (1 - (t - HIT) / 0.9), sp = (R() - 0.5) * 0.35;
+        parts.push({ x: g.cxp + (R() - 0.5) * g.er * 0.12, y: g.cyp + (R() - 0.5) * g.er * 0.12, vx: (tx * fwd + rx / rl * out + ty * sp) * vc, vy: (ty * fwd + ry / rl * out - tx * sp) * vc, h: 1, b: t, big: R() < 0.03 }); } }
+    var sub = 3, h = dt / sub, got = 0;
+    for (var p = 0; p < parts.length; p++) { var q = parts[p]; if (q.h <= 0) continue;
+      for (var k = 0; k < sub; k++) { var dx = q.x - g.ex, dy = q.y - g.ey, r2 = dx * dx + dy * dy, r = Math.sqrt(r2);
+        if (r < g.er * 0.97) { q.h = 0; break; }      // fell back
+        var aa = -g.GM / (r2 * r); q.vx += dx * aa * h; q.vy += dy * aa * h;
+        if (g.gather > 0 && r > g.er * 1.9) { var gx = g.mx - q.x, gy = g.my - q.y, gl = Math.hypot(gx, gy) + 1; q.vx += (gx / gl * g.er * 6 - q.vx * 2) * g.gather * h; q.vy += (gy / gl * g.er * 6 - q.vy * 2) * g.gather * h; if (gl < g.er * 0.08) { q.h = 0; got++; break; } }
+        q.x += q.vx * h; q.y += q.vy * h; } }
+    parts.got += got;
+  }
   function frame(now) {
     raf = 0; if (!playing) return;
     var dt = Math.min(0.05, (now - last) / 1000); last = now; t += dt;
     if (t > T_END) { t = T_END; playing = false; btn.textContent = '↺ Replay'; }
-    draw(dt); if (playing) raf = requestAnimationFrame(frame);
+    simStep(dt); draw(); if (playing) raf = requestAnimationFrame(frame);
   }
-  function draw(dt) {
+  function draw() {
     cx.globalCompositeOperation = 'source-over'; cx.fillStyle = '#000'; cx.fillRect(0, 0, CW, CH); cx.drawImage(stars, 0, 0);
     var S = Math.min(CW, CH), rr = Math.min(170, Math.round(S * 0.33)), ga = gaAt(t);
-    if (t < 16) impactScene(S, rr, dt); else moonScene(S, rr);
-    // the era caption and the time line
-    var e = ERAS[0]; for (var i = 0; i < ERAS.length; i++) if (t >= ERAS[i][0]) e = ERAS[i];
+    if (t < 16) impactScene(S, rr); else moonScene(S, rr);
+    // the era: large on the picture as it begins (and while scrubbing), and in the caption below; the time line
+    var ei = 0; for (var i = 0; i < ERAS.length; i++) if (t >= ERAS[i][0]) ei = i; var e = ERAS[ei], since = t - e[0];
+    title(e, scrub ? 1 : Math.min(1, since / 0.4) * Math.min(1, (3.6 - since) / 0.8));
     if (eraEl.textContent !== e[1]) { eraEl.textContent = e[1]; yearEl.textContent = e[2]; cap.textContent = e[3]; }
-    barDot.style.left = (100 * (4.6 - Math.max(0, ga)) / 4.6) + '%';
+    barDot.style.left = (100 * t / T_END) + '%';
+    var gtxt = ga > 0.995 ? ga.toFixed(2) + ' billion years ago' : ga >= 0.01 ? Math.round(ga * 1000) + ' million years ago' : 'Today';
+    if (gaEl && gaEl.textContent !== gtxt) gaEl.textContent = gtxt;
   }
-  function impactScene(S, rr, dt) {
-    // the young Earth, Theia closing in, the hit, the spray of debris into orbit and the Moon gathering in it
-    var zoom = ss(10, 16, t), ex = CW * (0.42 - 0.62 * zoom), ey = CH * (0.55 - 0.05 * zoom), er = S * (0.22 + 0.33 * zoom);
-    var hit = 4.2, hot = t < hit ? 0 : Math.min(1, (t - hit) * 2) * (1 - 0.35 * ss(6, 16, t));
-    drawSphere('e', ex, ey, er, rr, t * 6, { kind: 'earth', hot: 0.12 + 0.88 * hot, drift: t * 3 });
-    var ang = -Math.PI / 4, cxp = ex + Math.cos(ang) * er, cyp = ey + Math.sin(ang) * er, tr = er * 0.53;
-    if (t < hit + 0.5) {      // Theia, oblique: aimed at the upper-right limb
-      var u = Math.min(1, t / hit), dx = 0.78, dy = -0.62, dist = (1 - u) * S * 1.1;
-      var px = cxp + Math.cos(ang) * tr * 0.7 + dx * dist, py = cyp + Math.sin(ang) * tr * 0.7 + dy * dist, sq = t > hit ? 1 - (t - hit) / 0.5 : 1;
-      if (sq > 0) drawSphere('t', px, py, tr * sq, Math.round(rr * 0.6), 40 + t * 10, { kind: 'theia' });
+  function impactScene(S, rr) {
+    var g = geo(t), ex = g.ex, ey = g.ey, er = g.er, since = t - HIT;
+    var hot = t < HIT ? 0 : Math.min(1, since * 1.5) * (2.3 - 1.6 * ss(5.5, 16, t));      // the surface melts almost everywhere, then crusts over
+    // the rock-vapor atmosphere: a glowing envelope round the melted Earth
+    if (since > 0) { var va = Math.min(1, since * 2) * (0.55 - 0.35 * ss(6, 15, t)), vg = cx.createRadialGradient(ex, ey, er * 0.95, ex, ey, er * (1.25 + 0.15 * Math.min(1, since)));
+      vg.addColorStop(0, 'rgba(255,170,90,' + va + ')'); vg.addColorStop(0.5, 'rgba(255,110,50,' + va * 0.35 + ')'); vg.addColorStop(1, 'rgba(255,80,40,0)');
+      cx.globalCompositeOperation = 'lighter'; cx.fillStyle = vg; cx.beginPath(); cx.arc(ex, ey, er * 1.45, 0, 7); cx.fill(); cx.globalCompositeOperation = 'source-over'; }
+    // Earth: solid and dark before; molten, spun up and wobbling after
+    var wob = since > 0 ? 0.06 * Math.exp(-since * 0.7) * Math.sin(since * 6) : 0;
+    drawSphere('e', ex, ey, er, rr, t < HIT ? t * 5 : HIT * 5 + since * 22, { kind: 'earth', hot: hot, drift: t * 3 }, 1 + wob, 1 - wob, g.ang);
+    // Theia: falling in on a curving path, stretched toward Earth, then flattening against it and sinking in
+    var dirx = -0.78, diry = 0.62;      // its motion at contact: down and to the left
+    if (since < 1.1) {
+      var u = Math.min(1, t / HIT), dist = (1 - u) * S * 1.15, curve = (1 - u) * (1 - u) * S * 0.25;
+      var px = g.cxp - dirx * (g.tr * 0.85 + dist) + diry * curve, py = g.cyp - diry * (g.tr * 0.85 + dist) - dirx * curve;
+      var stretch = 1 + 0.14 * ss(HIT - 0.7, HIT, t), sq = since > 0 ? ss(0, 1.0, since) : 0;
+      if (since > 0) { px += (ex - px) * 0.55 * sq; py += (ey - py) * 0.55 * sq; }
+      cx.globalAlpha = 1 - ss(0.5, 1.1, since);
+      drawSphere('t', px, py, g.tr, Math.round(rr * 0.6), 40 + t * 10, { kind: 'theia' }, stretch * (1 - 0.55 * sq), (1 / Math.sqrt(stretch)) * (1 + 0.45 * sq), Math.atan2(g.cyp - py, g.cxp - px));
+      cx.globalAlpha = 1;
     }
-    if (t >= hit && t < hit + 2.5) { var fu = (t - hit) / 2.5; flash(cxp, cyp, er * 0.9, fu, true); }
-    var GM = Math.pow(er * 1.6, 3) * Math.pow(2 * Math.PI / 4.0, 2);      // so that an orbit at 1.6 Earth radii takes about 4 s
-    if (t >= hit && !parts.length) {
-      var s = 11; function R() { s = (s * 16807) % 2147483647; return s / 2147483647; }
-      for (var i = 0; i < 900; i++) { var rx = cxp - ex, ry = cyp - ey, rl = Math.hypot(rx, ry), tx = -ry / rl, ty = rx / rl, vc = Math.sqrt(GM / rl);
-        var k = 0.75 + R() * 0.55, out = 0.15 + R() * 0.45;
-        parts.push({ x: cxp + (R() - 0.5) * er * 0.15, y: cyp + (R() - 0.5) * er * 0.15, vx: (-tx * k + rx / rl * out) * vc + (R() - 0.5) * vc * 0.2, vy: (-ty * k + ry / rl * out) * vc + (R() - 0.5) * vc * 0.2, h: 1, m: 0 }); }
-    }
-    if (parts.length) {
-      // the Moon gathers at about 3.5 Earth radii, from the debris outside the zone where Earth's tides tear things apart
-      var mAng = -2.2 - (t - hit) * 0.55, mr0 = er * 3.2 / (1 + 0.62 * zoom) * (1 + 0.62 * zoom);
-      var mx = ex + Math.cos(mAng) * mr0, my = ey + Math.sin(mAng) * mr0 * 0.95, gather = ss(9, 15, t);
-      cx.globalCompositeOperation = 'lighter'; var got = 0, sub = 4;
-      for (var p = 0; p < parts.length; p++) { var q = parts[p]; if (q.h <= 0) continue;
-        for (var k2 = 0; k2 < sub; k2++) { var h = dt / sub, dx2 = q.x - ex, dy2 = q.y - ey, r2 = dx2 * dx2 + dy2 * dy2, r = Math.sqrt(r2);
-          if (r < er * 0.98) { q.h = 0; break; }
-          var aa = -GM / (r2 * r); q.vx += dx2 * aa * h; q.vy += dy2 * aa * h;
-          if (gather > 0 && r > er * 1.9) { var gx = mx - q.x, gy = my - q.y, gl = Math.hypot(gx, gy) + 1; q.vx += gx / gl * gather * er * 6 * h - q.vx * gather * 2 * h; q.vy += gy / gl * gather * er * 6 * h - q.vy * gather * 2 * h; if (gl < er * 0.08) { q.h = 0; got++; break; } }
-          q.x += q.vx * h; q.y += q.vy * h; }
-        if (q.h <= 0) continue;
-        var age = t - hit, a2 = Math.max(0.35, 1 - age * 0.07), sz = Math.max(1.5, S * 0.006);
-        cx.fillStyle = 'rgba(255,' + (150 + 70 * a2 | 0) + ',' + (70 * a2 | 0) + ',' + (0.8 * a2) + ')'; cx.fillRect(q.x - sz / 2, q.y - sz / 2, sz, sz);
-      }
+    if (since > 0) {
+      cx.globalCompositeOperation = 'lighter';
+      // the smear: Theia's mantle spreading round Earth, white-hot, cooling to orange
+      var sw = Math.min(2.2, since * 0.9), al = Math.max(0, 1 - since / 7), a0 = Math.atan2(g.cyp - ey, g.cxp - ex);
+      cx.strokeStyle = 'rgba(255,' + (200 - 80 * Math.min(1, since / 4) | 0) + ',110,' + 0.75 * al + ')'; cx.lineWidth = er * (0.16 - 0.06 * Math.min(1, since / 3)); cx.lineCap = 'round';
+      cx.beginPath(); cx.arc(ex, ey, er * 0.97, a0 - sw * 0.25, a0 + sw * 0.75); cx.stroke();
+      // the first flash at contact
+      if (since < 1.6) { var fu = since / 1.6, fr = er * (0.25 + 0.9 * fu), fg = cx.createRadialGradient(g.cxp, g.cyp, 0, g.cxp, g.cyp, fr);
+        fg.addColorStop(0, 'rgba(255,255,245,' + (1 - fu) + ')'); fg.addColorStop(0.4, 'rgba(255,210,140,' + 0.7 * (1 - fu) + ')'); fg.addColorStop(1, 'rgba(255,140,60,0)');
+        cx.fillStyle = fg; cx.beginPath(); cx.arc(g.cxp, g.cyp, fr, 0, 7); cx.fill(); }
+      // the debris, colored by how long it has had to cool
+      for (var p = 0; p < parts.length; p++) { var q = parts[p]; if (q.h <= 0) continue; var age = t - q.b, k2 = Math.min(1, age / 6), z = Math.max(1.5, S * (q.big ? 0.014 : 0.005));
+        cx.fillStyle = 'rgba(255,' + (235 - 120 * k2 | 0) + ',' + (190 - 160 * k2 | 0) + ',' + (0.85 - 0.45 * k2) + ')'; cx.fillRect(q.x - z / 2, q.y - z / 2, z, z); }
       cx.globalCompositeOperation = 'source-over';
-      parts.got = (parts.got || 0) + got;
-      if (t > 9) { var mrad = S * (0.02 + 0.33 * zoom) * Math.min(1, 0.4 + (parts.got || 0) / 500); var mxz = mx + (CW * 0.5 - mx) * zoom, myz = my + (CH * 0.47 - my) * zoom;
+      if (t > 9) { var mrad = S * (0.02 + 0.33 * g.zoom) * Math.min(1, 0.4 + parts.got / 500), mxz = g.mx + (CW * 0.5 - g.mx) * g.zoom, myz = g.my + (CH * 0.47 - g.my) * g.zoom;
         drawSphere('m', mxz, myz, mrad, rr, lonAt(16), { kind: 'moon', heat: 1, melt: 1, raft: 0, detail: 0, ga: 9, tycho: 0, cop: 0, drift: t * 2 }); }
     }
   }
@@ -233,14 +275,14 @@
     var lon0 = lonAt(t), x0 = CW * 0.5, y0 = CH * 0.47, rad = S * 0.35;
     // Earth, huge and close at first, falling behind as the Moon's orbit grows
     var ea = 1 - ss(26, 33, t);
-    if (ea > 0) { cx.globalAlpha = ea; drawSphere('e', -CW * 0.12 - CW * 0.4 * ss(16, 33, t), CH * 0.42, S * (0.55 - 0.25 * ss(16, 33, t)), rr, t * 6, { kind: 'earth', hot: 0.65 * (1 - ss(16, 30, t)), drift: t * 3 }); cx.globalAlpha = 1; }
+    if (ea > 0) { cx.globalAlpha = ea; drawSphere('e', -CW * 0.12 - CW * 0.4 * ss(16, 33, t), CH * 0.42, S * (0.55 - 0.25 * ss(16, 33, t)), rr, t * 6, { kind: 'earth', hot: 0.4 * (1 - ss(16, 22, t)), drift: t * 3 }); cx.globalAlpha = 1; }
     var P = { kind: 'moon', heat: 1 - 0.75 * ss(16, 26, t), melt: 1 - ss(29, 32.5, t), raft: ss(24, 30, t), detail: ss(32, 42, t), ga: gaAt(t), tycho: ss(57, 58, t), cop: ss(54, 55, t), drift: t * 2 };
     drawSphere('m', x0, y0, rad, rr, lon0, P);
     // impacts
     for (var i = 0; i < smallHits.length; i++) { var h = smallHits[i], u = (t - h.t) / 0.7; if (u < 0 || u > 1) continue; var p = project(h.lat, h.lon, lon0 - 360 * Math.floor(lon0 / 360), x0, y0, rad); if (p.z > 0.1) flash(p.x, p.y, rad * h.s, u, false); }
     for (var j = 0; j < EVENTS.length; j++) { var E = EVENTS[j], v = (t - E.t) / 1.4; if (v < 0 || v > 2.6) continue; var q = project(E.lat, E.lon, lon0 - 360 * Math.floor(lon0 / 360), x0, y0, rad);
       if (q.z > 0.05 && v <= 1) flash(q.x, q.y, rad * E.s, v, true);
-      if (q.z > 0.05) label(E.name, q.x, q.y - rad * E.s - CW * 0.02, Math.min(1, v * 3) * Math.min(1, (2.6 - v) * 2)); }
+      if (q.z > 0.05) label(E.name, q.x, q.y - rad * E.s - CW * 0.09, Math.min(1, v * 3) * Math.min(1, (2.6 - v) * 2), q.x, q.y - rad * E.s * 0.3); }
   }
 
   function makeStars() { stars = document.createElement('canvas'); stars.width = CW; stars.height = CH; var x = stars.getContext('2d'), s = 3;
@@ -252,15 +294,32 @@
     playing = true; btn.textContent = '❚❚ Pause'; last = performance.now(); if (!raf) raf = requestAnimationFrame(frame);
   }
   function pause() { playing = false; btn.textContent = '▶ Play'; }
+  function seek(s) {      // jump to s seconds; the debris is re-run from the impact (cheap: no drawing)
+    s = Math.max(0, Math.min(T_END, s)); var from = t;
+    if (s < from || from < HIT) { t = 0; resetParts(); }
+    var step = 1 / 30; while (t + step < s && t < 16) { t += step; simStep(step); }
+    t = s; draw();
+  }
+  function scrubber() {      // drag along the time line to go back and forth through time
+    var want = null, pend = false, wasPlaying = false;
+    function at(e) { var r = bar.getBoundingClientRect(); return Math.max(0, Math.min(1, (e.clientX - r.left) / r.width)) * T_END; }
+    function go() { pend = false; if (want != null) seek(want); }
+    bar.addEventListener('pointerdown', function (e) { e.preventDefault(); try { bar.setPointerCapture(e.pointerId); } catch (x) { /* fine */ } scrub = true; wasPlaying = playing; pause(); want = at(e); if (!pend) { pend = true; requestAnimationFrame(go); } });
+    bar.addEventListener('pointermove', function (e) { if (!scrub) return; want = at(e); if (!pend) { pend = true; requestAnimationFrame(go); } });
+    function end() { if (!scrub) return; scrub = false; draw(); if (wasPlaying && t < T_END) play(); }
+    bar.addEventListener('pointerup', end); bar.addEventListener('pointercancel', end);
+    var ticks = bar.querySelector('.mh-ticks'); if (ticks && !ticks.childNodes.length) ERAS.forEach(function (e) { var i = document.createElement('i'); i.style.left = (100 * e[0] / T_END) + '%'; ticks.appendChild(i); });
+  }
   window.MoonHistory = {
     open: function (root) {
-      box = root; cv = root.querySelector('canvas'); cx = cv.getContext('2d'); cap = root.querySelector('.mh-cap'); eraEl = root.querySelector('.mh-era'); yearEl = root.querySelector('.mh-year');
+      box = root; cv = root.querySelector('canvas'); cx = cv.getContext('2d'); cap = root.querySelector('.mh-cap'); eraEl = root.querySelector('.mh-era'); yearEl = root.querySelector('.mh-year'); gaEl = root.querySelector('.mh-ga');
       bar = root.querySelector('.mh-bar'); barDot = root.querySelector('.mh-dot'); btn = root.querySelector('.mh-play');
       btn.onclick = function () { playing ? pause() : play(); };
+      if (!bar.dataset.on) { bar.dataset.on = 1; scrubber(); }
       size(); eraEl.textContent = 'Loading…';
       return load().then(function () { t = 0; resetParts(); play(); });
     },
     close: function () { playing = false; if (raf) cancelAnimationFrame(raf); raf = 0; },
-    seek: function (s) { pause(); t = 0; resetParts(); var step = 1 / 15; while (t + step < s) { t += step; if (t < 16) draw(step); } t = s; draw(step); }      // jump to s seconds (runs the debris forward)
+    seek: function (s) { pause(); seek(s); }
   };
 })();

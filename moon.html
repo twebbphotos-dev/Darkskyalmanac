@@ -265,9 +265,12 @@ body.night-mode #zcl-set-modal,body.night-mode #es-set-modal{filter:grayscale(1)
 .mh-era{margin-top:12px;font-size:16px;font-weight:600;color:#F2E4BE;letter-spacing:.03em}
 .mh-year{font-size:10.5px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#CBA85A;margin-top:3px}
 .mh-cap{font-size:13px;line-height:1.55;color:#C9BD97;margin-top:8px;min-height:60px}
-.mh-bar{position:relative;height:2px;background:rgba(203,168,90,.3);margin:14px 6px 18px}
-.mh-dot{position:absolute;top:-4px;width:10px;height:10px;margin-left:-5px;border-radius:50%;background:#E6CC85;box-shadow:0 0 8px rgba(230,204,133,.7)}
-.mh-bar span{position:absolute;top:8px;font-size:9.5px;letter-spacing:.06em;color:#9A8A66}
+.mh-bar{position:relative;height:34px;margin:6px 8px 14px;cursor:pointer;touch-action:none;-webkit-user-select:none;user-select:none}
+.mh-bar::before{content:'';position:absolute;left:0;right:0;top:12px;height:3px;border-radius:2px;background:rgba(203,168,90,.32)}
+.mh-ticks i{position:absolute;top:8px;width:1px;height:11px;background:rgba(203,168,90,.55)}
+.mh-dot{position:absolute;top:5px;width:17px;height:17px;margin-left:-8.5px;border-radius:50%;background:#E6CC85;box-shadow:0 0 10px rgba(230,204,133,.75);pointer-events:none}
+.mh-bar span{position:absolute;top:22px;font-size:9.5px;letter-spacing:.06em;color:#9A8A66;pointer-events:none}
+.mh-ga{margin-top:10px;font-size:12px;font-weight:600;color:#E6CC85;font-variant-numeric:tabular-nums}
 .mh-bar span:first-of-type{left:0}.mh-bar span:last-of-type{right:0}
 .mh-play{margin-top:10px;padding:8px 16px;border-radius:7px;border:1px solid rgba(203,168,90,.5);background:transparent;color:#CBA85A;font:inherit;font-size:11px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;cursor:pointer}
 .mh-note{font-size:10px;line-height:1.5;color:#7A6E55;margin-top:12px}
@@ -1624,8 +1627,9 @@ if('serviceWorker' in navigator){
   <div class="mh-box">
     <button class="mh-x" type="button" aria-label="Close">&#215;</button>
     <canvas aria-hidden="true"></canvas>
+    <div class="mh-ga"></div>
+    <div class="mh-bar" title="Drag to move through time"><div class="mh-ticks"></div><i class="mh-dot"></i><span>4.5 billion years ago</span><span>Today</span></div>
     <div class="mh-era"></div><div class="mh-year"></div>
-    <div class="mh-bar"><i class="mh-dot"></i><span>4.5 billion years ago</span><span>Today</span></div>
     <div class="mh-cap"></div>
     <button class="mh-play" type="button">&#10074;&#10074; Pause</button>
     <div class="mh-note">An illustration of the leading explanation, not to scale in size or time. The surface is the real Moon from NASA’s Lunar Reconnaissance Orbiter, shown before its maria and then flooding basin by basin at approximate ages from crater counts.</div>
