@@ -399,20 +399,20 @@ const BOULDER = { x: 0, z: 0, cyl: [] };
 // the double crater the route crosses just east of stop 6, two overlapping craters about 45 and 37 m across (generated ones, picked by place)
 const near = (x, z) => craters.reduce((b, c) => Math.hypot(c.x - x, c.z - z) < Math.hypot(b.x - x, b.z - z) ? c : b);
 const RAMP_PAIR = [near(292, -765), near(312, -752)];
-// Tilted slabs of rock, one end bedded in the soil and the other raised, their long faces ramps you can drive: the fifth
-// piece of Tracy's Rock, lying low beside the others, and a kicker on the near rim of the double crater east of stop 6,
+// A tilted slab of rock, one end bedded in the soil and the other raised, its long face a ramp you can drive: on the near
+// rim of the double crater east of stop 6,
 // a jump right across both along the route. Each surface is ground for the wheels (slabAt, in ground()), and the same
 // function shapes its mesh. c, s: the direction from the bedded end to the lip.
 const SLABS = [];
 function slabRel(S, u, v) {      // height above the hillside at u along (0 at the bedded end, L at the raised lip) and v across
   const { L, W, H } = S;
   if (u < -0.6 || u > L + 1.2 || Math.abs(v) > W / 2 + 1.4) return -9;
-  const hw = W / 2 * (S.th ? 0.95 + 0.1 * fbm(u * 0.45 + 7, 3.3, 3) : 0.86 + 0.28 * fbm(u * 0.45 + 7, 3.3, 3)), le = L + 0.8 * (fbm(v * 0.6 + 2, 8.1, 3) - 0.5);      // a ragged outline, not a box
+  const hw = W / 2 * (0.78 + 0.38 * fbm(u * 0.45 + 7, 3.3, 3)), le = L + 1.1 * (fbm(v * 0.6 + 2, 8.1, 3) - 0.5);      // a ragged outline, not a box
   const uu = Math.max(0, u), t = Math.tan(S.th || 0), r0 = L - 2.3, rd = Math.max(0, uu - r0);      // a kicker: curving up over Lt, straight, then the last 2.3 m (a wheelbase) easing off by S.round,
   const ramp = S.th ? t * (uu < S.Lt ? uu * uu / (2 * S.Lt) : S.Lt / 2 + uu - S.Lt) - t * (S.round || 0) * rd * rd / (2 * 2.3) : H * uu / L;      // so the rover leaves without much spin
-  const top = ramp - 0.12 + (0.1 * (fbm(u * 0.9 + 4, v * 0.9, 3) - 0.5) + 0.035 * (fbm(u * 4 + 1, v * 4 - 3, 2) - 0.5)) * Math.min(1, Math.max(0, u)) * (S.th ? 0.25 : 1);      // a kicker's top worn smoother
-  const side = ss(hw + 0.6, hw - 0.9, Math.abs(v)), lip = ss(le + 0.5, le - 0.45, u);      // sides that fall away in a broken curve, a snapped-off lip
-  return top * side * lip - 1.2 * (1 - side * lip);
+  const top = ramp - 0.12 + (0.1 * (fbm(u * 0.9 + 4, v * 0.9, 3) - 0.5) + 0.035 * (fbm(u * 4 + 1, v * 4 - 3, 2) - 0.5)) * Math.min(1, Math.max(0, u)) * (S.th ? 0.3 + 0.9 * ss(1.2, 2.6, Math.abs(v)) : 1) + (S.th ? 0.05 * (fbm(u * 2.3 + 9, v * 2.3, 2) - 0.5) * ss(1.0, 2.4, Math.abs(v)) : 0);      // a broken rock face: rough toward its edges, worn smoother along the middle where the wheels run
+  const side = S.th ? Math.pow(ss(hw + 1.6, hw - 0.6, Math.abs(v)), 0.7) : ss(hw + 0.6, hw - 0.9, Math.abs(v)), lip = ss(le + 0.5, le - 0.45, u);      // sides that fall away in a broken curve (the ramp's rounded down like a boulder's shoulders), a snapped-off lip
+  return top * side * lip - 3.5 * (1 - side * lip);      // its sides run down well into the soil: bedded, never floating where the ground falls away
 }
 function slabAt(x, z) {
   let best = -1e9;
@@ -459,17 +459,32 @@ function rockMaterial() {
       .replace('#include <worldpos_vertex>', '#include <worldpos_vertex>\nvRP = (modelMatrix * vec4(transformed, 1.0)).xyz; vRN = normalize(mat3(modelMatrix) * objectNormal);');
     sh.fragmentShader = sh.fragmentShader.replace('#include <common>', `#include <common>
       uniform sampler2D rockN; varying vec3 vRP; varying vec3 vRN;
+      // 3D value noise, so the surface never repeats (the 256 px texture alone tiled visibly every 1.7 m across a 9 m boulder)
+      float rH( vec3 p ) { p = fract( p * 0.3183099 + 0.1 ); p *= 17.0; return fract( p.x * p.y * p.z * ( p.x + p.y + p.z ) ); }
+      float rV( vec3 x ) { vec3 i = floor( x ), f = fract( x ); f = f * f * ( 3.0 - 2.0 * f );
+        return mix( mix( mix( rH( i ), rH( i + vec3( 1, 0, 0 ) ), f.x ), mix( rH( i + vec3( 0, 1, 0 ) ), rH( i + vec3( 1, 1, 0 ) ), f.x ), f.y ),
+                    mix( mix( rH( i + vec3( 0, 0, 1 ) ), rH( i + vec3( 1, 0, 1 ) ), f.x ), mix( rH( i + vec3( 0, 1, 1 ) ), rH( i + vec3( 1, 1, 1 ) ), f.x ), f.y ), f.z ); }
+      float rF( vec3 p ) { float a = 0.0, w = 0.5; for ( int k = 0; k < 4; k++ ) { a += w * rV( p ); p = p * 2.07 + 1.3; w *= 0.5; } return a; }
+      // knobs and pits: rounded lumps a few decimeters across, and small vesicle-like pits, as on the boulder in the Station 6 photographs
+      float rBump( vec3 p ) { float k = rF( p * 1.6 ); float pit = smoothstep( 0.78, 0.86, rV( p * 9.0 ) ) * 0.6 + smoothstep( 0.8, 0.88, rV( p * 23.0 + 7.0 ) ) * 0.4; return k * 0.7 - pit * 0.18; }
       vec4 tri( vec3 p, vec3 w ) { return texture2D( rockN, p.zy ) * w.x + texture2D( rockN, p.xz ) * w.y + texture2D( rockN, p.xy ) * w.z; }
       vec3 triN( vec3 p, vec3 n, vec3 w ) {      // UDN blend of the three projections' normals onto the surface normal
         vec2 a = texture2D( rockN, p.zy ).xy * 2.0 - 1.0, b = texture2D( rockN, p.xz ).xy * 2.0 - 1.0, c = texture2D( rockN, p.xy ).xy * 2.0 - 1.0;
         return vec3( 0.0, a.y, a.x ) * w.x + vec3( b.x, 0.0, b.y ) * w.y + vec3( c.x, c.y, 0.0 ) * w.z; }`)
       .replace('#include <color_fragment>', `#include <color_fragment>
       vec3 rw = pow( abs( normalize( vRN ) ), vec3( 4.0 ) ); rw /= rw.x + rw.y + rw.z;
-      float pits = tri( vRP / 1.7, rw ).a * 0.6 + tri( vRP / 0.45, rw ).a * 0.4;
-      diffuseColor.rgb *= 0.72 + 0.5 * pits;`)
+      vec3 rq = mat3( 0.8, 0.36, -0.48, -0.36, 0.93, 0.06, 0.48, 0.06, 0.88 ) * vRP;      // a second, turned copy of the texture, blended by broad noise: no seams in a row
+      float mixT = smoothstep( 0.35, 0.65, rF( vRP * 0.31 ) );
+      float pits = mix( tri( vRP / 1.7, rw ).a, tri( rq / 2.3, rw ).a, mixT ) * 0.3 + tri( vRP / 0.45, rw ).a * 0.1;
+      float tone = rF( vRP * 0.22 ) * 0.6 + rF( vRP * 0.9 + 3.0 ) * 0.4, pit = smoothstep( 0.78, 0.86, rV( vRP * 9.0 ) ) * 0.6 + smoothstep( 0.8, 0.88, rV( vRP * 23.0 + 7.0 ) ) * 0.4;
+      diffuseColor.rgb *= ( 0.84 + 0.3 * pits ) * ( 0.82 + 0.36 * tone ) * ( 1.0 - 0.22 * pit );`)
       .replace('#include <normal_fragment_begin>', `#include <normal_fragment_begin>
       { vec3 wn = normalize( vRN ); vec3 w = pow( abs( wn ), vec3( 4.0 ) ); w /= w.x + w.y + w.z;
-        vec3 d = triN( vRP / 1.7, wn, w ) * 0.9 + triN( vRP / 0.45, wn, w ) * 0.55 * ( 1.0 - smoothstep( 8.0, 30.0, length( vViewPosition ) ) );
+        float near = 1.0 - smoothstep( 8.0, 40.0, length( vViewPosition ) );
+        vec3 d = triN( vRP / 1.7, wn, w ) * 0.35 + triN( vRP / 0.45, wn, w ) * 0.25 * near;
+        float e = 0.04, b0 = rBump( vRP );      // the procedural knobs and pits, as a bump on the surface
+        vec3 gb = vec3( rBump( vRP + vec3( e, 0, 0 ) ) - b0, rBump( vRP + vec3( 0, e, 0 ) ) - b0, rBump( vRP + vec3( 0, 0, e ) ) - b0 ) / e;
+        d -= ( gb - wn * dot( gb, wn ) ) * 0.09 * ( 0.4 + 0.6 * near );
         normal = normalize( ( viewMatrix * vec4( normalize( wn + d ), 0.0 ) ).xyz ); }`);
   };
   return m;
@@ -525,18 +540,17 @@ function splitBoulder() {
     }
   }
   BOULDER.cyl = cyl;
-  // the fifth piece, below the boulder on its downhill side, lying low
-  const a = Math.PI / 2 - 0.15;
-  buildSlab({ x: BOULDER.x + 9, z: BOULDER.z + 13, c: Math.cos(a), s: Math.sin(a), L: 8, W: 4.2, H: 0.7 }, mat, 21.7);
+  const TH = 22, LT = 12, RL = 18;      // 22° after a 12 m curve, 18 m long, its flat middle about 4 m wide between rounded shoulders: shorter than the first kicker (22 m) and still a clean jump
   // The ramp: a kicker on the near rim of the double crater, along the route, set by simulated runs so that at double speed and
   // full throttle the rover clears both craters (about 58 m) and comes down upright beyond the far rim, about 7 s in the air.
   // It stands level on its own base (on the rim's cross-slope it had tilted, and the rover left it rolling), curves up over
-  // 14 m to 20° and runs straight for 8 m, so it leaves the lip turning only slowly nose-down. Its lip is 2.5 m short of the rim.
-  const ra = 4.5 * Math.PI / 180, dc = Math.cos(ra), ds = Math.sin(ra), Mx = 302, Mz = -756, L = 22;
+  // 12 m to 22° and runs straight for 6 m, so it leaves the lip turning only slowly nose-down. Its lip is 2.5 m short of the rim.
+  // A rough slab of rock now, bedded at its edges (a full-speed run at double speed: about 6 to 7 s in the air, landing upright)
+  const ra = 4.5 * Math.PI / 180, dc = Math.cos(ra), ds = Math.sin(ra), Mx = 302, Mz = -756, L = RL;
   const inPair = (x, z) => RAMP_PAIR.some(c => Math.hypot(x - c.x, z - c.z) < c.R);
   let sn = -40; for (let q = -70; q < 0; q += 0.25) if (inPair(Mx + dc * q, Mz + ds * q)) { sn = q; break; }
   const lip = sn - 2.5, kx = Mx + dc * (lip - L / 2), kz = Mz + ds * (lip - L / 2);
-  buildSlab({ x: kx, z: kz, c: dc, s: ds, L, W: 7, H: 1, th: 23 * Math.PI / 180, Lt: 14, g0: groundBase(kx - dc * L / 2, kz - ds * L / 2) }, mat, 13.1);
+  buildSlab({ x: kx, z: kz, c: dc, s: ds, L, W: 7, H: 1, th: TH * Math.PI / 180, Lt: LT, g0: groundBase(kx - dc * L / 2, kz - ds * L / 2) }, mat, 13.1);
 }
 function rockMeshes() {
   // Three shapes of rock, each an icosahedron with its corners joined first (three.js gives every triangle its own
@@ -643,8 +657,12 @@ function step(h) {
     _f.add(_tmp); _t.add(_L.copy(r).cross(_tmp));
     // the sideways grip acts as if 25 cm up (the suspension's roll center, above the ground): less leverage to roll it over
     _tmp.copy(_ws).multiplyScalar(Fs); _f.add(_tmp); _t.add(_L.copy(r).addScaledVector(_up, 0.25).cross(_tmp));
-    wl.spin += vf / WHEEL_R * h;
+    wl.om = vf / WHEEL_R; wl.rolled = true;      // rolling: turning with the ground
   }
+  // A wheel that is off the ground, or only skimming it, keeps turning (the wire-mesh tire has some weight), its motor still
+  // driving it, and slows gently: before, it stopped dead whenever it was not pressed down, many times a second in this gravity
+  for (const wl of WHEELS) { if (!wl.rolled) { const drive = Math.abs(throttle) > 0.02 ? throttle * VMAX / WHEEL_R : 0; wl.om = (wl.om || 0) + ((drive || 0) - (wl.om || 0)) * Math.min(1, h * (drive ? 1.5 : 0.25)); }
+    wl.rolled = false; wl.spin += (wl.om || 0) * h; }
   // A turn assist while the tires bear on the ground: the yaw follows the turn the wheels ask for (four-wheel steering
   // turns on half the 2.3 m wheelbase), as a driver feels a car answer, instead of waiting on lightly loaded tires to bite
   { let load = 0; for (const wl of WHEELS) if (wl.contact) load++;
@@ -1599,8 +1617,15 @@ function rigWheels() {
     const orange = (a, b, c) => { if (!px) return false; let u = (uv.getX(a) + uv.getX(b) + uv.getX(c)) / 3, v = (uv.getY(a) + uv.getY(b) + uv.getY(c)) / 3; if (map.flipY) v = 1 - v;
       const X = Math.min(img.width - 1, Math.max(0, Math.floor((u - Math.floor(u)) * img.width))), Y = Math.min(img.height - 1, Math.max(0, Math.floor((v - Math.floor(v)) * img.height))), o = (Y * img.width + X) * 4;
       return px[o] - px[o + 2] > 60 && px[o] > 90; };
-    for (let t = 0; t < nTri; t++) { const a = vi(t, 0), b = vi(t, 1), c = vi(t, 2), ka = inside(f, a);
-      keep[ka >= 0 && inside(f, b) === ka && inside(f, c) === ka && !orange(a, b, c) ? ka : 4].push(a, b, c); }
+    // The fit comes from the tire's lower half, which the scan shows a little squashed under the rover's weight, so the upper
+    // tread stands a couple of centimeters outside it, and triangles astride the edge were left behind: scraps that stayed on
+    // the fender while the wheel turned and steered. A second, looser test takes any non-orange triangle wholly within 7%
+    // more radius (more only above the hub) if at least one corner was already inside.
+    const near = (i, k) => { const w = W[k], dx = f[i * 3] - w.c.x, dy = f[i * 3 + 1] - w.c.y, dz = f[i * 3 + 2] - w.c.z, R = w.r * (dy > 0 ? 1.07 : 1.025); return dx * dx + dy * dy < R * R && dz > w.z0 - 0.01 && dz < w.z1 + 0.01; };
+    for (let t = 0; t < nTri; t++) { const a = vi(t, 0), b = vi(t, 1), c = vi(t, 2), ka = inside(f, a), kb = inside(f, b), kc = inside(f, c);
+      let k = ka >= 0 && kb === ka && kc === ka ? ka : -1;
+      if (k < 0) { const any = ka >= 0 ? ka : kb >= 0 ? kb : kc; if (any >= 0 && near(a, any) && near(b, any) && near(c, any)) k = any; }
+      keep[k >= 0 && !orange(a, b, c) ? k : 4].push(a, b, c); }
     if (keep[4].length === nTri * 3) continue;      // nothing of a wheel in this part
     nm.getNormalMatrix(M);
     const build = (list, off) => {
