@@ -3,6 +3,9 @@
 Newest first. Version label / service-worker cache. Older entries (v2.39–v3.52)
 are in the claude.ai Project as `claude/CHANGELOG-vNNN.md` (NNN = cache number).
 
+## v5.40 (zion-sky-v509)
+Lunar Rover: the reset button in Settings, now "Reset records and map", also clears the drives drawn on the map, which had been kept for good in the browser's storage with no way to erase them.
+
 ## v5.39 (zion-sky-v508)
 Lunar Rover: smooth wheels, a natural ramp, a better Tracy's Rock. The wheels turned in fits and starts because a wheel only turned while pressed on the ground, and in one-sixth gravity the tires go light many times a second; now each wheel keeps its spin when it skims or leaves the ground, its motor still driving it, slowing gently. Scraps of tread stayed on the fenders when the wheels steered because each wheel's cut was fitted to the bottom of the tire, which the scan shows a little squashed, so the upper tread and triangles astride the edge were left behind; a second, looser test now takes them with the wheel (about 5% more of each tire). The jump ramp at the double crater is now a slab of broken rock: a ragged outline, a lumpy face worn smoother along the middle, rounded shoulders, and sides that run well down into the soil, where before its sides ended in mid-air wherever the rim fell away; it is shorter (18 m, was 22) and a little less steep (22°, was 23°), and a full-speed run at double speed still flies about 7 s. The low slab beside Tracy's Rock is gone. Tracy's Rock and the ramp share a new surface: the small rock texture tiled visibly every 1.7 m across the 9 m boulder, so it is now broken up with non-repeating 3D noise for broad tone, rounded knobs and small pits, as on the boulder in the Station 6 photographs.
 

@@ -1437,7 +1437,7 @@ function markSettings() {
   markSpeed(); setQ = detailChoice();
   document.querySelectorAll('.cam button').forEach(b => b.classList.toggle('on', +b.dataset.c === pov));
   document.querySelectorAll('.det button').forEach(b => b.classList.toggle('on', b.dataset.q === setQ));
-  $('set-apply').hidden = true; const r = $('set-rec'); r.armed = false; r.textContent = 'Reset records';
+  $('set-apply').hidden = true; const r = $('set-rec'); r.armed = false; r.textContent = 'Reset records and map';
   $('set-note').textContent = `Now drawing at ${DETAIL_NAME[0].toUpperCase() + DETAIL_NAME.slice(1)}. Lower detail runs smoother; higher looks sharper.`;
 }
 document.querySelectorAll('.cam button').forEach(b => b.addEventListener('click', () => { setPov(+b.dataset.c); markSettings(); }));
@@ -1447,8 +1447,9 @@ $('set-apply').addEventListener('click', () => { setDetail(setQ); location.reloa
 $('set-done').addEventListener('click', () => closeSheets());
 $('set-rec').addEventListener('click', () => {      // two taps, so a stray one cannot wipe them
   const r = $('set-rec'); if (!r.armed) { r.armed = true; r.textContent = 'Tap again to erase'; return; }
-  Object.keys(REC).forEach(k => { REC[k] = 0; }); AIR.best = 0; try { localStorage.removeItem('lrv-records'); } catch (e) { /* storage blocked */ }
-  showRecords(); r.armed = false; r.textContent = 'Records erased';
+  Object.keys(REC).forEach(k => { REC[k] = 0; }); AIR.best = 0; try { localStorage.removeItem('lrv-records'); localStorage.removeItem('lrv-trail'); } catch (e) { /* storage blocked */ }
+  MAP.trail.length = 0; MAP.t = 1;      // the drives drawn on the map go too (redrawn at once)
+  showRecords(); r.armed = false; r.textContent = 'Records and map erased';
 });
 
 /* ── replay: the last 20 s of the rover's pose, kept every frame. After a long jump over a crater, a button offers it
